@@ -12,7 +12,7 @@ import math
 from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
-from magnelio.geo._sheet import PlanarSheet, Sheet
+from magnelio.geo._sheet import Profile, Sheet
 from magnelio.geo._validate import finite, nonzero, point3, positive, vector3
 from magnelio.geo.shape import Solid
 from magnelio.materials.material import resolve_material
@@ -118,41 +118,6 @@ def extrude(shape, *, vector, face_near=None, material=None):
         )
     vector = vector3(vector, "extruded(vector)", nonzero=True)
     return _ExtrudedFaceShape(shape, face_near, vector, material)
-
-
-def cover(curve, *, material=None, name=None):
-    """Implementation of :meth:`magnelio.geo.Curve.covered`.
-
-    Uses ``BRepBuilderAPI_MakeFace`` on the curve's wire.
-    """
-    material = resolve_material(material, "covered(material=...)")
-    if curve._ends is not None and not curve.is_closed:
-        gap = math.dist(curve._ends[0], curve._ends[1])
-        raise ValueError(
-            f"covered() needs a closed curve, but this one ends {gap:.3e} m "
-            f"away from where it starts.  Chain the segments with joined() "
-            f"so the last end meets the first start, or build the profile "
-            f"with Path(...).closed()."
-        )
-    return _CoveredSheet(curve, material, name)
-
-
-@dataclass
-class _CoveredSheet(PlanarSheet):
-    _curve: object
-    material: object = None
-    name: str | None = None
-
-    @cached_occ_shape
-    def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import make_wire_face  # noqa: PLC0415
-
-        return make_wire_face(self._curve._occ_shape(scale))
-
-    def _analytic_bbox(self):
-        # Exact: a planar face lies inside the convex hull of its own
-        # boundary, whose AABB is the boundary's AABB.
-        return self._curve._analytic_bbox()
 
 
 def trace(curve, *, width, thickness, caps="round", normal=None, material=None, name=None):
@@ -268,10 +233,10 @@ def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=
     Uses ``BRepPrimAPI_MakeRevol``.
     """
     from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
-    from magnelio.geo._sheet import PlanarSheet  # noqa: PLC0415
+    from magnelio.geo._sheet import Profile  # noqa: PLC0415
 
     material = resolve_material(material, "revolved(material=...)")
-    if isinstance(profile, PlanarSheet) and material is None and profile.material is None:
+    if isinstance(profile, Profile) and material is None and profile.material is None:
         raise ValueError(
             "Revolving a construction profile (material=None) requires an "
             "explicit material= for the resulting solid."
@@ -514,19 +479,19 @@ class Loft(Solid):
 
     Parameters
     ----------
-    *sections : Face, covered Curve, or closed Curve
+    *sections : Profile or closed Curve
         At least two cross-sections, in the order the solid passes
-        through them.  Sheets contribute their outer boundary.  The
-        sections should wind the same way — a reversed one produces a
+        through them. Profiles contribute their outer boundary and all holes,
+        matched in boundary order. Every section needs the same hole count.
+        The sections should wind the same way — a reversed one produces a
         twisted, self-intersecting solid rather than an error.
     blend : {'spline', 'ruled'}
         How consecutive sections are joined.  ``'spline'`` (default)
         passes one smooth surface through all of them; ``'ruled'`` joins
         them with straight surfaces, so the solid is a stack of frusta.
     material : Material, optional
-        Material of the lofted solid.  ``None`` (default) makes it a
-        construction body, since cross-sections carry no volume material
-        to inherit.
+        Material of the lofted solid. Defaults to the first profile
+        section's material; without one the result is a construction solid.
     name : str, optional
         Optional label.
 
@@ -543,8 +508,8 @@ class Loft(Solid):
     --------
     A horn flaring from a square throat to a wider square mouth::
 
-        throat = geo.Face(normal="z", points=[...], position=0.0)
-        mouth = geo.Face(normal="z", points=[...], position=60e-3)
+        throat = geo.Profile.rectangle((0, 0, 0), (10e-3, 10e-3))
+        mouth = geo.Profile.rectangle((0, 0, 60e-3), (30e-3, 30e-3))
         horn = geo.Loft(throat, mouth, blend="ruled", material=pec)
     """
 
@@ -569,28 +534,35 @@ class Loft(Solid):
                         f"cross-section must be a closed outline — chain it "
                         f"with joined() or draw it with Path(...).closed()."
                     )
-            elif not isinstance(section, PlanarSheet):
+            elif not isinstance(section, Profile):
                 raise TypeError(
                     f"Loft section {index} is a {type(section).__name__}. "
-                    f"Sections must be planar sheets (a Face or a covered "
-                    f"Curve) or closed curves; to loft between faces of two "
+                    f"Sections must be Profile values or closed "
+                    f"Curve values; to loft between faces of two "
                     f"existing solids use the lofted() verb instead."
                 )
         self.sections = sections
         self.blend = blend
         self.material = resolve_material(material, "Loft(material=...)")
+        if self.material is None:
+            self.material = getattr(sections[0], "material", None)
+        counts = {len(s.boundary()) if isinstance(s, Profile) else 1 for s in sections}
+        if len(counts) != 1:
+            raise ValueError("Loft profiles must have the same number of holes.")
         self.name = name
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import extract_face_wire, make_loft  # noqa: PLC0415
+        from magnelio.geo._occ_backend import make_profile_loft  # noqa: PLC0415
         from magnelio.geo.curves import Curve  # noqa: PLC0415
 
         wires = [
-            s._occ_shape(scale) if isinstance(s, Curve) else extract_face_wire(s._occ_shape(scale))
+            [s._occ_shape(scale)]
+            if isinstance(s, Curve)
+            else [c._occ_shape(scale) for c in s.boundary()]
             for s in self.sections
         ]
-        return make_loft(wires, is_solid=True, is_ruled=self.blend == "ruled")
+        return make_profile_loft(wires, is_ruled=self.blend == "ruled")
 
     def _analytic_bbox(self):
         from magnelio.geo._scaling import box_diagonal, pad_box, union_boxes  # noqa: PLC0415
@@ -652,7 +624,6 @@ class _RevolvedShape(Solid):
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
-        import math  # noqa: PLC0415
 
         from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
         from magnelio.geo._occ_backend import make_revolve  # noqa: PLC0415

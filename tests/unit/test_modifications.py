@@ -7,6 +7,7 @@ from magnelio.geo import (
     Cylinder,
     Difference,
     GeometryModel,
+    Profile,
     Union,
 )
 from magnelio.geo.modifications import chamfer, extrude, fillet, loft
@@ -554,13 +555,11 @@ class TestTangentBlend:
             assert self._blend(blend="tangent").volume() > 0.0
 
     def test_n_ary_loft_points_at_the_verb_for_tangent(self):
-        from magnelio.geo import Face, Loft
+        from magnelio.geo import Loft, Profile
 
         def square(half, z):
-            return Face(
-                normal="z",
-                points=[(-half, -half), (half, -half), (half, half), (-half, half)],
-                position=z,
+            return Profile.polygon(
+                [(u, v, z) for u, v in [(-half, -half), (half, -half), (half, half), (-half, half)]]
             )
 
         with pytest.raises(ValueError, match="use Shape.lofted"):
@@ -627,9 +626,9 @@ class TestShelled:
             _volume(self._box().shelled(thickness=0.75 * self.A))
 
     def test_sheet_is_sent_to_thickened(self):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        sheet = Face(normal="z", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         with pytest.raises(TypeError, match="thickened"):
             sheet.shelled(thickness=1e-4)
 
@@ -644,12 +643,10 @@ class TestThickened:
     W, H, T = 10e-3, 4e-3, 35e-6
 
     def _sheet(self, material=None):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        return Face(
-            normal="z",
-            points=[(0, 0), (self.W, 0), (self.W, self.H), (0, self.H)],
-            position=1e-3,
+        return Profile.polygon(
+            [(u, v, 0.001) for u, v in [(0, 0), (self.W, 0), (self.W, self.H), (0, self.H)]],
             material=material,
         )
 
@@ -683,7 +680,7 @@ class TestThickened:
             .line_to((0, self.H, 0))
             .closed()
         )
-        slab = outline.covered().thickened(thickness=self.T, material=Material.pec())
+        slab = Profile.from_wires(outline).thickened(thickness=self.T, material=Material.pec())
         assert _volume(slab) == pytest.approx(self.W * self.H * self.T, rel=1e-9)
 
     def test_sheet_material_is_inherited(self):
@@ -711,12 +708,13 @@ class TestLoftSections:
     """Loft() interpolates a series of profiles."""
 
     def _square(self, half, offset):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        return Face(
-            normal="z",
-            points=[(-half, -half), (half, -half), (half, half), (-half, half)],
-            position=offset,
+        return Profile.polygon(
+            [
+                (u, v, offset)
+                for u, v in [(-half, -half), (half, -half), (half, half), (-half, half)]
+            ]
         )
 
     def test_two_sections_match_the_frustum(self):

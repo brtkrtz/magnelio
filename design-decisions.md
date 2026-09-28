@@ -22484,8 +22484,8 @@ or server is started for them.
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
 **Date:** 2026-09-28.
-**Status:** Accepted as the geometry-foundation contract; WP0 and WP1 are
-implemented on `feat/geo-api-foundation`, with WP2 next.
+**Status:** Accepted as the geometry-foundation contract; WP0 through WP2 are
+implemented on `feat/geo-api-foundation`, with WP3 next.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -22689,12 +22689,36 @@ primitive categories and needs its own later decision.
 The primary spelling remains
 `translated(vector)`, `rotated(axis, angle_deg, origin=...)`,
 `mirrored(normal, position=...)`, and `scaled(factor, center=...)` on every
-standalone category.  Each delegates to the same transform value and always
-returns one value of the receiver's category.  `repeat`, `copy`, `unite`, and
-`group` are removed from these methods: array construction is an explicit
-list/`Group` comprehension, and fusion an explicit `Union`.  One placement
-therefore cannot silently change return type or topology.  `+` and `-`
-remain Solid CSG operators and are never overloaded with vectors.
+standalone category. Each delegates to the same transform values and returns
+one value of the receiver's category by default. `translated` and `rotated`
+also accept `repeat`, `copy`, `unite`, and `group`; `mirrored` accepts the last
+three without `repeat`. `repeat` counts transformed copies at successive
+displacement/angle increments; `copy=True` includes the original first.
+Multiple values form a list unless aggregation is requested. An explicit
+`group=True` always returns a material-preserving Group, and `unite=True`
+always returns a Union of Solid input, including for a single copy. These
+aggregation modes are mutually exclusive; mirrored aggregation requires
+`copy=True`. Repeated Group assemblies preserve nested members and materials
+and reject fusion. Every copy is placed from the original through the affine
+backend. `Transform @ geometry` retains its strictly single-placement contract.
+`+` and `-` remain Solid CSG operators and are never overloaded with vectors.
+
+**Amendment (2026-09-28, after WP2).** The initial WP1 contract removed all
+array/copy/fusion options to make named methods category-preserving in every
+case. Developer review showed the loss of readable engineering construction,
+notably eightfold coax arrangements. That restriction is superseded by the
+explicit convenience modes above. The immutable affine algebra and dimensional
+Boolean boundary are unchanged; convenience flags request array construction
+and result aggregation deliberately. Existing named-topology evolution rules
+continue to govern fusion, whether requested through `unite` or explicit Union.
+Gate: `tests/unit/test_geo_transform_foundation.py` now has 34 tests, including
+the original-plus-seven 45-degree arrangement, placed profiles with holes,
+material-preserving nested assemblies, one-copy aggregation, invalid counts
+and conflicting modes, and the executed methods recipe. All 93 foundation
+gates and 650 affected unit/integration tests pass; Tutorial 14 is re-executed
+and the full Sphinx build passes with the known configuration-cache diagnostic
+suppressed. Private measurements: `investigations/geo-api-foundation/`
+(internal dossier).
 
 **Material and failure rules.**  Affine placement preserves `material`,
 `name`, and selection names exactly.  A solid produced from a `Profile` uses
@@ -22734,7 +22758,48 @@ primitives, imported CAD, construction results, and Boolean results are
 groups use the immutable homogeneous-matrix backend exposed as `Transform`,
 `Translation`, `Rotation`, `Mirror`, and `Scale`; composition follows the
 rightmost-first column-vector rule.  The named methods delegate to these
-values and no longer accept repetition/copy/fusion switches.  CSG constructors
+values; the initial removal of repetition/copy/fusion switches was subsequently
+revised by the amendment above. CSG constructors
 reject every non-`Solid` category before a kernel call.  Gate:
 `tests/unit/test_geo_transform_foundation.py`; the remaining characterization
 test has been advanced only where WP1 deliberately replaced its assertions.
+
+
+**WP2 implementation (2026-09-28).** Exact `Curve.line`, `circle`, and
+`ellipse` factories retain analytic edges, including arbitrary plane normals
+and either order of ellipse semi-axes. `Curve.length` uses tolerance-controlled
+CAD arc-length integration; the default linear mass-property integration was
+0.027 % high for the 3:2 ellipse and is not the measurement contract.
+`Profile.polygon`, `rectangle`, `circle`, and `from_wires` replace public
+`Face` and `Curve.covered()` without aliases; the transitional `PlanarSheet`
+marker and covered-sheet wrapper are removed. Profiles validate their wires
+at construction using the existing model scaling: closure, planarity,
+self-intersection, strict containment, and disjoint non-nested holes. Hole
+winding is corrected without changing boundary geometry. `Profile.area`
+excludes holes; `boundary()` returns standalone Curve values, outer first
+and then holes in input order. An affine wrapper transforms these values
+through the same placement, preserving correspondence without kernel indices.
+
+Extrusion, revolution and pipe sweep consume the whole face, retaining every
+inner wire. Profile lofts construct corresponding outer and inner lofts and
+subtract the latter volumes; every section must have equal hole cardinality
+and input order determines correspondence. No geometry-nearest matching is
+introduced. An omitted Loft material inherits the first Profile's material;
+this closes the profile-only inheritance gap without advancing FaceRef or
+uniform-operation work. Changing hole cardinality, sweep-frame roll and
+intersection-checking modes remain outside this slice. Existing loose-point
+solid-face operations are not rewritten ahead of WP3/WP4.
+
+Gate: `tests/unit/test_geo_profiles_foundation.py` (24 tests), including
+analytic length/area/volume across model scales, invalid boundaries, multiple
+holes, transformed boundary extraction, all four solid constructors, project
+BREP round trip, and executed methods/upgrade snippets. The remaining baseline
+is migrated only for this slice's removed names. All 70 foundation gates pass;
+unit/integration: 3722 passed, 39 skipped, followed by 542 passing relevant
+tests including the documentation recipes. The methods and API pages,
+Tutorial 14, geometry upgrade guide,
+other affected examples and repository certificates use the new Profile
+vocabulary. All 32 selected gallery examples execute successfully, and the
+final full Sphinx build passes with the known configuration-cache diagnostic
+suppressed. Two existing tutorial RST formatting defects found by this gate
+are corrected.

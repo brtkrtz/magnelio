@@ -17,13 +17,10 @@ if TYPE_CHECKING:
 
 
 from magnelio.geo._cache import cached_occ_shape
-from magnelio.geo._sheet import PlanarSheet
 from magnelio.geo._validate import (
-    finite,
     nonnegative,
     nonzero,
     point3,
-    point_list,
     positive,
     vector3,
 )
@@ -40,7 +37,7 @@ class _BaseShape(Solid):
     :class:`~magnelio.geo.GeometryModel`; a solid without one is a
     **construction solid** — a body that exists only to shape other
     bodies through Boolean operations, the volumetric sibling of the
-    material-less :class:`Face` profile::
+    material-less :class:`Profile` profile::
 
         ring = Cylinder(radius=r_out, height=t, material=pec) - Cylinder(
             origin=(0, 0, -1), radius=r_in, height=2
@@ -460,80 +457,6 @@ class Cone(_BaseShape):
 
         radius = max(self.bottom_radius, self.top_radius)
         return axis_segment_box(self.origin, normalize_axis(self.axis), self.height, radius)
-
-
-@dataclass
-class Face(PlanarSheet):
-    """A standalone planar polygon face.
-
-    A Face lives in an axis-normal plane and carries an **optional**
-    material:
-
-    - **no material** (default) — a *construction profile*: the input to
-      :meth:`~magnelio.geo.Shape.extruded`,
-      :meth:`~magnelio.geo.Shape.revolved`,
-      :meth:`~magnelio.geo.Shape.swept` or
-      :meth:`~magnelio.geo.Shape.thickened`, each of which turns it into
-      a solid.  A material-less Face is not a physical object and is not
-      meshed on its own.
-    - **with a material** — a *thin sheet*.  The object is free to carry the
-      material field, but thin-sheet *physics* wiring is deferred,
-      so a material-carrying Face cannot yet be added to a
-      :class:`~magnelio.geo.GeometryModel` for meshing.
-
-    The polygon is given as in-plane ``(u, v)`` points; ``(u, v)`` map to
-    the two axes orthogonal to *normal* following the package convention
-    (normal ``'x'`` → u=y, v=z; ``'y'`` → u=x, v=z; ``'z'`` → u=x, v=y),
-    the same frame :func:`cross_section_polygons` uses.
-
-    Parameters
-    ----------
-    normal : str
-        Plane normal axis: ``'x'``, ``'y'``, or ``'z'``.
-    points : sequence of (float, float)
-        In-plane ``(u, v)`` vertices [meters]; at least 3, without
-        self-intersection.  The polygon is closed automatically.
-    position : float
-        Position of the plane along the normal axis [meters] (default 0).
-    material : Material or str, optional
-        Material of the thin sheet.  ``None`` (default) = construction
-        profile.
-    name : str, optional
-        Optional label.
-    """
-
-    normal: str
-    points: tuple
-    position: float = 0.0
-    material: "Material | None" = None
-    name: str | None = None
-
-    def __post_init__(self):
-        self.material = resolve_material(self.material, "Face.material")
-        if self.normal not in ("x", "y", "z"):
-            raise ValueError(f"Face.normal must be 'x', 'y', or 'z'; got {self.normal!r}")
-        self.points = point_list(self.points, "Face.points", dim=2, minimum=3)
-        self.position = finite(self.position, "Face.position")
-
-    @cached_occ_shape
-    def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import make_face
-
-        return make_face(self.normal, self.position, self.points, scale=scale)
-
-    def _analytic_bbox(self):
-        from magnelio.geo._scaling import box_of_points
-
-        uv_axes = {"x": (1, 2), "y": (0, 2), "z": (0, 1)}[self.normal]
-        normal_axis = {"x": 0, "y": 1, "z": 2}[self.normal]
-        pts3 = []
-        for u, v in self.points:
-            p = [0.0, 0.0, 0.0]
-            p[normal_axis] = self.position
-            p[uv_axes[0]] = u
-            p[uv_axes[1]] = v
-            pts3.append(tuple(p))
-        return box_of_points(pts3)
 
 
 @dataclass

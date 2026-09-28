@@ -14,11 +14,11 @@ from magnelio.geo import (
     Curve,
     Cylinder,
     Difference,
-    Face,
     GeometryModel,
     Group,
     Intersection,
     Path,
+    Profile,
     Sphere,
     ThinWire,
     Torus,
@@ -136,8 +136,8 @@ class TestExtentArguments:
         with pytest.raises(ValueError, match=r"Scale\(factor\) must not be zero"):
             _brick().scaled(0.0)
 
-    def test_repeat_option_is_removed(self):
-        with pytest.raises(TypeError, match="unexpected keyword argument 'repeat'"):
+    def test_repeat_must_be_a_whole_number(self):
+        with pytest.raises(TypeError, match="repeat must be a whole number"):
             _brick().translated((1e-3, 0, 0), repeat=2.5)
 
 
@@ -207,13 +207,13 @@ class TestOperandArguments:
 class TestProfileArguments:
     """Point sequences for faces, curves and paths."""
 
-    def test_face_points_must_be_in_plane_pairs(self):
-        with pytest.raises(ValueError, match="3 coordinates"):
-            Face(normal="z", points=[(0, 0, 0), (1, 0, 0), (1, 1, 0)])
+    def test_polygon_points_must_be_world_triples(self):
+        with pytest.raises(ValueError, match="2 coordinates"):
+            Profile.polygon([(0, 0), (1, 0), (1, 1)])
 
     def test_face_needs_three_points(self):
         with pytest.raises(ValueError, match="at least 3 points"):
-            Face(normal="z", points=[(0, 0), (1, 0)])
+            Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (1, 0)]])
 
     def test_flat_coordinate_list_is_named_as_such(self):
         with pytest.raises(TypeError, match="flat list of coordinates"):
@@ -266,17 +266,17 @@ class TestVerbArguments:
             _brick().chamfered(edges="every", distance=1e-4)
 
     def test_zero_extrusion_vector_is_rejected(self):
-        sheet = Face(normal="z", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         with pytest.raises(ValueError, match="zero vector"):
             sheet.extruded((0, 0, 0), material=PEC)
 
     def test_sweep_spine_must_be_a_curve(self):
-        sheet = Face(normal="z", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         with pytest.raises(TypeError, match="needs a Curve as its spine"):
             sheet.swept([(0, 0, 0), (0, 0, 1e-3)], material=PEC)
 
     def test_revolve_beyond_a_full_turn_is_rejected(self):
-        sheet = Face(normal="x", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(0.0, u, v) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         with pytest.raises(ValueError, match="at most a full turn"):
             sheet.revolved("z", 720.0, material=PEC)
 

@@ -631,7 +631,7 @@ class Mesh:
 
         if any(isinstance(s, _Sheet) for s in shapes):
             raise NotImplementedError(
-                "A standalone sheet (a Face, a covered Curve or a Surface) "
+                "A standalone sheet (a Profile or a Surface) "
                 "cannot be meshed yet: thin-sheet physics is deferred. Use "
                 "it as a profile for extruded()/revolved()/swept(), grow it "
                 "into a solid with thickened(), or model the sheet as a thin "

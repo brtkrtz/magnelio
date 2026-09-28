@@ -258,24 +258,44 @@ class Group:
             else:
                 yield s
 
-    def translated(self, vector):
+    def translated(self, vector, *, repeat=1, copy=False, unite=False, group=False):
         """Return a Group with every member translated by *vector*.
 
         Parameters
         ----------
         vector : tuple of float
             ``(dx, dy, dz)`` translation [meters].
+        repeat : int, optional
+            Number of translated assemblies at successive vector displacements.
+        copy : bool, optional
+            Include the original assembly first.
+        unite : bool, optional
+            Unsupported for Group: Boolean fusion requires individual Solid
+            operands. Use *group* to retain the assembly materials.
+        group : bool, optional
+            Bundle the assemblies into a Group instead of returning a list.
 
         Returns
         -------
-        Group
-            New Group with its structure and member materials preserved.
+        Group or list of Group
+            One placed assembly by default, otherwise a list or an explicitly
+            requested enclosing Group. Member structure and materials persist.
         """
-        from magnelio.geo.transforms import Translation  # noqa: PLC0415
+        from magnelio.geo.transforms import translate  # noqa: PLC0415
 
-        return Translation(vector) @ self
+        return translate(self, vector, repeat=repeat, copy=copy, unite=unite, group=group)
 
-    def rotated(self, axis, angle_deg, origin=(0.0, 0.0, 0.0)):
+    def rotated(
+        self,
+        axis,
+        angle_deg,
+        origin=(0.0, 0.0, 0.0),
+        *,
+        repeat=1,
+        copy=False,
+        unite=False,
+        group=False,
+    ):
         """Return a Group with every member rotated about one axis.
 
         Parameters
@@ -286,15 +306,27 @@ class Group:
             Right-handed angle [degrees].
         origin : tuple of float
             Point on the rotation axis [meters].
+        repeat : int, optional
+            Number of rotated assemblies at successive angle increments.
+        copy : bool, optional
+            Include the original assembly first.
+        unite : bool, optional
+            Unsupported for Group: Boolean fusion requires individual Solid
+            operands. Use *group* to retain the assembly materials.
+        group : bool, optional
+            Bundle the assemblies into a Group instead of returning a list.
 
         Returns
         -------
-        Group
-            New Group with its structure and member materials preserved.
+        Group or list of Group
+            One placed assembly by default, otherwise a list or an explicitly
+            requested enclosing Group. Member structure and materials persist.
         """
-        from magnelio.geo.transforms import Rotation  # noqa: PLC0415
+        from magnelio.geo.transforms import rotate  # noqa: PLC0415
 
-        return Rotation(axis, angle_deg, origin) @ self
+        return rotate(
+            self, axis, angle_deg, origin, repeat=repeat, copy=copy, unite=unite, group=group
+        )
 
     def scaled(self, factor, center=(0.0, 0.0, 0.0)):
         """Return a Group with every member uniformly scaled.
@@ -315,7 +347,7 @@ class Group:
 
         return Scale(factor, center) @ self
 
-    def mirrored(self, normal, position=0.0):
+    def mirrored(self, normal, position=0.0, *, copy=False, unite=False, group=False):
         """Return a Group with every member mirrored across one plane.
 
         Parameters
@@ -324,15 +356,24 @@ class Group:
             Plane-normal axis name or direction vector.
         position : float
             Signed plane position along the unit normal [meters].
+        copy : bool, optional
+            Include the original assembly first.
+        unite : bool, optional
+            Unsupported for Group: Boolean fusion requires individual Solid
+            operands. Use *group* to retain the assembly materials.
+        group : bool, optional
+            Bundle original and image into a Group. Requires *copy*.
 
         Returns
         -------
-        Group
-            New Group with its structure and member materials preserved.
+        Group or list of Group
+            One mirrored assembly by default, otherwise a two-element list
+            or an explicitly requested enclosing Group. Member structure and
+            materials persist.
         """
-        from magnelio.geo.transforms import Mirror  # noqa: PLC0415
+        from magnelio.geo.transforms import mirror  # noqa: PLC0415
 
-        return Mirror(normal, position) @ self
+        return mirror(self, normal=normal, position=position, copy=copy, unite=unite, group=group)
 
     def volume(self, scale: float | None = None) -> float:
         """Total volume of every member [cubic meters].

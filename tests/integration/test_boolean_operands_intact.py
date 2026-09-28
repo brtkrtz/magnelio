@@ -51,22 +51,36 @@ def _coupler_bodies():
         radius=dia / 2, origin=(0, 0, -20e-3), axis="z", height=length + 40e-3, material=air
     )
     recess = (
-        geo.Face(
-            normal="x",
-            points=((0, -w), (0, length + w), (dia / 2 + t + h, length + w), (dia / 2 + t + h, -w)),
+        geo.Profile.polygon(
+            [
+                (0.0, u, v)
+                for u, v in (
+                    (0, -w),
+                    (0, length + w),
+                    (dia / 2 + t + h, length + w),
+                    (dia / 2 + t + h, -w),
+                )
+            ],
             material=pec,
         )
         .revolved(axis="z", angle_deg=51.0)
         .rotated(axis="z", angle_deg=-25.5)
-        .filleted(edges="all", radius=1e-3)
+        .filleted(edges="all", radius=0.001)
     )
     coax = geo.Cylinder(
         origin=(0, 0, -w / 2), axis="y", height=dia / 2 + 10e-3, radius=4e-3, material=air
     )
     electrode = (
-        geo.Face(
-            normal="x",
-            points=((dia / 2, 0), (dia / 2, length), (dia / 2 + t, length), (dia / 2 + t, 0)),
+        geo.Profile.polygon(
+            [
+                (0.0, u, v)
+                for u, v in (
+                    (dia / 2, 0),
+                    (dia / 2, length),
+                    (dia / 2 + t, length),
+                    (dia / 2 + t, 0),
+                )
+            ],
             material=pec,
         )
         .revolved(axis="z", angle_deg=25.7)

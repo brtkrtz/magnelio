@@ -63,14 +63,21 @@ def build_coupler_bodies():
         material=air,
     )
     pit = (
-        geo.Face(
-            normal="x",
-            points=((0, -g), (0, length + g), (dia / 2 + t + h, length + g), (dia / 2 + t + h, -g)),
+        geo.Profile.polygon(
+            [
+                (0.0, u, v)
+                for u, v in (
+                    (0, -g),
+                    (0, length + g),
+                    (dia / 2 + t + h, length + g),
+                    (dia / 2 + t + h, -g),
+                )
+            ],
             material=pec,
         )
         .revolved(axis="z", angle_deg=beta)
         .rotated(axis="z", angle_deg=-beta / 2)
-        .filleted(edges="all", radius=1e-3)
+        .filleted(edges="all", radius=0.001)
     )
     coax_vac = geo.Cylinder(
         origin=(0, 0, -w / 2), axis="y", height=dia / 2 + l_coax, radius=ra, material=air
@@ -82,9 +89,11 @@ def build_coupler_bodies():
         radius=ri,
         material=pec,
     )
-    electrodes = geo.Face(
-        normal="x",
-        points=((dia / 2, 0), (dia / 2, length), (dia / 2 + t, length), (dia / 2 + t, 0)),
+    electrodes = geo.Profile.polygon(
+        [
+            (0.0, u, v)
+            for u, v in ((dia / 2, 0), (dia / 2, length), (dia / 2 + t, length), (dia / 2 + t, 0))
+        ],
         material=pec,
     ).revolved(axis="z", angle_deg=alpha)
     electrodes = electrodes.rotated(axis="z", angle_deg=-alpha / 2)

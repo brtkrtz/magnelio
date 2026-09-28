@@ -142,8 +142,8 @@ class TestLoftConstructor:
         # Regression: Loft is a public class constructor, not routed
         # through the loft() factory — its material must resolve too
         # (tutorial 14 hit the raw string in plot_cross_section).
-        from magnelio.geo import Face, Loft
+        from magnelio.geo import Loft, Profile
 
-        throat = Face(normal="z", points=((0, 0), (1e-3, 0), (0, 1e-3)))
-        mouth = Face(normal="z", points=((0, 0), (2e-3, 0), (0, 2e-3)), position=5e-3)
+        throat = Profile.polygon([(u, v, 0.0) for u, v in ((0, 0), (0.001, 0), (0, 0.001))])
+        mouth = Profile.polygon([(u, v, 0.005) for u, v in ((0, 0), (0.002, 0), (0, 0.002))])
         assert Loft(throat, mouth, material="pec").material.is_pec

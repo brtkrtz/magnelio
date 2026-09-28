@@ -1,7 +1,7 @@
 """Curved sheets from parametric maps.
 
 A :class:`Surface` is a zero-thickness curved sheet — the free-form
-counterpart of the planar :class:`~magnelio.geo.Face`.  It is built
+counterpart of the planar :class:`~magnelio.geo.Profile`.  It is built
 from a parametric map ``(u, v) -> (x, y, z)`` sampled on a grid and
 interpolated by a B-spline surface, and it serves as the profile that
 :meth:`~magnelio.geo.Shape.extruded` or
@@ -36,7 +36,7 @@ class Surface(Sheet):
     (a degree-3 interpolant between them), bounded by the grid's four
     edge rows.
 
-    Like a :class:`~magnelio.geo.Face`, a Surface carries an
+    Like a :class:`~magnelio.geo.Profile`, a Surface carries an
     **optional** material: none (default) makes it a *construction
     profile* — the input to :meth:`~magnelio.geo.Shape.extruded` or
     :meth:`~magnelio.geo.Shape.thickened`, which turn it into a solid;

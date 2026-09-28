@@ -8137,80 +8137,6 @@ def extract_face_wire(face):
     return wire
 
 
-# Plane normal → (axis index, u index, v index).  Must match the (u, v)
-# convention of ``cross_section_polygons`` so a Face and the cross-section
-# of its extrusion share one coordinate frame.
-_FACE_UV = {
-    "x": (0, 1, 2),  # normal x: u=y, v=z
-    "y": (1, 0, 2),  # normal y: u=x, v=z
-    "z": (2, 0, 1),  # normal z: u=x, v=y
-}
-
-
-def make_face(normal: str, offset: float, points, scale: float = 1.0):
-    """Build a planar OCC face from a polygon of ``(u, v)`` points.
-
-    The polygon lies in the axis-normal plane at ``offset`` along *normal*;
-    ``(u, v)`` map to the two in-plane axes following the same convention
-    as :func:`cross_section_polygons` (normal ``x`` → u=y, v=z; ``y`` →
-    u=x, v=z; ``z`` → u=x, v=y).  The polygon is closed automatically.
-
-    Parameters
-    ----------
-    normal : str
-        Plane normal axis: ``'x'``, ``'y'``, or ``'z'``.
-    offset : float
-        Position of the plane along the normal axis [m].
-    points : sequence of (float, float)
-        In-plane ``(u, v)`` vertices [m], at least 3, non-self-intersecting.
-
-    Returns
-    -------
-    TopoDS_Face
-        The planar face.
-    """
-    occ = _require_occ()
-    try:
-        from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
-            BRepBuilderAPI_MakeFace,
-            BRepBuilderAPI_MakePolygon,
-        )
-    except ImportError as exc:
-        raise ImportError(
-            "pythonocc-core is required for face construction. "
-            "Install via: conda install -c conda-forge pythonocc-core"
-        ) from exc
-
-    if normal not in _FACE_UV:
-        raise ValueError(f"normal must be 'x', 'y', or 'z'; got {normal!r}")
-    pts = list(points)
-    if len(pts) < 3:
-        raise ValueError(f"A Face needs at least 3 points; got {len(pts)}.")
-
-    axis_idx, u_idx, v_idx = _FACE_UV[normal]
-    poly = BRepBuilderAPI_MakePolygon()
-    for uv in pts:
-        coord = [0.0, 0.0, 0.0]
-        coord[axis_idx] = offset * scale
-        coord[u_idx] = uv[0] * scale
-        coord[v_idx] = uv[1] * scale
-        poly.Add(occ["gp_Pnt"](*coord))
-    poly.Close()
-    if not poly.IsDone():
-        raise ValueError(
-            "OCC could not build a closed polygon from the given Face "
-            "points (degenerate or duplicate vertices?)."
-        )
-
-    mkface = BRepBuilderAPI_MakeFace(poly.Wire(), True)  # True = planar only
-    if not mkface.IsDone():
-        raise ValueError(
-            "OCC could not build a planar face from the Face polygon — "
-            "the points must be coplanar and non-self-intersecting."
-        )
-    return mkface.Face()
-
-
 def make_bspline_surface(points, scale: float = 1.0):
     """Build a curved OCC face interpolating a grid of sample points.
 
@@ -9157,9 +9083,8 @@ def make_joined_wire(wires, tol: float):
 def make_wire_face(wire):
     """Build the planar face bounded by a closed OCC wire.
 
-    The free-boundary counterpart of :func:`make_face`, which is limited
-    to axis-normal polygons: any closed planar wire — arcs, splines and
-    straight segments mixed — becomes a face here.
+    Any closed planar wire, including mixed analytic arcs, splines and
+    straight segments, becomes a face here.
 
     Parameters
     ----------
@@ -9181,7 +9106,7 @@ def make_wire_face(wire):
 
     if not wire.Closed():
         raise ValueError(
-            "covered() needs a closed curve; this one has two loose ends. "
+            "Profile.from_wires needs a closed curve; this one has two loose ends. "
             "Chain the segments with joined() so the last end meets the "
             "first start, or build the profile with Path(...).closed()."
         )
@@ -9189,7 +9114,7 @@ def make_wire_face(wire):
     if not mkface.IsDone():
         if mkface.Error() == BRepBuilderAPI_NotPlanar:
             raise ValueError(
-                "covered() needs a planar curve — these segments do not lie in one plane."
+                "Profile.from_wires needs a planar curve — these segments do not lie in one plane."
             )
         raise ValueError(
             "OCC could not build a face from this curve — is the boundary self-intersecting?"
@@ -9839,3 +9764,89 @@ def wire_vertex_points(wire, scale: float = 1.0) -> np.ndarray:
         pts.append((p.X(), p.Y(), p.Z()))
         ex.Next()
     return np.asarray(pts, dtype=float).reshape(-1, 3) / scale
+
+
+def make_closed_ellipse(center, u, v, a, b, scale=1.0):
+    """One exact closed analytic edge, including the circular special case."""
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+    from OCC.Core.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Elips, gp_Pnt
+
+    n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+    if a < b:
+        u, a, b = v, b, a
+    frame = gp_Ax2(gp_Pnt(*_scale3(center, scale)), gp_Dir(*n), gp_Dir(*u))
+    conic = gp_Circ(frame, a * scale) if a == b else gp_Elips(frame, a * scale, b * scale)
+    edge = BRepBuilderAPI_MakeEdge(conic)
+    if not edge.IsDone():
+        raise RuntimeError("Curve.circle/ellipse: OCC edge construction failed.")
+    wire = BRepBuilderAPI_MakeWire(edge.Edge())
+    if not wire.IsDone():
+        raise RuntimeError("Curve.circle/ellipse: OCC wire construction failed.")
+    return wire.Wire()
+
+
+def make_profile_face(outer, holes):
+    """Validate intrinsic profile topology before constructing the region."""
+    from OCC.Core.BRep import BRep_Tool
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+    from OCC.Core.BRepCheck import BRepCheck_Analyzer
+    from OCC.Core.BRepClass import BRepClass_FaceClassifier
+    from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
+    from OCC.Core.Precision import precision
+    from OCC.Core.TopAbs import TopAbs_IN, TopAbs_VERTEX
+    from OCC.Core.TopExp import TopExp_Explorer
+    from OCC.Core.TopoDS import topods
+
+    tol = precision.Confusion()
+    wires = [outer, *holes]
+    faces = []
+    for wire in wires:
+        face = make_wire_face(wire)
+        if not BRepCheck_Analyzer(face).IsValid():
+            raise ValueError("Profile.from_wires: boundary is self-intersecting or degenerate.")
+        faces.append(face)
+    plane = BRepAdaptor_Surface(faces[0]).Plane()
+    for face in faces[1:]:
+        other = BRepAdaptor_Surface(face).Plane()
+        if (
+            not plane.Axis().Direction().IsParallel(other.Axis().Direction(), 1e-9)
+            or plane.Distance(other.Location()) > tol
+        ):
+            raise ValueError("Profile.from_wires: all boundaries must be coplanar.")
+
+    def inside(wire, face):
+        vertex = TopExp_Explorer(wire, TopAbs_VERTEX).Current()
+        point = BRep_Tool.Pnt(topods.Vertex(vertex))
+        return BRepClass_FaceClassifier(face, point, tol).State() == TopAbs_IN
+
+    for i, hole in enumerate(holes, 1):
+        distance = BRepExtrema_DistShapeShape(outer, hole)
+        if not distance.IsDone():
+            raise RuntimeError("Profile.from_wires: OCC boundary distance failed.")
+        if distance.Value() <= tol or not inside(hole, faces[0]):
+            raise ValueError(
+                "Profile.from_wires: holes must lie strictly inside the outer boundary "
+                "without intersection."
+            )
+        for j in range(1, i):
+            distance = BRepExtrema_DistShapeShape(wires[j], hole)
+            if not distance.IsDone():
+                raise RuntimeError("Profile.from_wires: OCC boundary distance failed.")
+            if distance.Value() <= tol or inside(hole, faces[j]) or inside(wires[j], faces[i]):
+                raise ValueError("Profile.from_wires: holes must not touch, intersect, or nest.")
+    face = make_face_with_holes(outer, holes)
+    if not BRepCheck_Analyzer(face).IsValid():
+        raise ValueError("Profile.from_wires: invalid planar region or intersecting boundaries.")
+    return face
+
+
+def make_profile_loft(sections, is_ruled=False):
+    """Loft corresponding boundaries and subtract the hole volumes."""
+    counts = {len(wires) for wires in sections}
+    if len(counts) != 1:
+        raise ValueError("Loft profiles must have the same number of holes.")
+    solid = make_loft([w[0] for w in sections], is_solid=True, is_ruled=is_ruled)
+    for i in range(1, len(sections[0])):
+        tool = make_loft([w[i] for w in sections], is_solid=True, is_ruled=is_ruled)
+        solid = boolean_difference(solid, tool)
+    return solid

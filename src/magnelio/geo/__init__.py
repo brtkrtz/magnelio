@@ -13,8 +13,8 @@ Boolean ``+``, ``-`` and ``&`` and their explicit :class:`Union`,
 :class:`Group` is a material-preserving authoring collection, not a shape or a
 Boolean operand; affine transforms distribute over its members.
 
-The legacy axis-normal :class:`Face` constructor and ``Curve.covered()``
-currently produce :class:`Profile` values.  :class:`Path` draws a curve
+:class:`Profile` factories build planar regions from exact closed curves,
+including intrinsic holes.  :class:`Path` draws a curve
 segment by segment, while :class:`ThinWire` is an EM mesh declaration around a
 curve rather than a standalone CAD dimension.
 
@@ -33,7 +33,7 @@ from magnelio.geo.imported import ImportedSolid
 from magnelio.geo.modifications import Loft
 from magnelio.geo.operations import Difference, Group, Intersection, Union
 from magnelio.geo.path import Path
-from magnelio.geo.primitives import Brick, Cone, Cylinder, Face, Sphere, Torus
+from magnelio.geo.primitives import Brick, Cone, Cylinder, Sphere, Torus
 from magnelio.geo.shape import Shape, Solid
 from magnelio.geo.surfaces import Surface
 from magnelio.geo.transforms import Mirror, Rotation, Scale, Transform, Translation
@@ -531,7 +531,6 @@ __all__ = [
     "Cylinder",
     "Cone",
     "Torus",
-    "Face",
     "Path",
     "Union",
     "Intersection",

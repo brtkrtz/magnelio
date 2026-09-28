@@ -1,5 +1,6 @@
 """Dimensional geometry and affine value algebra (geometry foundation WP1)."""
 
+import math
 from dataclasses import FrozenInstanceError
 
 import pytest
@@ -61,7 +62,9 @@ def test_every_standalone_category_is_transformable_and_preserved():
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     transform = geo.Translation((2.0, 0.0, 0.0))
     curve = geo.Curve.polyline(((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)), name="route")
-    profile = geo.Face("z", ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0)), name="section")
+    profile = geo.Profile.polygon(
+        [(u, v, 0.0) for u, v in ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0))], name="section"
+    )
     surface = geo.Surface(
         (((0.0, 0.0, 0.0), (0.0, 1.0, 0.0)), ((1.0, 0.0, 0.2), (1.0, 1.0, 0.2))),
         name="dish",
@@ -116,7 +119,7 @@ def test_transform_preserves_material_name_and_group_structure():
 @pytest.mark.parametrize("operation", [geo.Union, geo.Intersection, geo.Difference])
 def test_boolean_constructors_reject_non_solids_by_category(operation):
     solid = geo.Brick()
-    profile = geo.Face("z", ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0)))
+    profile = geo.Profile.polygon([(u, v, 0.0) for u, v in ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0))])
 
     with pytest.raises(TypeError, match="accepts Solid operands"):
         operation(solid, profile)
@@ -130,3 +133,131 @@ def test_solid_operators_reject_curves_and_geometry_cannot_right_apply_transform
         solid + curve
     with pytest.raises(TypeError, match="unsupported operand"):
         solid @ geo.Translation((1.0, 0.0, 0.0))
+
+
+def test_requested_eightfold_rotation_includes_original_and_fuses_solids():
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    body = geo.Sphere(center=(2, 0, 0), radius=0.1, material="pec", name="post")
+    result = body.rotated(axis="z", angle_deg=45, repeat=7, copy=True, unite=True)
+    assert isinstance(result, geo.Union)
+    assert len(result.shapes) == 8 and result.shapes[0] is body
+    for i, member in enumerate(result.shapes):
+        lo, hi = member.bounding_box()
+        center = tuple((a + b) / 2 for a, b in zip(lo, hi))
+        angle = math.radians(45 * i)
+        assert center == pytest.approx((2 * math.cos(angle), 2 * math.sin(angle), 0), abs=1e-9)
+        assert member.name == "post" and member.material is body.material
+    assert result.volume() == pytest.approx(8 * body.volume(), rel=1e-10)
+    assert body.center == (2, 0, 0)
+
+
+@pytest.mark.parametrize("mode,result_type", [("group", geo.Group), ("unite", geo.Union)])
+@pytest.mark.parametrize("method,args", [("translated", ((1, 0, 0),)), ("rotated", ("z", 45))])
+def test_explicit_aggregation_is_honoured_for_one_copy(mode, result_type, method, args):
+    result = getattr(geo.Brick(), method)(*args, **{mode: True})
+    assert isinstance(result, result_type)
+    assert len(result.shapes) == 1
+
+
+def test_repeated_translation_uses_original_placement_and_preserves_profile_holes():
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    profile = (
+        geo.Profile.from_wires(
+            geo.Curve.circle((0, 0, 0), 2), [geo.Curve.circle((0, 0, 0), 1)], name="ring"
+        )
+        .rotated("y", 30)
+        .translated((10, 0, 0))
+    )
+    copies = profile.translated((0, 0, 5), repeat=3, copy=True)
+    assert copies[0] is profile and len(copies) == 4
+    for i, member in enumerate(copies):
+        assert isinstance(member, geo.Profile) and member.name == "ring"
+        assert member.area == pytest.approx(3 * math.pi)
+        assert len(member.boundary()) == 2
+        _assert_box(
+            member.bounding_box(),
+            tuple(
+                tuple(x + (5 * i if j == 2 else 0) for j, x in enumerate(p))
+                for p in profile.bounding_box()
+            ),
+        )
+
+
+@pytest.mark.parametrize("method,args", [("translated", ((1, 0, 0),)), ("rotated", ("z", 45))])
+@pytest.mark.parametrize(
+    "repeat,error", [(0, ValueError), (-1, ValueError), (2.5, TypeError), (True, TypeError)]
+)
+def test_invalid_repetition_count_rejected(method, args, repeat, error):
+    with pytest.raises(error, match="repeat"):
+        getattr(geo.Brick(), method)(*args, repeat=repeat)
+
+
+@pytest.mark.parametrize(
+    "method,args", [("translated", ((1, 0, 0),)), ("rotated", ("z", 45)), ("mirrored", ("x",))]
+)
+def test_aggregation_conflicts_and_non_solid_fusion_rejected(method, args):
+    curve = geo.Curve.line((0, 0, 0), (1, 0, 0))
+    with pytest.raises(ValueError, match="either unite=True or group=True"):
+        getattr(curve, method)(*args, copy=True, unite=True, group=True)
+    with pytest.raises(TypeError, match="Solid"):
+        getattr(curve, method)(*args, copy=True, unite=True)
+    grouped = getattr(curve, method)(*args, copy=True, group=True)
+    assert isinstance(grouped, geo.Group)
+    assert all(isinstance(s, geo.Curve) for s in grouped.shapes)
+
+
+@pytest.mark.parametrize("mode", ["unite", "group"])
+def test_mirror_aggregation_requires_original(mode):
+    with pytest.raises(ValueError, match="requires copy=True"):
+        geo.Brick().mirrored("x", **{mode: True})
+
+
+@pytest.mark.parametrize(
+    "method,args",
+    [("translated", ((1, 2, 3),)), ("rotated", ("z", 45, (1, 2, 3))), ("mirrored", ("x", 1))],
+)
+def test_repeated_nested_assemblies_keep_materials_and_member_placement(method, args):
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    assembly = geo.Group(
+        geo.Group(geo.Brick(material="pec", name="metal"), name="inner"),
+        geo.Sphere(center=(2, 0, 0), radius=0.25, material="air", name="dielectric"),
+        name="component",
+    )
+    options = {} if method == "mirrored" else {"repeat": 2}
+    result = getattr(assembly, method)(*args, copy=True, group=True, **options)
+    assert result.shapes[0] is assembly
+    assert len(result.shapes) == (2 if method == "mirrored" else 3)
+    for i, placed in enumerate(result.shapes[1:], 1):
+        assert placed.name == "component" and placed.shapes[0].name == "inner"
+        members = list(placed.members())
+        originals = list(assembly.members())
+        assert [m.material for m in members] == [m.material for m in originals]
+        if method == "translated":
+            transform = geo.Translation(tuple(i * x for x in args[0]))
+        elif method == "rotated":
+            transform = geo.Rotation(args[0], i * args[1], args[2])
+        else:
+            transform = geo.Mirror(*args)
+        for member, original in zip(members, originals):
+            _assert_box(member.bounding_box(), (transform @ original).bounding_box())
+    with pytest.raises(TypeError, match="Solid"):
+        getattr(assembly, method)(*args, copy=True, unite=True)
+
+
+def test_documented_array_recipe_executes_and_has_eight_elements():
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    import re
+    from pathlib import Path
+
+    guide = (Path(__file__).resolve().parents[2] / "docs/methods/geometry.md").read_text()
+    (recipe,) = [
+        block
+        for block in re.findall(r"```python\n(.*?)```", guide, re.DOTALL)
+        if block.startswith("post = geo.Cylinder")
+    ]
+    namespace = {"geo": geo}
+    exec(compile(recipe, "array documentation", "exec"), namespace)
+    assert namespace["posts"].volume() == pytest.approx(8 * namespace["post"].volume(), rel=1e-10)
+    assert len(namespace["fence"].shapes) == 8
+    assert namespace["fence"].shapes[0] is namespace["via"]
+    assert len(namespace["pair"].shapes) == 2

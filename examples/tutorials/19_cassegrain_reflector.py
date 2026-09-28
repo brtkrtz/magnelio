@@ -222,15 +222,8 @@ yc, zc = p_feed[1], p_feed[2]
 
 
 def rectangle(x, a, b, grow=0.0):
-    return geo.Face(
-        normal="x",
-        points=(
-            (yc - a / 2 - grow, zc - b / 2 - grow),
-            (yc + a / 2 + grow, zc - b / 2 - grow),
-            (yc + a / 2 + grow, zc + b / 2 + grow),
-            (yc - a / 2 - grow, zc + b / 2 + grow),
-        ),
-        position=x,
+    return geo.Profile.rectangle(
+        (x, yc, zc), (a + 2 * grow, b + 2 * grow), normal="x", x_direction="y"
     )
 
 
@@ -399,7 +392,7 @@ fig, ax = pattern.plot_3d(title="Cassegrain radiation surface")
 # peak directivity                          19.2 dBi
 # aperture bound :math:`(\pi D/\lambda)^2`  28.0 dBi
 # beam direction, measured vs designed      2° apart
-# |S11| over 8.5–11.5 GHz                   −12 … −19 dB
+# ``|S11|`` over 8.5–11.5 GHz               −12 … −19 dB
 # radiated / accepted power                 0.93
 # power balance of the far-field box        1.005
 # ========================================  ==========

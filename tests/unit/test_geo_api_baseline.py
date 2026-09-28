@@ -26,7 +26,6 @@ EXPECTED_EXPORTS = [
     "Cylinder",
     "Cone",
     "Torus",
-    "Face",
     "Path",
     "Union",
     "Intersection",
@@ -78,13 +77,6 @@ EXPECTED_CONSTRUCTOR_SIGNATURES = {
         ("major_radius", "POSITIONAL_OR_KEYWORD", "1.0"),
         ("minor_radius", "POSITIONAL_OR_KEYWORD", "0.25"),
         ("axis", "POSITIONAL_OR_KEYWORD", "'z'"),
-    ),
-    "Face": (
-        ("normal", "POSITIONAL_OR_KEYWORD", "<required>"),
-        ("points", "POSITIONAL_OR_KEYWORD", "<required>"),
-        ("position", "POSITIONAL_OR_KEYWORD", "0.0"),
-        ("material", "POSITIONAL_OR_KEYWORD", "None"),
-        ("name", "POSITIONAL_OR_KEYWORD", "None"),
     ),
     "Surface": (
         ("points", "POSITIONAL_OR_KEYWORD", "<required>"),
@@ -143,10 +135,13 @@ EXPECTED_CONSTRUCTOR_SIGNATURES = {
 }
 
 EXPECTED_SHAPE_VERB_SIGNATURES = {
-    "translated": "(self, vector)",
-    "rotated": "(self, axis, angle_deg, origin=(0.0, 0.0, 0.0))",
+    "translated": "(self, vector, *, repeat=1, copy=False, unite=False, group=False)",
+    "rotated": (
+        "(self, axis, angle_deg, origin=(0.0, 0.0, 0.0), *, "
+        "repeat=1, copy=False, unite=False, group=False)"
+    ),
     "scaled": "(self, factor, center=(0.0, 0.0, 0.0))",
-    "mirrored": "(self, normal, position=0.0)",
+    "mirrored": "(self, normal, position=0.0, *, copy=False, unite=False, group=False)",
     "chamfered": "(self, *, near=None, face_near=None, edges=None, distance)",
     "filleted": "(self, *, near=None, face_near=None, edges=None, radius)",
     "extruded": "(self, vector, *, face_near=None, material=None)",
@@ -202,7 +197,8 @@ def test_wp1_dimensional_categories_are_explicit():
     assert issubclass(geo.Sheet, geo.Shape)
     assert issubclass(geo.Solid, geo.Shape)
     assert issubclass(geo.Brick, geo.Solid)
-    assert issubclass(geo.Face, geo.Profile)
+    assert not hasattr(geo, "Face")
+    assert not hasattr(geo.Curve, "covered")
     assert issubclass(geo.Surface, geo.Sheet)
     assert not issubclass(geo.Group, geo.Shape)
     assert not issubclass(geo.Path, geo.Shape)
@@ -212,11 +208,8 @@ def test_wp1_dimensional_categories_are_explicit():
 
 def test_axis_normal_face_and_profile_extrusion_numerics():
     pytest.importorskip("OCC.Core.BRepPrimAPI")
-    profile = geo.Face(
-        normal="z",
-        points=((0.0, 0.0), (2.0, 0.0), (2.0, 3.0), (0.0, 3.0)),
-        position=4.0,
-        material=_air(),
+    profile = geo.Profile.polygon(
+        [(u, v, 4.0) for u, v in ((0.0, 0.0), (2.0, 0.0), (2.0, 3.0), (0.0, 3.0))], material=_air()
     )
 
     _assert_box(profile.bounding_box(), ((0.0, 0.0, 4.0), (2.0, 3.0, 4.0)))
@@ -233,12 +226,13 @@ def test_named_transform_methods_chain_left_to_right():
     _assert_box(placed.bounding_box(), ((-2.0, 2.0, 0.0), (0.0, 3.0, 3.0)))
 
 
-def test_wp1_transforms_always_return_one_geometry_value():
+def test_transform_defaults_preserve_category_and_arrays_are_explicit():
     body = geo.Brick(material=_air())
 
     assert isinstance(body.translated((1.0, 0.0, 0.0)), geo.Solid)
-    with pytest.raises(TypeError, match="unexpected keyword argument 'repeat'"):
-        body.translated((1.0, 0.0, 0.0), repeat=2)
+    copies = body.translated((1.0, 0.0, 0.0), repeat=2)
+    assert isinstance(copies, list) and len(copies) == 2
+    assert all(isinstance(s, geo.Solid) for s in copies)
 
 
 def test_face_selection_is_a_loose_point_consumed_by_the_operation():

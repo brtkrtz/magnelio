@@ -84,7 +84,7 @@ outline = (
     .closed()
 )
 
-section = outline.covered()
+section = geo.Profile.from_wires(outline)
 drawn = section.extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
 
 # The two routes describe the same solid, and `volume()` is the way to
@@ -101,7 +101,7 @@ print(f"relative difference: {abs(drawn.volume() / electrode.volume() - 1.0):.2e
 # Curves, profiles and solids share one placement grammar
 # -------------------------------------------------------
 #
-# The outline is a :class:`~magnelio.geo.Curve`, its covered region is a
+# The outline is a :class:`~magnelio.geo.Curve`, its bounded region is a
 # :class:`~magnelio.geo.Profile`, and the extrusion is a
 # :class:`~magnelio.geo.Solid`.  All three accept the same named transform
 # methods.  An immutable transform value is useful when the same placement
@@ -118,6 +118,15 @@ print(
     isinstance(placed_section, geo.Profile),
     isinstance(placed_electrode, geo.Solid),
 )
+
+# Regular arrays use the named methods' convenience options. Seven rotated
+# copies plus the original make eight electrodes, fused into one PEC body.
+# Curves can use the same placement pattern with ``group=True``, retaining
+# their one-dimensional category. A mirrored pair needs only ``copy=True``.
+
+electrodes = drawn.rotated("z", 45, repeat=7, copy=True, unite=True)
+outlines = outline.rotated("z", 45, repeat=7, copy=True, group=True)
+electrode_pair = drawn.mirrored("x", copy=True, group=True)
 
 # %%
 # .. note::
@@ -137,7 +146,7 @@ print(
 
 CHAMFER = 1.0e-3
 
-chamfered = (
+chamfered = geo.Profile.from_wires(
     geo.Path(on_circle(R_IN, 0.0))
     .line_to(on_circle(R_OUT - CHAMFER, 0.0))
     .line_to((*on_circle(R_OUT, 0.0)[:2], 0.0))
@@ -145,9 +154,7 @@ chamfered = (
     .line_to(on_circle(R_IN, SPAN))
     .arc_to(on_circle(R_IN, 0.0), center=CENTRE, normal=(0.0, 0.0, -1.0))
     .closed()
-    .covered()
-    .extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
-)
+).extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
 
 fig, ax = plots.plot_cross_section(
     [chamfered], "z", HEIGHT / 2, title="the same electrode, drawn and modified"
@@ -167,17 +174,48 @@ fig, ax = plots.plot_cross_section(
 # stepped transformer, a bead.  Here the outline is drawn in the x-z
 # plane and turned about z:
 
-nose = (
+nose = geo.Profile.from_wires(
     geo.Path((0.0, 0.0, 0.0))
-    .line_to((3.0e-3, 0.0, 0.0))
-    .line_to((3.0e-3, 0.0, 8.0e-3))
-    .arc_to((0.0, 0.0, 11.0e-3), via=(2.1e-3, 0.0, 10.1e-3))
+    .line_to((0.003, 0.0, 0.0))
+    .line_to((0.003, 0.0, 0.008))
+    .arc_to((0.0, 0.0, 0.011), via=(0.0021, 0.0, 0.0101))
     .closed()
-    .covered()
-    .revolved(axis="z", material="pec")
-)
+).revolved(axis="z", material="pec")
 
 fig, ax = plots.plot_cross_section([nose], "y", 0.0, title="revolved profile: a rounded pin")
+
+# %%
+# Exact boundaries and intrinsic holes
+# -------------------------------------
+#
+# A circle or ellipse is one exact analytic wire, not a many-sided polygon.
+# A Profile bounds the region inside it. Holes belong to that region, so
+# extruding or sweeping the profile carries the bore without a separate cut.
+# Here an annulus sweeps round a half-circle into a hollow elbow:
+
+outer = geo.Curve.circle((0, 0, 0), 2e-3)
+inner = geo.Curve.circle((0, 0, 0), 1e-3)
+annulus = geo.Profile.from_wires(outer, holes=[inner], material="pec")
+spine = geo.Curve.arc((8e-3, 0, 0), (0, 8e-3, 0), (-8e-3, 0, 0))
+elbow = annulus.swept(spine)
+
+fig, ax = plots.plot_cross_section([elbow], "z", 0.0, title="an exact hollow elbow")
+print(
+    f"elbow volume / (profile area x spine length): "
+    f"{elbow.volume() / (annulus.area * spine.length):.8f}"
+)
+
+# An ellipse and an explicitly oriented rectangle need only world vectors.
+# The first semi-axis follows ``major_axis`` in the plane of ``normal``;
+# rectangle width follows ``x_direction`` and height ``normal x x_direction``.
+# Extracted boundaries remain independent, transformable Curve values.
+
+ellipse = geo.Curve.ellipse((0, 0, 0), (3e-3, 2e-3), major_axis="x")
+elliptical_pad = geo.Profile.from_wires(ellipse).extruded((0, 0, 35e-6), material=copper)
+rectangle = geo.Profile.rectangle((0, 0, 0), (6e-3, 4e-3), normal=(1, 1, 1), x_direction=(1, -1, 0))
+(edge_loop,) = rectangle.boundary()
+print(f"ellipse area: {geo.Profile.from_wires(ellipse).area * 1e6:.6f} mm^2")
+print(f"rectangle perimeter: {edge_loop.length * 1e3:.6f} mm")
 
 # %%
 # Hollowing a solid
@@ -258,11 +296,7 @@ fig, ax = plots.plot_cross_section(
 
 def square(half, z):
     """A square outline of half-width *half*, at height *z*."""
-    return geo.Face(
-        normal="z",
-        points=[(-half, -half), (half, -half), (half, half), (-half, half)],
-        position=z,
-    )
+    return geo.Profile.rectangle((0, 0, z), (2 * half, 2 * half))
 
 
 taper = geo.Loft(square(4.0e-3, 0.0), square(10.0e-3, 18.0e-3), blend="ruled", material="pec")
@@ -276,7 +310,7 @@ fig, ax = plots.plot_cross_section([taper], "y", 0.0, title="a ruled taper betwe
 # * Reach for a primitive first — a cylinder with ``inner_radius`` and
 #   ``angle_deg`` covers tubes and sectors without any drawing.
 # * When the outline is the thing you actually know, draw it with
-#   :class:`~magnelio.geo.Path`, close it, and cover it.  The resulting
+#   :class:`~magnelio.geo.Path`, close it, and pass it to ``Profile.from_wires``.  The resulting
 #   sheet is a profile for ``extruded`` / ``revolved`` / ``swept`` /
 #   ``thickened``.
 # * An arc through a centre is ambiguous; ``normal=`` removes the

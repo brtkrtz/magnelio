@@ -7,6 +7,34 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- Exact `Curve.line`, `Curve.circle` and `Curve.ellipse` construction,
+  CAD curve lengths, and planar `Profile` factories for polygons,
+  oriented rectangles, discs, and closed boundaries with holes.
+  Profile areas exclude holes; `boundary()` extracts independently
+  transformable curves. Extrusion, revolution, sweep and loft preserve
+  intrinsic holes.
+
+### Changed
+
+- Named translations and rotations retain `repeat`, `copy`, `unite` and
+  `group`; mirroring retains copy and aggregation options. Explicit Group or
+  Union aggregation is honoured even for one translated or rotated copy.
+  Fusion requires Solid input; grouped assemblies preserve member materials.
+- `Loft` inherits its first profile's material when no override is given
+  and matches inner boundaries in construction order; all sections must
+  have the same number of holes. Profile factories validate closure,
+  coplanarity, intersections and nesting at construction.
+
+### Removed
+
+- The standalone `Face` constructor and `Curve.covered()`; use the
+  `Profile` factories with three-dimensional world points instead.
+  The geometry upgrade guide and migrated profile tutorial show the replacements.
+
 ## [0.8.2] - 2026-09-09
 
 ### Added

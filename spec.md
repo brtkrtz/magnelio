@@ -686,10 +686,11 @@ are internal since DD-117 (importable, no stability guarantee).
 ### 8.3 Geometry ontology and construction contract
 
 DD-275 fixes the geometry-foundation contract.  It is an accepted staged
-contract: WP1 now implements the dimensional hierarchy, affine values,
-member-wise Group placement, and Solid-only CSG.  The surviving pre-WP2
-surface is characterized in `tests/unit/test_geo_api_baseline.py`; WP2 through
-WP5 implement the remaining slices below.  A name listed here must not be
+contract: WP1 implements the dimensional hierarchy, affine values,
+member-wise Group placement, and Solid-only CSG; WP2 implements exact curves
+and validated planar Profile factories, including intrinsic holes. The
+migration boundary is characterized in `tests/unit/test_geo_api_baseline.py`;
+WP3 through WP5 implement the remaining slices below.  A name listed here must not be
 documented as shipped until its work package lands.
 
 Standalone geometry is dimensional:
@@ -705,10 +706,9 @@ Shape
 
 The existing volume primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
 `Torus`, `ImportedSolid`) and Boolean results are `Solid` values.  `Curve`,
-`Sheet`, `Profile`, `Surface`, and `Solid` are public categories.  During WP1,
-the current axis-normal polygon `Face` and `Curve.covered()` remain as
-transitional `Profile` producers; WP2 removes them in favour of the fixed
-`Profile` factories.  `FaceRef` will name owned topology in WP3.  `Group` is a transformable,
+`Sheet`, `Profile`, `Surface`, and `Solid` are public categories. The
+axis-normal polygon `Face` and `Curve.covered()` have been removed in favour
+of the fixed `Profile` factories.  `FaceRef` will name owned topology in WP3.  `Group` is a transformable,
 material-preserving aggregate but not a `Shape` or CSG operand.  `ThinWire`
 is an EM mesh declaration around a `Curve`, not a standalone CAD category.
 
@@ -741,16 +741,28 @@ Profile.from_wires(outer, holes=(), *, material=None, name=None)
 Profile polygon points are 3-D and coplanar.  `from_wires` validates closed,
 coplanar, nested, non-intersecting wires; holes are profile topology and do
 not require solid Boolean scaffolding.  `Curve.covered()` is not part of the
-new contract.
+new contract. `Curve.length` and `Profile.area` are read-only CAD measurements.
+`Profile.boundary()` returns detached Curve values in world placement: the
+outer wire followed by holes in input order, preserved by affine transforms.
+All four profile-to-solid operations retain holes. Loft sections require equal
+hole counts, match inner boundaries by input order, and inherit an omitted
+material from the first Profile. Topology-changing holes are not supported.
 
 ### 8.4 Transform algebra and category-specific operations
 
 Every standalone `Shape` provides exactly the common affine verbs
 `translated`, `rotated`, `mirrored`, and `scaled`, plus `bounding_box()`.
-The verbs return one value of the same dimensional category and preserve
-material, name, and named topology.  Transform repetition/fusion flags are
-not part of this contract; arrays use an explicit list or `Group`, and fusion
-uses `Union`.
+By default the verbs return one value of the same dimensional category and
+preserve material, name, and named topology. `translated` and `rotated` also
+provide `repeat=1`, `copy=False`, `unite=False`, and `group=False`; `mirrored`
+provides the last three options without repetition. `repeat` counts transformed
+copies at successive displacement/angle increments, and `copy=True` includes
+the original first. Without aggregation a multi-value result is a list;
+`group=True` always returns a material-preserving Group, and `unite=True`
+always returns a Union, restricted to Solid input. Group and union modes are
+mutually exclusive, and mirrored aggregation requires `copy=True`. Repeated
+Group assemblies retain their nested members and reject fusion. `scaled`
+has no array options. Every copy is a direct affine placement of the source.
 
 Reusable placement uses immutable values:
 

@@ -87,10 +87,10 @@ class TestModelScale:
 
 
 def _shape_zoo():
+    from magnelio.geo import Brick, Cone, Cylinder, Profile, Sphere, Torus
     from magnelio.geo.curves import Curve
     from magnelio.geo.modifications import extrude, revolve, sweep
     from magnelio.geo.operations import Difference, Group, Intersection, Union
-    from magnelio.geo.primitives import Brick, Cone, Cylinder, Face, Sphere, Torus
     from magnelio.geo.surfaces import Surface
     from magnelio.geo.transforms import rotate, scale, translate
 
@@ -105,7 +105,9 @@ def _shape_zoo():
         origin=(0, 0, 0), bottom_radius=2e-3, top_radius=0.5e-3, height=4e-3, axis="x", material=air
     )
     torus = Torus(center=(0, 0, 0), major_radius=3e-3, minor_radius=0.5e-3, axis="y", material=air)
-    face = Face(normal="z", points=((0, 0), (2e-3, 0), (2e-3, 1e-3), (0, 1e-3)), position=0.5e-3)
+    face = Profile.polygon(
+        [(u, v, 0.0005) for u, v in ((0, 0), (0.002, 0), (0.002, 0.001), (0, 0.001))]
+    )
     dish = Surface.parametric(
         lambda r, phi: (r * np.cos(phi), r * np.sin(phi), r * r / 4e-3),
         u=(0.0, 2e-3),
@@ -135,7 +137,7 @@ def _shape_zoo():
         (
             "revolved",
             revolve(
-                Face(normal="z", points=((1e-3, 0), (2e-3, 0), (2e-3, 1e-3))),
+                Profile.polygon([(u, v, 0.0) for u, v in ((0.001, 0), (0.002, 0), (0.002, 0.001))]),
                 axis="x",
                 angle_deg=270.0,
                 material=air,
@@ -148,8 +150,13 @@ def _shape_zoo():
         (
             "sweep_helix",
             sweep(
-                Face(normal="z", points=((-1e-4, -1e-4), (1e-4, -1e-4), (1e-4, 1e-4))),
-                Curve.helix(radius=1e-3, pitch=0.5e-3, turns=3, axis="z"),
+                Profile.polygon(
+                    [
+                        (u, v, 0.0)
+                        for u, v in ((-0.0001, -0.0001), (0.0001, -0.0001), (0.0001, 0.0001))
+                    ]
+                ),
+                Curve.helix(radius=0.001, pitch=0.0005, turns=3, axis="z"),
                 material=air,
             ),
         ),

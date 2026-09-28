@@ -10,9 +10,9 @@ from magnelio.geo import (
     Cone,
     Cylinder,
     Difference,
-    Face,
     Group,
     Intersection,
+    Profile,
     Shape,
     Solid,
     Sphere,
@@ -65,7 +65,7 @@ class TestDocumentedSurface:
     # Curve and ThinWire are deliberately absent: they are 1D objects
     # (a sweep spine, a sub-cell wire), not solids, so the Boolean
     # operators and the verbs do not apply to them.
-    @pytest.mark.parametrize("cls", [Brick, Sphere, Cylinder, Cone, Torus, Face])
+    @pytest.mark.parametrize("cls", [Brick, Sphere, Cylinder, Cone, Torus, Profile])
     def test_every_geometry_class_is_a_shape(self, cls):
         assert issubclass(cls, Shape)
 
@@ -275,14 +275,14 @@ class TestMirror:
     def test_copy_returns_original_and_image(self):
         _occ()
         b = _chiral()
-        pair = [b, b.mirrored(normal="x")]
+        pair = b.mirrored(normal="x", copy=True)
         assert isinstance(pair, list) and len(pair) == 2
         assert pair[0] is b
 
     def test_copy_unite_builds_the_symmetric_whole(self):
         _occ()
         b = _chiral()
-        whole = Union(b, b.mirrored(normal="x"))
+        whole = b.mirrored(normal="x", copy=True, unite=True)
         assert isinstance(whole, Union)
         # Disjoint halves (the brick starts at x = 1), so volumes add.
         assert _volume(whole) == pytest.approx(2.0 * _volume(b))

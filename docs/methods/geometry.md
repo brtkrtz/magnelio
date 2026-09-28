@@ -1,7 +1,7 @@
 # Geometry construction
 
 Magnelio models are built from constructive solid geometry on the Open
-CASCADE kernel via `pythonocc-core` (DD-003, DD-016) — primitives,
+CASCADE kernel via `pythonocc-core` — primitives,
 Boolean operations, and a set of *verbs* that grow, move and modify
 shapes.  The construction layer is engineering infrastructure on top
 of a third-party kernel, not a numerical-methods contribution.  This chapter
@@ -21,19 +21,18 @@ category:
   them.  A solid may carry a material and is what a `GeometryModel`
   meshes.
 - **Sheets** — `Sheet` values are zero-thickness regions: the planar
-  `Profile` category currently includes `Face` (an
-  axis-normal polygon), a `Curve.covered()` (any closed planar curve
-  filled in), while `Surface` is the curved-sheet category.  A sheet without a material is
+  `Profile` factories bound a planar region with an outer wire and optional
+  holes, while `Surface` is the curved-sheet category.  A sheet without a material is
   a *construction profile*: it exists to be grown into a body by
   `extruded()` or `thickened()` — and, for the planar ones, `revolved()`
   or `swept()`, or as a section of a `Loft`.  A sheet with a material
   would be a *thin sheet*; its physics (an infinitely thin conductor or
   dielectric film) is not wired, so such a sheet cannot be meshed on its
   own — model it as a thin body instead.
-- **Curves** — `Curve` values (polyline, arc, spline, helix) are
+- **Curves** — `Curve` values (line, circle, ellipse, polyline, arc, spline, helix) are
   one-dimensional standalone shapes.  `Path` is a builder which
   draws one segment by segment.  A closed planar curve becomes a sheet
-  through `covered()`; any curve becomes a conductor track through
+  through `Profile.from_wires(curve)`; any curve becomes a conductor track through
   `traced()` (widened in its plane, then given a metallisation
   thickness — the direct route from a routed centreline to the copper
   of a board); a `ThinWire` is a curve meshed as a sub-cell conductor.
@@ -46,6 +45,63 @@ transforms apply member by member.  Booleans accept solids only; passing a
 curve, sheet, profile or group raises a category-specific `TypeError` before
 the CAD kernel is called.
 
+## Exact curves and planar profiles
+
+`Curve.line(start, end)` builds an exact straight segment. `Curve.circle`
+and `Curve.ellipse` build closed analytic wires, retaining their exact
+conic geometry through rotations and mirrors. They do not approximate the
+boundary with a polygon. Circles take a world centre, radius and plane
+normal. Ellipses take a world centre, two semi-axis lengths, a normal and
+`major_axis`: the direction of the first semi-axis, projected into the
+plane. Either semi-axis may be larger. `curve.length` reads the CAD length.
+Arcs, elliptical arcs, splines, helices and `joined()` remain available;
+`Path` builds mixed boundaries segment by segment.
+
+A wire describes a boundary; a `Profile` describes the enclosed region.
+Use `Profile.polygon(points)` for coplanar 3-D vertices (closed automatically),
+`Profile.rectangle(center, size, normal=..., x_direction=...)` for an
+oriented rectangle, `Profile.circle(center, radius, normal=...)` for a disc,
+and `Profile.from_wires(outer, holes=...)` for any closed planar boundary.
+`size` gives rectangle width and height. `x_direction` fixes its width direction
+in the plane; height follows `normal x x_direction`. Without it, the least
+parallel world axis supplies the projected width direction. There is no
+ambient working coordinate system.
+
+For example, an annular cross-section extrudes into a tube with its bore
+already present:
+
+```python
+from magnelio import geo
+
+outer = geo.Curve.circle((0, 0, 0), 2e-3)
+inner = geo.Curve.circle((0, 0, 0), 1e-3)
+ring = geo.Profile.from_wires(outer, holes=[inner], material="pec")
+tube = ring.extruded((0, 0, 10e-3))
+```
+
+The factories validate closure, planarity, self-intersection and hole placement
+before returning. Holes must lie strictly inside the outer wire, cannot touch
+or intersect each other or the outer wire, and cannot nest. Winding is corrected
+automatically. Invalid boundaries raise `ValueError`; inputs from the wrong
+category raise `TypeError`. A profile can be placed in any plane by explicit
+world points, normals and directions, or by the common affine methods.
+
+`profile.area` measures the region with its holes removed. `profile.boundary()`
+returns independent `Curve` values: the outer boundary first, then holes in
+construction order. The curves have the profile's world placement and can be
+transformed or used to construct another profile. This extraction is a
+standalone value operation.
+
+Extrusion, revolution and sweep carry all inner boundaries into the solid.
+`Loft` carries holes by matching boundaries in the supplied order, so every
+section must have the same number of holes and the same intended correspondence.
+It cannot create, close, or merge holes partway through a transition. As for
+any loft or sweep, valid sections alone cannot guarantee that the resulting
+three-dimensional body avoids crossing itself. A material supplied to an
+operation overrides the profile material; otherwise the material is inherited
+(`Loft` uses its first section). Construction profiles need an explicit
+material for extrusion, revolution and sweep.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:
@@ -55,15 +111,46 @@ feed = feed.rotated("z", 30.0).translated((12e-3, 0.0, 0.0))
 route = route.mirrored("y")
 ```
 
-Each call returns exactly one new value.  Array construction and fusion are
-therefore explicit operations rather than switches which change a transform's
-return type:
+Without additional options each call returns one new value of the same
+dimensional category. For regular arrays, `translated()` and `rotated()`
+accept `repeat`, `copy`, `unite`, and `group`. `repeat` counts transformed
+copies, starting at one displacement or angle increment; `copy=True` adds
+the untransformed original first. Thus seven copies plus the original make
+an eight-element circular array:
 
 ```python
-posts = [post.translated((i * pitch, 0.0, 0.0)) for i in range(8)]
-fence = geo.Union(*posts)
-assembly = geo.Group(*posts)
+post = geo.Cylinder(radius=0.5e-3, height=5e-3, origin=(6e-3, 0, 0), material="pec")
+posts = post.rotated("z", 45, repeat=7, copy=True, unite=True)
+via = geo.Cylinder(radius=0.2e-3, height=1e-3, material="pec")
+fence = via.translated((1e-3, 0, 0), repeat=7, copy=True, group=True)
+pair = post.mirrored("x", copy=True, group=True)
 ```
+
+Translation copy *i* is displaced by `i * vector`; rotation copy *i* turns
+through `i * angle_deg` about the same axis and origin. Each placement acts
+on the original geometry, preserving the source and its existing placement.
+`repeat` must be a positive whole number. `mirrored()` accepts `copy`, `unite`
+and `group`, but has no repetition count: two reflections in the same plane
+would return to the original. Mirrored aggregation requires `copy=True`.
+`scaled()` retains its single-placement signature.
+
+| Options | Result |
+| --- | --- |
+| Default `repeat=1, copy=False` | One placed geometry value |
+| Multiple copies or `copy=True`, without aggregation | A list in placement order, original first when included |
+| `group=True` | A `Group`, preserving member materials and dimensional categories |
+| `unite=True` | A `Union`, carrying one material inherited from the source solid |
+
+`group` and `unite` are mutually exclusive. An explicitly requested Group or
+Union is returned even for a single translated or rotated copy. Fusion is
+valid only for `Solid`: curves, profiles and curved sheets may be repeated
+and grouped, but cannot become Solid Boolean operands.
+
+The same convenience options apply to a `Group` assembly. Each copy retains
+its nested members and materials; `group=True` bundles these assemblies into
+an enclosing Group. `unite=True` rejects a Group rather than collapsing its
+potentially different materials. Lists, explicit `Group`/`Union` constructors
+and Python comprehensions remain available for irregular placement patterns.
 
 For a placement that is reused, build an immutable affine value.  `@` acts on
 column-vector points, so the rightmost operation happens first:
@@ -77,7 +164,8 @@ placed_solid = placement @ housing
 
 This is equivalent to rotating each value and then translating it.  `Mirror`
 reflects across `point · normal == position`; `Scale` is uniform about its
-centre.  Geometry does not right-apply a transform, and `+ vector` is not a
+centre. `Transform @ geometry` always produces one placement and has no
+array or aggregation options. Geometry does not right-apply a transform, and `+ vector` is not a
 translation: `+`, `-` and `&` remain solid Boolean operators.
 
 A union of bodies that are prisms along one axis over the same

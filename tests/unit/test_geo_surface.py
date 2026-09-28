@@ -17,7 +17,7 @@ import pytest
 
 import magnelio as mio
 from magnelio import geo
-from magnelio.geo._sheet import PlanarSheet, Sheet
+from magnelio.geo._sheet import Profile, Sheet
 
 F, D, XC = 0.18, 0.24, 0.15
 T = 5e-3
@@ -56,7 +56,7 @@ def dish():
 class TestParametricSampling:
     def test_is_a_sheet_but_not_planar(self, dish):
         assert isinstance(dish, Sheet)
-        assert not isinstance(dish, PlanarSheet)
+        assert not isinstance(dish, Profile)
         assert dish.material is None
 
     def test_samples_lie_on_the_surface(self, dish):
@@ -169,7 +169,7 @@ class TestExtrudeAndThicken:
 class TestTransformsKeepSheets:
     def test_rotated_surface_is_still_a_sheet(self, dish):
         turned = dish.rotated("y", 25.0)
-        assert isinstance(turned, Sheet) and not isinstance(turned, PlanarSheet)
+        assert isinstance(turned, Sheet) and not isinstance(turned, Profile)
         solid = turned.extruded(vector=(0.0, 0.0, -T), material="pec")
         assert solid.volume() > 0.9 * math.pi * (D / 2) ** 2 * T * math.cos(math.radians(25.0))
 
@@ -183,9 +183,9 @@ class TestTransformsKeepSheets:
             assert sheet.extruded(vector=(0.0, 0.0, -T), material="pec").volume() > 0.0
 
     def test_rotated_face_thickens(self):
-        face = geo.Face(normal="z", points=((0, 0), (1e-2, 0), (1e-2, 5e-3)))
+        face = geo.Profile.polygon([(u, v, 0.0) for u, v in ((0, 0), (0.01, 0), (0.01, 0.005))])
         slab = face.rotated("x", 30.0).thickened(thickness=1e-3, material="pec")
-        assert isinstance(face.rotated("x", 30.0), PlanarSheet)
+        assert isinstance(face.rotated("x", 30.0), Profile)
         assert slab.volume() == pytest.approx(0.5 * 1e-2 * 5e-3 * 1e-3, rel=1e-9)
 
 

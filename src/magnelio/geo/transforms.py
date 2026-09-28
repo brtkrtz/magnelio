@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
-from magnelio.geo._validate import finite, nonzero, point3, vector3
+from magnelio.geo._validate import count, finite, nonzero, point3, vector3
 from magnelio.geo.shape import Shape, Solid
 
 _IDENTITY = (
@@ -204,12 +204,10 @@ _CATEGORY_WRAPPERS: dict[type, type] = {}
 
 
 def _category_wrapper(shape):
-    from magnelio.geo._sheet import PlanarSheet, Profile, Sheet  # noqa: PLC0415
+    from magnelio.geo._sheet import Profile, Sheet  # noqa: PLC0415
     from magnelio.geo.surfaces import Surface  # noqa: PLC0415
 
-    if isinstance(shape, PlanarSheet):
-        category = PlanarSheet
-    elif isinstance(shape, Profile):
+    if isinstance(shape, Profile):
         category = Profile
     elif isinstance(shape, Surface):
         category = Surface
@@ -301,14 +299,69 @@ def _transform_box(box, transform):
     return box_of_points([transform.point(point) for point in corners])
 
 
-def translate(shape, vector):
-    """Apply :class:`Translation`; retained as an internal helper."""
-    return Translation(vector) @ shape
+def _apply_repeat(shape, make_one, repeat, copy, unite, group):
+    """Place independent copies, then apply the requested result category."""
+    if unite and group:
+        raise ValueError("Pass either unite=True or group=True, not both.")
+    repeat = count(repeat, "repeat", minimum=1)
+    if unite and not isinstance(shape, Solid):
+        raise TypeError(
+            "unite=True accepts Solid geometry only; "
+            f"got {type(shape).__name__}. Use group=True to preserve separate members."
+        )
+    if repeat == 1 and not copy and not unite and not group:
+        return make_one(1)
+    copies = [shape] if copy else []
+    copies.extend(make_one(i) for i in range(1, repeat + 1))
+    if unite:
+        from magnelio.geo.operations import Union  # noqa: PLC0415
+
+        return Union(*copies)
+    if group:
+        from magnelio.geo.operations import Group  # noqa: PLC0415
+
+        return Group(*copies)
+    return copies
 
 
-def rotate(shape, axis, angle_deg, origin=(0.0, 0.0, 0.0)):
-    """Apply :class:`Rotation`; retained as an internal helper."""
-    return Rotation(axis, angle_deg, origin) @ shape
+def translate(shape, vector, *, repeat=1, copy=False, unite=False, group=False):
+    """Place a linear array through the common affine backend."""
+    vector = vector3(vector, "Translation(vector)")
+    return _apply_repeat(
+        shape,
+        lambda i: Translation(tuple(i * x for x in vector)) @ shape,
+        repeat,
+        copy,
+        unite,
+        group,
+    )
+
+
+def rotate(
+    shape,
+    axis,
+    angle_deg,
+    origin=(0.0, 0.0, 0.0),
+    *,
+    repeat=1,
+    copy=False,
+    unite=False,
+    group=False,
+):
+    """Place a circular array through the common affine backend."""
+    from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
+
+    axis = normalize_axis(axis, "Rotation(axis)")
+    angle_deg = finite(angle_deg, "Rotation(angle_deg)")
+    origin = point3(origin, "Rotation(origin)")
+    return _apply_repeat(
+        shape,
+        lambda i: Rotation(axis, i * angle_deg, origin) @ shape,
+        repeat,
+        copy,
+        unite,
+        group,
+    )
 
 
 def scale(shape, factor, center=(0.0, 0.0, 0.0)):
@@ -316,6 +369,9 @@ def scale(shape, factor, center=(0.0, 0.0, 0.0)):
     return Scale(factor, center) @ shape
 
 
-def mirror(shape, *, normal, position=0.0):
-    """Apply :class:`Mirror`; retained as an internal helper."""
-    return Mirror(normal, position) @ shape
+def mirror(shape, *, normal, position=0.0, copy=False, unite=False, group=False):
+    """Place one mirror image, optionally combined with its original."""
+    transform = Mirror(normal, position)
+    if (unite or group) and not copy:
+        raise ValueError("mirrored(unite=True) or mirrored(group=True) requires copy=True.")
+    return _apply_repeat(shape, lambda i: transform @ shape, 1, copy, unite, group)

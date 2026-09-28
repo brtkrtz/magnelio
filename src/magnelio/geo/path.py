@@ -88,7 +88,7 @@ class Path:
             .arc_to((0.0, -1e-3, 0.0), center=(0.0, 0.0, 0.0))
             .closed()
         )
-        slot = outline.covered().extruded(vector=(0, 0, t), material=copper)
+        slot = Profile.from_wires(outline).extruded(vector=(0, 0, t), material=copper)
     """
 
     start: tuple

@@ -99,8 +99,7 @@ class Shape:
         -------
         float
             Volume in cubic meters.  A planar sheet
-            (:class:`~magnelio.geo.Face`, a covered
-            :class:`~magnelio.geo.Curve`) has no thickness and reports
+            (:class:`~magnelio.geo.Profile`) has no thickness and reports
             zero.
 
         Examples
@@ -146,33 +145,49 @@ class Shape:
 
     # ── transforms ────────────────────────────────────────────────────
 
-    def translated(self, vector):
+    def translated(self, vector, *, repeat=1, copy=False, unite=False, group=False):
         """Return this shape moved by *vector*.
 
         Parameters
         ----------
         vector : tuple of float
             ``(dx, dy, dz)`` translation [meters].
+        repeat : int, optional
+            Number of translated copies, starting at one vector displacement.
+            Copy *i* is moved by ``i * vector``; defaults to 1.
+        copy : bool, optional
+            Include the untransformed original first; defaults to False.
+        unite : bool, optional
+            Return a Union of the copies. Only Solid geometry is eligible.
+        group : bool, optional
+            Return a Group, preserving each member's material. Mutually
+            exclusive with *unite*.
         Returns
         -------
-        Shape
-            One translated geometry value of the same dimensional category.
+        Shape or list of Shape or Union or Group
+            One translated value by default; otherwise a list, or the
+            explicitly requested Union or Group, including for one copy.
 
         Examples
         --------
-        A row of eight vias is explicit about copying and fusion::
+        A row of eight vias, including the original, fused into one body::
 
-            fence = Union(*(via.translated((i * 2e-3, 0, 0)) for i in range(8)))
+            fence = via.translated((2e-3, 0, 0), repeat=7, copy=True, unite=True)
         """
-        from magnelio.geo.transforms import Translation  # noqa: PLC0415
+        from magnelio.geo.transforms import translate  # noqa: PLC0415
 
-        return Translation(vector) @ self
+        return translate(self, vector, repeat=repeat, copy=copy, unite=unite, group=group)
 
     def rotated(
         self,
         axis,
         angle_deg,
         origin=(0.0, 0.0, 0.0),
+        *,
+        repeat=1,
+        copy=False,
+        unite=False,
+        group=False,
     ):
         """Return this shape rotated about an axis.
 
@@ -187,20 +202,33 @@ class Shape:
         origin : tuple of float
             A point on the rotation axis (default: the coordinate
             origin).
+        repeat : int, optional
+            Number of rotated copies at ``angle_deg`` through
+            ``repeat * angle_deg``; defaults to 1.
+        copy : bool, optional
+            Include the unrotated original first; defaults to False.
+        unite : bool, optional
+            Return a Union of the copies. Only Solid geometry is eligible.
+        group : bool, optional
+            Return a Group, preserving each member's material. Mutually
+            exclusive with *unite*.
         Returns
         -------
-        Shape
-            One rotated geometry value of the same dimensional category.
+        Shape or list of Shape or Union or Group
+            One rotated value by default; otherwise a list, or the
+            explicitly requested Union or Group, including for one copy.
 
         Examples
         --------
         Four posts at 90° spacing around the z axis::
 
-            posts = Group(*(post.rotated("z", i * 90.0) for i in range(4)))
+            posts = post.rotated("z", 90.0, repeat=3, copy=True, group=True)
         """
-        from magnelio.geo.transforms import Rotation  # noqa: PLC0415
+        from magnelio.geo.transforms import rotate  # noqa: PLC0415
 
-        return Rotation(axis, angle_deg, origin) @ self
+        return rotate(
+            self, axis, angle_deg, origin, repeat=repeat, copy=copy, unite=unite, group=group
+        )
 
     def scaled(self, factor, center=(0.0, 0.0, 0.0)):
         """Return this shape scaled uniformly about a fixed point.
@@ -230,7 +258,7 @@ class Shape:
 
         return Scale(factor, center) @ self
 
-    def mirrored(self, normal, position=0.0):
+    def mirrored(self, normal, position=0.0, *, copy=False, unite=False, group=False):
         """Return this shape reflected across a plane.
 
         The plane is the set of points ``p`` with ``p · normal ==
@@ -257,24 +285,33 @@ class Shape:
         position : float
             Signed distance of the plane from the coordinate origin
             along *normal* [meters] (default 0).
+        copy : bool, optional
+            Include the original first; defaults to False.
+        unite : bool, optional
+            Return a Union of original and image. Requires *copy* and Solid
+            geometry.
+        group : bool, optional
+            Return a Group of original and image, retaining member materials.
+            Requires *copy*; mutually exclusive with *unite*.
         Returns
         -------
-        Shape
-            The mirror image, of the same dimensional category.
+        Shape or list of Shape or Union or Group
+            The image alone by default, otherwise ``[original, image]``
+            or the explicitly requested Union or Group.
 
         Examples
         --------
         Complete a half-modelled power divider into one solid::
 
-            full = Union(half, half.mirrored("x"))
+            full = half.mirrored("x", copy=True, unite=True)
 
         Mirror a feed line onto the far side of a board::
 
             far = line.mirrored("z", position=h / 2)
         """
-        from magnelio.geo.transforms import Mirror  # noqa: PLC0415
+        from magnelio.geo.transforms import mirror  # noqa: PLC0415
 
-        return Mirror(normal, position) @ self
+        return mirror(self, normal=normal, position=position, copy=copy, unite=unite, group=group)
 
     # ── modifications ─────────────────────────────────────────────────
 
@@ -343,8 +380,7 @@ class Shape:
         The result is a **standalone solid**, not fused with the shape it
         came from.  Two input forms:
 
-        - a standalone sheet — a :class:`~magnelio.geo.Face`, a covered
-          :class:`~magnelio.geo.Curve` or a curved
+        - a standalone sheet — a :class:`~magnelio.geo.Profile` or a curved
           :class:`~magnelio.geo.Surface` — the sheet *is* the profile and
           *face_near* is unused;
         - any solid — the face nearest *face_near* is extruded.
@@ -355,7 +391,7 @@ class Shape:
             ``(dx, dy, dz)`` extrusion direction and length [meters].
         face_near : tuple of float, optional
             3D point near the face to extrude.  Required for a solid,
-            ignored for a Face.
+            ignored for a Profile.
         material : Material, optional
             Material of the extruded solid.  Defaults to this shape's
             material; required when extruding a construction sheet, which
@@ -389,7 +425,7 @@ class Shape:
             origin).
         material : Material, optional
             Material of the revolved solid.  Defaults to this shape's
-            material; required for a construction Face.
+            material; required for a construction Profile.
 
         Returns
         -------
@@ -406,7 +442,7 @@ class Shape:
         The profile is moved for you: its centroid is placed on the
         spine's start point and its plane turned perpendicular to the
         spine's start tangent, then it follows the path.  The canonical
-        example is a coil, ``Face(...).swept(Curve.helix(...))``.
+        example is a coil, ``Profile.rectangle(...).swept(Curve.helix(...))``.
 
         Parameters
         ----------
@@ -472,8 +508,7 @@ class Shape:
     def thickened(self, thickness, *, direction="forward", material=None):
         """Grow this sheet into a solid of constant thickness.
 
-        Only a sheet — a :class:`~magnelio.geo.Face`, a covered
-        :class:`~magnelio.geo.Curve` or a curved
+        Only a sheet — a :class:`~magnelio.geo.Profile` or a curved
         :class:`~magnelio.geo.Surface` — can be thickened.  A planar sheet
         becomes a slab whose footprint is exactly the sheet, which makes
         this the direct way from a drawn outline to a metallisation of a
@@ -513,7 +548,7 @@ class Shape:
         --------
         A copper patch from a drawn outline::
 
-            patch = outline.covered().thickened(thickness=35e-6, material=copper)
+            patch = Profile.from_wires(outline).thickened(thickness=35e-6, material=copper)
         """
         from magnelio.geo.modifications import thicken  # noqa: PLC0415
 

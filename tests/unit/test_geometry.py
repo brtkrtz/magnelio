@@ -4,6 +4,7 @@ import math
 
 import pytest
 
+from magnelio.geo import Profile
 from magnelio.materials.material import Material
 
 
@@ -686,7 +687,7 @@ class TestOCCTransforms:
         assert rotate(s, (0, 0, 1), 45).material is mat
         assert scale(s, 2.0).material is mat
 
-    # -- explicit arrays -------------------------------------------------------
+    # -- repeated transforms --------------------------------------------------
 
     def test_translate_repeat(self):
         _occ()
@@ -694,7 +695,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import translate
 
         b = Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        copies = [translate(b, (2e-3 * i, 0, 0)) for i in range(1, 4)]
+        copies = translate(b, (2e-3, 0, 0), repeat=3)
         assert isinstance(copies, list)
         assert len(copies) == 3
         # Copy 1 at 2mm, copy 2 at 4mm, copy 3 at 6mm
@@ -708,7 +709,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import translate
 
         b = Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        result = [b, *(translate(b, (2e-3 * i, 0, 0)) for i in range(1, 3))]
+        result = translate(b, (2e-3, 0, 0), repeat=2, copy=True)
         assert isinstance(result, list)
         assert len(result) == 3  # original + 2 copies
         assert result[0] is b  # first element is the original
@@ -720,7 +721,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import translate
 
         b = Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        result = Union(*(translate(b, (2e-3 * i, 0, 0)) for i in range(1, 4)))
+        result = translate(b, (2e-3, 0, 0), repeat=3, unite=True)
         assert isinstance(result, Union)
         assert result._occ_shape() is not None
 
@@ -730,7 +731,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import rotate
 
         b = Brick(origin=(1e-3, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        copies = [rotate(b, axis=(0, 0, 1), angle_deg=90 * i) for i in range(1, 4)]
+        copies = rotate(b, axis=(0, 0, 1), angle_deg=90, repeat=3)
         assert isinstance(copies, list)
         assert len(copies) == 3  # at 90°, 180°, 270°
 
@@ -740,10 +741,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import rotate
 
         b = Brick(origin=(1e-3, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        result = [
-            b,
-            *(rotate(b, axis=(0, 0, 1), angle_deg=90 * i) for i in range(1, 4)),
-        ]
+        result = rotate(b, axis=(0, 0, 1), angle_deg=90, repeat=3, copy=True)
         assert isinstance(result, list)
         assert len(result) == 4  # original + 3 copies
         assert result[0] is b
@@ -2177,13 +2175,13 @@ class TestGroupClass:
 
 
 class TestGroupTransforms:
-    """Transforms distribute over members; arrays use explicit Groups."""
+    """Transforms distribute over members and retain assembly materials."""
 
     def test_group_flag_aggregates_copies(self):
         from magnelio.geo import Brick, Group
 
         base = Brick(material=_air())
-        res = Group(*(base.translated((i * 1e-3, 0, 0)) for i in range(1, 4)))
+        res = base.translated((1e-3, 0, 0), repeat=3, group=True)
         assert isinstance(res, Group)
         assert len(list(res.members())) == 3
 
@@ -2191,16 +2189,16 @@ class TestGroupTransforms:
         from magnelio.geo import Brick, Group
 
         b = Brick(material=_air())
-        res = Group(b, *(b.translated((i * 1e-3, 0, 0)) for i in range(1, 3)))
+        res = b.translated((1e-3, 0, 0), repeat=2, copy=True, group=True)
         assert isinstance(res, Group)
         members = list(res.members())
         assert len(members) == 3 and members[0] is b
 
-    def test_transform_options_are_removed(self):
+    def test_transform_aggregation_options_are_exclusive(self):
         from magnelio.geo import Brick
 
-        with pytest.raises(TypeError, match="unexpected keyword argument 'group'"):
-            Brick(material=_air()).translated((1e-3, 0, 0), group=True)
+        with pytest.raises(ValueError, match="either unite=True or group=True"):
+            Brick(material=_air()).translated((1e-3, 0, 0), unite=True, group=True)
 
     def test_translate_distributes_and_preserves_material(self):
         from magnelio.geo import Brick, Group
@@ -2342,44 +2340,44 @@ class TestGroupInModel:
 # ── 1b: standalone Face ──────────────────────────────────────────────────────
 
 
-class TestFaceClass:
+class TestProfilePolygon:
     """Standalone planar Face with optional material (WP 1b)."""
 
     _RECT = [(0, 0), (4e-3, 0), (4e-3, 3e-3), (0, 3e-3)]
 
     def test_default_material_none_and_position_zero(self):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        f = Face(normal="z", points=self._RECT)
+        f = Profile.polygon([(u, v, 0.0) for u, v in self._RECT])
         assert f.material is None
-        assert f.position == 0.0
+        assert f.bounding_box()[0][2] == pytest.approx(0.0, abs=1e-10)
 
     def test_stores_material_and_name(self):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
         pec = Material.pec()
-        f = Face(normal="z", points=self._RECT, material=pec, name="sheet")
+        f = Profile.polygon([(u, v, 0.0) for u, v in self._RECT], material=pec, name="sheet")
         assert f.material is pec and f.name == "sheet"
 
     def test_bad_normal_raises(self):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
         with pytest.raises(ValueError, match="normal"):
-            Face(normal="q", points=self._RECT)
+            Profile.rectangle((0, 0, 0), (1, 1), normal="q")
 
     def test_too_few_points_raises(self):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
         with pytest.raises(ValueError, match="at least 3"):
-            Face(normal="z", points=[(0, 0), (1e-3, 0)])
+            Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (0.001, 0)]])
 
     def test_bbox_z_normal(self):
         """z-normal: (u, v) = (x, y); plane at offset in z."""
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        (xmin, ymin, zmin), (xmax, ymax, zmax) = Face(
-            normal="z", points=self._RECT, position=2e-3
+        (xmin, ymin, zmin), (xmax, ymax, zmax) = Profile.polygon(
+            [(u, v, 0.002) for u, v in self._RECT]
         ).bounding_box()
         assert (xmin, ymin, zmin) == pytest.approx((0, 0, 2e-3), abs=1e-6)
         assert (xmax, ymax, zmax) == pytest.approx((4e-3, 3e-3, 2e-3), abs=1e-6)
@@ -2387,10 +2385,10 @@ class TestFaceClass:
     def test_bbox_y_normal(self):
         """y-normal: (u, v) = (x, z); plane at offset in y."""
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        (xmin, ymin, zmin), (xmax, ymax, zmax) = Face(
-            normal="y", points=self._RECT, position=2e-3
+        (xmin, ymin, zmin), (xmax, ymax, zmax) = Profile.polygon(
+            [(u, 0.002, v) for u, v in self._RECT]
         ).bounding_box()
         assert (xmin, ymin, zmin) == pytest.approx((0, 2e-3, 0), abs=1e-6)
         assert (xmax, ymax, zmax) == pytest.approx((4e-3, 2e-3, 3e-3), abs=1e-6)
@@ -2398,19 +2396,19 @@ class TestFaceClass:
     def test_bbox_x_normal(self):
         """x-normal: (u, v) = (y, z); plane at offset in x."""
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        (xmin, ymin, zmin), (xmax, ymax, zmax) = Face(
-            normal="x", points=self._RECT, position=2e-3
+        (xmin, ymin, zmin), (xmax, ymax, zmax) = Profile.polygon(
+            [(0.002, u, v) for u, v in self._RECT]
         ).bounding_box()
         assert (xmin, ymin, zmin) == pytest.approx((2e-3, 0, 0), abs=1e-6)
         assert (xmax, ymax, zmax) == pytest.approx((2e-3, 4e-3, 3e-3), abs=1e-6)
 
     def test_occ_shape_cached(self):
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        f = Face(normal="z", points=self._RECT)
+        f = Profile.polygon([(u, v, 0.0) for u, v in self._RECT])
         assert f._occ_shape() is f._occ_shape()
 
 
@@ -2424,11 +2422,11 @@ class TestExtrudeFace:
 
     def test_construction_face_requires_material(self):
         """A material-less Face needs an explicit material= to extrude."""
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
         from magnelio.geo.modifications import extrude
 
         with pytest.raises(ValueError, match="requires an explicit material"):
-            extrude(Face(normal="z", points=self._RECT), vector=(0, 0, 5e-3))
+            extrude(Profile.polygon([(u, v, 0.0) for u, v in self._RECT]), vector=(0, 0, 0.005))
 
     def test_solid_still_requires_face_near(self):
         """The solid form of extrude still needs face_near."""
@@ -2441,12 +2439,12 @@ class TestExtrudeFace:
 
     def test_extruded_face_bbox(self):
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
         from magnelio.geo.modifications import extrude
 
         solid = extrude(
-            Face(normal="z", points=self._RECT, position=2e-3),
-            vector=(0, 0, 5e-3),
+            Profile.polygon([(u, v, 0.002) for u, v in self._RECT]),
+            vector=(0, 0, 0.005),
             material=Material.pec(),
         )
         (xmin, ymin, zmin), (xmax, ymax, zmax) = solid.bounding_box()
@@ -2455,31 +2453,40 @@ class TestExtrudeFace:
 
     def test_extruded_solid_material_explicit(self):
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
         from magnelio.geo.modifications import extrude
 
         pec = Material.pec()
-        solid = extrude(Face(normal="z", points=self._RECT), vector=(0, 0, 5e-3), material=pec)
+        solid = extrude(
+            Profile.polygon([(u, v, 0.0) for u, v in self._RECT]),
+            vector=(0, 0, 0.005),
+            material=pec,
+        )
         assert solid.material is pec
 
     def test_extruded_solid_inherits_face_material(self):
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
         from magnelio.geo.modifications import extrude
 
         pec = Material.pec()
-        solid = extrude(Face(normal="z", points=self._RECT, material=pec), vector=(0, 0, 5e-3))
+        solid = extrude(
+            Profile.polygon([(u, v, 0.0) for u, v in self._RECT], material=pec),
+            vector=(0, 0, 0.005),
+        )
         assert solid.material is pec
 
     def test_extrude_nonrectangular_profile(self):
         """An L-shaped profile extrudes to a valid solid (general polygon)."""
         _occ()
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
         from magnelio.geo.modifications import extrude
 
         lprof = [(0, 0), (6e-3, 0), (6e-3, 2e-3), (2e-3, 2e-3), (2e-3, 5e-3), (0, 5e-3)]
         solid = extrude(
-            Face(normal="z", points=lprof), vector=(0, 0, 3e-3), material=Material.pec()
+            Profile.polygon([(u, v, 0.0) for u, v in lprof]),
+            vector=(0, 0, 0.003),
+            material=Material.pec(),
         )
         (_, _, _), (xmax, ymax, zmax) = solid.bounding_box()
         assert (xmax, ymax, zmax) == pytest.approx((6e-3, 5e-3, 3e-3), abs=1e-6)
@@ -2487,11 +2494,11 @@ class TestExtrudeFace:
     def test_face_rejected_by_mesher(self):
         """A standalone Face in a model raises up front (thin-sheet deferred)."""
         _occ()
-        from magnelio.geo import Face, GeometryModel
+        from magnelio.geo import GeometryModel, Profile
         from magnelio.mesh.mesher import Mesh, MeshControl
 
         m = GeometryModel()
-        m.add(Face(normal="z", points=self._RECT, material=Material.pec()))
+        m.add(Profile.polygon([(u, v, 0.0) for u, v in self._RECT], material=Material.pec()))
         with pytest.raises(NotImplementedError, match="thin-sheet"):
             Mesh.from_geometry(
                 m, MeshControl(min_nodes_per_wavelength=4, max_cell_size=2e-3), f_max=10e9
@@ -2502,13 +2509,19 @@ class TestExtrudeFace:
         _occ()
         import numpy as np
 
-        from magnelio.geo import Face, GeometryModel
+        from magnelio.geo import GeometryModel, Profile
         from magnelio.geo.modifications import extrude
         from magnelio.mesh.mesher import Mesh, MeshControl
 
         pec = Material.pec()
         model = GeometryModel()
-        model.add(extrude(Face(normal="z", points=self._RECT), vector=(0, 0, 6e-3), material=pec))
+        model.add(
+            extrude(
+                Profile.polygon([(u, v, 0.0) for u, v in self._RECT]),
+                vector=(0, 0, 0.006),
+                material=pec,
+            )
+        )
         mesh = Mesh.from_geometry(
             model, MeshControl(min_nodes_per_wavelength=4, max_cell_size=1e-3), f_max=10e9
         )
@@ -2626,10 +2639,11 @@ class TestRevolve:
 
     # Rect ring profile in the y=0 plane: x in [3,4] mm, z in [0,1] mm.
     def _ring_profile(self, material=None):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        return Face(
-            normal="y", points=[(3e-3, 0), (4e-3, 0), (4e-3, 1e-3), (3e-3, 1e-3)], material=material
+        return Profile.polygon(
+            [(u, 0.0, v) for u, v in [(0.003, 0), (0.004, 0), (0.004, 0.001), (0.003, 0.001)]],
+            material=material,
         )
 
     def test_construction_face_requires_material(self):
@@ -2723,11 +2737,10 @@ class TestSweep:
     """sweep() sweeps a Face profile along a Curve spine (WP 1e)."""
 
     def _square(self, half, material=None):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
-        return Face(
-            normal="z",
-            points=[(-half, -half), (half, -half), (half, half), (-half, half)],
+        return Profile.polygon(
+            [(u, v, 0.0) for u, v in [(-half, -half), (half, -half), (half, half), (-half, half)]],
             material=material,
         )
 
@@ -2996,8 +3009,8 @@ class TestCurveJoined:
         assert len(_wire_edges(nested._occ_shape(1.0))) == 3
 
 
-class TestCurveCovered:
-    """Curve.covered() turns a closed profile into a planar sheet."""
+class TestProfileFromWires:
+    """Profile.from_wires fills a closed planar boundary."""
 
     def _square(self, side=4e-3):
         from magnelio.geo import Path
@@ -3013,12 +3026,12 @@ class TestCurveCovered:
     def test_open_curve_rejected_eagerly(self):
         from magnelio.geo import Curve
 
-        with pytest.raises(ValueError, match="needs a closed curve"):
-            Curve.polyline([(0, 0, 0), (1e-3, 0, 0)]).covered()
+        with pytest.raises(ValueError, match="closed"):
+            Profile.from_wires(Curve.polyline([(0, 0, 0), (0.001, 0, 0)]))
 
     def test_square_area(self):
         _occ()
-        assert _area(self._square().covered()) == pytest.approx(16e-6, rel=1e-12)
+        assert _area(Profile.from_wires(self._square())) == pytest.approx(16e-6, rel=1e-12)
 
     def test_half_disc_extrudes_to_exact_volume(self):
         from magnelio.geo import Curve
@@ -3027,13 +3040,13 @@ class TestCurveCovered:
         r, h = 5e-3, 20e-3
         back = Curve.polyline([(0, -r, 0), (0, r, 0)])
         front = Curve.arc((0, r, 0), (r, 0, 0), (0, -r, 0))
-        rod = back.joined(front).covered().extruded(vector=(0, 0, h), material=_air())
+        rod = Profile.from_wires(back.joined(front)).extruded(vector=(0, 0, h), material=_air())
         assert _volume(rod) == pytest.approx(math.pi * r * r / 2 * h, rel=1e-12)
 
     def test_construction_sheet_needs_material_to_extrude(self):
         _occ()
         with pytest.raises(ValueError, match="requires an explicit material"):
-            self._square().covered().extruded(vector=(0, 0, 1e-3))
+            Profile.from_wires(self._square()).extruded(vector=(0, 0, 0.001))
 
     def test_non_planar_profile_rejected_by_the_kernel(self):
         from magnelio.geo import Path
@@ -3047,27 +3060,27 @@ class TestCurveCovered:
             .closed()
         )
         with pytest.raises(ValueError, match="planar"):
-            skew.covered()._occ_shape(1.0)
+            Profile.from_wires(skew)._occ_shape(1.0)
 
     def test_revolved_and_swept_accept_a_covered_sheet(self):
         from magnelio.geo import Curve
 
         _occ()
-        profile = (
-            Curve.polyline([(2e-3, 0, 0), (4e-3, 0, 0), (4e-3, 0, 1e-3), (2e-3, 0, 1e-3)])
-            .joined(Curve.polyline([(2e-3, 0, 1e-3), (2e-3, 0, 0)]))
-            .covered()
+        profile = Profile.from_wires(
+            Curve.polyline(
+                [(0.002, 0, 0), (0.004, 0, 0), (0.004, 0, 0.001), (0.002, 0, 0.001)]
+            ).joined(Curve.polyline([(0.002, 0, 0.001), (0.002, 0, 0)]))
         )
         ring = profile.revolved(axis="z", material=_air())
         assert _volume(ring) == pytest.approx(math.pi * (16e-6 - 4e-6) * 1e-3, rel=1e-6)
 
         spine = Curve.polyline([(0, 0, 0), (0, 0, 10e-3)])
-        tube = self._square().covered().swept(spine, material=_air())
+        tube = Profile.from_wires(self._square()).swept(spine, material=_air())
         assert _volume(tube) == pytest.approx(16e-6 * 10e-3, rel=1e-6)
 
     def test_analytic_box_contains_the_kernel_box(self):
         _occ()
-        sheet = self._square().covered()
+        sheet = Profile.from_wires(self._square())
         lo, hi = sheet._analytic_bbox()
         occ_lo, occ_hi = sheet.bounding_box()
         assert all(lo[i] <= occ_lo[i] + 1e-12 for i in range(3))
@@ -3079,7 +3092,7 @@ class TestCurveCovered:
 
         _occ()
         model = GeometryModel()
-        model.add(self._square().covered(material=_air()))
+        model.add(Profile.from_wires(self._square(), material=_air()))
         with pytest.raises(NotImplementedError, match="standalone sheet"):
             Mesh.from_geometry(model, MeshControl(), f_max=10e9)
 
@@ -3271,14 +3284,12 @@ class TestPath:
         _occ()
         a, b = 0.012, 0.019
         kw = dict(center=(0, 0, 0), semi_axes=(a, b), major_axis="z", normal=(0, -1, 0))
-        spheroid = (
+        spheroid = Profile.from_wires(
             Path((0.0, 0.0, -a))
             .ellipse_to((b, 0.0, 0.0), **kw)
             .ellipse_to((0.0, 0.0, a), **kw)
             .closed()
-            .covered()
-            .revolved(axis="z", material=mio.Material.air())
-        )
+        ).revolved(axis="z", material=mio.Material.air())
         assert spheroid.volume() == pytest.approx(4.0 / 3.0 * math.pi * a * b * b, rel=1e-9)
 
     def test_ellipse_arguments_are_checked_at_the_call(self):
@@ -3505,10 +3516,10 @@ class TestShapeVolume:
         assert seg.volume() == pytest.approx(expected, rel=1e-12)
 
     def test_planar_sheet_has_none(self):
-        from magnelio.geo import Face
+        from magnelio.geo import Profile
 
         _occ()
-        sheet = Face(normal="z", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         assert sheet.volume() == 0.0
 
     def test_group_adds_its_members(self):
