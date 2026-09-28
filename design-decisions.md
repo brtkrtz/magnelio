@@ -4014,6 +4014,11 @@ allowed, compared by value) is a separate small change, not part of this DD.
 **Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 1,
 WP 1b + 1d — the continuation of DD-071).
 **Status:** Accepted — implemented and merged behind the plan.
+**Superseded in part by [[DD-275]] (2026-09-28):** the public
+axis-normal `Face` and the loose `face_near` operation grammar are migration
+history, not the durable geometry ontology.  Planar standalone geometry moves
+to `Profile`; owned CAD faces become `FaceRef`.  The implementation record
+below is retained because it explains the behaviour being migrated.
 **Problem.**  Solids could only be authored as CSG primitives + Boolean
 ops; there was no way to give an arbitrary planar profile and sweep it into
 a solid.  ``extrude`` existed but only for a *face of an existing solid*
@@ -4072,6 +4077,10 @@ WP 1c/1e via the abstract ``Curve``), and the overlap-policy relaxation
 **Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 1,
 WP 1c + 1e — continuation of DD-071 and DD-072).
 **Status:** Accepted — implemented and merged behind the plan.
+**Superseded in part by [[DD-275]] (2026-09-28):** `Curve` becomes a
+first-class transformable `Shape`, and profile-consuming operations move to
+the dimensional contract decided there.  The exact-helix construction,
+sweep positioning evidence and optimal-bounding-box decision below stand.
 **Problem.**  There was no way to author a curved solid (a coil, a bent
 trace, a solid of revolution).  The plan's motivating case — a spiral
 inductor — is a rectangular profile (WP 1b ``Face``) swept along a helix.
@@ -7374,6 +7383,11 @@ excited channels, with the rest matched.
 ## DD-113 — Geometry verbs: CSG operators + chainable methods
 
 **Status:** Decided 2026-08-02 (session 143); shipped same session.
+**Superseded in part by [[DD-275]] (2026-09-28):** named transform methods
+remain, but they no longer share one indiscriminate verb surface with every
+dimension, and transform repetition no longer changes the method's return
+category.  CSG operators become `Solid`-only.  The old grammar below is kept
+as the migration baseline.
 
 **Problem.**  CSG verbs were CamelCase classes (`Difference(a, b)`)
 while transform/modifier verbs were snake_case free functions
@@ -8622,6 +8636,10 @@ rejections).
 
 **Date:** 2026-08-11
 **Status:** Accepted — implemented, tested.
+**Superseded in part by [[DD-275]] (2026-09-28):** `Curve.covered()` and the
+private `PlanarSheet` category give way to public `Profile.from_wires()` and
+the `Sheet`/`Profile` hierarchy.  Joined curves and absolute `Path` segments
+remain; the no-ambient-coordinate-system decision is reaffirmed.
 
 **Problem.**  `Curve` offered four constructors (polyline, arc, spline,
 helix) and no way to combine them.  Every outline that mixes straight
@@ -22462,3 +22480,248 @@ the same controls and client/server rendering choices.  Zed needs no switch;
 users of an unidentified editor select the browser once per kernel instead of
 adding a destination to every `show()`.  Documentation builds remain on PyVista's gallery path; no browser
 or server is started for them.
+
+## DD-275 — Dimensional geometry, owned topology and affine values
+
+**Date:** 2026-09-28.
+**Status:** Accepted as the geometry-foundation contract; WP0 is documented
+and gated, implementation starts with WP1 on `feat/geo-api-foundation`.
+**Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
+**Record:** `investigations/geo-api-foundation/` (internal dossier).
+
+**Problem.**  The geometry API grew useful capabilities without acquiring a
+stable ontology.  `Shape` currently means “an object accepted by the CSG
+wrappers”, so a solid, planar profile, curved sheet and `Group` advertise the
+same Boolean and modification verbs, while the genuinely one-dimensional
+`Curve` cannot even be translated.  Public `Face` means an axis-normal
+polygon rather than a face of a body.  A body face or edge is never a value:
+each operation consumes a loose nearest point immediately, equal-distance
+picks depend on OCC enumeration order, and there is no selection identity to
+carry through a rotation or a later construction.  Transform repetition
+compounds the category problem by returning one shape, a list, a `Union`, or
+a `Group` from the same method.
+
+The intended oblique-coax workflow needs all of those distinctions at once:
+name a physical end face, rotate the body without losing it, start a routed
+path in that face's pose, and sweep the selected profile to a domain plane.
+Persistent OCC indices cannot provide that identity: they are kernel-local
+enumeration details and change after reconstruction or a Boolean operation.
+
+**Decision — standalone geometry has an explicit dimensional hierarchy.**
+These names, including the intermediate bases, are public:
+
+```text
+Shape                         immutable standalone geometry
+|-- Curve                     one-dimensional wire/locus
+|-- Sheet                     standalone two-dimensional geometry
+|   |-- Profile               planar bounded sheet: outer wire plus holes
+|   `-- Surface               curved sheet
+`-- Solid                     closed three-dimensional body
+
+TopologyRef                   immutable owner-bound sub-entity, not Shape
+|-- VertexRef
+|-- EdgeRef
+|-- FaceRef
+|-- EdgeSetRef                deliberate multi-edge result
+`-- FaceSetRef                deliberate multi-face result
+```
+
+`Shape` owns only operations valid for every standalone category: the four
+affine transforms, `bounding_box()`, and identity metadata such as `name`.
+Dimension-specific operations live on the narrowest category that supports
+them.  In particular:
+
+- Boolean `+`, `-`, and `&` and their explicit `Union`, `Difference`, and
+  `Intersection` spellings accept and return `Solid` only.
+- `Profile` and eligible planar `FaceRef` values provide `extruded`,
+  `revolved`, and `swept`; lofting accepts profiles or eligible face refs and
+  returns a `Solid`.
+- Solid-only topology modifications (`chamfered`, `filleted`, `shelled`) take
+  refs or ref sets rather than loose points at their architectural core.
+- A physical standalone sheet may carry a material.  A profile without one
+  is construction geometry.  A solid without one remains a construction
+  solid under [[DD-127]].
+
+The existing solid primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
+`Torus`, `ImportedSolid`) become `Solid` subclasses.  `Union`, `Difference`,
+`Intersection`, and `Loft` remain public result constructors with their
+dimensionally restricted inputs.  `Group` remains an immutable,
+material-preserving authoring collection, but is **not** a `Shape` and never a
+CSG operand; transforms apply member-wise and `GeometryModel.add()` continues
+to flatten it.  `ThinWire` remains an EM mesh declaration around a `Curve`,
+not a CAD dimension in the hierarchy.
+
+The current public `Face` is removed rather than aliased.  Its meanings split
+cleanly: standalone planar construction is `Profile`, while topology owned by
+a solid is `FaceRef`.  `PlanarSheet` stays an implementation detail during
+migration and then disappears.
+
+**Exact construction vocabulary.**  Curves keep `polyline`, `arc`,
+`ellipse_arc`, `spline`, `helix`, and `joined`, and add the exact factories
+`Curve.line(start, end)`, `Curve.circle(center, radius, *, normal="z")`, and
+`Curve.ellipse(center, semi_axes, *, major_axis, normal="z")`.
+`Curve.covered()` is removed.  Planar construction is spelled:
+
+```python
+Profile.polygon(points, *, material=None, name=None)
+Profile.rectangle(center, size, *, normal="z", x_direction=None,
+                  material=None, name=None)
+Profile.circle(center, radius, *, normal="z", material=None, name=None)
+Profile.from_wires(outer, holes=(), *, material=None, name=None)
+```
+
+Polygon points and all centres are three-dimensional world coordinates.
+`normal` accepts the established axis-letter or vector spelling;
+`x_direction`, when supplied, fixes the rectangle's in-plane width direction.
+The factory validates coplanarity, closure, wire nesting, and non-intersection
+before returning a profile.  Inner wires are intrinsic profile topology, not
+post-extrusion Boolean scaffolding.
+
+There is no ambient working coordinate system.  Explicit points, vectors and
+the in-plane direction fully determine a construction.  A moving pose stored
+inside a `Path` is different: it is geometry data, not hidden session state.
+The relative-path vocabulary is fixed now for WP5:
+
+```python
+Path.from_pose(point, tangent, up)
+Path.from_face(face_ref, *, up)
+path.forward(distance)
+path.turn_left(*, radius, angle_deg)
+path.turn_right(*, radius, angle_deg)
+path.turn_to(direction, *, radius)
+path.straight_to_plane(normal, position)
+```
+
+Absolute `line_to`, `arc_to`, `ellipse_to`, and `spline_to` remain.  `up`
+defines left/right and roll; zero or parallel tangent/up vectors are invalid.
+`turn_to` takes a target tangent and a radius, so it is geometrically
+determined rather than guessing a curvature.
+
+**Topology references are views owned by one immutable shape.**  A ref holds
+a strong reference to its `Solid` owner and a resolved, cached subshape for
+that owner's model scale.  It is not standalone geometry, cannot enter a
+`GeometryModel`, cannot be used as a Boolean operand, and has no transform
+methods.  Transform the owner and retrieve the ref from the returned owner.
+Detachment is explicit: `EdgeRef.as_curve()` returns a standalone `Curve`;
+`FaceRef.detached()` returns `Profile` for a planar face and `Surface` for a
+curved face.
+
+Singular selection uses one noun and two overloads:
+
+```python
+solid.face("port")
+solid.face(near=p, normal=n, surface_type="plane")
+solid.edge("rim")
+solid.edge(near=p, curve_type="circle")
+solid.vertex("feed")
+solid.vertex(near=p)
+```
+
+The first form is named lookup.  In the second, at least one semantic
+constraint is required.  `solid.faces(...)` and `solid.edges(...)` are the
+deliberate plurals and return `FaceSetRef` and `EdgeSetRef`; they never appear
+as accidental fallbacks from a singular selector.  The corresponding
+immutable registration methods are `tag_face`, `tag_faces`, `tag_edge`,
+`tag_edges`, and `tag_vertex`; for example
+`body.tag_face("port", near=p, normal=n)`.  Names are unique per topology kind
+and owner, are non-empty strings, and registration returns a new owner.  No
+public numeric topology index exists.
+
+Selection first filters by every supplied semantic constraint, then minimizes
+Euclidean distance to the complete subshape — not to a sampled centroid.
+The `normal=` constraint is compared orientation-sensitively with the solid
+face's outward normal.
+Supported surface-type vocabulary begins with `"plane"`, `"cylinder"`,
+`"cone"`, `"sphere"`, `"torus"`, `"bspline"`, and `"other"`; curve types
+use the analogous analytic names.  Zero candidates raises
+`TopologySelectionError`.  More than one candidate at the same distance
+within the owner scale's converted OCC tolerance raises
+`AmbiguousTopologyError`, a `TopologySelectionError` subclass.  Kernel order
+is never a tie-breaker; the message lists the remaining candidates and asks
+for a normal/type/near constraint that separates them.
+
+**Named topology follows construction history, not proximity.**  An affine
+transform carries every registered selection exactly.  A topology-changing
+operation uses OCC `Modified`, `Generated`, and `IsDeleted` history.  A
+singular name with one surviving successor is retained.  Deletion, no
+reported successor where identity cannot be proven, or one-to-many evolution
+raises `TopologyEvolutionError` at the operation that destroys the contract.
+A deliberately registered set may evolve to a set after duplicate removal.
+Unnamed refs are ephemeral owner views and are not propagated.  The store
+serializes the named selection's semantic origin and operation-history path,
+never an OCC enumeration index; read-back rebuilds the owner, replays the
+history and validates the same unique cardinality before exposing the name.
+
+**Reference measurements follow one property/method rule.**  Intrinsic,
+argument-free values are read-only properties and may be cached:
+
+- `VertexRef.point`;
+- `EdgeRef.length`, `start`, `end`, and `vertices`;
+- `FaceRef.centroid`, `area`, `is_planar`, `edges`, and `vertices`;
+- `FaceRef.normal` only for a planar face, where it is constant and outward.
+
+Parameterized queries and value-producing work remain methods:
+`FaceRef.normal_at(point)`, `detached()`, `as_curve()`, `bounding_box()`, and
+`volume()`.  Accessing `.normal` on a curved face raises `ValueError` and
+names `normal_at`; it does not silently mean “normal at the centroid”.
+Factories are class methods, transformations and construction steps are
+past-tense instance methods, and selectors are singular/plural nouns.  This
+is the naming convention for every later WP.
+
+**Affine placement is a value algebra.**  The public immutable classes are
+`Transform`, `Translation`, `Rotation`, `Mirror`, and `Scale`:
+
+```python
+Translation(vector)
+Rotation(axis, angle_deg, origin=(0, 0, 0))
+Mirror(normal, position=0)
+Scale(factor, center=(0, 0, 0))
+Transform.identity()
+```
+
+They act on column-vector points.  `A @ B @ geometry` applies `B` first and
+then `A`; `A @ B` returns a `Transform`.  A transform may act on any
+standalone `Shape` or on a `Group`, preserving the exact concrete geometry
+category, material, name and named topology.  `geometry @ transform` is not
+defined.  Uniform scale is retained; non-uniform scale would change analytic
+primitive categories and needs its own later decision.
+
+The primary spelling remains
+`translated(vector)`, `rotated(axis, angle_deg, origin=...)`,
+`mirrored(normal, position=...)`, and `scaled(factor, center=...)` on every
+standalone category.  Each delegates to the same transform value and always
+returns one value of the receiver's category.  `repeat`, `copy`, `unite`, and
+`group` are removed from these methods: array construction is an explicit
+list/`Group` comprehension, and fusion an explicit `Union`.  One placement
+therefore cannot silently change return type or topology.  `+` and `-`
+remain Solid CSG operators and are never overloaded with vectors.
+
+**Material and failure rules.**  Affine placement preserves `material`,
+`name`, and selection names exactly.  A solid produced from a `Profile` uses
+an explicit `material=` when given, otherwise the profile material; a solid
+continued from a `FaceRef` uses an explicit material when given, otherwise
+the owner solid's material.  Failure categories are stable:
+
+- a category mismatch raises `TypeError` and names the accepted categories;
+- invalid or underdetermined geometry arguments raise `ValueError` before a
+  kernel call where possible;
+- no semantic selection match raises `TopologySelectionError`;
+- a tied match raises `AmbiguousTopologyError`;
+- lost or split named identity raises `TopologyEvolutionError`;
+- an OCC construction failure after valid inputs raises `RuntimeError` with
+  the public operation and kernel diagnostic.
+
+`TopologySelectionError`, `AmbiguousTopologyError`, and
+`TopologyEvolutionError` are public in `magnelio.geo` alongside the reference
+and reference-set classes.  Existing `GeometryOverlapError` remains separate
+because it is a model-assembly failure, not topology selection.
+
+**Consequences and staging.**  This is an intentional breaking API for the
+next pre-1.0 minor release.  The old surface is frozen by
+`tests/unit/test_geo_api_baseline.py` and inventoried in the internal record;
+later WPs replace those assertions deliberately rather than preserving an
+accidental compatibility layer.  WP1 implements only the hierarchy and
+affine foundation.  Profiles, topology refs, uniform operations and routed
+paths remain WP2 through WP5 respectively; accepting this decision does not
+claim that those names are shipped yet.  Each slice must migrate its methods
+prose and executable examples with the code.

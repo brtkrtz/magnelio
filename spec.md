@@ -5,7 +5,7 @@
 > This is the internal design reference; the user-facing API reference
 > is the Sphinx documentation (`docs/api`).
 >
-> Last updated: 2026-08-14
+> Last updated: 2026-09-28
 
 ## Table of Contents
 
@@ -683,56 +683,161 @@ analysis = AnalysisScatteringTD(mesh=mesh, f_max=f_max, ports=[spec])
 The builders, runtime operators and the V/I recorder behind the specs
 are internal since DD-117 (importable, no stability guarantee).
 
-### 8.3 Geometry primitives
+### 8.3 Geometry ontology and construction contract
 
-| Class      | Constructor arguments |
-|------------|-----------------------|
-| `Brick`    | `origin, size, material=None, name=None` (also `Brick.from_corners(p1, p2, material=None)` and `Brick.from_ranges(x1=, x2=/dx=, …, material=None)`) |
-| `Sphere`   | `center, radius, material=None, name=None` |
-| `Cylinder` | `origin, radius, height, material=None, axis="z", inner_radius=0.0, angle_deg=None, name=None` (hollow tube / angular segment, DD-132) |
-| `Cone`     | `origin, bottom_radius, top_radius, height, material=None, axis="z", name=None` |
-| `Torus`    | `center, major_radius, minor_radius, material=None, axis="z", name=None` |
+DD-275 fixes the geometry-foundation contract.  It is an accepted staged
+contract: the pre-WP1 implementation still has the legacy `Shape`/`Face`
+surface characterized in `tests/unit/test_geo_api_baseline.py`; WP1 through
+WP5 implement the slices below.  A name listed here must not be documented as
+shipped until its work package lands.
 
-Every `axis=` accepts an axis letter (`"x"`/`"y"`/`"z"`) **or** any
-3-vector (length ignored).  A negative `height` extrudes along
-`-axis` from the origin.
+Standalone geometry is dimensional:
 
-### 8.4 CSG operations and shape verbs
+```text
+Shape
+|-- Curve
+|-- Sheet
+|   |-- Profile       planar bounded sheet, outer wire plus holes
+|   `-- Surface       curved sheet
+`-- Solid             closed 3-D body
+```
+
+The existing volume primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
+`Torus`, `ImportedSolid`) and Boolean results are `Solid` values.  `Curve`,
+`Sheet`, `Profile`, `Surface`, and `Solid` are public categories.  The current
+axis-normal polygon `Face` is removed: `Profile` owns planar standalone
+construction and `FaceRef` names owned topology.  `Group` is a transformable,
+material-preserving aggregate but not a `Shape` or CSG operand.  `ThinWire`
+is an EM mesh declaration around a `Curve`, not a standalone CAD category.
+
+Solid primitive signatures remain as follows unless a later, explicit DD
+amends one:
+
+| Class | Constructor arguments |
+| --- | --- |
+| `Brick` | `origin, size, material=None, name=None`; also `from_corners` and `from_ranges` |
+| `Sphere` | `center, radius, material=None, name=None` |
+| `Cylinder` | `origin, radius, height, material=None, axis="z", inner_radius=0.0, angle_deg=None, name=None` |
+| `Cone` | `origin, bottom_radius, top_radius, height, material=None, axis="z", name=None` |
+| `Torus` | `center, major_radius, minor_radius, material=None, axis="z", name=None` |
+
+Every axis or normal accepts `"x"`, `"y"`, `"z"`, or a non-zero
+three-vector.  Geometry is always expressed in world coordinates; there is
+no ambient local coordinate-system state.
+
+Curve construction is `line`, `circle`, `ellipse`, `polyline`, `arc`,
+`ellipse_arc`, `spline`, `helix`, and `joined`.  Planar construction is:
+
+```python
+Profile.polygon(points, *, material=None, name=None)
+Profile.rectangle(center, size, *, normal="z", x_direction=None,
+                  material=None, name=None)
+Profile.circle(center, radius, *, normal="z", material=None, name=None)
+Profile.from_wires(outer, holes=(), *, material=None, name=None)
+```
+
+Profile polygon points are 3-D and coplanar.  `from_wires` validates closed,
+coplanar, nested, non-intersecting wires; holes are profile topology and do
+not require solid Boolean scaffolding.  `Curve.covered()` is not part of the
+new contract.
+
+### 8.4 Transform algebra and category-specific operations
+
+Every standalone `Shape` provides exactly the common affine verbs
+`translated`, `rotated`, `mirrored`, and `scaled`, plus `bounding_box()`.
+The verbs return one value of the same dimensional category and preserve
+material, name, and named topology.  Transform repetition/fusion flags are
+not part of this contract; arrays use an explicit list or `Group`, and fusion
+uses `Union`.
+
+Reusable placement uses immutable values:
+
+```python
+Translation(vector)
+Rotation(axis, angle_deg, origin=(0, 0, 0))
+Mirror(normal, position=0)
+Scale(factor, center=(0, 0, 0))
+Transform.identity()
+```
+
+For column-vector points, `A @ B @ shape` applies `B` first and `A` second.
+`A @ B` composes to `Transform`; a transform acts on a `Shape` or `Group`.
+The reverse `shape @ transform` is undefined.  Scale is uniform.  Named
+methods delegate to the same algebra.  `+` and `-` are never vector
+placement.
+
+CSG operators are `Solid`-only:
 
 | Spelling | Meaning |
-|----------|---------|
-| `a + b` / `Union(*shapes, material=None, name=None)` | Boolean union |
-| `a & b` / `Intersection(shape_a, shape_b, …)` | Boolean intersection |
-| `a - b` / `Difference(base, *tools, …)` | Boolean difference |
-| `Group(*shapes, name=None)` | Material-preserving bundle (transforms distribute; Boolean operands reject it) |
+| --- | --- |
+| `a + b` / `Union(*solids, ...)` | Boolean union |
+| `a & b` / `Intersection(a, b, ...)` | Boolean intersection |
+| `a - b` / `Difference(base, *tools, ...)` | Boolean difference |
+| `Group(*geometry, name=None)` | Non-CSG aggregate; transforms distribute |
 
-Transforms and modifications are chainable methods on every shape:
-`.translated(v)`, `.rotated(axis, angle_deg)`, `.scaled(f)`,
-`.mirrored(normal, position=0.0)`, `.chamfered(…)`, `.filleted(…)`,
-`.extruded(…)`, `.revolved(…)`, `.swept(…)`, `.lofted(…)` — e.g.
-`brick.translated((0, 0, 5e-3)).rotated("z", 45.0) - hole`.
+Profile-consuming operations accept a standalone `Profile` or an eligible
+planar `FaceRef` and return a `Solid`.  They include extrusion, revolution,
+sweep, and loft.  Chamfer, fillet, and shell are `Solid` operations and use
+owned edge/face refs rather than loose nearest points.  An explicit
+`material=` wins; otherwise a Profile supplies its material and a `FaceRef`
+supplies its owner Solid's material.  Construction solids without material
+remain valid Boolean tools but cannot enter `GeometryModel` directly.
 
-Both the operators and the verbs live on `geo.Shape`, the public base
-class every primitive and every Boolean result inherits from, and that
-class is their documented home (DD-128) — the implementations in
-`geo/transforms.py` and `geo/modifications.py` are internal.  `Curve`
-and `ThinWire` are outside the hierarchy: they are 1D objects, and
-neither the operators nor the verbs apply.
+### 8.5 Owned topology, selectors and persistence
 
-`.mirrored()` reflects across the plane `p · n̂ == position` (DD-126;
-the normal is the positional core argument per DD-153).
-It has no `repeat` — mirroring twice is the identity — but
-`copy=True, unite=True` turns a modelled half into the symmetric
-whole: `half.mirrored("x", copy=True, unite=True)`.
+Owned topology is a separate public hierarchy:
 
-`material` is optional on every primitive (DD-127).  A shape carrying
-one is a physical object; a shape without one is a **construction
-body** — a Boolean tool or extrusion profile, which
-`GeometryModel.add()` refuses.  Boolean results take their material
-from the base (`Difference`) resp. first (`Union`, `Intersection`)
-operand, so cut tools never need one.
+```text
+TopologyRef
+|-- VertexRef
+|-- EdgeRef
+|-- FaceRef
+|-- EdgeSetRef
+`-- FaceSetRef
+```
 
-### 8.5 BoundaryConditions
+A ref strongly owns its immutable `Solid` context, caches resolution at that
+owner's model scale, and cannot transform, enter a model, or act as a CSG
+operand.  `EdgeRef.as_curve()` and `FaceRef.detached()` explicitly produce
+standalone geometry; the latter returns `Profile` for planar and `Surface`
+for curved topology.
+
+Selectors have named and semantic forms: `solid.face("port")` retrieves a
+name, while `solid.face(near=..., normal=..., surface_type=...)` selects once.
+Edges and vertices use `edge` / `vertex`; `faces(...)` and `edges(...)` are
+the explicit plurals returning `FaceSetRef` and `EdgeSetRef`.  Persistent
+registration is immutable through `tag_face`, `tag_faces`, `tag_edge`,
+`tag_edges`, and `tag_vertex`.  Public numeric OCC indices are forbidden.
+
+Semantic constraints filter first; nearest distance is then measured to the
+complete subshape.  Zero candidates raises `TopologySelectionError`.  A tie
+within the owner-scale OCC tolerance raises `AmbiguousTopologyError`; kernel
+enumeration order never decides.  Surface types use `plane`, `cylinder`,
+`cone`, `sphere`, `torus`, `bspline`, and `other` (with analogous analytic
+curve types).
+
+Affine transforms preserve named refs exactly.  A topology-changing
+operation maps them only through OCC `Modified` / `Generated` / `IsDeleted`
+history.  A unique successor survives; deletion, an unprovable successor, or
+a singular one-to-many split raises `TopologyEvolutionError`.  A deliberately
+named set may remain a set.  The project store persists semantic origin and
+the construction-history path, never raw topology indices, and validates the
+same cardinality when rebuilding.
+
+Intrinsic reference measurements are read-only properties:
+`VertexRef.point`; `EdgeRef.length`, `start`, `end`, `vertices`;
+`FaceRef.centroid`, `area`, `is_planar`, `edges`, `vertices`, and the constant
+planar `normal`.  Parameterized or value-producing queries are methods,
+including `normal_at(point)`, `detached()`, `as_curve()`, `bounding_box()`,
+and `volume()`.  Reading `.normal` on a curved face raises and names
+`normal_at`.
+
+Category mismatches raise `TypeError`; invalid or underdetermined geometry
+raises `ValueError`; selection absence and ties use the public selection
+exceptions; named-topology loss uses `TopologyEvolutionError`; a kernel
+failure after valid input raises `RuntimeError` naming the public operation.
+
+### 8.6 BoundaryConditions
 
 A string-typed thin facade.  Each face takes one of
 ``"PEC"`` | ``"PMC"`` | ``"CPML"`` | ``"Periodic"``, or a symmetry
@@ -790,7 +895,7 @@ BC subclasses can pass a ``dict[str, BoundaryProtocol]`` directly to
 ``FITTimeDomainSolver(boundary_conditions=…)`` (the classes live in
 ``magnelio.boundaries``).
 
-### 8.6 Ports — declarative objects, specs and operators
+### 8.7 Ports — declarative objects, specs and operators
 
 Declarative ports (top level; resolved by the analysis against the
 finished mesh):
@@ -824,7 +929,7 @@ All operators implement the :class:`Port` protocol: ``project_V``,
 ``name``, ``n_modes``.  This is what allows the unified
 ``PortSignalRecorder`` and the single ``ports=[…]`` slot on the solver.
 
-### 8.7 Problem-class roadmap (DD-224)
+### 8.8 Problem-class roadmap (DD-224)
 
 Problem classes are `Analysis<Problem><Formulation>`: the suffix names
 the formulation the user reasons in (`TD`/`FD`, written only where a

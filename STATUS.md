@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-23.*  **Released v0.8.2** (2026-09-09): **DD-270**
+*Last updated: 2026-09-28.*  **Released v0.8.2** (2026-09-09): **DD-270**
 the Poynting vector as a derived view of any recorded field (`poynting()`,
 `"S"` in the component vocabulary), **DD-271** three more readings of an
 S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
@@ -33,16 +33,16 @@ Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
+On `feat/geo-api-foundation`, the 36 WP0 geometry characterization tests pass; no geometry implementation has changed yet.
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
-This file states what *is*.  Chronology: `git log --first-parent main`;
-reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured
-floors regenerate from the `validation/` certificates their DDs name.
+This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
 
 ## Recent decisions
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-275** (2026-09-28, branch `feat/geo-api-foundation`, WP0) — accepted the breaking geometry-foundation contract without implementing it: public dimensional `Shape` categories (`Curve`, `Sheet`/`Profile`/`Surface`, `Solid`), owner-bound topology refs with named history rather than OCC indices, deterministic ambiguity failures, and immutable composable affine values.  `Face` splits into `Profile` and `FaceRef`; `Group` ceases to be a `Shape`; CSG becomes Solid-only; named transform methods stay but their repetition/fusion return-type switches go.  Baseline inventory: internal dossier `investigations/geo-api-foundation/`; gate `tests/unit/test_geo_api_baseline.py`.  WP1 is the next unstarted slice.
 * **DD-274** (2026-09-23) — viewer destination is independent of its rendering backend.  A plain script now serves the complete Magnelio toolbar through trame and opens it in the system browser; `target="native"` retains the PyVista/VTK window.  `target="inline"` keeps the Jupyter widget.  Zed's `kernel-zed-*.json` identity selects the browser automatically despite its ipykernel; `plots.configure_viewer(target="browser")` is the once-per-kernel switch for other editor REPLs that do not render the asynchronously filled `VBox`.  The browser server binds loopback on a daemon thread and is reused; missing trame warns and falls back to native.  `mode` remains `client`/`server`/`trame`/`static`/`none`, with `none` still returning the plotter.
   CI compatibility: PyVista 0.49 stores viewers in `trame_pyvista.ui`; OCC 8 requires an explicit trace-clearance check beyond offset contour counting (DD-135).
 * **DD-273** (2026-09-09, branch `feat/surface-current`) — the surface current is the wall-loss booking, read as a vector.  `surface_current(mesh)` on any recording, spectrum or `FieldState` gives `J_s = n × H` per wall patch; `enumerate_wall_patches` reads the [[DD-087]] enumeration the other way round (per patch: conformal area, outward normal `−w/‖w‖`, and *which* sample contributions it booked).  Magnitude from the loss booking (`|J_s|²A = Σw|H|²`, so `power_loss` **is** `MonitorWallLoss` — measured 0.9998 on a real run), direction from `n × H` with the weight-averaged samples.  Accuracy is inherited and does not refine away: coax inner conductor 1.3 %, shield 5.0 % against `√(P/Z₀)`, because the DD-098 pullback is calibrated on the quadratic loss while the current is linear in H; shipped deliberately, since the distribution is what a current picture is read for.  Four traps, all measured: grid quantities vs. physical fields ([[DD-085]], factor 1500), wall cells of a curved conductor are PEC-classified (dropping them loses 83 % of a mantle), a port plane holds the feed's *cross-section* and not a wall (+9.5 %, hence `exclude_faces=`), and a viewer display group must be registered in `_GROUPS` or its actor is built, filled and never shown.  `PECSurfaceData` removed: built for every conformal mesh, stored in every project, read by nothing, and it booked the *normal* H component.  Record `investigations/surface-current/` (internal dossier).
@@ -316,7 +316,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **3D viewer, browser review (DD-261…DD-267)** — closed: toolbar, volume representations, mirrored frames and phase play were driven in Chrome, and the developer confirmed the viewer after the DD-268 convention change (2026-09-08).  Left: the mouse bindings in the help dialog are read from the vtk.js bundle, not clicked through.
+* **Geometry API foundation (DD-275)** — WP0 is complete: the current surface and documented uses are inventoried, numerical/topological behaviour is characterized, and the hierarchy, selectors, topology evolution, transforms, names and failures are fixed.  WP1–WP6 remain unimplemented; current user code still sees the legacy `Shape`/`Face` API until those slices land.
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a
@@ -379,9 +379,6 @@ flickers to ``"done"`` between sequential runs; the reader skips
 * **Mesh build** — speed campaign closed 2026-08-29 (DD-201…DD-223;
   deferred work, A/B switches and traps in DD-223).  Open against it:
   KB-043.
-
-Closed construction sites are tombstoned where they were decided and
-are not repeated here.
 
 ## Deferred / nice-to-have
 
