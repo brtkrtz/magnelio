@@ -64,3 +64,25 @@ overriding inheritance.
 The [geometry construction guide](methods/geometry.md) explains exact curves,
 arbitrary orientation, holes and placement; Tutorial 14 constructs a hollow
 elbow and compares its volume with profile area times spine length.
+
+## Owned topology
+
+`Solid.face(near=..., normal=..., surface_type=...)`, `edge(...)` and
+`vertex(...)` now return owner-bound references. Keep enduring selections by
+calling `tag_face`, `tag_edge` or `tag_vertex` before placement, then retrieve
+the name from the placed owner. `faces`, `edges`, `tag_faces` and `tag_edges`
+are deliberate set operations. Numeric kernel indices are not supported.
+
+References have no independent transform methods. Detach a face with
+`face.detached()` or an edge with `edge.as_curve()` when standalone geometry
+is required. The existing solid modification signatures remain available.
+
+Ambiguous semantic picks raise `AmbiguousTopologyError`; refine the selector
+instead of relying on kernel order. Names follow affine placements exactly;
+construction that loses or splits a singular name raises
+`TopologyEvolutionError`. Name a set before an intentional split. Project
+geometry now retains names by replaying their semantic origins and construction
+histories; older projects without this metadata continue to load.
+
+[Tutorial 21](tutorials/plot_21_topology_selection.rst) names a coax end face,
+rotates its owner and detaches the placed annulus for a continuation.

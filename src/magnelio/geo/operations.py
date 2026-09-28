@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 
 from magnelio.geo._cache import cached_occ_shape
+from magnelio.geo._topology_history import finish
 from magnelio.geo.shape import Shape, Solid
 from magnelio.materials.material import resolve_material
 
@@ -88,6 +89,7 @@ class Union(Solid):
         material = resolve_material(material, "Union(material=...)")
         self.material = material if material is not None else shapes[0].material
         self.name = name
+        finish(self)
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
@@ -122,6 +124,7 @@ class Intersection(Solid):
         self.material = resolve_material(self.material, "Intersection(material=...)")
         if self.material is None:
             self.material = self.shape_a.material
+        finish(self)
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
@@ -165,11 +168,18 @@ class Difference(Solid):
         material = resolve_material(material, "Difference(material=...)")
         self.material = material if material is not None else base.material
         self.name = name
+        finish(self)
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
         from magnelio.geo._occ_backend import boolean_difference
 
+        if hasattr(self, "_topology_inputs"):
+            from magnelio.geo._occ_backend import boolean_difference_many
+
+            return boolean_difference_many(
+                self.base._occ_shape(scale), [t._occ_shape(scale) for t in self.tools]
+            )
         return boolean_difference(self.base._occ_shape(scale), self._occ_tools(scale))
 
     def _occ_tools(self, scale=1.0):

@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._sheet import Profile, Sheet
+from magnelio.geo._topology_history import finish
 from magnelio.geo._validate import finite, nonzero, point3, positive, vector3
 from magnelio.geo.shape import Solid
 from magnelio.materials.material import resolve_material
@@ -56,7 +57,7 @@ def chamfer(shape, *, near=None, face_near=None, edges=None, distance):
         distance = tuple(positive(d, "chamfered(distance)") for d in distance)
     else:
         distance = positive(distance, "chamfered(distance)")
-    return _ChamferedShape(shape, near, face_near, edges, distance)
+    return finish(_ChamferedShape(shape, near, face_near, edges, distance))
 
 
 def fillet(shape, *, near=None, face_near=None, edges=None, radius):
@@ -66,7 +67,7 @@ def fillet(shape, *, near=None, face_near=None, edges=None, radius):
     """
     _check_edge_selector("filleted", near, face_near, edges)
     radius = positive(radius, "filleted(radius)")
-    return _FilletedShape(shape, near, face_near, edges, radius)
+    return finish(_FilletedShape(shape, near, face_near, edges, radius))
 
 
 @dataclass
@@ -117,7 +118,7 @@ def extrude(shape, *, vector, face_near=None, material=None):
             "to extrude (only a standalone sheet may omit it)."
         )
     vector = vector3(vector, "extruded(vector)", nonzero=True)
-    return _ExtrudedFaceShape(shape, face_near, vector, material)
+    return finish(_ExtrudedFaceShape(shape, face_near, vector, material))
 
 
 def trace(curve, *, width, thickness, caps="round", normal=None, material=None, name=None):
@@ -130,7 +131,7 @@ def trace(curve, *, width, thickness, caps="round", normal=None, material=None, 
     thickness = nonzero(thickness, "traced(thickness)")
     if caps not in ("round", "flat"):
         raise ValueError(f"caps must be 'round' or 'flat'; got {caps!r}")
-    return _TracedCurveShape(curve, width, thickness, caps, normal, material, name)
+    return finish(_TracedCurveShape(curve, width, thickness, caps, normal, material, name))
 
 
 @dataclass
@@ -224,7 +225,9 @@ def loft(
     material = resolve_material(material, "lofted(material=...)")
     _check_blend(blend, allow_tangent=True)
     tension = _check_tension(tension, blend=blend)
-    return _LoftedShape(shape_a, face_near_a, shape_b, face_near_b, material, blend, tension)
+    return finish(
+        _LoftedShape(shape_a, face_near_a, shape_b, face_near_b, material, blend, tension)
+    )
 
 
 def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=None):
@@ -249,7 +252,7 @@ def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=
             f"full turn; got {angle_deg}."
         )
     origin = point3(origin, "revolved(origin)")
-    return _RevolvedShape(profile, axis, angle_deg, origin, material)
+    return finish(_RevolvedShape(profile, axis, angle_deg, origin, material))
 
 
 def shell(shape, *, thickness, opening_face_near=None):
@@ -263,7 +266,7 @@ def shell(shape, *, thickness, opening_face_near=None):
             "grow a sheet into a solid slab use thickened()."
         )
     thickness = positive(thickness, "shelled(thickness)")
-    return _ShelledShape(shape, thickness, opening_face_near)
+    return finish(_ShelledShape(shape, thickness, opening_face_near))
 
 
 def thicken(sheet, *, thickness, direction="forward", material=None):
@@ -377,7 +380,7 @@ def sweep(profile, spine, *, material=None):
             f"{type(spine).__name__}. Build the path with Curve.polyline / "
             f"Curve.arc / Curve.spline / Curve.helix, or draw it with Path."
         )
-    return _SweptShape(profile, spine, material)
+    return finish(_SweptShape(profile, spine, material))
 
 
 @dataclass

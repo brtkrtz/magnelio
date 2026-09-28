@@ -36,6 +36,17 @@ from magnelio.geo.path import Path
 from magnelio.geo.primitives import Brick, Cone, Cylinder, Sphere, Torus
 from magnelio.geo.shape import Shape, Solid
 from magnelio.geo.surfaces import Surface
+from magnelio.geo.topology import (
+    AmbiguousTopologyError,
+    EdgeRef,
+    EdgeSetRef,
+    FaceRef,
+    FaceSetRef,
+    TopologyEvolutionError,
+    TopologyRef,
+    TopologySelectionError,
+    VertexRef,
+)
 from magnelio.geo.transforms import Mirror, Rotation, Scale, Transform, Translation
 from magnelio.geo.wire import ThinWire
 
@@ -521,6 +532,15 @@ __all__ = [
     "Profile",
     "Surface",
     "Solid",
+    "TopologyRef",
+    "VertexRef",
+    "EdgeRef",
+    "FaceRef",
+    "EdgeSetRef",
+    "FaceSetRef",
+    "TopologySelectionError",
+    "AmbiguousTopologyError",
+    "TopologyEvolutionError",
     "Transform",
     "Translation",
     "Rotation",

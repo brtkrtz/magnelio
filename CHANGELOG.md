@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Owner-bound face, edge and vertex references with semantic selection,
+  read-only CAD measurements, connectivity and explicit detachment. Named
+  selections follow affine placements and provable construction histories;
+  ambiguous picks, deleted names and singular splits report explicit errors.
+  Projects retain semantic origins and replay named selection histories.
+  The geometry guide and topology-selection tutorial explain the workflow.
 - Exact `Curve.line`, `Curve.circle` and `Curve.ellipse` construction,
   CAD curve lengths, and planar `Profile` factories for polygons,
   oriented rectangles, discs, and closed boundaries with holes.

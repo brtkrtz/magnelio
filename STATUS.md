@@ -33,17 +33,17 @@ Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
-On `feat/geo-api-foundation`, WP0-WP2 implement the dimensional/affine
-foundation and exact Curve/Profile factories with validated intrinsic holes.
-All 93 foundation gates pass; final affected unit/integration: 650 passed.
-Full pre-amendment unit/integration: 3722 passed / 39 skipped.
+On `feat/geo-api-foundation`, WP0-WP3 implement dimensional/affine geometry,
+exact Curve/Profile factories with holes, owned topology and named histories.
+All 148 foundation gates and 41 API-documentation gates pass. The full suite
+passes 3799/40 skipped; 642 final regressions and 33/33 gallery examples pass; fresh Sphinx is clean.
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
 
 ## Recent decisions
 Newest first, one line each; the full record is the DD entry.
-* **DD-275** (2026-09-28, branch `feat/geo-api-foundation`, WP0-WP2) — dimensional geometry and affine values are implemented; exact line/circle/ellipse curves and world-coordinate Profile factories now replace `Face`/`Curve.covered()` without aliases. Profiles validate closed coplanar boundaries, intersections and hole nesting immediately; area excludes holes and boundary extraction returns standalone curves. Extrusion, revolution, sweep and loft retain holes; lofts match inner wires in input order and inherit the first profile's material. Methods/API prose, Tutorial 14, geometry upgrade guide and affected examples are migrated. Transform array/copy/group/fusion options are retained by the developer-review amendment, with Solid-only fusion and material-preserving assembly copies. All 93 foundation gates and 650 affected unit/integration tests pass; all 32 executable gallery examples and the final full Sphinx build pass (known configuration-cache diagnostic suppressed). Owner-bound topology refs/history/selectors remain WP3. Internal dossier: `investigations/geo-api-foundation/`; focused gates: `tests/unit/test_geo_transform_foundation.py`, `tests/unit/test_geo_profiles_foundation.py`.
+* **DD-275** (2026-09-28, branch `feat/geo-api-foundation`, WP0-WP3) — dimensional geometry, exact curves, Profile factories with intrinsic holes, and affine array/copy/group/fusion options are implemented and documented. Owner-bound face/edge/vertex refs now provide semantic selectors, immutable tags, read-only measurements and explicit detachment. Names follow affine placements and provable OCC histories; ties, lost/split singular names and operand-name conflicts raise explicitly. Deliberate sets retain splits/merges, with deletion still refused. Project geometry persists semantic origins and named construction branches without subshape indices, validating cardinality on replay. Per-owner/per-scale inventories and bounding-box screening support hundreds of faces. Methods/API prose, upgrade guide and Tutorial 21 cover this slice; direct FaceRef-consuming operations remain WP4 and relative paths WP5. All 148 foundation gates and 41 API-documentation tests pass; full suite 3799/40 skipped, 642 final regressions, 33/33 gallery examples and fresh Sphinx pass. Internal dossier: `investigations/geo-api-foundation/`; focused gate: `tests/unit/test_geo_topology_foundation.py`.
 * **DD-274** (2026-09-23) — viewer destination is independent of its rendering backend.  A plain script now serves the complete Magnelio toolbar through trame and opens it in the system browser; `target="native"` retains the PyVista/VTK window.  `target="inline"` keeps the Jupyter widget.  Zed's `kernel-zed-*.json` identity selects the browser automatically despite its ipykernel; `plots.configure_viewer(target="browser")` is the once-per-kernel switch for other editor REPLs that do not render the asynchronously filled `VBox`.  The browser server binds loopback on a daemon thread and is reused; missing trame warns and falls back to native.  `mode` remains `client`/`server`/`trame`/`static`/`none`, with `none` still returning the plotter.
   CI compatibility: PyVista 0.49 stores viewers in `trame_pyvista.ui`; OCC 8 requires an explicit trace-clearance check beyond offset contour counting (DD-135).
 * **DD-273** (2026-09-09, branch `feat/surface-current`) — the surface current is the wall-loss booking, read as a vector.  `surface_current(mesh)` on any recording, spectrum or `FieldState` gives `J_s = n × H` per wall patch; `enumerate_wall_patches` reads the [[DD-087]] enumeration the other way round (per patch: conformal area, outward normal `−w/‖w‖`, and *which* sample contributions it booked).  Magnitude from the loss booking (`|J_s|²A = Σw|H|²`, so `power_loss` **is** `MonitorWallLoss` — measured 0.9998 on a real run), direction from `n × H` with the weight-averaged samples.  Accuracy is inherited and does not refine away: coax inner conductor 1.3 %, shield 5.0 % against `√(P/Z₀)`, because the DD-098 pullback is calibrated on the quadratic loss while the current is linear in H; shipped deliberately, since the distribution is what a current picture is read for.  Four traps, all measured: grid quantities vs. physical fields ([[DD-085]], factor 1500), wall cells of a curved conductor are PEC-classified (dropping them loses 83 % of a mantle), a port plane holds the feed's *cross-section* and not a wall (+9.5 %, hence `exclude_faces=`), and a viewer display group must be registered in `_GROUPS` or its actor is built, filled and never shown.  `PECSurfaceData` removed: built for every conformal mesh, stored in every project, read by nothing, and it booked the *normal* H component.  Record `investigations/surface-current/` (internal dossier).
@@ -100,8 +100,8 @@ Newest first, one line each; the full record is the DD entry.
 ## Script directories
 
 `examples/` is the public-API surface — `examples/tutorials/` holds the
-20 gallery tutorials, no internal imports, all running to completion on
-the GPU box on pure defaults (the DD-096 port-signal criterion is on by
+21 gallery tutorials (21 on the foundation branch), with no internal imports.
+Released tutorials run on the GPU box on pure defaults (the DD-096 criterion is on by
 default, DD-114: the energy criterion alone never fires on a shielded
 lossless structure's TM-cut-off plateau).  `validation/` holds the
 scripts that legitimately use internals — the certificates regenerating
@@ -284,7 +284,7 @@ of the run, in double it is flat (−149.12 → −149.13 dB).
 (`pip install -e .[docs]`, `sphinx-build -b html docs
 docs/_build/html`; warning-free — verified with `sphinx -E`, a cached
 rebuild proves nothing).  Pillars: Tutorials (from
-`examples/tutorials/*.py`, 01–20 shipped; full gallery ~8:40, of which
+`examples/tutorials/*.py`, 01–20 released, 21 on the foundation branch; of which
 tutorial 13, the DR-filter capstone, is ~5.5 min), API reference,
 Numerical methods (thirteen chapters, every method cited, in-house
 derivations marked in prose), Bibliography.  `docs/references.bib`
@@ -317,7 +317,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **Geometry API foundation (DD-275)** — WP0-WP2 are complete: hierarchy, affine algebra with explicit array/copy/aggregation convenience, Solid-only CSG, exact curves and Profile factories with intrinsic holes are implemented and documented. `Face`, `Curve.covered()` and `PlanarSheet` are removed. WP3-WP6 remain; topology references begin in WP3. All 32 executable gallery examples and the final full Sphinx build pass (known configuration-cache diagnostic suppressed).
+* **Geometry API foundation (DD-275)** — WP0-WP3 are implemented: dimensional hierarchy, exact curves/Profile holes, affine convenience, owned topology, semantic/named selection, history failures and project replay. `Face`, `Curve.covered()` and `PlanarSheet` are removed. Methods and Tutorial 21 document coax face selection after placement, detachment and intentional splits. WP4-WP6 remain; uniform FaceRef-consuming operations begin in WP4. Full suite 3799/40 skipped, 642 final regressions, 33/33 gallery examples and fresh Sphinx pass.
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

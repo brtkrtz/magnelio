@@ -22,7 +22,7 @@ Directory layout (the write-once model, plus the ``runs/`` and
   ``BRepTools`` (exact, lossless round-trip); the shape → material
   mapping rides in ``geometry.json`` in the same order the compound
   iterates.  BREP carries the boundary representation only, so the
-  reconstructed geometry is kernel-shape-backed
+  untagged reconstructed geometry is kernel-shape-backed
   (:class:`~magnelio.geo.ImportedSolid`) —
   the original ``Brick`` / ``Difference`` CSG tree is not recovered
   (by design; the store serves visualisation, documentation and
@@ -3206,7 +3206,9 @@ class ProjectStore:
         geometry : GeometryModel or list, optional
             Source geometry.  When given, an exact ``geometry.brep`` is
             written, plus a ``geometry.json`` carrying per-shape names
-            and materials in compound order.  The tessellated
+            and materials in compound order. Named topology also stores
+            semantic origins and construction histories for validated replay.
+            The tessellated
             ``geometry.vtm`` for ParaView is written by
             :meth:`Project.export_paraview`.
         setup : dict, optional
@@ -3278,6 +3280,7 @@ class ProjectStore:
             _save_mesh(f, mesh)
 
     def _write_geometry(self, geometry) -> None:
+        from magnelio.geo._topology_store import to_recipe  # noqa: PLC0415
         from magnelio.geo.wire import ThinWire  # noqa: PLC0415
 
         shapes = list(geometry)
@@ -3291,6 +3294,7 @@ class ProjectStore:
         _write_json_atomic(
             self.path / "geometry.json",
             {
+                "topology_recipes": [to_recipe(s) for s in shapes],
                 "materials": [_material_to_dict(s.material) for s in shapes],
                 "names": [getattr(s, "name", None) for s in shapes],
                 "kinds": ["wire" if isinstance(s, ThinWire) else "solid" for s in shapes],
@@ -4312,7 +4316,9 @@ class Project(ScatteringResultMixin):
         """The reconstructed geometry (:class:`LoadedGeometry`) or ``None``.
 
         Requires OCC.  Returns ``None`` if the project carries no
-        geometry (``geometry.brep`` absent).
+        geometry (``geometry.brep`` absent). Named topology is rebuilt from
+        its stored semantic origins and construction histories; invalid
+        successor identity raises TopologyEvolutionError.
         """
         if self._geometry is None:
             from magnelio.geo.imported import ImportedSolid  # noqa: PLC0415
@@ -4346,9 +4352,18 @@ class Project(ScatteringResultMixin):
                 )
             names = gj.get("names", [None] * len(mats))
             colors = gj.get("colors") or [None] * len(mats)
+            from magnelio.geo._topology_store import from_recipe  # noqa: PLC0415
+
+            recipes = gj.get("topology_recipes", [None] * len(mats))
+            if len(recipes) != len(mats):
+                raise ValueError(
+                    "Geometry topology metadata count does not match the material list."
+                )
             shapes = [
-                ImportedSolid(s, m, name=n, color=tuple(c) if c is not None else None)
-                for s, m, n, c, kind in zip(occ_shapes, mats, names, colors, kinds)
+                from_recipe(recipe)
+                if recipe is not None
+                else ImportedSolid(s, m, name=n, color=tuple(c) if c is not None else None)
+                for s, m, n, c, kind, recipe in zip(occ_shapes, mats, names, colors, kinds, recipes)
                 if kind != "wire"
             ]
             self._geometry = LoadedGeometry(shapes, background)

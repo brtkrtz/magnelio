@@ -6,6 +6,7 @@ import math
 from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
+from magnelio.geo._topology_history import finish
 from magnelio.geo._validate import count, finite, nonzero, point3, vector3
 from magnelio.geo.shape import Shape, Solid
 
@@ -237,7 +238,7 @@ def _apply(transform: Transform, shape: Shape):
     if isinstance(shape, _TransformedShape):
         transform = transform @ shape._transform
         shape = shape._inner
-    return _category_wrapper(shape)(shape, transform)
+    return finish(_category_wrapper(shape)(shape, transform))
 
 
 def _transform_curve(transform: Transform, curve):

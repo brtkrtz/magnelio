@@ -16,6 +16,15 @@ EXPECTED_EXPORTS = [
     "Profile",
     "Surface",
     "Solid",
+    "TopologyRef",
+    "VertexRef",
+    "EdgeRef",
+    "FaceRef",
+    "EdgeSetRef",
+    "FaceSetRef",
+    "TopologySelectionError",
+    "AmbiguousTopologyError",
+    "TopologyEvolutionError",
     "Transform",
     "Translation",
     "Rotation",
@@ -243,7 +252,7 @@ def test_face_selection_is_a_loose_point_consumed_by_the_operation():
 
     # Solid-face extrusion returns the new prism, not a union with the input.
     assert extended.volume() == pytest.approx(1.0, rel=1e-12)
-    assert not hasattr(body, "face")
+    assert isinstance(body.face(near=(0.5, 0.5, 1.0)), geo.FaceRef)
 
 
 def test_equidistant_nearest_face_currently_uses_kernel_order():

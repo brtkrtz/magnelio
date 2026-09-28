@@ -37,7 +37,12 @@ def cached_occ_shape(method: Callable[..., Any]) -> Callable[..., Any]:
         cached = cache.get(key)
         if cached is not None:
             return cached
-        result = method(self, key)
+        if hasattr(self, "_topology_inputs"):
+            from magnelio.geo._topology_history import evaluate
+
+            result = evaluate(self, key, method)
+        else:
+            result = method(self, key)
         cache[key] = result
         return result
 

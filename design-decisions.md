@@ -22484,8 +22484,8 @@ or server is started for them.
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
 **Date:** 2026-09-28.
-**Status:** Accepted as the geometry-foundation contract; WP0 through WP2 are
-implemented on `feat/geo-api-foundation`, with WP3 next.
+**Status:** Accepted as the geometry-foundation contract; WP0 through WP3 are
+implemented on `feat/geo-api-foundation`, with WP4 next.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -22803,3 +22803,71 @@ vocabulary. All 32 selected gallery examples execute successfully, and the
 final full Sphinx build passes with the known configuration-cache diagnostic
 suppressed. Two existing tutorial RST formatting defects found by this gate
 are corrected.
+
+
+**WP3 implementation (2026-09-28).** `TopologyRef`, `VertexRef`, `EdgeRef`,
+`FaceRef`, `EdgeSetRef` and `FaceSetRef` are immutable owner-bound views of a
+Solid, with the accepted read-only measurements and connectivity. Semantic
+selectors filter analytic type and oriented normal before measuring distance
+to the complete trimmed subshape. Ties at the converted kernel tolerance
+raise with candidate summaries. Plural selection deliberately retains ties;
+without constraints it selects all members. For curved faces, a normal filter
+requires a near point and evaluates the closest point; without near it filters
+planar faces. Public indices remain absent.
+
+Registration returns an owner wrapper preserving the receiver and metadata.
+Names are unique per kind, and singular/set lookups enforce their declared
+cardinality. Affine history follows the actual transformed topology, including
+reflections and negative scale. Normal evaluation uses surface derivatives;
+Planarity is geometric, using GeomLib_IsPlanarSurface at kernel tolerance; a
+flat B-spline face detaches by re-covering its exact wires with a plane so the
+Profile operation contract remains usable. Analytic plane frames can become
+indirect under reflection, so reading only
+the plane axis gave the wrong sign. The existing planar outward-normal helper
+now accounts for that frame parity as well.
+
+Named construction is eager at the public operation call: a scoped ContextVar
+captures the relevant OCC builders after all direct sources are evaluated,
+maps same-kind Modified/Generated results,
+checks final owner membership, and releases the builders after resolution.
+Intermediate predecessors remain candidates until final owner membership is
+checked: a closed shell has parallel original/offset branches, not merely a
+linear replacement chain. Lazy untagged tools are built outside capture so
+their histories cannot delete or remap a named base.
+Unchanged identity in the result is accepted as proof even where kernel
+IsDeleted is incomplete for edges/vertices. Singular splits, missing/deleted
+successors and conflicting operand names raise. Sets can split or merge after
+deduplication, but deletion of any selected member still fails. Untagged
+geometry keeps the established lazy and fast fusion paths. Tagged Union and
+Difference use history-producing N-ary kernel passes, avoiding the planar
+fusion/pre-fused-tool paths that discard source history.
+
+Project metadata is additive and versioned: a DAG retains semantic origins
+and named construction branches; untagged origins are exact scaled BREP
+snapshots. Read-back replays only a closed set of internal operation codecs,
+validating origin and final cardinality. It never stores subshape indices or
+reselects transformed names by geometry. Saved snapshot scale is retained to
+avoid degrading nanometre topology by a meter-space round trip. Legacy
+projects without this metadata keep the final-BREP reader.
+
+Detachment returns an independent Curve, planar Profile with its real holes,
+or curved Surface, retaining world placement and the owner's face material.
+Only Solid owners register selections. Direct FaceRef construction verbs,
+uniform operation arguments and relative Path poses remain WP4/WP5. History
+adapters cover the existing kernel construction steps, but a wire-based loft
+can report no provable face successor and a shell can split one source face
+into outer/inner successors. Those cases are explicit, tested failures rather
+than an inferred nearest match.
+
+Gate: `tests/unit/test_geo_topology_foundation.py`; the methods/API pages,
+geometry upgrade guide, Unreleased changelog and Tutorial 21 explain the same
+shipped slice. The tutorial names a coax end before rotation, retrieves and
+detaches the placed annulus, shows a volume-checked straight continuation and
+a cap set split by a slot. Per-owner/per-scale topology inventories and cached
+bounding boxes support hundreds of faces; nearest queries screen bounds before
+kernel distance evaluations. Verification: 55 WP3 tests, 642 final relevant tests; full suite 3799 passed /
+40 skipped (before the last three regression additions and scoped-history/
+planarity corrections, covered by the final relevant run). All 33 selected
+gallery examples execute; a fresh Sphinx build and repository gates pass.
+Private verification and performance records are in
+`investigations/geo-api-foundation/WP3-VERIFICATION.md` (internal record).

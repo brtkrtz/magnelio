@@ -24,8 +24,19 @@ read-only measurements; `Profile.boundary()` returns detached boundary curves.
 See [geometry construction](../methods/geometry.md) for orientation, validation,
 and hole correspondence during lofting.
 
+Owned topology is separate from standalone geometry: `TopologyRef`,
+`VertexRef`, `EdgeRef`, `FaceRef`, `EdgeSetRef` and `FaceSetRef` hold one
+`Solid` owner. The Solid selectors `face`, `edge`, `vertex`, `faces` and
+`edges` accept semantic constraints or registered names; `tag_face`,
+`tag_edge`, `tag_vertex`, `tag_faces` and `tag_edges` register immutable names.
+`TopologySelectionError`, `AmbiguousTopologyError` and `TopologyEvolutionError`
+distinguish missing, tied and lost selections. The
+{ref}`owned topology guide <geometry-owned-topology>`
+explains measurements, detachment, history failures and project persistence.
+
 ```{eval-rst}
 .. automodule:: magnelio.geo
    :members:
    :imported-members:
+   :inherited-members:
 ```

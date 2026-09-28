@@ -102,6 +102,109 @@ operation overrides the profile material; otherwise the material is inherited
 (`Loft` uses its first section). Construction profiles need an explicit
 material for extrusion, revolution and sweep.
 
+(geometry-owned-topology)=
+## Owned topology and named selections
+
+A body face is a `FaceRef`, an edge is an `EdgeRef`, and a vertex is a
+`VertexRef`. These are read-only views owned by one immutable `Solid`.
+They carry their owner; they are not standalone shapes and cannot be moved,
+added to a model, or combined with Boolean operators. Use `face.detached()`
+to obtain a standalone `Profile` for a planar face or `Surface` for a curved
+one, and `edge.as_curve()` for a standalone curve. Detachment keeps world
+placement, face holes and the owner's material.
+
+Select by physical meaning rather than kernel indices. `body.face(near=p)`
+minimises distance to the complete trimmed face, including its boundaries;
+it does not compare centroids. `normal=` compares oriented outward normals,
+and `surface_type=` filters plane, cylinder, cone, sphere, torus, bspline or
+other surfaces. Without `near`, a normal constraint selects planar faces;
+with `near`, a curved face is tested at the closest point. Edges accept
+`curve_type=` (line, circle, ellipse, hyperbola, parabola, bezier, bspline,
+other); vertices accept `near=`. Filters apply before the distance comparison.
+
+A singular selection needs at least one constraint. No match raises
+`TopologySelectionError`; equally eligible candidates within the model's
+converted CAD tolerance raise `AmbiguousTopologyError`. A point on a shared
+edge can select two faces equally well: add a normal or surface-type
+constraint. `body.faces(...)` and `body.edges(...)` deliberately return iterable
+`FaceSetRef` and `EdgeSetRef` values. Without constraints they select all faces
+or edges; with `near` they retain all nearest ties.
+
+Register a selection before placement when it has an enduring physical role:
+
+```python
+from magnelio import geo
+
+coax = geo.Cylinder(radius=2e-3, inner_radius=1e-3, height=5e-3, material="pec")
+coax = coax.tag_face("port", near=(1.5e-3, 0, 5e-3), normal="z")
+coax = coax.rotated("y", 22.5)
+port = coax.face("port")
+profile = port.detached()
+extension = profile.extruded(tuple(1e-3 * n for n in port.normal))
+```
+
+Names are non-empty strings, unique per topology kind on their owner.
+`tag_face`, `tag_edge`, `tag_vertex`, `tag_faces` and `tag_edges` return a new
+owner; the input stays unchanged. Named lookup cannot be combined with
+semantic constraints. Retrieve a singular tag with the singular selector
+and a set tag with the plural selector.
+
+Intrinsic measurements are read-only properties: `vertex.point`;
+`edge.length`, `start`, `end`, `vertices`; and `face.centroid`, `area`,
+`is_planar`, `edges`, `vertices`. Positions and lengths are in metres and areas
+in square metres. Edge endpoints follow the edge's orientation on its owner;
+reflection may reverse their traversal order. Boundary connectivity includes
+inner wires and deduplicates
+shared vertices and seam edges. A planar face has a constant outward `normal`.
+Planarity is measured geometrically: a flat B-spline patch is planar even
+when its analytic `surface_type` remains `bspline`. Detachment covers its exact
+boundaries with a plane, giving a usable Profile.
+For a curved face use `normal_at(point)` with a point on the trimmed face;
+reading its `.normal` raises `ValueError`.
+
+### How names follow construction
+
+Translation, rotation, reflection and uniform scaling preserve names exactly,
+including their new placement and outward orientation. An unnamed reference
+continues to describe its original owner; transform the tagged owner and look
+up the name there. Group placements keep each member's names independently.
+
+Boolean and modification operations use the CAD kernel's construction history.
+A singular name survives only with one provable successor. Deleted selections,
+unprovable successors and singular names that split raise
+`TopologyEvolutionError` during the construction call. The implementation never
+falls back to the nearest face. When a split is intentional, register a set
+before performing it:
+
+```python
+block = geo.Brick(size=(2e-3, 2e-3, 2e-3), material="pec")
+block = block.tag_faces("cap", normal="z")
+slot = geo.Brick(origin=(0.9e-3, -1e-3, -1e-3), size=(0.2e-3, 4e-3, 4e-3))
+split = block - slot
+assert len(split.faces("cap")) == 2
+```
+
+A set can split or merge, but deleting any selected member still raises.
+Different operands carrying the same topology name must prove the same selection;
+otherwise their Boolean combination reports a name conflict. In particular,
+fusing tagged array copies can conflict; group them when each copy needs its
+own selection names. Names should be registered after fusion when they describe
+the fused body.
+
+History availability depends on the operation and kernel. A shell can map an
+outer face to both an outer and an inner face; use a deliberate set when that
+is intended. A face-to-face loft built from boundary wires may provide no
+provable face successor, so retaining that singular tag fails explicitly.
+Detaching a face creates independent geometry and intentionally leaves the
+owner's names behind. Existing profile construction verbs and loose-point
+solid modification verbs retain their signatures.
+
+Projects persist the semantic origin of each name and the relevant construction
+path, with exact geometry snapshots at untagged origins. Read-back replays that
+path and validates the registered and final cardinalities before exposing names.
+It stores no subshape enumeration indices. Topology enumeration is cached per
+owner and model scale; repeated named lookup resolves from the owner's cache.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:

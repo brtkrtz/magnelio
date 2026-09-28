@@ -656,6 +656,285 @@ class Solid(Shape):
     accept only ``Solid`` operands.
     """
 
+    def face(self, name=None, *, near=None, normal=None, surface_type=None):
+        """Select one owned face, or retrieve a registered name.
+
+        Parameters
+        ----------
+        name : str, optional
+            Registered singular selection name; excludes semantic constraints.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        normal : str or tuple of float, optional
+            Outward unit normal constraint. Curved faces require near; without
+            near this filters planar faces only.
+        surface_type : str, optional
+            plane, cylinder, cone, sphere, torus, bspline or other.
+
+        Returns
+        -------
+        FaceRef
+            Read-only view bound to this Solid. At least one semantic constraint
+            is required for unnamed selection.
+
+        Raises
+        ------
+        TopologySelectionError
+            If no candidate or matching registered name exists.
+        AmbiguousTopologyError
+            If a singular selection has equally eligible candidates. Supply
+            additional constraints or use a plural selector deliberately.
+        """
+        from magnelio.geo.topology import select
+
+        return select(
+            self, "face", name, near=near, normal=normal, surface_type=surface_type, plural=False
+        )
+
+    def tag_face(self, name, *, near=None, normal=None, surface_type=None):
+        """Register an immutable named face selection.
+
+        Parameters
+        ----------
+        name : str
+            Non-empty name, unique within this topology kind on this owner.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        normal : str or tuple of float, optional
+            Outward unit normal constraint. Curved faces require near; without
+            near this filters planar faces only.
+        surface_type : str, optional
+            plane, cylinder, cone, sphere, torus, bspline or other.
+
+        Returns
+        -------
+        Solid
+            New owner with the selection registered. The receiver is unchanged.
+            Affine transforms preserve it; construction requires provable OCC
+            successors and raises TopologyEvolutionError if identity is lost.
+        """
+        from magnelio.geo.topology import tag
+
+        return tag(
+            self, "face", name, near=near, normal=normal, surface_type=surface_type, plural=False
+        )
+
+    def faces(self, name=None, *, near=None, normal=None, surface_type=None):
+        """Select a deliberate set of owned faces, or retrieve a registered name.
+
+        Parameters
+        ----------
+        name : str, optional
+            Registered set selection name; excludes semantic constraints.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        normal : str or tuple of float, optional
+            Outward unit normal constraint. Curved faces require near; without
+            near this filters planar faces only.
+        surface_type : str, optional
+            plane, cylinder, cone, sphere, torus, bspline or other.
+
+        Returns
+        -------
+        FaceSetRef
+            Read-only view bound to this Solid. With no constraints, selects all members.
+
+        Raises
+        ------
+        TopologySelectionError
+            If no candidate or matching registered name exists.
+        AmbiguousTopologyError
+            If a singular selection has equally eligible candidates. Supply
+            additional constraints or use a plural selector deliberately.
+        """
+        from magnelio.geo.topology import select
+
+        return select(
+            self, "face", name, near=near, normal=normal, surface_type=surface_type, plural=True
+        )
+
+    def tag_faces(self, name, *, near=None, normal=None, surface_type=None):
+        """Register an immutable named set of faces.
+
+        Parameters
+        ----------
+        name : str
+            Non-empty name, unique within this topology kind on this owner.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        normal : str or tuple of float, optional
+            Outward unit normal constraint. Curved faces require near; without
+            near this filters planar faces only.
+        surface_type : str, optional
+            plane, cylinder, cone, sphere, torus, bspline or other.
+
+        Returns
+        -------
+        Solid
+            New owner with the selection registered. The receiver is unchanged.
+            Affine transforms preserve it; construction requires provable OCC
+            successors and raises TopologyEvolutionError if identity is lost.
+        """
+        from magnelio.geo.topology import tag
+
+        return tag(
+            self, "face", name, near=near, normal=normal, surface_type=surface_type, plural=True
+        )
+
+    def edge(self, name=None, *, near=None, curve_type=None):
+        """Select one owned edge, or retrieve a registered name.
+
+        Parameters
+        ----------
+        name : str, optional
+            Registered singular selection name; excludes semantic constraints.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        curve_type : str, optional
+            line, circle, ellipse, hyperbola, parabola, bezier, bspline or other.
+
+        Returns
+        -------
+        EdgeRef
+            Read-only view bound to this Solid. At least one semantic constraint
+            is required for unnamed selection.
+
+        Raises
+        ------
+        TopologySelectionError
+            If no candidate or matching registered name exists.
+        AmbiguousTopologyError
+            If a singular selection has equally eligible candidates. Supply
+            additional constraints or use a plural selector deliberately.
+        """
+        from magnelio.geo.topology import select
+
+        return select(self, "edge", name, near=near, curve_type=curve_type, plural=False)
+
+    def tag_edge(self, name, *, near=None, curve_type=None):
+        """Register an immutable named edge selection.
+
+        Parameters
+        ----------
+        name : str
+            Non-empty name, unique within this topology kind on this owner.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        curve_type : str, optional
+            line, circle, ellipse, hyperbola, parabola, bezier, bspline or other.
+
+        Returns
+        -------
+        Solid
+            New owner with the selection registered. The receiver is unchanged.
+            Affine transforms preserve it; construction requires provable OCC
+            successors and raises TopologyEvolutionError if identity is lost.
+        """
+        from magnelio.geo.topology import tag
+
+        return tag(self, "edge", name, near=near, curve_type=curve_type, plural=False)
+
+    def edges(self, name=None, *, near=None, curve_type=None):
+        """Select a deliberate set of owned edges, or retrieve a registered name.
+
+        Parameters
+        ----------
+        name : str, optional
+            Registered set selection name; excludes semantic constraints.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        curve_type : str, optional
+            line, circle, ellipse, hyperbola, parabola, bezier, bspline or other.
+
+        Returns
+        -------
+        EdgeSetRef
+            Read-only view bound to this Solid. With no constraints, selects all members.
+
+        Raises
+        ------
+        TopologySelectionError
+            If no candidate or matching registered name exists.
+        AmbiguousTopologyError
+            If a singular selection has equally eligible candidates. Supply
+            additional constraints or use a plural selector deliberately.
+        """
+        from magnelio.geo.topology import select
+
+        return select(self, "edge", name, near=near, curve_type=curve_type, plural=True)
+
+    def tag_edges(self, name, *, near=None, curve_type=None):
+        """Register an immutable named set of edges.
+
+        Parameters
+        ----------
+        name : str
+            Non-empty name, unique within this topology kind on this owner.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+        curve_type : str, optional
+            line, circle, ellipse, hyperbola, parabola, bezier, bspline or other.
+
+        Returns
+        -------
+        Solid
+            New owner with the selection registered. The receiver is unchanged.
+            Affine transforms preserve it; construction requires provable OCC
+            successors and raises TopologyEvolutionError if identity is lost.
+        """
+        from magnelio.geo.topology import tag
+
+        return tag(self, "edge", name, near=near, curve_type=curve_type, plural=True)
+
+    def vertex(self, name=None, *, near=None):
+        """Select one owned vertex, or retrieve a registered name.
+
+        Parameters
+        ----------
+        name : str, optional
+            Registered singular selection name; excludes semantic constraints.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+
+        Returns
+        -------
+        VertexRef
+            Read-only view bound to this Solid. At least one semantic constraint
+            is required for unnamed selection.
+
+        Raises
+        ------
+        TopologySelectionError
+            If no candidate or matching registered name exists.
+        AmbiguousTopologyError
+            If a singular selection has equally eligible candidates. Supply
+            additional constraints or use a plural selector deliberately.
+        """
+        from magnelio.geo.topology import select
+
+        return select(self, "vertex", name, near=near, plural=False)
+
+    def tag_vertex(self, name, *, near=None):
+        """Register an immutable named vertex selection.
+
+        Parameters
+        ----------
+        name : str
+            Non-empty name, unique within this topology kind on this owner.
+        near : tuple of float, optional
+            World point in metres; distance is measured to the complete subshape.
+
+        Returns
+        -------
+        Solid
+            New owner with the selection registered. The receiver is unchanged.
+            Affine transforms preserve it; construction requires provable OCC
+            successors and raises TopologyEvolutionError if identity is lost.
+        """
+        from magnelio.geo.topology import tag
+
+        return tag(self, "vertex", name, near=near, plural=False)
+
 
 def _is_shape(obj) -> bool:
     """True for anything the CSG operators can meaningfully combine.

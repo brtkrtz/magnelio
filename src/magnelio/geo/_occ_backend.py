@@ -34,6 +34,7 @@ from magnelio.geo._line_kernels import (
     planar_point_state,
     segment_fractions,
 )
+from magnelio.geo._topology_history import result as _history_result
 
 
 def _require_occ():
@@ -304,7 +305,7 @@ def _run_bop(op_cls, arguments: list, tools: list):
             f"OCC Boolean operation {op_cls.__name__} failed "
             f"({len(arguments)} argument(s), {len(tools)} tool(s))."
         )
-    return op.Shape()
+    return _history_result(op)
 
 
 def boolean_union(shapes: list):
@@ -324,6 +325,10 @@ def boolean_union(shapes: list):
     occ = _require_occ()
     if len(shapes) == 1:
         return shapes[0]
+    from magnelio.geo._topology_history import recording  # noqa: PLC0415
+
+    if recording():
+        return _run_bop(occ["Fuse"], shapes[:1], shapes[1:])
     from magnelio.geo._prism_fuse import fuse_shapes  # noqa: PLC0415
 
     def fuse(parts):
@@ -1056,7 +1061,7 @@ def occ_translate(shape, vector: tuple, scale: float = 1.0):
     occ = _require_occ()
     trsf = occ["gp_Trsf"]()
     trsf.SetTranslation(occ["gp_Vec"](*_scale3(vector, scale)))
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 def occ_rotate(shape, axis: tuple, angle_deg: float, origin: tuple, scale: float = 1.0):
@@ -1067,7 +1072,7 @@ def occ_rotate(shape, axis: tuple, angle_deg: float, origin: tuple, scale: float
     ax1 = occ["gp_Ax1"](occ["gp_Pnt"](*_scale3(origin, scale)), occ["gp_Dir"](*axis))
     trsf = occ["gp_Trsf"]()
     trsf.SetRotation(ax1, math.radians(angle_deg))
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 def occ_scale(shape, factor: float, center: tuple, scale: float = 1.0):
@@ -1075,7 +1080,7 @@ def occ_scale(shape, factor: float, center: tuple, scale: float = 1.0):
     occ = _require_occ()
     trsf = occ["gp_Trsf"]()
     trsf.SetScale(occ["gp_Pnt"](*_scale3(center, scale)), factor)
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 def occ_mirror(shape, normal: tuple, position: float, scale: float = 1.0):
@@ -1092,7 +1097,7 @@ def occ_mirror(shape, normal: tuple, position: float, scale: float = 1.0):
     ax2 = occ["gp_Ax2"](occ["gp_Pnt"](*_scale3(point, scale)), occ["gp_Dir"](*normal))
     trsf = occ["gp_Trsf"]()
     trsf.SetMirror(ax2)
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 def occ_transform(shape, matrix: tuple, scale: float = 1.0):
@@ -1117,7 +1122,7 @@ def occ_transform(shape, matrix: tuple, scale: float = 1.0):
         matrix[2][2],
         matrix[2][3] * scale,
     )
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 # ---------------------------------------------------------------------------
@@ -7864,7 +7869,7 @@ def make_thick_solid(shape, opening_faces, thickness: float, scale: float = 1.0)
             raise RuntimeError(failure) from exc
         if built is None or built.IsNull():
             raise RuntimeError(failure)
-        return built
+        return _history_result(maker)
 
     opening_faces = list(opening_faces)
     if not opening_faces:
@@ -8067,7 +8072,7 @@ def make_chamfer(shape, edges, dist, scale: float = 1.0):
     chamfer_maker.Build()
     if not chamfer_maker.IsDone():
         raise RuntimeError("OCC chamfer operation failed.")
-    return chamfer_maker.Shape()
+    return _history_result(chamfer_maker)
 
 
 def make_fillet(shape, edges, radius, scale: float = 1.0):
@@ -8102,7 +8107,7 @@ def make_fillet(shape, edges, radius, scale: float = 1.0):
     fillet_maker.Build()
     if not fillet_maker.IsDone():
         raise RuntimeError("OCC fillet operation failed.")
-    return fillet_maker.Shape()
+    return _history_result(fillet_maker)
 
 
 # ---------------------------------------------------------------------------
@@ -8343,7 +8348,7 @@ def make_extrude(face, vector, scale: float = 1.0):
     prism.Build()
     if not prism.IsDone():
         raise RuntimeError("OCC extrude (prism) operation failed.")
-    return prism.Shape()
+    return _history_result(prism)
 
 
 #: Two outward face normals whose sum is shorter than this count as
@@ -8393,7 +8398,7 @@ def make_loft(wires, is_solid=True, is_ruled=False):
     thru.Build()
     if not thru.IsDone():
         raise RuntimeError("OCC loft (ThruSections) operation failed.")
-    return thru.Shape()
+    return _history_result(thru)
 
 
 def face_outward_normal(face):
@@ -8434,7 +8439,10 @@ def face_outward_normal(face):
     surf = BRepAdaptor_Surface(face)
     if surf.GetType() == GeomAbs_Plane:
         direction = surf.Plane().Axis().Direction()
-        normal = [direction.X(), direction.Y(), direction.Z()]
+        # A reflection makes the plane frame indirect; its axis alone is
+        # then opposite to the derivative-based surface normal (DD-275).
+        sign = 1 if surf.Plane().Position().Direct() else -1
+        normal = [sign * direction.X(), sign * direction.Y(), sign * direction.Z()]
     else:
         u_min, u_max, v_min, v_max = breptools.UVBounds(face)
         props = GeomLProp_SLProps(
@@ -8574,7 +8582,7 @@ def make_tangent_blend(face_a, face_b, tension):
         raise RuntimeError("OCC tangent blend (MakePipeShell) operation failed.")
     if not pipe.MakeSolid():
         raise RuntimeError("OCC tangent blend did not close into a solid.")
-    return pipe.Shape()
+    return _history_result(pipe)
 
 
 def _make_tangent_loft(face_a, face_b, point_a, point_b, normal_a, normal_b, tension):
@@ -9442,7 +9450,7 @@ def make_revolve(profile_face, axis_point, axis_dir, angle_rad, scale: float = 1
     rev.Build()
     if not rev.IsDone():
         raise RuntimeError("OCC revolve (MakeRevol) operation failed.")
-    return rev.Shape()
+    return _history_result(rev)
 
 
 def _perp_dir(d):
@@ -9521,13 +9529,13 @@ def make_sweep(profile_face, spine_wire):
     frame_to = gp_Ax3(start_pnt, tangent, _perp_dir(tangent))
     trsf = gp_Trsf()
     trsf.SetDisplacement(frame_from, frame_to)
-    moved = BRepBuilderAPI_Transform(profile_face, trsf, True).Shape()
+    moved = _history_result(BRepBuilderAPI_Transform(profile_face, trsf, True))
 
     pipe = BRepOffsetAPI_MakePipe(spine_wire, moved)
     pipe.Build()
     if not pipe.IsDone():
         raise RuntimeError("OCC sweep (MakePipe) operation failed.")
-    return pipe.Shape()
+    return _history_result(pipe)
 
 
 # ---------------------------------------------------------------------------

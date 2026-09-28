@@ -690,7 +690,8 @@ contract: WP1 implements the dimensional hierarchy, affine values,
 member-wise Group placement, and Solid-only CSG; WP2 implements exact curves
 and validated planar Profile factories, including intrinsic holes. The
 migration boundary is characterized in `tests/unit/test_geo_api_baseline.py`;
-WP3 through WP5 implement the remaining slices below.  A name listed here must not be
+WP3 implements owned topology, semantic/named selection, history and project
+replay. WP4 and WP5 implement uniform operations and relative paths below.  A name listed here must not be
 documented as shipped until its work package lands.
 
 Standalone geometry is dimensional:
@@ -708,7 +709,7 @@ The existing volume primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
 `Torus`, `ImportedSolid`) and Boolean results are `Solid` values.  `Curve`,
 `Sheet`, `Profile`, `Surface`, and `Solid` are public categories. The
 axis-normal polygon `Face` and `Curve.covered()` have been removed in favour
-of the fixed `Profile` factories.  `FaceRef` will name owned topology in WP3.  `Group` is a transformable,
+of the fixed `Profile` factories.  `FaceRef` names owned topology.  `Group` is a transformable,
 material-preserving aggregate but not a `Shape` or CSG operand.  `ThinWire`
 is an EM mesh declaration around a `Curve`, not a standalone CAD category.
 
@@ -833,10 +834,37 @@ curve types).
 Affine transforms preserve named refs exactly.  A topology-changing
 operation maps them only through OCC `Modified` / `Generated` / `IsDeleted`
 history.  A unique successor survives; deletion, an unprovable successor, or
-a singular one-to-many split raises `TopologyEvolutionError`.  A deliberately
-named set may remain a set.  The project store persists semantic origin and
+a singular one-to-many split raises `TopologyEvolutionError` during the public
+construction call. A deliberately named set may split or merge after duplicate
+removal, but deletion of any selected member still raises. Conflicting names
+from different operands raise unless they prove the same selection.  The project store persists semantic origin and
 the construction-history path, never raw topology indices, and validates the
-same cardinality when rebuilding.
+same cardinality when rebuilding. The additive, versioned
+`geometry.json` recipe retains a DAG of named construction branches and scaled
+BREP snapshots at untagged origins; operation inputs carry their material and
+metadata. Snapshot geometry stays at its saved kernel scale to avoid degrading
+nanometre topology on conversion to meter space. Legacy untagged projects keep
+the final-BREP reader. No operation is reconstructed through arbitrary imports.
+
+Named builds capture kernel histories in a scoped ContextVar, isolated from
+nested source evaluation; per-scale caches retain resolved names and release
+builders afterwards. Untagged geometry keeps the existing lazy/fast paths;
+tagged Union/Difference use history-producing N-ary operations rather than
+planar fusion or pre-fused tools whose source histories would be lost.
+Topology inventories, owner scale and bounding boxes are cached per owner and
+scale. A nearest query screens conservative bounds before exact distances.
+Normal constraints on curved faces require `near` and use the closest face
+point; without `near`, they filter planar faces only. Reflection normals use
+surface derivatives, including indirect analytic plane frames. Geometric planarity uses
+`GeomLib_IsPlanarSurface` at kernel tolerance, including flat spline patches;
+planar non-plane faces detach by covering their exact wires with a plane.
+
+The shipped history adapter covers affine, extrusion, revolution, sweep, loft,
+Boolean, fillet/chamfer and shell kernel steps. Only Solid owners can register
+names; direct FaceRef-consuming operations remain WP4. A wire-based loft may
+have no provable face successor, while shell offsets may split an original face
+into outer and inner faces. Such evolution follows the failure rules, not
+geometric rematching. `tests/unit/test_geo_topology_foundation.py` is the gate.
 
 Intrinsic reference measurements are read-only properties:
 `VertexRef.point`; `EdgeRef.length`, `start`, `end`, `vertices`;
