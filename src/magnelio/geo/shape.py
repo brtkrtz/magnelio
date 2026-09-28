@@ -1,9 +1,9 @@
-"""The CSG shape base class.
+"""Dimensional standalone geometry bases.
 
-:class:`Shape` carries everything every geometry object can do — the
-Boolean operators and the chainable verbs — so the primitives, the
-Boolean results and the internal transform/modification wrappers all
-share one surface.
+:class:`Shape` carries the affine placement and bounding-box protocol shared
+by curves, sheets, profiles and solids.  During the staged foundation
+migration, construction verbs remain implemented here but validate their
+dimensional inputs before reaching the CAD kernel.
 
 The verbs delegate to implementations in ``transforms``/
 ``modifications``; those functions are internal, and this class is the
@@ -17,13 +17,11 @@ from __future__ import annotations
 
 
 class Shape:
-    """Base class of every CSG shape: Boolean operators and chainable verbs.
+    """Base class of immutable standalone geometry.
 
-    Every geometry object — a primitive (:class:`~magnelio.geo.Brick`,
-    :class:`~magnelio.geo.Cylinder`, …), the result of a Boolean
-    operation, and the result of any verb below — is a ``Shape`` and
-    supports everything documented here.  ``Shape`` is a base type, not
-    something to instantiate directly.
+    Every standalone geometry object is a ``Shape``.  ``Shape`` is a base
+    type, not something to instantiate directly; use one of its dimensional
+    subclasses.
 
     **Shapes are immutable.**  Every operator and verb returns a *new*
     shape; the receiver is never modified.  That is what makes the calls
@@ -39,22 +37,11 @@ class Shape:
     came from.  Tools and profiles therefore need no material of their
     own — see :class:`~magnelio.geo.Brick` for construction bodies.
 
-    **Repetition.**  :meth:`translated` and :meth:`rotated` can produce a
-    whole series of copies in one call via ``repeat``; :meth:`mirrored`
-    produces exactly one image.  All three share the same options for
-    what to do with the copies:
-
-    ``copy``
-        Include the untransformed original in the result.
-    ``unite``
-        Fuse everything into a single :class:`~magnelio.geo.Union` — one
-        solid with one material.
-    ``group``
-        Bundle everything into a :class:`~magnelio.geo.Group`, where each
-        copy keeps its own material.  Mutually exclusive with ``unite``.
-
-    Without any of them the return value is a single shape; with them it
-    is a list, a ``Union`` or a ``Group``.
+    The dimensional subclasses are :class:`~magnelio.geo.Curve`,
+    :class:`~magnelio.geo.Sheet` (including
+    :class:`~magnelio.geo.Profile`) and :class:`~magnelio.geo.Solid`.
+    Every category supports the same four affine transforms.  Boolean
+    operations are restricted to ``Solid`` values.
     """
 
     # ── geometry queries ──────────────────────────────────────────────
@@ -159,56 +146,33 @@ class Shape:
 
     # ── transforms ────────────────────────────────────────────────────
 
-    def translated(self, vector, *, repeat=1, copy=False, unite=False, group=False):
+    def translated(self, vector):
         """Return this shape moved by *vector*.
 
         Parameters
         ----------
         vector : tuple of float
             ``(dx, dy, dz)`` translation [meters].
-        repeat : int
-            Number of translated copies (default 1).  Copy *i* is shifted
-            by ``i * vector``, which makes this the way to build a
-            regular array — an antenna array, a via fence, a corrugated
-            wall.
-        copy : bool
-            Include the untranslated original in the result.
-        unite : bool
-            Fuse all copies into a single :class:`~magnelio.geo.Union`.
-        group : bool
-            Bundle all copies into a :class:`~magnelio.geo.Group`, each
-            keeping its own material.  Mutually exclusive with *unite*.
-
         Returns
         -------
-        Shape or list or Union or Group
-            A single shape for the default ``repeat=1, copy=False``,
-            otherwise a list — or a ``Union``/``Group`` if requested.
+        Shape
+            One translated geometry value of the same dimensional category.
 
         Examples
         --------
-        A row of eight vias, one solid::
+        A row of eight vias is explicit about copying and fusion::
 
-            fence = via.translated((2e-3, 0, 0), repeat=8, copy=True, unite=True)
-
-        A :class:`~magnelio.geo.Group` is translated member by member and
-        the result is again a Group, so mixed-material assemblies survive
-        the call intact.
+            fence = Union(*(via.translated((i * 2e-3, 0, 0)) for i in range(8)))
         """
-        from magnelio.geo.transforms import translate  # noqa: PLC0415
+        from magnelio.geo.transforms import Translation  # noqa: PLC0415
 
-        return translate(self, vector, repeat=repeat, copy=copy, unite=unite, group=group)
+        return Translation(vector) @ self
 
     def rotated(
         self,
         axis,
         angle_deg,
         origin=(0.0, 0.0, 0.0),
-        *,
-        repeat=1,
-        copy=False,
-        unite=False,
-        group=False,
     ):
         """Return this shape rotated about an axis.
 
@@ -223,35 +187,20 @@ class Shape:
         origin : tuple of float
             A point on the rotation axis (default: the coordinate
             origin).
-        repeat : int
-            Number of rotated copies (default 1) — the way to build a
-            circular array, such as the arms of a hybrid ring or the
-            posts of a rotationally symmetric filter.
-        copy : bool
-            Include the unrotated original in the result.
-        unite : bool
-            Fuse all copies into a single :class:`~magnelio.geo.Union`.
-        group : bool
-            Bundle all copies into a :class:`~magnelio.geo.Group`, each
-            keeping its own material.  Mutually exclusive with *unite*.
-
         Returns
         -------
-        Shape or list or Union or Group
-            A single shape for the default ``repeat=1, copy=False``,
-            otherwise a list — or a ``Union``/``Group`` if requested.
+        Shape
+            One rotated geometry value of the same dimensional category.
 
         Examples
         --------
         Four posts at 90° spacing around the z axis::
 
-            posts = post.rotated("z", 90.0, repeat=3, copy=True, group=True)
+            posts = Group(*(post.rotated("z", i * 90.0) for i in range(4)))
         """
-        from magnelio.geo.transforms import rotate  # noqa: PLC0415
+        from magnelio.geo.transforms import Rotation  # noqa: PLC0415
 
-        return rotate(
-            self, axis, angle_deg, origin, repeat=repeat, copy=copy, unite=unite, group=group
-        )
+        return Rotation(axis, angle_deg, origin) @ self
 
     def scaled(self, factor, center=(0.0, 0.0, 0.0)):
         """Return this shape scaled uniformly about a fixed point.
@@ -277,11 +226,11 @@ class Shape:
             The scaled shape; a :class:`~magnelio.geo.Group` is scaled
             member by member about the common *center*.
         """
-        from magnelio.geo.transforms import scale  # noqa: PLC0415
+        from magnelio.geo.transforms import Scale  # noqa: PLC0415
 
-        return scale(self, factor, center)
+        return Scale(factor, center) @ self
 
-    def mirrored(self, normal, position=0.0, *, copy=False, unite=False, group=False):
+    def mirrored(self, normal, position=0.0):
         """Return this shape reflected across a plane.
 
         The plane is the set of points ``p`` with ``p · normal ==
@@ -308,44 +257,24 @@ class Shape:
         position : float
             Signed distance of the plane from the coordinate origin
             along *normal* [meters] (default 0).
-        copy : bool
-            Include the unmirrored original in the result — the usual
-            way to complete a symmetric structure from a modelled half.
-        unite : bool
-            Fuse original and image into a single
-            :class:`~magnelio.geo.Union`.  Requires *copy*.
-        group : bool
-            Bundle them into a :class:`~magnelio.geo.Group`, each keeping
-            its own material.  Requires *copy*; mutually exclusive with
-            *unite*.
-
         Returns
         -------
-        Shape or list or Union or Group
-            The mirror image alone for the default ``copy=False``,
-            otherwise ``[original, image]`` — or a ``Union``/``Group``
-            if requested.
-
-        Raises
-        ------
-        ValueError
-            If *unite* or *group* is given without *copy*: there would be
-            nothing to combine the image with, and silently returning the
-            bare image would be a wrong geometry that still meshes.
+        Shape
+            The mirror image, of the same dimensional category.
 
         Examples
         --------
         Complete a half-modelled power divider into one solid::
 
-            full = half.mirrored("x", copy=True, unite=True)
+            full = Union(half, half.mirrored("x"))
 
         Mirror a feed line onto the far side of a board::
 
             far = line.mirrored("z", position=h / 2)
         """
-        from magnelio.geo.transforms import mirror  # noqa: PLC0415
+        from magnelio.geo.transforms import Mirror  # noqa: PLC0415
 
-        return mirror(self, normal=normal, position=position, copy=copy, unite=unite, group=group)
+        return Mirror(normal, position) @ self
 
     # ── modifications ─────────────────────────────────────────────────
 
@@ -682,6 +611,15 @@ class Shape:
             blend=blend,
             tension=tension,
         )
+
+
+class Solid(Shape):
+    """Base class of closed three-dimensional bodies.
+
+    Primitive bodies, imported CAD, Boolean results and construction results
+    derive from this category.  Boolean union, difference and intersection
+    accept only ``Solid`` operands.
+    """
 
 
 def _is_shape(obj) -> bool:

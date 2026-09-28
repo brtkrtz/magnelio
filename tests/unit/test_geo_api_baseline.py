@@ -1,4 +1,4 @@
-"""Characterize the public geometry API before its foundation migration."""
+"""Characterize the geometry API boundary as the foundation migrates."""
 
 from __future__ import annotations
 
@@ -11,14 +11,22 @@ from magnelio.materials.material import Material
 
 EXPECTED_EXPORTS = [
     "Shape",
+    "Curve",
+    "Sheet",
+    "Profile",
+    "Surface",
+    "Solid",
+    "Transform",
+    "Translation",
+    "Rotation",
+    "Mirror",
+    "Scale",
     "Brick",
     "Sphere",
     "Cylinder",
     "Cone",
     "Torus",
     "Face",
-    "Surface",
-    "Curve",
     "Path",
     "Union",
     "Intersection",
@@ -135,13 +143,10 @@ EXPECTED_CONSTRUCTOR_SIGNATURES = {
 }
 
 EXPECTED_SHAPE_VERB_SIGNATURES = {
-    "translated": "(self, vector, *, repeat=1, copy=False, unite=False, group=False)",
-    "rotated": (
-        "(self, axis, angle_deg, origin=(0.0, 0.0, 0.0), *, repeat=1, "
-        "copy=False, unite=False, group=False)"
-    ),
+    "translated": "(self, vector)",
+    "rotated": "(self, axis, angle_deg, origin=(0.0, 0.0, 0.0))",
     "scaled": "(self, factor, center=(0.0, 0.0, 0.0))",
-    "mirrored": "(self, normal, position=0.0, *, copy=False, unite=False, group=False)",
+    "mirrored": "(self, normal, position=0.0)",
     "chamfered": "(self, *, near=None, face_near=None, edges=None, distance)",
     "filleted": "(self, *, near=None, face_near=None, edges=None, radius)",
     "extruded": "(self, vector, *, face_near=None, material=None)",
@@ -164,7 +169,7 @@ def _assert_box(actual, expected):
         assert actual_corner == pytest.approx(expected_corner)
 
 
-def test_curated_exports_are_pinned_before_the_breaking_migration():
+def test_curated_exports_are_pinned_during_the_breaking_migration():
     assert geo.__all__ == EXPECTED_EXPORTS
 
 
@@ -191,15 +196,18 @@ def test_common_shape_verb_signatures_are_pinned(name, signature):
     assert str(inspect.signature(getattr(geo.Shape, name))) == signature
 
 
-def test_current_dimensional_categories_are_implicit():
-    assert issubclass(geo.Brick, geo.Shape)
-    assert issubclass(geo.Face, geo.Shape)
-    assert issubclass(geo.Surface, geo.Shape)
-    assert issubclass(geo.Group, geo.Shape)
-    assert not issubclass(geo.Curve, geo.Shape)
+def test_wp1_dimensional_categories_are_explicit():
+    assert issubclass(geo.Curve, geo.Shape)
+    assert issubclass(geo.Profile, geo.Sheet)
+    assert issubclass(geo.Sheet, geo.Shape)
+    assert issubclass(geo.Solid, geo.Shape)
+    assert issubclass(geo.Brick, geo.Solid)
+    assert issubclass(geo.Face, geo.Profile)
+    assert issubclass(geo.Surface, geo.Sheet)
+    assert not issubclass(geo.Group, geo.Shape)
     assert not issubclass(geo.Path, geo.Shape)
     assert not issubclass(geo.ThinWire, geo.Shape)
-    assert not hasattr(geo.Curve.polyline([(0, 0, 0), (1, 0, 0)]), "translated")
+    assert hasattr(geo.Curve.polyline([(0, 0, 0), (1, 0, 0)]), "translated")
 
 
 def test_axis_normal_face_and_profile_extrusion_numerics():
@@ -225,13 +233,12 @@ def test_named_transform_methods_chain_left_to_right():
     _assert_box(placed.bounding_box(), ((-2.0, 2.0, 0.0), (0.0, 3.0, 3.0)))
 
 
-def test_repeated_transforms_currently_change_result_category():
+def test_wp1_transforms_always_return_one_geometry_value():
     body = geo.Brick(material=_air())
 
-    assert isinstance(body.translated((1.0, 0.0, 0.0)), geo.Shape)
-    assert isinstance(body.translated((1.0, 0.0, 0.0), repeat=2), list)
-    assert isinstance(body.translated((1.0, 0.0, 0.0), repeat=2, copy=True, unite=True), geo.Union)
-    assert isinstance(body.translated((1.0, 0.0, 0.0), repeat=2, copy=True, group=True), geo.Group)
+    assert isinstance(body.translated((1.0, 0.0, 0.0)), geo.Solid)
+    with pytest.raises(TypeError, match="unexpected keyword argument 'repeat'"):
+        body.translated((1.0, 0.0, 0.0), repeat=2)
 
 
 def test_face_selection_is_a_loose_point_consumed_by_the_operation():

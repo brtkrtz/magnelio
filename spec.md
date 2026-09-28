@@ -686,10 +686,11 @@ are internal since DD-117 (importable, no stability guarantee).
 ### 8.3 Geometry ontology and construction contract
 
 DD-275 fixes the geometry-foundation contract.  It is an accepted staged
-contract: the pre-WP1 implementation still has the legacy `Shape`/`Face`
-surface characterized in `tests/unit/test_geo_api_baseline.py`; WP1 through
-WP5 implement the slices below.  A name listed here must not be documented as
-shipped until its work package lands.
+contract: WP1 now implements the dimensional hierarchy, affine values,
+member-wise Group placement, and Solid-only CSG.  The surviving pre-WP2
+surface is characterized in `tests/unit/test_geo_api_baseline.py`; WP2 through
+WP5 implement the remaining slices below.  A name listed here must not be
+documented as shipped until its work package lands.
 
 Standalone geometry is dimensional:
 
@@ -704,9 +705,10 @@ Shape
 
 The existing volume primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
 `Torus`, `ImportedSolid`) and Boolean results are `Solid` values.  `Curve`,
-`Sheet`, `Profile`, `Surface`, and `Solid` are public categories.  The current
-axis-normal polygon `Face` is removed: `Profile` owns planar standalone
-construction and `FaceRef` names owned topology.  `Group` is a transformable,
+`Sheet`, `Profile`, `Surface`, and `Solid` are public categories.  During WP1,
+the current axis-normal polygon `Face` and `Curve.covered()` remain as
+transitional `Profile` producers; WP2 removes them in favour of the fixed
+`Profile` factories.  `FaceRef` will name owned topology in WP3.  `Group` is a transformable,
 material-preserving aggregate but not a `Shape` or CSG operand.  `ThinWire`
 is an EM mesh declaration around a `Curve`, not a standalone CAD category.
 

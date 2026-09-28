@@ -84,7 +84,8 @@ outline = (
     .closed()
 )
 
-drawn = outline.covered().extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
+section = outline.covered()
+drawn = section.extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
 
 # The two routes describe the same solid, and `volume()` is the way to
 # say so: it reports what the CAD kernel actually built, not what the
@@ -95,6 +96,28 @@ drawn = outline.covered().extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
 print(f"primitive: {electrode.volume() * 1e9:.6f} mm^3")
 print(f"drawn:     {drawn.volume() * 1e9:.6f} mm^3")
 print(f"relative difference: {abs(drawn.volume() / electrode.volume() - 1.0):.2e}")
+
+# %%
+# Curves, profiles and solids share one placement grammar
+# -------------------------------------------------------
+#
+# The outline is a :class:`~magnelio.geo.Curve`, its covered region is a
+# :class:`~magnelio.geo.Profile`, and the extrusion is a
+# :class:`~magnelio.geo.Solid`.  All three accept the same named transform
+# methods.  An immutable transform value is useful when the same placement
+# belongs to several pieces of a component.  In ``A @ B @ geometry``, ``B``
+# acts first:
+
+placement = geo.Translation((30.0e-3, 0.0, 0.0)) @ geo.Rotation("z", 15.0)
+placed_outline = placement @ outline
+placed_section = placement @ section
+placed_electrode = placement @ drawn
+
+print(
+    isinstance(placed_outline, geo.Curve),
+    isinstance(placed_section, geo.Profile),
+    isinstance(placed_electrode, geo.Solid),
+)
 
 # %%
 # .. note::

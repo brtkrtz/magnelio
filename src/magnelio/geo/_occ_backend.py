@@ -1095,6 +1095,31 @@ def occ_mirror(shape, normal: tuple, position: float, scale: float = 1.0):
     return occ["Transform"](shape, trsf, True).Shape()
 
 
+def occ_transform(shape, matrix: tuple, scale: float = 1.0):
+    """Apply a homogeneous rigid/reflection/uniform-scale transform.
+
+    The matrix is expressed in meters; only its translation column must be
+    converted to the scaled coordinates used by the kernel.
+    """
+    occ = _require_occ()
+    trsf = occ["gp_Trsf"]()
+    trsf.SetValues(
+        matrix[0][0],
+        matrix[0][1],
+        matrix[0][2],
+        matrix[0][3] * scale,
+        matrix[1][0],
+        matrix[1][1],
+        matrix[1][2],
+        matrix[1][3] * scale,
+        matrix[2][0],
+        matrix[2][1],
+        matrix[2][2],
+        matrix[2][3] * scale,
+    )
+    return occ["Transform"](shape, trsf, True).Shape()
+
+
 # ---------------------------------------------------------------------------
 # Point classification
 # ---------------------------------------------------------------------------

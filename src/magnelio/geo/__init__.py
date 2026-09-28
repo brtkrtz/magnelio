@@ -1,37 +1,32 @@
-"""
-CSG geometry subsystem.
+"""Dimensional geometry and constructive solid geometry.
 
-- Base class: ``Shape`` — the Boolean operators and the chainable verbs
-  every geometry object shares; the documented home of both.
-- Primitives: ``Brick``, ``Sphere``, ``Cylinder``, ``Cone``, ``Torus``,
-  ``Face``; curves: ``Curve`` (polyline / arc / spline / helix);
-  curved sheets: ``Surface`` (``Surface.parametric`` samples a map
-  ``(u, v) -> (x, y, z)`` into a B-spline sheet — a reflector dish before
-  it is extruded into metal).
-- Profiles: ``Path`` draws a chained curve segment by segment;
-  ``Curve.joined()`` chains existing curves, ``Curve.covered()`` turns a
-  closed one into a planar sheet and ``Curve.traced()`` into a
-  conductor track.
-- Operations: ``Union``, ``Intersection``, ``Difference`` — or the
-  operators ``a + b`` / ``a - b`` / ``a & b`` on any shape — and
-  ``Loft`` through a series of cross-sections.
-- Containers: ``Group`` (material-preserving bundle), ``GeometryModel``.
-- Imported geometry: ``ImportedSolid`` — a solid read from a CAD file
-  (``magnelio.io.import_step``) or from a project store.
-- Verbs: chainable shape methods — ``.translated()``, ``.rotated()``,
-  ``.scaled()``, ``.mirrored()``, ``.chamfered()``, ``.filleted()``,
-  ``.extruded()``, ``.lofted()``, ``.revolved()``, ``.swept()``,
-  ``.shelled()``, ``.thickened()``.  They are documented on
-  :class:`Shape`, the base class every geometry object inherits from.
+Standalone geometry has explicit dimensions: :class:`Curve` is
+one-dimensional, :class:`Sheet` is two-dimensional (with planar
+:class:`Profile` and curved :class:`Surface` categories), and :class:`Solid`
+is three-dimensional.  All derive from :class:`Shape` and share immutable
+translation, rotation, reflection and uniform scaling.  Reusable placement is
+expressed by :class:`Transform`, :class:`Translation`, :class:`Rotation`,
+:class:`Mirror` and :class:`Scale`, composed and applied with ``@``.
 
-``GeometryModel`` lives in the core ``magnelio`` namespace; every
-other geometry name is public here.
+Boolean ``+``, ``-`` and ``&`` and their explicit :class:`Union`,
+:class:`Difference` and :class:`Intersection` spellings accept solids only.
+:class:`Group` is a material-preserving authoring collection, not a shape or a
+Boolean operand; affine transforms distribute over its members.
+
+The legacy axis-normal :class:`Face` constructor and ``Curve.covered()``
+currently produce :class:`Profile` values.  :class:`Path` draws a curve
+segment by segment, while :class:`ThinWire` is an EM mesh declaration around a
+curve rather than a standalone CAD dimension.
+
+``GeometryModel`` lives in the core ``magnelio`` namespace; every other
+geometry name is public here.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from magnelio.geo._sheet import Profile, Sheet
 from magnelio.geo._validate import operand
 from magnelio.geo.curves import Curve
 from magnelio.geo.imported import ImportedSolid
@@ -39,8 +34,9 @@ from magnelio.geo.modifications import Loft
 from magnelio.geo.operations import Difference, Group, Intersection, Union
 from magnelio.geo.path import Path
 from magnelio.geo.primitives import Brick, Cone, Cylinder, Face, Sphere, Torus
-from magnelio.geo.shape import Shape
+from magnelio.geo.shape import Shape, Solid
 from magnelio.geo.surfaces import Surface
+from magnelio.geo.transforms import Mirror, Rotation, Scale, Transform, Translation
 from magnelio.geo.wire import ThinWire
 
 if TYPE_CHECKING:
@@ -520,14 +516,22 @@ class GeometryModel:
 
 __all__ = [
     "Shape",
+    "Curve",
+    "Sheet",
+    "Profile",
+    "Surface",
+    "Solid",
+    "Transform",
+    "Translation",
+    "Rotation",
+    "Mirror",
+    "Scale",
     "Brick",
     "Sphere",
     "Cylinder",
     "Cone",
     "Torus",
     "Face",
-    "Surface",
-    "Curve",
     "Path",
     "Union",
     "Intersection",

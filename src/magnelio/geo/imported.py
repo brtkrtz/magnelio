@@ -12,13 +12,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from magnelio.geo.shape import Shape
+from magnelio.geo.shape import Solid
 
 if TYPE_CHECKING:
     from magnelio.materials.material import Material
 
 
-class ImportedSolid(Shape):
+class ImportedSolid(Solid):
     """A solid whose geometry came from a CAD file or a project store.
 
     Instances are produced by :func:`~magnelio.io.import_step`,

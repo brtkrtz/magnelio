@@ -27,12 +27,12 @@ from magnelio.geo._validate import (
     positive,
     vector3,
 )
-from magnelio.geo.shape import Shape
+from magnelio.geo.shape import Solid
 from magnelio.materials.material import resolve_material
 
 
 @dataclass
-class _BaseShape(Shape):
+class _BaseShape(Solid):
     """Common base for all CSG shapes.
 
     ``material`` is optional.  A solid that carries one is a *physical*

@@ -110,7 +110,7 @@ def _post_row():
 
     box = Brick(origin=(0.0, -3e-3, 0.0), size=(4 * PITCH, 6e-3, 6e-3), material=AIR)
     post = Cylinder(origin=(PITCH, 0.0, 0.0), radius=RADIUS, height=HEIGHT, axis="z", material=PEC)
-    posts = post.translated((PITCH, 0.0, 0.0), repeat=2, copy=True, unite=True)
+    posts = Union(*(post.translated((i * PITCH, 0.0, 0.0)) for i in range(3)))
     return Difference(box, posts), posts
 
 

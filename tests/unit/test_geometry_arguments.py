@@ -85,11 +85,11 @@ class TestPointArguments:
         assert all(isinstance(c, float) for c in s.center)
 
     def test_translation_vector_is_checked_at_the_call(self):
-        with pytest.raises(TypeError, match=r"translated\(vector\)"):
+        with pytest.raises(TypeError, match=r"Translation\(vector\)"):
             _brick().translated(1e-3)
 
     def test_rotation_origin_is_checked_at_the_call(self):
-        with pytest.raises(ValueError, match=r"rotated\(origin\)"):
+        with pytest.raises(ValueError, match=r"Rotation\(origin\)"):
             _brick().rotated("z", 90.0, origin=(0, 0))
 
 
@@ -133,16 +133,12 @@ class TestExtentArguments:
             Torus(major_radius=1e-3, minor_radius=2e-3)
 
     def test_scaling_by_zero_is_rejected(self):
-        with pytest.raises(ValueError, match=r"scaled\(factor\) must not be zero"):
+        with pytest.raises(ValueError, match=r"Scale\(factor\) must not be zero"):
             _brick().scaled(0.0)
 
-    def test_repeat_must_be_a_whole_number(self):
-        with pytest.raises(TypeError, match="repeat"):
+    def test_repeat_option_is_removed(self):
+        with pytest.raises(TypeError, match="unexpected keyword argument 'repeat'"):
             _brick().translated((1e-3, 0, 0), repeat=2.5)
-
-    def test_repeat_below_one_is_rejected(self):
-        with pytest.raises(ValueError, match="repeat"):
-            _brick().translated((1e-3, 0, 0), repeat=0)
 
 
 # ── axes ─────────────────────────────────────────────────────────────────────
@@ -178,7 +174,7 @@ class TestOperandArguments:
     def test_a_list_of_shapes_is_not_an_operand(self):
         with pytest.raises(TypeError) as excinfo:
             Union([_brick(), Sphere(radius=1.0, material=PEC)])
-        assert "Union(a, b)" in str(excinfo.value)
+        assert "Solid operands" in str(excinfo.value)
 
     def test_union_of_nothing_is_rejected(self):
         with pytest.raises(ValueError, match="at least 1 operand"):
@@ -189,7 +185,7 @@ class TestOperandArguments:
             Difference(_brick())
 
     def test_intersection_rejects_a_non_shape(self):
-        with pytest.raises(TypeError, match="geometry object"):
+        with pytest.raises(TypeError, match="Solid operands"):
             Intersection(_brick(), None)
 
     def test_group_member_must_be_geometry(self):

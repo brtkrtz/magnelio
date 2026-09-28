@@ -33,12 +33,21 @@ class Sheet(Shape):
     """
 
 
-class PlanarSheet(Sheet):
-    """Base class of every zero-thickness *planar* profile.
+class Profile(Sheet):
+    """Base class of every bounded planar construction profile.
 
     Besides what every :class:`Sheet` can do, a planar sheet is the
     profile of :meth:`~magnelio.geo.Shape.revolved` and
     :meth:`~magnelio.geo.Shape.swept`, and a section of a
     :class:`~magnelio.geo.Loft` — the verbs that need a plane to turn,
     move or interpolate.
+    """
+
+
+class PlanarSheet(Profile):
+    """Transitional internal marker for the pre-Profile constructors.
+
+    ``Face`` and ``Curve.covered()`` remain available until their WP2
+    replacements land, but already expose the public :class:`Profile`
+    category introduced by the geometry foundation.
     """

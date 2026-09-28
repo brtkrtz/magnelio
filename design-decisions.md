@@ -22484,8 +22484,8 @@ or server is started for them.
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
 **Date:** 2026-09-28.
-**Status:** Accepted as the geometry-foundation contract; WP0 is documented
-and gated, implementation starts with WP1 on `feat/geo-api-foundation`.
+**Status:** Accepted as the geometry-foundation contract; WP0 and WP1 are
+implemented on `feat/geo-api-foundation`, with WP2 next.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -22725,3 +22725,16 @@ affine foundation.  Profiles, topology refs, uniform operations and routed
 paths remain WP2 through WP5 respectively; accepting this decision does not
 claim that those names are shipped yet.  Each slice must migrate its methods
 prose and executable examples with the code.
+
+**WP1 implementation (2026-09-28).**  `Curve`, `Sheet`, `Profile`, and
+`Solid` now form the public dimensional hierarchy under `Shape`; volume
+primitives, imported CAD, construction results, and Boolean results are
+`Solid`, while the transitional `Face`/`Curve.covered()` values already expose
+`Profile`.  `Group` is no longer a `Shape`.  All standalone categories and
+groups use the immutable homogeneous-matrix backend exposed as `Transform`,
+`Translation`, `Rotation`, `Mirror`, and `Scale`; composition follows the
+rightmost-first column-vector rule.  The named methods delegate to these
+values and no longer accept repetition/copy/fusion switches.  CSG constructors
+reject every non-`Solid` category before a kernel call.  Gate:
+`tests/unit/test_geo_transform_foundation.py`; the remaining characterization
+test has been advanced only where WP1 deliberately replaced its assertions.

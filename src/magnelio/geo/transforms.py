@@ -1,327 +1,321 @@
-"""
-Geometric transforms: translate, rotate, scale, mirror.
-
-These functions wrap a CSG shape in a transformed copy.
-Transforms are applied via OCC BRepBuilderAPI_Transform.
-"""
+"""Immutable affine transforms shared by every geometry category."""
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
-from magnelio.geo._validate import count, finite, nonzero, point3, vector3
-from magnelio.geo.shape import Shape
+from magnelio.geo._validate import finite, nonzero, point3, vector3
+from magnelio.geo.shape import Shape, Solid
 
-_SHEET_VARIANTS: dict = {}
-
-
-def _wrapper(cls, inner):
-    """The wrapper class to instantiate for *inner*: *cls* itself, or
-    its sheet-preserving variant when *inner* is a sheet.
-
-    A moved, turned, scaled or mirrored sheet is still a sheet — still
-    a profile for ``extruded()``/``thickened()``, and still planar if it
-    was — so the wrapper inherits the marker base of what it wraps.
-    """
-    from magnelio.geo._sheet import PlanarSheet, Sheet  # noqa: PLC0415
-
-    if isinstance(inner, PlanarSheet):
-        marker = PlanarSheet
-    elif isinstance(inner, Sheet):
-        marker = Sheet
-    else:
-        return cls
-    key = (cls, marker)
-    if key not in _SHEET_VARIANTS:
-        _SHEET_VARIANTS[key] = type(
-            f"{cls.__name__}{marker.__name__}",
-            (cls, marker),
-            {"__doc__": f"{cls.__name__} of a {marker.__name__}.", "__module__": __name__},
-        )
-    return _SHEET_VARIANTS[key]
+_IDENTITY = (
+    (1.0, 0.0, 0.0, 0.0),
+    (0.0, 1.0, 0.0, 0.0),
+    (0.0, 0.0, 1.0, 0.0),
+    (0.0, 0.0, 0.0, 1.0),
+)
 
 
-def _apply_repeat(shape, make_one, repeat, copy, unite, group=False):
-    """Shared logic for repeated transforms.
+def _matrix(value) -> tuple[tuple[float, float, float, float], ...]:
+    try:
+        rows = tuple(tuple(float(c) for c in row) for row in value)
+    except (TypeError, ValueError):
+        raise TypeError("Transform matrix must be a 4 x 4 sequence of finite numbers.") from None
+    if len(rows) != 4 or any(len(row) != 4 for row in rows):
+        raise ValueError("Transform matrix must have exactly 4 rows and 4 columns.")
+    if not all(math.isfinite(c) for row in rows for c in row):
+        raise ValueError("Transform matrix entries must be finite.")
+    if rows[3] != (0.0, 0.0, 0.0, 1.0):
+        raise ValueError("Transform matrix must be affine: its last row must be (0, 0, 0, 1).")
+
+    columns = tuple(tuple(rows[i][j] for i in range(3)) for j in range(3))
+    lengths = tuple(math.hypot(*column) for column in columns)
+    if min(lengths) <= 0.0:
+        raise ValueError("Transform matrix must be invertible.")
+    scale = lengths[0]
+    if any(not math.isclose(length, scale, rel_tol=1e-12) for length in lengths[1:]):
+        raise ValueError("Transform supports uniform scale only; its three axis scales must match.")
+    unit_columns = tuple(
+        tuple(component / length for component in column)
+        for column, length in zip(columns, lengths)
+    )
+    for i in range(3):
+        for j in range(i + 1, 3):
+            dot = sum(a * b for a, b in zip(unit_columns[i], unit_columns[j]))
+            if abs(dot) > 1e-12:
+                raise ValueError(
+                    "Transform axes must remain perpendicular (no shear is supported)."
+                )
+    return rows
+
+
+def _multiply(a, b):
+    return tuple(
+        tuple(sum(a[i][k] * b[k][j] for k in range(4)) for j in range(4)) for i in range(4)
+    )
+
+
+@dataclass(frozen=True)
+class Transform:
+    """An immutable affine placement value.
+
+    Matrices act on column-vector points.  Consequently ``A @ B @ shape``
+    applies ``B`` first and then ``A``.  Only rigid transforms, reflections
+    and uniform scales are accepted; shear and non-uniform scale would change
+    the public analytic geometry categories.
 
     Parameters
     ----------
-    shape : CSG shape
-        The original (untransformed) shape.
-    make_one : callable(int) -> shape
-        Returns the *i*-th transformed copy (i = 1 … repeat).
-    repeat : int
-        Number of transformed copies.
-    copy : bool
-        If True, include the untransformed original in the result.
-    unite : bool
-        If True, fuse the copies into a single :class:`Union` (one solid,
-        one material).
-    group : bool
-        If True, bundle the copies into a :class:`Group` (each copy keeps
-        its own material).  The material-preserving sibling of *unite*;
-        mutually exclusive with it.
-
-    Returns
-    -------
-    shape or list or Union or Group
+    matrix : sequence of sequence of float
+        Homogeneous 4 x 4 affine matrix.  Prefer :class:`Translation`,
+        :class:`Rotation`, :class:`Mirror`, :class:`Scale`, and composition.
     """
-    if unite and group:
-        raise ValueError("Pass either unite=True or group=True, not both.")
-    repeat = count(repeat, "repeat", minimum=1)
 
-    if repeat == 1 and not copy:
-        return make_one(1)
+    matrix: tuple
 
-    copies = []
-    if copy:
-        copies.append(shape)
-    for i in range(1, repeat + 1):
-        copies.append(make_one(i))
+    def __post_init__(self):
+        object.__setattr__(self, "matrix", _matrix(self.matrix))
 
-    if unite:
-        from magnelio.geo.operations import Union  # noqa: PLC0415
+    @classmethod
+    def identity(cls) -> "Transform":
+        """Return the identity transform."""
+        return Transform(_IDENTITY)
 
-        return Union(*copies)
-    if group:
+    def __matmul__(self, other):
+        if isinstance(other, Transform):
+            return Transform(_multiply(self.matrix, other.matrix))
         from magnelio.geo.operations import Group  # noqa: PLC0415
 
-        return Group(*copies)
-    return copies
+        if isinstance(other, Group):
+            return Group(*(self @ member for member in other.shapes), name=other.name)
+        if isinstance(other, Shape):
+            return _apply(self, other)
+        raise TypeError(
+            "A Transform can be composed with another Transform or applied "
+            f"to a Shape or Group; got {type(other).__name__}."
+        )
+
+    def point(self, point) -> tuple[float, float, float]:
+        """Return *point* transformed by this affine value."""
+        x, y, z = point3(point, "Transform.point(point)")
+        p = (x, y, z, 1.0)
+        return tuple(sum(self.matrix[i][j] * p[j] for j in range(4)) for i in range(3))
 
 
-def _distribute(group, transform_one):
-    """Apply a per-member transform to a Group, preserving nesting/material.
+@dataclass(frozen=True, init=False)
+class Translation(Transform):
+    """Translation by a three-dimensional vector.
 
     Parameters
     ----------
-    group : Group
-        The bundle to transform.
-    transform_one : callable(member) -> member
-        Transforms a single member.  A nested Group member recurses
-        (``transform_one`` on a Group re-enters this helper), so the tree
-        structure and every member's material are preserved.
-
-    Returns
-    -------
-    Group
-        A new Group with the same *name* and each member transformed.
+    vector : tuple of float
+        ``(dx, dy, dz)`` translation [meters].
     """
-    from magnelio.geo.operations import Group  # noqa: PLC0415
 
-    return Group(*[transform_one(m) for m in group.shapes], name=group.name)
+    def __init__(self, vector):
+        x, y, z = vector3(vector, "Translation(vector)")
+        super().__init__(((1.0, 0.0, 0.0, x), (0.0, 1.0, 0.0, y), (0.0, 0.0, 1.0, z), _IDENTITY[3]))
 
 
-def translate(
-    shape,
-    vector: tuple[float, float, float],
-    *,
-    repeat: int = 1,
-    copy: bool = False,
-    unite: bool = False,
-    group: bool = False,
-):
-    """Implementation of :meth:`magnelio.geo.Shape.translated`.
+@dataclass(frozen=True, init=False)
+class Rotation(Transform):
+    """Right-handed rotation about an axis through an origin.
 
-    A :class:`Group` is translated member-by-member; the result is again
-    a Group.
+    Parameters
+    ----------
+    axis : str or tuple of float
+        ``"x"``, ``"y"``, ``"z"`` or an arbitrary direction vector.
+    angle_deg : float
+        Right-handed rotation angle [degrees].
+    origin : tuple of float
+        Point on the rotation axis [meters].
     """
-    from magnelio.geo.operations import Group  # noqa: PLC0415
 
-    vector = vector3(vector, "translated(vector)")
-    if isinstance(shape, Group):
+    def __init__(self, axis, angle_deg, origin=(0.0, 0.0, 0.0)):
+        from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
 
-        def make_one(i):
-            v = tuple(c * i for c in vector)
-            return _distribute(shape, lambda m: translate(m, v))
+        x, y, z = normalize_axis(axis, "Rotation(axis)")
+        angle = math.radians(finite(angle_deg, "Rotation(angle_deg)"))
+        origin = point3(origin, "Rotation(origin)")
+        c = math.cos(angle)
+        s = math.sin(angle)
+        one_c = 1.0 - c
+        linear = (
+            (c + x * x * one_c, x * y * one_c - z * s, x * z * one_c + y * s),
+            (y * x * one_c + z * s, c + y * y * one_c, y * z * one_c - x * s),
+            (z * x * one_c - y * s, z * y * one_c + x * s, c + z * z * one_c),
+        )
+        moved = tuple(origin[i] - sum(linear[i][j] * origin[j] for j in range(3)) for i in range(3))
+        super().__init__(tuple((*linear[i], moved[i]) for i in range(3)) + (_IDENTITY[3],))
 
-        return _apply_repeat(shape, make_one, repeat, copy, unite, group)
 
-    def make_one(i):
-        v = tuple(c * i for c in vector)
-        return _wrapper(_TranslatedShape, shape)(shape, v)
+@dataclass(frozen=True, init=False)
+class Mirror(Transform):
+    """Reflection across the plane ``point . normal == position``.
 
-    return _apply_repeat(shape, make_one, repeat, copy, unite, group)
-
-
-def rotate(
-    shape,
-    axis: tuple[float, float, float],
-    angle_deg: float,
-    origin=(0.0, 0.0, 0.0),
-    *,
-    repeat: int = 1,
-    copy: bool = False,
-    unite: bool = False,
-    group: bool = False,
-):
-    """Implementation of :meth:`magnelio.geo.Shape.rotated`.
-
-    A :class:`Group` is rotated member-by-member; the result is again a
-    Group.
+    Parameters
+    ----------
+    normal : str or tuple of float
+        ``"x"``, ``"y"``, ``"z"`` or the plane's normal vector.
+    position : float
+        Signed plane position along the unit normal [meters].
     """
-    from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
-    from magnelio.geo.operations import Group  # noqa: PLC0415
 
-    axis = normalize_axis(axis, "rotated(axis)")
-    angle_deg = finite(angle_deg, "rotated(angle_deg)")
-    origin = point3(origin, "rotated(origin)")
-    if isinstance(shape, Group):
+    def __init__(self, normal, position=0.0):
+        from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
 
-        def make_one(i):
-            return _distribute(shape, lambda m: rotate(m, axis, angle_deg * i, origin))
-
-        return _apply_repeat(shape, make_one, repeat, copy, unite, group)
-
-    def make_one(i):
-        return _wrapper(_RotatedShape, shape)(shape, axis, angle_deg * i, origin)
-
-    return _apply_repeat(shape, make_one, repeat, copy, unite, group)
+        n = normalize_axis(normal, "Mirror(normal)")
+        position = finite(position, "Mirror(position)")
+        linear = tuple(
+            tuple((1.0 if i == j else 0.0) - 2.0 * n[i] * n[j] for j in range(3)) for i in range(3)
+        )
+        moved = tuple(2.0 * position * n[i] for i in range(3))
+        super().__init__(tuple((*linear[i], moved[i]) for i in range(3)) + (_IDENTITY[3],))
 
 
-def scale(shape, factor: float, center=(0.0, 0.0, 0.0)):
-    """Implementation of :meth:`magnelio.geo.Shape.scaled`.
+@dataclass(frozen=True, init=False)
+class Scale(Transform):
+    """Uniform scale about a fixed centre.
 
-    A :class:`Group` is scaled member-by-member about the common
-    *center*; the result is again a Group.
+    Parameters
+    ----------
+    factor : float
+        Non-zero uniform scale factor.
+    center : tuple of float
+        Fixed point of the scale [meters].
     """
-    from magnelio.geo.operations import Group  # noqa: PLC0415
 
-    factor = nonzero(factor, "scaled(factor)")
-    center = point3(center, "scaled(center)")
-    if isinstance(shape, Group):
-        return _distribute(shape, lambda m: scale(m, factor, center))
-    return _wrapper(_ScaledShape, shape)(shape, factor, center)
-
-
-def mirror(
-    shape,
-    *,
-    normal,
-    position: float = 0.0,
-    copy: bool = False,
-    unite: bool = False,
-    group: bool = False,
-):
-    """Implementation of :meth:`magnelio.geo.Shape.mirrored`.
-
-    A :class:`Group` is mirrored member-by-member; the result is again a
-    Group.
-    """
-    from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
-    from magnelio.geo.operations import Group  # noqa: PLC0415
-
-    normal = normalize_axis(normal, "mirrored(normal)")
-    position = finite(position, "mirrored(position)")
-    if (unite or group) and not copy:
-        # DD-126: mirror has no repeat, so without copy there is a
-        # single shape to bundle.  Silently honouring unite/group would
-        # hand back a bare mirror image where the caller asked for the
-        # symmetric whole — a wrong geometry that meshes and solves.
-        raise ValueError(
-            "mirror(unite=True) / mirror(group=True) needs copy=True — "
-            "there is nothing to combine the mirror image with otherwise."
+    def __init__(self, factor, center=(0.0, 0.0, 0.0)):
+        factor = nonzero(factor, "Scale(factor)")
+        center = point3(center, "Scale(center)")
+        moved = tuple((1.0 - factor) * c for c in center)
+        super().__init__(
+            (
+                (factor, 0.0, 0.0, moved[0]),
+                (0.0, factor, 0.0, moved[1]),
+                (0.0, 0.0, factor, moved[2]),
+                _IDENTITY[3],
+            )
         )
 
-    if isinstance(shape, Group):
 
-        def make_one(i):
-            return _distribute(shape, lambda m: mirror(m, normal=normal, position=position))
-
-        return _apply_repeat(shape, make_one, 1, copy, unite, group)
-
-    def make_one(i):
-        return _wrapper(_MirroredShape, shape)(shape, normal, position)
-
-    return _apply_repeat(shape, make_one, 1, copy, unite, group)
+_CATEGORY_WRAPPERS: dict[type, type] = {}
 
 
-@dataclass
-class _TranslatedShape(Shape):
-    _inner: object
-    _vector: tuple[float, float, float]
+def _category_wrapper(shape):
+    from magnelio.geo._sheet import PlanarSheet, Profile, Sheet  # noqa: PLC0415
+    from magnelio.geo.surfaces import Surface  # noqa: PLC0415
 
-    @property
-    def material(self):
-        return self._inner.material
-
-    @cached_occ_shape
-    def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import occ_translate
-
-        return occ_translate(self._inner._occ_shape(scale), self._vector, scale=scale)
-
-    def _analytic_bbox(self):
-        from magnelio.geo._scaling import translate_box
-
-        return translate_box(self._inner._analytic_bbox(), self._vector)
-
-
-@dataclass
-class _RotatedShape(Shape):
-    _inner: object
-    _axis: tuple[float, float, float]
-    _angle_deg: float
-    _origin: tuple[float, float, float]
-
-    @property
-    def material(self):
-        return self._inner.material
-
-    @cached_occ_shape
-    def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import occ_rotate
-
-        return occ_rotate(
-            self._inner._occ_shape(scale), self._axis, self._angle_deg, self._origin, scale=scale
+    if isinstance(shape, PlanarSheet):
+        category = PlanarSheet
+    elif isinstance(shape, Profile):
+        category = Profile
+    elif isinstance(shape, Surface):
+        category = Surface
+    elif isinstance(shape, Sheet):
+        category = Sheet
+    elif isinstance(shape, Solid):
+        category = Solid
+    else:
+        category = Shape
+    if category not in _CATEGORY_WRAPPERS:
+        _CATEGORY_WRAPPERS[category] = type(
+            f"Transformed{category.__name__}",
+            (_TransformedShape, category),
+            {
+                "__doc__": f"Affine transform of a {category.__name__}.",
+                "__module__": __name__,
+            },
         )
+    return _CATEGORY_WRAPPERS[category]
 
-    def _analytic_bbox(self):
-        from magnelio.geo._scaling import rotate_box
 
-        return rotate_box(self._inner._analytic_bbox(), self._axis, self._angle_deg, self._origin)
+def _apply(transform: Transform, shape: Shape):
+    from magnelio.geo.curves import Curve  # noqa: PLC0415
+
+    if isinstance(shape, Curve):
+        return _transform_curve(transform, shape)
+    if isinstance(shape, _TransformedShape):
+        transform = transform @ shape._transform
+        shape = shape._inner
+    return _category_wrapper(shape)(shape, transform)
+
+
+def _transform_curve(transform: Transform, curve):
+    from magnelio.geo.curves import Curve  # noqa: PLC0415
+
+    root = getattr(curve, "_transform_root", curve)
+    previous = getattr(curve, "_transform_value", Transform.identity())
+    combined = transform @ previous
+
+    def build(scale):
+        from magnelio.geo._occ_backend import occ_transform  # noqa: PLC0415
+
+        return occ_transform(root._occ_shape(scale), combined.matrix, scale=scale)
+
+    bounds = _transform_box(root._analytic_bbox(), combined)
+    ends = None
+    if root._ends is not None:
+        ends = tuple(combined.point(point) for point in root._ends)
+    result = Curve(_build=build, name=root.name, _bounds=bounds, _ends=ends)
+    result._transform_root = root
+    result._transform_value = combined
+    return result
 
 
 @dataclass
-class _ScaledShape(Shape):
+class _TransformedShape(Shape):
     _inner: object
-    _factor: float
-    _center: tuple[float, float, float]
+    _transform: Transform
 
     @property
     def material(self):
         return self._inner.material
 
-    @cached_occ_shape
-    def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import occ_scale
-
-        return occ_scale(self._inner._occ_shape(scale), self._factor, self._center, scale=scale)
-
-    def _analytic_bbox(self):
-        from magnelio.geo._scaling import scale_box
-
-        return scale_box(self._inner._analytic_bbox(), self._factor, self._center)
-
-
-@dataclass
-class _MirroredShape(Shape):
-    _inner: object
-    _normal: tuple[float, float, float]
-    _position: float
+    @property
+    def name(self):
+        return getattr(self._inner, "name", None)
 
     @property
-    def material(self):
-        return self._inner.material
+    def color(self):
+        return getattr(self._inner, "color", None)
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import occ_mirror
+        from magnelio.geo._occ_backend import occ_transform  # noqa: PLC0415
 
-        return occ_mirror(self._inner._occ_shape(scale), self._normal, self._position, scale=scale)
+        return occ_transform(self._inner._occ_shape(scale), self._transform.matrix, scale=scale)
 
     def _analytic_bbox(self):
-        from magnelio.geo._scaling import mirror_box
+        return _transform_box(self._inner._analytic_bbox(), self._transform)
 
-        return mirror_box(self._inner._analytic_bbox(), self._normal, self._position)
+
+def _transform_box(box, transform):
+    from magnelio.geo._scaling import box_of_points  # noqa: PLC0415
+
+    lo, hi = box
+    corners = tuple(
+        (x, y, z) for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (lo[2], hi[2])
+    )
+    return box_of_points([transform.point(point) for point in corners])
+
+
+def translate(shape, vector):
+    """Apply :class:`Translation`; retained as an internal helper."""
+    return Translation(vector) @ shape
+
+
+def rotate(shape, axis, angle_deg, origin=(0.0, 0.0, 0.0)):
+    """Apply :class:`Rotation`; retained as an internal helper."""
+    return Rotation(axis, angle_deg, origin) @ shape
+
+
+def scale(shape, factor, center=(0.0, 0.0, 0.0)):
+    """Apply :class:`Scale`; retained as an internal helper."""
+    return Scale(factor, center) @ shape
+
+
+def mirror(shape, *, normal, position=0.0):
+    """Apply :class:`Mirror`; retained as an internal helper."""
+    return Mirror(normal, position) @ shape

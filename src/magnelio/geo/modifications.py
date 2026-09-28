@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._sheet import PlanarSheet, Sheet
 from magnelio.geo._validate import finite, nonzero, point3, positive, vector3
-from magnelio.geo.shape import Shape
+from magnelio.geo.shape import Solid
 from magnelio.materials.material import resolve_material
 
 
@@ -70,7 +70,7 @@ def fillet(shape, *, near=None, face_near=None, edges=None, radius):
 
 
 @dataclass
-class _ChamferedShape(Shape):
+class _ChamferedShape(Solid):
     _inner: object
     _near: object
     _face_near: object
@@ -169,7 +169,7 @@ def trace(curve, *, width, thickness, caps="round", normal=None, material=None, 
 
 
 @dataclass
-class _TracedCurveShape(Shape):
+class _TracedCurveShape(Solid):
     _curve: object
     _width: float
     _thickness: float
@@ -327,7 +327,7 @@ def thicken(sheet, *, thickness, direction="forward", material=None):
 
 
 @dataclass
-class _ShelledShape(Shape):
+class _ShelledShape(Solid):
     _inner: object
     _thickness: float
     _opening_face_near: object
@@ -350,7 +350,7 @@ class _ShelledShape(Shape):
 
 
 @dataclass
-class _ThickenedSheet(Shape):
+class _ThickenedSheet(Solid):
     _inner: object
     _thickness: float
     _direction: str
@@ -416,7 +416,7 @@ def sweep(profile, spine, *, material=None):
 
 
 @dataclass
-class _ExtrudedFaceShape(Shape):
+class _ExtrudedFaceShape(Solid):
     _inner: object
     _face_near: object
     _vector: object
@@ -452,7 +452,7 @@ class _ExtrudedFaceShape(Shape):
 
 
 @dataclass
-class _LoftedShape(Shape):
+class _LoftedShape(Solid):
     _shape_a: object
     _face_near_a: object
     _shape_b: object
@@ -501,7 +501,7 @@ class _LoftedShape(Shape):
 
 
 @dataclass
-class Loft(Shape):
+class Loft(Solid):
     """A solid interpolating an ordered series of cross-sections.
 
     The way to build a transition no primitive covers: a horn flaring
@@ -604,7 +604,7 @@ class Loft(Shape):
 
 
 @dataclass
-class _FilletedShape(Shape):
+class _FilletedShape(Solid):
     _inner: object
     _near: object
     _face_near: object
@@ -637,7 +637,7 @@ _AXIS_VECTORS = {"x": (1.0, 0.0, 0.0), "y": (0.0, 1.0, 0.0), "z": (0.0, 0.0, 1.0
 
 
 @dataclass
-class _RevolvedShape(Shape):
+class _RevolvedShape(Solid):
     _profile: object
     _axis: object
     _angle_deg: float
@@ -691,7 +691,7 @@ class _RevolvedShape(Shape):
 
 
 @dataclass
-class _SweptShape(Shape):
+class _SweptShape(Solid):
     _profile: object
     _spine: object
     _material: object

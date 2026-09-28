@@ -686,7 +686,7 @@ class TestOCCTransforms:
         assert rotate(s, (0, 0, 1), 45).material is mat
         assert scale(s, 2.0).material is mat
 
-    # -- repeat / copy / unite -------------------------------------------------
+    # -- explicit arrays -------------------------------------------------------
 
     def test_translate_repeat(self):
         _occ()
@@ -694,7 +694,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import translate
 
         b = Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        copies = translate(b, (2e-3, 0, 0), repeat=3)
+        copies = [translate(b, (2e-3 * i, 0, 0)) for i in range(1, 4)]
         assert isinstance(copies, list)
         assert len(copies) == 3
         # Copy 1 at 2mm, copy 2 at 4mm, copy 3 at 6mm
@@ -708,7 +708,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import translate
 
         b = Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        result = translate(b, (2e-3, 0, 0), repeat=2, copy=True)
+        result = [b, *(translate(b, (2e-3 * i, 0, 0)) for i in range(1, 3))]
         assert isinstance(result, list)
         assert len(result) == 3  # original + 2 copies
         assert result[0] is b  # first element is the original
@@ -720,7 +720,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import translate
 
         b = Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        result = translate(b, (2e-3, 0, 0), repeat=3, unite=True)
+        result = Union(*(translate(b, (2e-3 * i, 0, 0)) for i in range(1, 4)))
         assert isinstance(result, Union)
         assert result._occ_shape() is not None
 
@@ -730,7 +730,7 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import rotate
 
         b = Brick(origin=(1e-3, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        copies = rotate(b, axis=(0, 0, 1), angle_deg=90, repeat=3)
+        copies = [rotate(b, axis=(0, 0, 1), angle_deg=90 * i) for i in range(1, 4)]
         assert isinstance(copies, list)
         assert len(copies) == 3  # at 90°, 180°, 270°
 
@@ -740,7 +740,10 @@ class TestOCCTransforms:
         from magnelio.geo.transforms import rotate
 
         b = Brick(origin=(1e-3, 0, 0), size=(1e-3, 1e-3, 1e-3), material=_air())
-        result = rotate(b, axis=(0, 0, 1), angle_deg=90, repeat=3, copy=True)
+        result = [
+            b,
+            *(rotate(b, axis=(0, 0, 1), angle_deg=90 * i) for i in range(1, 4)),
+        ]
         assert isinstance(result, list)
         assert len(result) == 4  # original + 3 copies
         assert result[0] is b
@@ -2174,32 +2177,30 @@ class TestGroupClass:
 
 
 class TestGroupTransforms:
-    """Transforms distribute over members; group= aggregates copies."""
+    """Transforms distribute over members; arrays use explicit Groups."""
 
     def test_group_flag_aggregates_copies(self):
         from magnelio.geo import Brick, Group
-        from magnelio.geo.transforms import translate
 
-        res = translate(Brick(material=_air()), (1e-3, 0, 0), repeat=3, group=True)
+        base = Brick(material=_air())
+        res = Group(*(base.translated((i * 1e-3, 0, 0)) for i in range(1, 4)))
         assert isinstance(res, Group)
         assert len(list(res.members())) == 3
 
     def test_group_flag_with_copy_includes_original(self):
         from magnelio.geo import Brick, Group
-        from magnelio.geo.transforms import translate
 
         b = Brick(material=_air())
-        res = translate(b, (1e-3, 0, 0), repeat=2, copy=True, group=True)
+        res = Group(b, *(b.translated((i * 1e-3, 0, 0)) for i in range(1, 3)))
         assert isinstance(res, Group)
         members = list(res.members())
         assert len(members) == 3 and members[0] is b
 
-    def test_unite_and_group_mutually_exclusive(self):
+    def test_transform_options_are_removed(self):
         from magnelio.geo import Brick
-        from magnelio.geo.transforms import translate
 
-        with pytest.raises(ValueError, match="either unite"):
-            translate(Brick(material=_air()), (1e-3, 0, 0), repeat=2, unite=True, group=True)
+        with pytest.raises(TypeError, match="unexpected keyword argument 'group'"):
+            Brick(material=_air()).translated((1e-3, 0, 0), group=True)
 
     def test_translate_distributes_and_preserves_material(self):
         from magnelio.geo import Brick, Group

@@ -1,14 +1,13 @@
 # `magnelio.geo`
 
-Geometry is built from primitives (`Brick`, `Cylinder`, …) combined with
-the Boolean operators `+`, `-` and `&`, then refined with chainable
-verbs (`.translated()`, `.mirrored()`, `.filleted()`, …).
+Standalone geometry is organised by dimension: `Curve`, `Sheet` (including
+planar `Profile` and curved `Surface` values), and `Solid` all derive from
+`Shape`.  The named affine methods are shared by every category; immutable
+`Transform` values provide reusable composition with `@`.
 
-The operators and verbs are **not** listed on each primitive: they are
-shared by every geometry object and documented once on
-{class}`~magnelio.geo.Shape`, the base class all of them inherit from.
-Start there when you are looking for what can be done *to* a shape;
-the classes below describe what each shape *is*.
+Boolean `+`, `-` and `&` are restricted to `Solid` values.  `Group` is a
+material-preserving authoring collection rather than a `Shape`; its affine
+transforms distribute over its members.
 
 ```{eval-rst}
 .. automodule:: magnelio.geo

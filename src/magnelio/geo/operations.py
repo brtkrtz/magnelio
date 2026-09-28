@@ -1,7 +1,7 @@
 """
 CSG Boolean operations: Union, Intersection, Difference — plus Group.
 
-Boolean ops wrap two (or more) shapes and build the OCC BRep shape lazily.
+Boolean ops wrap solids and build the OCC BRep shape lazily.
 The material of a boolean operation is derived from the constituent shapes;
 the result shape uses the material of the base operand for Difference,
 and requires explicit material assignment for Union/Intersection.
@@ -23,8 +23,7 @@ if TYPE_CHECKING:
 
 
 from magnelio.geo._cache import cached_occ_shape
-from magnelio.geo._validate import operand
-from magnelio.geo.shape import Shape
+from magnelio.geo.shape import Shape, Solid
 from magnelio.materials.material import resolve_material
 
 
@@ -60,11 +59,16 @@ def _check_operands(operands, op_name: str, *, minimum: int) -> None:
         )
     _reject_group(operands, op_name)
     for index, s in enumerate(operands):
-        operand(s, f"{op_name} operand {index}")
+        if not isinstance(s, Solid):
+            raise TypeError(
+                f"{op_name} accepts Solid operands; operand {index} is "
+                f"{type(s).__name__}. Curves, sheets, profiles and Groups "
+                "are not Boolean operands."
+            )
 
 
 @dataclass
-class Union(Shape):
+class Union(Solid):
     """Boolean union of two or more shapes.
 
     Args:
@@ -98,7 +102,7 @@ class Union(Shape):
 
 
 @dataclass
-class Intersection(Shape):
+class Intersection(Solid):
     """Boolean intersection of two shapes.
 
     Args:
@@ -132,7 +136,7 @@ class Intersection(Shape):
 
 
 @dataclass
-class Difference(Shape):
+class Difference(Solid):
     """Boolean difference: base minus one or more tools.
 
     Parameters
@@ -193,7 +197,7 @@ class Difference(Shape):
 
 
 @dataclass
-class Group(Shape):
+class Group:
     """A logical bundle of shapes that preserves each member's material.
 
     Unlike :class:`Union` — which *fuses* its operands into a single solid
@@ -212,9 +216,7 @@ class Group(Shape):
       Group whose members are each translated; likewise
       :meth:`~magnelio.geo.Shape.rotated`,
       :meth:`~magnelio.geo.Shape.scaled` and
-      :meth:`~magnelio.geo.Shape.mirrored`.  The repeat helpers grow
-      a ``group=True`` sibling of ``unite=True`` that aggregates copies
-      into a Group instead of fusing them.
+      :meth:`~magnelio.geo.Shape.mirrored`.
     - **Nesting is allowed** (a Group of Groups); :meth:`members` flattens
       recursively.
     - **Flattened at** :meth:`~magnelio.geo.GeometryModel.add`, so the
@@ -236,8 +238,10 @@ class Group(Shape):
 
     def __init__(self, *shapes, name=None):
         for index, s in enumerate(shapes):
-            if not isinstance(s, Group):
-                operand(s, f"Group member {index}")
+            if not isinstance(s, (Shape, Group)):
+                raise TypeError(
+                    f"Group member {index} must be a Shape or nested Group; got {type(s).__name__}."
+                )
         self.shapes = shapes
         self.name = name
 
@@ -253,6 +257,82 @@ class Group(Shape):
                 yield from s.members()
             else:
                 yield s
+
+    def translated(self, vector):
+        """Return a Group with every member translated by *vector*.
+
+        Parameters
+        ----------
+        vector : tuple of float
+            ``(dx, dy, dz)`` translation [meters].
+
+        Returns
+        -------
+        Group
+            New Group with its structure and member materials preserved.
+        """
+        from magnelio.geo.transforms import Translation  # noqa: PLC0415
+
+        return Translation(vector) @ self
+
+    def rotated(self, axis, angle_deg, origin=(0.0, 0.0, 0.0)):
+        """Return a Group with every member rotated about one axis.
+
+        Parameters
+        ----------
+        axis : str or tuple of float
+            Axis name or direction vector.
+        angle_deg : float
+            Right-handed angle [degrees].
+        origin : tuple of float
+            Point on the rotation axis [meters].
+
+        Returns
+        -------
+        Group
+            New Group with its structure and member materials preserved.
+        """
+        from magnelio.geo.transforms import Rotation  # noqa: PLC0415
+
+        return Rotation(axis, angle_deg, origin) @ self
+
+    def scaled(self, factor, center=(0.0, 0.0, 0.0)):
+        """Return a Group with every member uniformly scaled.
+
+        Parameters
+        ----------
+        factor : float
+            Non-zero uniform scale factor.
+        center : tuple of float
+            Fixed point of the scale [meters].
+
+        Returns
+        -------
+        Group
+            New Group with its structure and member materials preserved.
+        """
+        from magnelio.geo.transforms import Scale  # noqa: PLC0415
+
+        return Scale(factor, center) @ self
+
+    def mirrored(self, normal, position=0.0):
+        """Return a Group with every member mirrored across one plane.
+
+        Parameters
+        ----------
+        normal : str or tuple of float
+            Plane-normal axis name or direction vector.
+        position : float
+            Signed plane position along the unit normal [meters].
+
+        Returns
+        -------
+        Group
+            New Group with its structure and member materials preserved.
+        """
+        from magnelio.geo.transforms import Mirror  # noqa: PLC0415
+
+        return Mirror(normal, position) @ self
 
     def volume(self, scale: float | None = None) -> float:
         """Total volume of every member [cubic meters].

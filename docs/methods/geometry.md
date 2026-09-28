@@ -11,33 +11,74 @@ solid, and what the mesher makes of the result.  The API reference
 lists every class and verb; the tutorials on profile geometry, CAD
 import and the reflector antenna show them in use.
 
-## Bodies, sheets and curves
+## Shapes have a dimension
 
-Three kinds of object share the geometry namespace:
+Every standalone geometry value is a `Shape`, with one explicit dimensional
+category:
 
-- **Bodies** — `Brick`, `Sphere`, `Cylinder`, `Cone`, `Torus`, `Loft`,
+- **Solids** — `Solid` values such as `Brick`, `Sphere`, `Cylinder`, `Cone`, `Torus`, `Loft`,
   imported solids, and everything a verb or a Boolean produces from
-  them.  A body carries a material and is what a `GeometryModel`
+  them.  A solid may carry a material and is what a `GeometryModel`
   meshes.
-- **Sheets** — zero-thickness regions: the planar `Face` (an
+- **Sheets** — `Sheet` values are zero-thickness regions: the planar
+  `Profile` category currently includes `Face` (an
   axis-normal polygon), a `Curve.covered()` (any closed planar curve
-  filled in), and the curved `Surface`.  A sheet without a material is
+  filled in), while `Surface` is the curved-sheet category.  A sheet without a material is
   a *construction profile*: it exists to be grown into a body by
   `extruded()` or `thickened()` — and, for the planar ones, `revolved()`
   or `swept()`, or as a section of a `Loft`.  A sheet with a material
   would be a *thin sheet*; its physics (an infinitely thin conductor or
   dielectric film) is not wired, so such a sheet cannot be meshed on its
   own — model it as a thin body instead.
-- **Curves** — `Curve` (polyline, arc, spline, helix) and `Path`, which
+- **Curves** — `Curve` values (polyline, arc, spline, helix) are
+  one-dimensional standalone shapes.  `Path` is a builder which
   draws one segment by segment.  A closed planar curve becomes a sheet
   through `covered()`; any curve becomes a conductor track through
   `traced()` (widened in its plane, then given a metallisation
   thickness — the direct route from a routed centreline to the copper
   of a board); a `ThinWire` is a curve meshed as a sub-cell conductor.
 
-Moving, turning, scaling and mirroring keep these kinds: a rotated
-sheet is still a sheet and still a profile, a mirrored planar sheet is
-still planar.  Booleans are defined on bodies.
+Moving, turning, scaling and mirroring preserve the category, material and
+name: a rotated curve remains a curve, a rotated profile remains a profile,
+and a mirrored solid remains a solid.  `Group` is deliberately outside the
+`Shape` hierarchy.  It is a material-preserving authoring collection whose
+transforms apply member by member.  Booleans accept solids only; passing a
+curve, sheet, profile or group raises a category-specific `TypeError` before
+the CAD kernel is called.
+
+## Placement and transform composition
+
+The named methods are the normal spelling for one-off placement:
+
+```python
+feed = feed.rotated("z", 30.0).translated((12e-3, 0.0, 0.0))
+route = route.mirrored("y")
+```
+
+Each call returns exactly one new value.  Array construction and fusion are
+therefore explicit operations rather than switches which change a transform's
+return type:
+
+```python
+posts = [post.translated((i * pitch, 0.0, 0.0)) for i in range(8)]
+fence = geo.Union(*posts)
+assembly = geo.Group(*posts)
+```
+
+For a placement that is reused, build an immutable affine value.  `@` acts on
+column-vector points, so the rightmost operation happens first:
+
+```python
+placement = geo.Translation((12e-3, 0.0, 0.0)) @ geo.Rotation("z", 30.0)
+placed_curve = placement @ route
+placed_profile = placement @ cross_section
+placed_solid = placement @ housing
+```
+
+This is equivalent to rotating each value and then translating it.  `Mirror`
+reflects across `point · normal == position`; `Scale` is uniform about its
+centre.  Geometry does not right-apply a transform, and `+ vector` is not a
+translation: `+`, `-` and `&` remain solid Boolean operators.
 
 A union of bodies that are prisms along one axis over the same
 interval — the strips of a feed network, the pads of a layer, a row of

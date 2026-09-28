@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 
 from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._validate import point3, point_list, positive
+from magnelio.geo.shape import Shape
 
 # Seam tolerance of :meth:`Curve.joined`, relative to the chain's own
 # bounding-box diagonal.  Relative on purpose (DD-120): a micrometre-sized
@@ -88,7 +89,7 @@ def _ellipse_frame(p_start, p_end, center, semi_axes, major_axis, normal):
 
 
 @dataclass
-class Curve:
+class Curve(Shape):
     """An abstract 3D locus backed by an OCC wire (no material).
 
     Do not construct directly — use one of the classmethods

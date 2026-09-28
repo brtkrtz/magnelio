@@ -14,6 +14,7 @@ from magnelio.geo import (
     Group,
     Intersection,
     Shape,
+    Solid,
     Sphere,
     Torus,
     Union,
@@ -68,9 +69,12 @@ class TestDocumentedSurface:
     def test_every_geometry_class_is_a_shape(self, cls):
         assert issubclass(cls, Shape)
 
-    @pytest.mark.parametrize("cls", [Union, Intersection, Difference, Group])
+    @pytest.mark.parametrize("cls", [Union, Intersection, Difference])
     def test_every_boolean_result_is_a_shape(self, cls):
-        assert issubclass(cls, Shape)
+        assert issubclass(cls, Solid)
+
+    def test_group_is_not_a_shape(self):
+        assert not issubclass(Group, Shape)
 
     @pytest.mark.parametrize("verb", VERBS)
     def test_verb_carries_its_own_documentation(self, verb):
@@ -271,23 +275,19 @@ class TestMirror:
     def test_copy_returns_original_and_image(self):
         _occ()
         b = _chiral()
-        pair = b.mirrored(normal="x", copy=True)
+        pair = [b, b.mirrored(normal="x")]
         assert isinstance(pair, list) and len(pair) == 2
         assert pair[0] is b
 
     def test_copy_unite_builds_the_symmetric_whole(self):
         _occ()
         b = _chiral()
-        whole = b.mirrored(normal="x", copy=True, unite=True)
+        whole = Union(b, b.mirrored(normal="x"))
         assert isinstance(whole, Union)
         # Disjoint halves (the brick starts at x = 1), so volumes add.
         assert _volume(whole) == pytest.approx(2.0 * _volume(b))
         lo, hi = whole.bounding_box()
         assert (lo[0], hi[0]) == pytest.approx((-4.0, 4.0))
-
-    def test_unite_without_copy_raises(self):
-        with pytest.raises(ValueError, match="copy=True"):
-            _chiral().mirrored(normal="x", unite=True)
 
     def test_group_distributes_and_keeps_materials(self):
         _occ()
@@ -313,7 +313,7 @@ class TestMirror:
         assert m.bounding_box()[0][0] == pytest.approx(6.0)
 
     def test_invalid_normal_raises(self):
-        with pytest.raises(ValueError, match=r"mirrored\(normal\)"):
+        with pytest.raises(ValueError, match=r"Mirror\(normal\)"):
             _chiral().mirrored(normal="q")
 
 
