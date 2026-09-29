@@ -9512,15 +9512,15 @@ def _perp_dir(d):
     return gp_Dir(v)
 
 
-def make_sweep(profile_face, spine_wire):
+def make_sweep(profile_face, spine_wire, *, frame="corrected_frenet", binormal=None):
     """Sweep a planar profile face along a spine wire to produce a solid.
 
     ``BRepOffsetAPI_MakePipe`` uses the profile at the position it already
     occupies, so the profile is first rigidly moved so its centroid lands
     on the spine's start point and its plane normal aligns with the spine's
-    start tangent (its in-plane roll fixed deterministically).  The result
-    is a tube centred on the spine, oriented by the pipe's own trihedron
-    along the path.
+    start tangent, retaining its actual in-plane roll. The selected transport
+    carries that initial orientation along the path; corrected Frenet is the
+    unchanged default.
 
     Parameters
     ----------
@@ -9590,11 +9590,53 @@ def make_sweep(profile_face, spine_wire):
     trsf = shift.Multiplied(trsf)
     moved = _history_result(BRepBuilderAPI_Transform(profile_face, trsf, True))
 
+    if frame != "corrected_frenet":
+        return _oriented_sweep(moved, spine_wire, frame, binormal, tangent)
+
     pipe = BRepOffsetAPI_MakePipe(spine_wire, moved)
     pipe.Build()
     if not pipe.IsDone():
         raise RuntimeError("OCC sweep (MakePipe) operation failed.")
     return _history_result(pipe)
+
+
+def _oriented_sweep(profile_face, spine_wire, frame, binormal, tangent):
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipeShell
+    from OCC.Core.BRepTools import BRepTools_WireExplorer
+    from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Vec
+
+    # Pin every boundary to the same start vertex. Automatic placement of an
+    # offset hole could select another station and destroy hole correspondence.
+    walker = BRepTools_WireExplorer(spine_wire)
+    start = walker.CurrentVertex()
+    plane = BRepAdaptor_Surface(profile_face).Plane()
+    fixed = gp_Ax2(plane.Location(), tangent, plane.XAxis().Direction())
+    if (
+        frame == "fixed_binormal"
+        and gp_Vec(*binormal).Crossed(gp_Vec(tangent)).Magnitude() <= 1e-12
+    ):
+        raise ValueError("swept(binormal=...) must not be parallel to the spine tangent.")
+    outer = extract_face_wire(profile_face)
+    wires = [outer] + [wire for wire in _shape_wires(profile_face) if not wire.IsSame(outer)]
+    solids = []
+    for wire in wires:
+        pipe = BRepOffsetAPI_MakePipeShell(spine_wire)
+        if frame == "frenet":
+            pipe.SetMode(True)
+        elif frame == "fixed":
+            pipe.SetMode(fixed)
+        else:
+            pipe.SetMode(gp_Dir(*binormal))
+        pipe.Add(wire, start, False, False)
+        pipe.Build()
+        if not pipe.IsDone() or not pipe.MakeSolid():
+            raise RuntimeError(f"swept(frame={frame!r}): OCC pipe failed ({pipe.GetStatus()}).")
+        solids.append(_history_result(pipe))
+    solid = solids[0]
+    for hole in solids[1:]:
+        solid = boolean_difference(solid, hole)
+    return solid
 
 
 # ---------------------------------------------------------------------------

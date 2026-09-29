@@ -22484,8 +22484,9 @@ or server is started for them.
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
 **Date:** 2026-09-28.
-**Status:** Accepted as the geometry-foundation contract; WP0 through WP4 are
-implemented on `feat/geo-api-foundation`, with WP5 next.
+**Status:** Accepted as the geometry-foundation contract; WP0 through WP5 are
+implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation
+slice is implemented and the remaining advanced-CAD roadmap stays open.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -22989,3 +22990,36 @@ when additional routing recipes are added, retaining their numerical fixtures.
 All 33 selected Gallery examples execute successfully. The final fresh Sphinx
 build reloads the final API, re-executes Tutorial 21 with its last visual
 refinement and passes with warnings treated as errors.
+
+**WP6 orientation slice (2026-09-29, programme still open).** `swept` on
+standalone planar sections and FaceRef accepts `frame="corrected_frenet"`
+(unchanged default), `"frenet"`, `"fixed"` and `"fixed_binormal"`. The initial
+shortest normal-to-tangent rotation and actual section roll are unchanged.
+Frenet sections follow tangent/curvature/torsion; fixed sections remain parallel
+in world space. Fixed binormal retains the section's angular relation to a
+supplied world direction and can therefore be oblique to a spatial tangent.
+It requires `binormal=`; other modes reject that argument. Zero/nonfinite
+directions and initial tangent parallelism fail at the call. Direction parsing
+prescales finite vectors before normalization, retaining magnitudes from 1e-300
+to 1e300 without modifying the common axis parser.
+
+Non-default modes use MakePipeShell. Each section boundary is anchored explicitly
+to the same spine start vertex, including nonconcentric holes; automatically
+choosing a nearest station independently for a hole is not allowed. Inner pipe
+volumes are subtracted. The default MakePipe implementation remains intact.
+Named result snapshots/project replay and material rules are unchanged.
+Fixed monotone sections have volume equal to area times normal-projected
+displacement, whereas perpendicular constant sections use area times path length.
+No twist/draft or intersection-checking mode is added in this slice.
+
+Gate: `tests/unit/test_geo_sweep_frames.py`, with four-mode annular checks over
+nanometre-to-kilometre scales, independent asymmetric circular end vertices and
+volumes, offset multiple holes, arbitrary placement/reflection covariance,
+spatial cap-angle constraints, invalid directions, project read-back and an
+executed methods recipe. All 42 new gates and 853 relevant regressions pass.
+Methods/API prose, Unreleased changelog and Tutorial 22 explain the same contract;
+the fresh Sphinx build executes the new tutorial and reuses the 33 previously
+verified WP5 outputs. Record: `investigations/geo-api-foundation/WP6-ORIENTATION-VERIFICATION.md`
+(internal record). The broad remainder of WP6 has no frozen contracts yet;
+the private scope inventory proposes explicit packages and a scope question
+remains pending. This entry does not mark the whole WP6 complete.

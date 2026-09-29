@@ -311,8 +311,8 @@ For a sweep, the shortest rotation from the oriented section normal to the
 spine tangent transports its actual boundary. An already aligned section
 retains its in-plane roll exactly. If the normal is opposite to the tangent,
 the half-turn uses the section plane's X direction. The pipe then uses the
-kernel's corrected Frenet transport; further twist and frame modes are not
-exposed. Flat spline sheets are re-covered with their exact boundaries as
+kernel's corrected Frenet transport by default. Explicit frame modes are
+described below. Flat spline sheets are re-covered with their exact boundaries as
 planar sections. The following annular face continues around an exact bend:
 
 ```python
@@ -358,6 +358,60 @@ Selected operations retain exact identity when the surrounding model changes
 its numerical build scale. Projects replay reference origins on their original
 immutable owners, with exact snapshot checks for individual connected edges;
 no persistent kernel indices or nearest retargeting are used.
+
+## Sweep orientation modes
+
+`swept(spine, frame=...)` chooses how the initially aligned section travels
+along a Curve. The same options apply to Profile, eligible planar Sheet and
+FaceRef inputs. Initial placement always retains the real boundary and roll.
+An explicit direction is a world vector, independent of Path's routing up.
+
+| Frame | Section transport |
+| --- | --- |
+| `"corrected_frenet"` (default) | Kernel corrected Frenet transport; the established sweep behaviour |
+| `"frenet"` | Normal to the path tangent, with the curvature/torsion frame |
+| `"fixed"` | All sections remain parallel to the initially aligned section in world space |
+| `"fixed_binormal"` | Angular relations between the section and the supplied world `binormal` remain constant |
+
+Frenet orientation can change sharply where curvature vanishes or changes
+sign. Fixed orientation is useful for a displaced transition whose end
+apertures must remain parallel. It requires a path that advances through those
+section planes; a folded path can produce an invalid volume. Fixed binormal
+requires a nonzero `binormal=` and rejects a direction parallel to the initial
+tangent. On a planar bend use its plane normal to keep the section's relation
+to that bend plane constant. On a spatial path its sections can be oblique to
+the tangent: this mode preserves the specified angular relation, rather than
+replacing the direction with a tangent-dependent projection. `binormal=` is
+invalid for the other modes.
+
+The area-times-path-length rule applies to perpendicular, constant-area
+sections. For fixed parallel sections that advance monotonically along their
+normal, volume is area times the displacement projected onto that normal.
+For example, the following 45-degree bend keeps both rectangular apertures
+parallel to the x-z plane:
+
+```python
+import math
+from magnelio import geo
+
+bend_radius = 8e-3
+angle = math.pi / 4
+aperture = geo.Profile.rectangle((bend_radius, 0, 0), (1e-3, 0.3e-3),
+                                 normal="y", x_direction="x", material="air")
+spine = geo.Curve.arc((bend_radius, 0, 0),
+                      (bend_radius * math.cos(angle / 2), bend_radius * math.sin(angle / 2), 0),
+                      (bend_radius * math.cos(angle), bend_radius * math.sin(angle), 0))
+kept_parallel = aperture.swept(spine, frame="fixed")
+expected_volume = aperture.area * bend_radius * math.sin(angle)
+```
+
+Holes share the same station and frame as the complete section, including
+offset holes. Material inheritance and owner-selection rules remain the same
+as for a default sweep. These options control transport; they do not add twist,
+draft, corner smoothing or a guarantee against self-intersection. Choose
+sections and paths that form a valid solid; kernel failures raise RuntimeError.
+[Tutorial 22](../tutorials/plot_22_sweep_orientation.rst) compares perpendicular
+and parallel transport, checks both volumes and displays their end apertures.
 
 ## Placement and transform composition
 

@@ -816,9 +816,17 @@ retargeting.
 Sweep alignment transports the real section boundary by the shortest oriented
 normal-to-start-tangent rotation, preserving in-plane roll for aligned sections.
 Antiparallel normals use the plane X direction as a half-turn axis; subsequent
-transport remains corrected Frenet. Planar thickening forward follows the
+transport defaults to corrected Frenet. `swept(frame=...)` also accepts `frenet`,
+`fixed` and `fixed_binormal`. Fixed world sections remain parallel to their
+initial alignment; fixed binormal retains their angular relation to the supplied
+world `binormal`, and may yield oblique sections on spatial paths. That direction
+is required only for fixed binormal and cannot be parallel to the initial
+tangent. Non-default frames use MakePipeShell with every outer/inner boundary
+pinned to the same spine start vertex; hole solids are subtracted. The default
+MakePipe route is retained. Planar thickening forward follows the
 oriented sheet/face normal. Path routing poses are independent of this pipe
-orientation; configurable pipe frame/twist modes remain WP6. An explicit
+orientation. Pipe frame modes are implemented as a first WP6 slice; twist/draft
+laws and intersection-checking modes remain open. An explicit
 `material=` wins; otherwise a Profile supplies its material and a `FaceRef`
 supplies its owner Solid's material.  Construction solids without material
 remain valid Boolean tools but cannot enter `GeometryModel` directly.
@@ -857,7 +865,8 @@ rigid rotation. No torsion-derived Frenet frame or world-axis reset is used
 for routing. Zero-tangent degeneracy fails rather than inventing a pose.
 
 Final Curve values contain geometry, not a routing frame; pipe orientation
-retains the existing corrected Frenet contract. Project round trips retain
+defaults to corrected Frenet and can be selected independently with `frame=`.
+Project round trips retain
 the resulting geometry and named faces; a new Path may start from those faces
 after read-back, without a Path-specific store codec. Focused gate:
 `tests/unit/test_geo_paths_foundation.py`.

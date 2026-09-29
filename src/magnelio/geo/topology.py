@@ -372,7 +372,7 @@ class FaceRef(TopologyRef):
 
         return revolve(self, axis=axis, angle_deg=angle_deg, origin=origin, material=material)
 
-    def swept(self, spine, *, material=None):
+    def swept(self, spine, *, material=None, frame="corrected_frenet", binormal=None):
         """Return a Solid by sweeping this planar face along a Curve.
 
         Parameters
@@ -384,6 +384,14 @@ class FaceRef(TopologyRef):
         material : Material or str, optional
             Override the owner's material.
 
+        frame : {'corrected_frenet', 'frenet', 'fixed', 'fixed_binormal'}, optional
+            Transport of the initially aligned section. Fixed keeps sections
+            parallel in world space; fixed binormal preserves their angular
+            relation to a supplied world direction.
+        binormal : str or tuple of float, optional
+            Required only for fixed binormal transport; it must not be parallel
+            to the spine tangent.
+
         Returns
         -------
         Solid
@@ -391,7 +399,7 @@ class FaceRef(TopologyRef):
         """
         from magnelio.geo.modifications import sweep
 
-        return sweep(self, spine, material=material)
+        return sweep(self, spine, material=material, frame=frame, binormal=binormal)
 
     def thickened(self, thickness, *, direction="forward", material=None):
         """Return a Solid offset from this face.

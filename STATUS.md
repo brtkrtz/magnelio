@@ -33,10 +33,10 @@ Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
-On `feat/geo-api-foundation`, WP0-WP5 implement dimensional/affine geometry,
-exact Curve/Profile factories, owned topology, uniform operations and relative routes.
-All 281 foundation gates, 811 final relevant tests, 33/33 gallery examples and fresh Sphinx pass.
-Full run: 3930 passed / 40 skipped / 3 failures; two recipe fixtures now pass, QTEM is identical on WP3.
+On `feat/geo-api-foundation`, WP0-WP5 are implemented; WP6 orientation is a first slice.
+Sweeps add Frenet, fixed world sections and fixed binormal; the corrected Frenet default remains.
+All 323 foundation/sweep gates and 853 relevant tests pass; Tutorial 22 and fresh Sphinx pass.
+WP6 remains open. Latest full run is WP5; its QTEM failure is identical on WP3.
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
@@ -100,7 +100,7 @@ Newest first, one line each; the full record is the DD entry.
 ## Script directories
 
 `examples/` is the public-API surface — `examples/tutorials/` holds the
-21 gallery tutorials (21 on the foundation branch), with no internal imports.
+22 gallery tutorials (21/22 on the foundation branch), with no internal imports.
 Released tutorials run on the GPU box on pure defaults (the DD-096 criterion is on by
 default, DD-114: the energy criterion alone never fires on a shielded
 lossless structure's TM-cut-off plateau).  `validation/` holds the
@@ -284,7 +284,7 @@ of the run, in double it is flat (−149.12 → −149.13 dB).
 (`pip install -e .[docs]`, `sphinx-build -b html docs
 docs/_build/html`; warning-free — verified with `sphinx -E`, a cached
 rebuild proves nothing).  Pillars: Tutorials (from
-`examples/tutorials/*.py`, 01–20 released, 21 on the foundation branch; of which
+`examples/tutorials/*.py`, 01–20 released, 21/22 on the foundation branch; of which
 tutorial 13, the DR-filter capstone, is ~5.5 min), API reference,
 Numerical methods (thirteen chapters, every method cited, in-house
 derivations marked in prose), Bibliography.  `docs/references.bib`
@@ -317,7 +317,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **Geometry API foundation (DD-275)** — WP0-WP5 are implemented and documented: dimensional/affine geometry, exact curves/Profile holes, owned topology/names, uniform operations, relative routing poses and project replay. Tutorial 21 routes the placed named coax face through a right circular bend to the domain plane and sweeps its actual annulus. WP6 advanced CAD remains open. All 811 final relevant tests, 33/33 gallery examples and fresh Sphinx pass. The full-suite QTEM length-law failure has the exact unchanged-WP3 value; both documentation-fixture failures pass after section isolation.
+* **Geometry API foundation (DD-275)** — WP0-WP5 are implemented and documented. WP6 adds a first sweep-orientation slice: Frenet, fixed world sections and fixed binormal, retaining the default transport, initial roll, holes and material rules. Tutorial 22 compares perpendicular and parallel apertures; all 42 new gates and 853 relevant tests pass, as does fresh Sphinx (new tutorial executed, 33 WP5 outputs reused). The broad WP6 remains open; its detailed scope question is pending. Record: `investigations/geo-api-foundation/WP6-ORIENTATION-VERIFICATION.md` (internal record). The latest full run remains WP5 with the unchanged-WP3 QTEM length-law failure.
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

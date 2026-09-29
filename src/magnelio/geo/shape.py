@@ -423,14 +423,17 @@ class Shape:
 
         return revolve(self, axis=axis, angle_deg=angle_deg, origin=origin, material=material)
 
-    def swept(self, spine, *, face_near=None, material=None):
+    def swept(
+        self, spine, *, face_near=None, material=None, frame="corrected_frenet", binormal=None
+    ):
         """Sweep a planar Sheet along a Curve into an independent Solid.
 
         The actual boundary is translated to the spine start and aligned by
         the shortest normal-to-tangent rotation, retaining in-plane roll.
         An already aligned section stays in its actual orientation. For an
         opposite normal, the section plane's X axis defines the half-turn.
-        The pipe then follows the kernel's corrected Frenet transport.
+        The pipe follows corrected Frenet transport unless another frame
+        is selected explicitly.
 
         Parameters
         ----------
@@ -443,6 +446,14 @@ class Shape:
         material : Material or str, optional
             Override the section's material; otherwise it is inherited.
             Without material the result is a construction solid.
+        frame : {'corrected_frenet', 'frenet', 'fixed', 'fixed_binormal'}, optional
+            Transport of the initially aligned section. The default retains
+            corrected Frenet transport. Frenet follows curvature and torsion;
+            fixed keeps sections parallel in world space. Fixed binormal
+            preserves their angular relation to the supplied world direction.
+        binormal : str or tuple of float, optional
+            Required only for fixed binormal transport. Must not be parallel
+            to the spine tangent. Path's up direction does not set this value.
 
         Returns
         -------
@@ -451,7 +462,9 @@ class Shape:
         """
         from magnelio.geo.modifications import sweep  # noqa: PLC0415
 
-        return sweep(self, spine, face_near=face_near, material=material)
+        return sweep(
+            self, spine, face_near=face_near, material=material, frame=frame, binormal=binormal
+        )
 
     def shelled(self, thickness, *, opening_face_near=None, openings=None):
         """Hollow this Solid inward to a constant wall thickness.

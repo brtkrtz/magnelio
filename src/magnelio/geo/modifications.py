@@ -449,7 +449,9 @@ class _ThickenedSheet(Solid):
         return pad_box(self._inner._analytic_bbox(), self._thickness)
 
 
-def sweep(profile, spine, *, face_near=None, material=None):
+def sweep(
+    profile, spine, *, face_near=None, material=None, frame="corrected_frenet", binormal=None
+):
     """Implementation of :meth:`magnelio.geo.Shape.swept`.
 
     Uses ``BRepOffsetAPI_MakePipe``, orienting the result by the pipe
@@ -457,6 +459,21 @@ def sweep(profile, spine, *, face_near=None, material=None):
     """
     from magnelio.geo.curves import Curve  # noqa: PLC0415
 
+    modes = ("corrected_frenet", "frenet", "fixed", "fixed_binormal")
+    if frame not in modes:
+        raise ValueError(f"swept(frame=...) must be one of {modes}; got {frame!r}.")
+    if frame == "fixed_binormal":
+        if binormal is None:
+            raise ValueError("swept(frame='fixed_binormal') requires binormal=.")
+        from magnelio.geo._axes import normalize_axis
+
+        if not isinstance(binormal, str):
+            binormal = vector3(binormal, "swept(binormal)", nonzero=True)
+            magnitude = max(abs(component) for component in binormal)
+            binormal = tuple(component / magnitude for component in binormal)
+        binormal = normalize_axis(binormal, "swept(binormal)")
+    elif binormal is not None:
+        raise ValueError("swept(binormal=...) requires frame='fixed_binormal'.")
     material = resolve_material(material, "swept(material=...)")
     if isinstance(profile, Solid):
         if face_near is None:
@@ -471,7 +488,21 @@ def sweep(profile, spine, *, face_near=None, material=None):
             f"{type(spine).__name__}. Build the path with Curve.polyline / "
             f"Curve.arc / Curve.spline / Curve.helix, or draw it with Path."
         )
-    return finish(_SweptShape(profile, spine, material))
+    if frame == "fixed_binormal":
+        from OCC.Core.BRepAdaptor import BRepAdaptor_CompCurve
+        from OCC.Core.gp import gp_Pnt, gp_Vec
+
+        from magnelio.geo.topology import _scale
+
+        curve = BRepAdaptor_CompCurve(spine._occ_shape(_scale(spine)))
+        tangent = gp_Vec()
+        curve.D1(curve.FirstParameter(), gp_Pnt(), tangent)
+        if tangent.Magnitude() <= 1e-30:
+            raise ValueError("swept() requires a non-zero initial spine tangent.")
+        direction = gp_Vec(*binormal)
+        if tangent.Crossed(direction).Magnitude() <= 1e-12 * tangent.Magnitude():
+            raise ValueError("swept(binormal=...) must not be parallel to the spine tangent.")
+    return finish(_SweptShape(profile, spine, material, frame, binormal))
 
 
 @dataclass
@@ -774,6 +805,8 @@ class _SweptShape(Solid):
     _profile: object
     _spine: object
     _material: object
+    _frame: str = "corrected_frenet"
+    _binormal: object = None
 
     @property
     def material(self):
@@ -785,7 +818,12 @@ class _SweptShape(Solid):
     def _occ_shape(self, scale=1.0):
         from magnelio.geo._occ_backend import make_sweep  # noqa: PLC0415
 
-        return make_sweep(self._profile._occ_shape(scale), self._spine._occ_shape(scale))
+        return make_sweep(
+            self._profile._occ_shape(scale),
+            self._spine._occ_shape(scale),
+            frame=self._frame,
+            binormal=self._binormal,
+        )
 
     def _analytic_bbox(self):
         from magnelio.geo._scaling import box_diagonal, pad_box  # noqa: PLC0415

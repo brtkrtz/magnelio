@@ -50,6 +50,12 @@ The {ref}`routing guide <geometry-routed-paths>` defines left/right,
 rotation-minimizing transport, plane offsets and underdetermined bends.
 Path's up direction guides routing; it does not select a sweep frame.
 
+`swept(frame=...)` selects corrected Frenet, Frenet, fixed world orientation
+or fixed binormal transport. Fixed binormal requires `binormal=`; other modes
+reject that argument. See the [sweep orientation guide](../methods/geometry.md)
+for oblique sections, volume rules and curvature degeneracies, and Tutorial 22
+for parallel-aperture transitions.
+
 ```{eval-rst}
 .. automodule:: magnelio.geo
    :members:

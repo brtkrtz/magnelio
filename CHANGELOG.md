@@ -11,6 +11,10 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Explicit sweep orientation modes: Frenet, parallel world sections and fixed
+  binormal transport, alongside the unchanged corrected Frenet default. The
+  geometry guide and parallel-aperture tutorial explain section orientation,
+  retained holes and the different volume rules.
 - Immutable relative Path poses from a world point or planar owned face,
   with forward runs, exact left/right circular bends, spatial target-tangent
   turns and straight continuation to a world plane. Absolute steps update
