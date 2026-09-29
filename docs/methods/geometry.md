@@ -103,6 +103,80 @@ operation overrides the profile material; otherwise the material is inherited
 produce construction solids suitable as Boolean tools. Assign a material before
 adding the resulting body to a `GeometryModel`.
 
+(geometry-routed-paths)=
+## Absolute and relative routed paths
+
+`Path(start)` retains absolute `line_to`, `arc_to`, `ellipse_to` and
+`spline_to` construction. Each step starts at `path.current`; `curve()`
+returns the drawn Curve and `closed()` adds a straight closing edge when needed.
+Every step returns a new Path, so a common prefix can be branched.
+
+For relative routing, start with `Path.from_pose(point, tangent, up)` or
+`Path.from_face(face_ref, up=...)`. The latter requires a planar FaceRef,
+starts at its area centroid and points along its outward normal, including
+after owner rotation or reflection. A centroid can lie inside an annular hole:
+it is the centreline anchor, not a point of metal. Directions accept world
+vectors or axis letters. Tangent is normalized; up is projected perpendicular
+to it and normalized. Zero directions and parallel tangent/up pairs are errors.
+Read the current unit directions through `path.tangent` and `path.up`.
+
+`forward(distance)` adds a positive straight run. `turn_left(radius=...,
+angle_deg=...)` turns towards `up x tangent`; `turn_right` turns towards
+`tangent x up`. Both build exact circular arcs with positive radius and an
+angle strictly between 0 and 360 degrees. Split a full loop into several turns.
+`turn_to(direction, radius=...)` takes the shortest circular bend to a target
+world tangent, carrying up through the same rigid rotation. An aligned target
+adds no edge; an opposite target leaves the bend plane undetermined and raises.
+Choose an explicit left or right 180-degree turn for a reversal.
+
+`straight_to_plane(normal, position)` intersects the forward ray with the
+world plane `unit_normal · point = position`. Position is a signed distance
+in meters, so `normal="x", position=xmax` means `x = xmax`. The tangent
+stays unchanged. An already reached plane adds no edge; a parallel ray or an
+intersection behind the current point raises `ValueError`.
+
+For example, continue a named oblique coax end around a right-hand bend to
+the domain plane without reconstructing its annular profile:
+
+```python
+from magnelio import geo
+
+coax = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3,
+                    height=6e-3, material="pec").tag_face("port", normal="x")
+coax = coax.rotated("z", 22.5)
+port = coax.face("port")
+route = (geo.Path.from_face(port, up="z")
+         .turn_right(radius=8e-3, angle_deg=22.5)
+         .straight_to_plane(normal="x", position=20e-3))
+extension = port.swept(route.curve())
+```
+
+### Spatial transport and roll
+
+Relative circular bends rotate both tangent and up about their bend axis.
+Absolute segments update tangent from the actual CAD derivative. At a corner,
+up follows the shortest rotation from the previous tangent to the segment's
+start tangent; a sharp reversal uses up as its half-turn axis. This updates
+the routing pose but does not smooth the geometric corner. Along a smooth
+curve, up follows rotation-minimizing (Bishop) transport, adding no spin about
+the tangent, including through spline inflections. A segment with zero tangent
+cannot define a pose and raises. This rule applies to spatial curves as well
+as planar arcs and ellipses; up need not stay aligned with a world axis.
+
+An unposed `Path(start)` acquires tangent after its first absolute segment,
+so `forward` and `straight_to_plane` can then be used; up remains unspecified.
+Relative turns require an explicit pose from `from_pose` or `from_face`.
+Absolute calls on a posed path retain and transport up, allowing both grammars
+to compose. The resulting Curve stores geometry, not a routing frame.
+Path's pose determines subsequent construction; pipe sweeps continue to use
+their corrected Frenet transport and the selected section's actual initial
+roll. A Path up direction does not impose a separate sweep frame or twist.
+Choose radius and section sizes that avoid self-intersection; the route alone
+does not certify a valid swept volume.
+
+[Tutorial 21](../tutorials/plot_21_topology_selection.rst) checks the hollow
+bend's volume against area times length and shows the open bore at the plane.
+
 (geometry-owned-topology)=
 ## Owned topology and named selections
 

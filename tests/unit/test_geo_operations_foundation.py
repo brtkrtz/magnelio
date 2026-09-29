@@ -271,7 +271,7 @@ def test_wp4_upgrade_recipe_executes():
     import re
 
     text = (Path(__file__).parents[2] / "docs/migration-geometry.md").read_text()
-    section = text.split("## Uniform operations", 1)[1]
+    section = text.split("## Uniform operations", 1)[1].split("\n## ", 1)[0]
     namespace = {}
     for block in re.findall(r"```python\n(.*?)```", section, re.S):
         exec(block, namespace)

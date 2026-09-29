@@ -22930,3 +22930,62 @@ upgrade recipes. Methods/API prose, the upgrade guide and Tutorials 14/21
 show the same public grammar; Tutorial 21's absolute circular bend is not a
 relative Path implementation. Verification is recorded in
 `investigations/geo-api-foundation/WP4-VERIFICATION.md` (internal record).
+
+**WP5 implementation (2026-09-29).** The relative vocabulary above is now
+implemented on immutable Path values. `current`, `tangent` and `up` are
+read-only; `from_pose` normalizes tangent and projects up perpendicular to it.
+`from_face` accepts a planar FaceRef, begins at its area centroid and points
+along its outward normal, including after owner placement or reflection.
+An annular centroid is a centreline anchor and need not lie in the metal.
+Zero/parallel directions and curved/unowned face inputs fail eagerly.
+Path's direction parser prescales finite input vectors by their largest
+component before normalization, maintaining unit poses for magnitudes from
+1e-300 to 1e300 without changing the shared geometry axis parser.
+Absolute-only paths acquire tangent after a segment but no implicit up; forward
+runs and plane intersections then work, while all relative turns require an
+explicit initial pose. Absolute segments on posed paths retain transported up.
+
+Left is `up x tangent`; right is `tangent x up`. Circular turns have positive
+radius and angles strictly between zero and 360 degrees, building exact
+Curve arcs and rotating tangent/up together. Full loops use several turns.
+`turn_to` chooses the shortest arc in the old/target tangent plane; an aligned
+target adds no edge and an opposite target raises, since no bend plane can be
+inferred. Explicit left/right 180-degree turns disambiguate that case.
+Plane continuation uses `unit_normal dot point = signed_position` in world
+meters; it rejects parallel rays and intersections behind the current tangent.
+An already reached plane within projected-coordinate roundoff (eight ULPs)
+adds no degenerate edge. No default routing radius is inferred.
+
+**Spatial frame and roll contract.** At an absolute corner, up undergoes the
+shortest old-to-start-tangent rotation; an antiparallel corner uses up as the
+half-turn axis. Corners remain corners, not automatically smoothed bends.
+Along smooth absolute arcs, ellipses and spatial splines, the routing frame
+uses rotation-minimizing transport: `du/dq = -t (u dot dt/dq)`. CAD first and
+second derivatives are evaluated at the segment's model scale. Adaptive
+DOP853 integration uses rtol 1e-10, atol 1e-12 and at most one-sixteenth of
+the parameter range per step; endpoint up is re-orthonormalized. This requires
+no curvature-normal division, retains roll through inflections, and adds no
+spin about the tangent. Relative circles use exact Rodrigues rotation instead
+of numerical integration. A zero tangent fails instead of choosing a world
+axis. The routing frame is data of Path; a completed Curve retains geometry
+only. Pipe sweeps continue to use their existing corrected Frenet transport
+and actual section roll. No WP6 sweep frame/twist mode is introduced.
+
+Gate: `tests/unit/test_geo_paths_foundation.py`, covering analytic endpoints,
+tangents and arc lengths at nanometre to kilometre model scales; arbitrary
+spatial target tangents, projection and degeneracy rules, absolute/relative
+composition, major-circle roll, ellipse axis order, inflections and closed
+loops; an independent discrete parallel-transport check and rotation covariance
+for a spatial spline; posed reflected faces, annular bends to the domain plane,
+unchanged owners and exact project read-back; and executed prose recipes.
+Methods/API prose, the upgrade page and Tutorial 21 document the contract.
+The tutorial names an x-directed coax end, rotates its owner 22.5 degrees,
+routes a relative right bend to x=max, sweeps the actual annulus and checks
+area-times-length volume plus the open outlet. Verification record:
+`investigations/geo-api-foundation/WP5-VERIFICATION.md` (internal record).
+All 65 WP5 gates and 811 final relevant tests pass, including all 281 foundation
+gates. Existing profile/operation prose gates now isolate their own sections
+when additional routing recipes are added, retaining their numerical fixtures.
+All 33 selected Gallery examples execute successfully. The final fresh Sphinx
+build reloads the final API, re-executes Tutorial 21 with its last visual
+refinement and passes with warnings treated as errors.

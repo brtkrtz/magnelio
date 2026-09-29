@@ -123,3 +123,32 @@ cap = body.face(normal="z")
 extension = cap.extruded((0, 0, 3e-3))
 housing = body.shelled(0.2e-3, openings=cap)
 ```
+
+## Relative routes
+
+Existing absolute `Path(start).line_to(...).arc_to(...).ellipse_to(...).spline_to(...)`
+calls remain available. To continue from a planar owned face, replace manual
+centroid/normal arithmetic with `Path.from_face(face, up=...)`. To route from
+a point, use `Path.from_pose(point, tangent, up)`. Up must not be parallel to
+tangent; it determines left/right and is carried without added tangent twist.
+
+```python
+from magnelio import geo
+
+body = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3,
+                    height=6e-3, material="pec").tag_face("port", normal="x")
+body = body.rotated("z", 22.5)
+face = body.face("port")
+spine = (geo.Path.from_face(face, up="z")
+         .turn_right(radius=8e-3, angle_deg=22.5)
+         .straight_to_plane("x", 20e-3).curve())
+extension = face.swept(spine)
+```
+
+Absolute segments now resolve their CAD endpoint tangent when appended.
+Degenerate segments with no tangent therefore fail at that step. Relative
+turns require a posed start; an absolute-only path acquires tangent but no
+implicit up direction. `turn_to` rejects an opposite direction because it
+does not determine a bend plane. The [routing guide](methods/geometry.md)
+defines spatial transport and the distinction between routing pose and pipe
+orientation. Tutorial 21 executes the oblique coax bend to the domain plane.

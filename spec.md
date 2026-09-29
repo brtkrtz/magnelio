@@ -691,8 +691,8 @@ member-wise Group placement, and Solid-only CSG; WP2 implements exact curves
 and validated planar Profile factories, including intrinsic holes. The
 migration boundary is characterized in `tests/unit/test_geo_api_baseline.py`;
 WP3 implements owned topology, semantic/named selection, history and project
-replay. WP4 implements the uniform operations below; WP5 relative paths remain
-open. A name listed here must not be
+replay. WP4 implements the uniform operations below; WP5 implements relative
+routes and transported poses. A name listed here must not be
 documented as shipped until its work package lands.
 
 Standalone geometry is dimensional:
@@ -817,11 +817,50 @@ Sweep alignment transports the real section boundary by the shortest oriented
 normal-to-start-tangent rotation, preserving in-plane roll for aligned sections.
 Antiparallel normals use the plane X direction as a half-turn axis; subsequent
 transport remains corrected Frenet. Planar thickening forward follows the
-oriented sheet/face normal. Relative poses and configurable frame/twist modes
-remain WP5/WP6 respectively.  An explicit
+oriented sheet/face normal. Path routing poses are independent of this pipe
+orientation; configurable pipe frame/twist modes remain WP6. An explicit
 `material=` wins; otherwise a Profile supplies its material and a `FaceRef`
 supplies its owner Solid's material.  Construction solids without material
 remain valid Boolean tools but cannot enter `GeometryModel` directly.
+
+#### Relative routing poses (WP5)
+
+`Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;
+`Path.from_face(face_ref, up=...)` requires a planar FaceRef and starts at its
+area centroid along its outward normal. Up is projected perpendicular to
+tangent; zero or parallel directions fail. Read-only `current`, `tangent`
+and `up` expose world point and unit directions. Path direction parsing first
+prescales finite vectors by their largest component, avoiding norm overflow or
+underflow for dimensionless direction magnitudes. An absolute-only `Path(start)`
+has no initial tangent or up; absolute segments acquire tangent but no implicit
+roll reference. `forward`/plane intersection require tangent, all turns require up.
+
+`forward(distance)` requires positive length. Left turns rotate about up,
+right turns about -up; left is `up x tangent`. Radius is positive and angle
+is strictly between 0 and 360 degrees. `turn_to(direction, radius=...)` builds
+the shortest circular bend and rigidly transports up; aligned targets are
+no-ops and opposite targets raise for an undetermined plane. Explicit left/right
+half-turns determine a reversal. Exact Curve arcs carry the resulting route.
+
+`straight_to_plane(normal, position)` uses `unit_normal dot point = position`,
+with signed offset in meters. It continues along tangent; an already reached
+plane is a no-op within eight floating-point ULPs of the projected coordinates.
+Parallel rays and intersections behind the route fail. Absolute line, circular,
+elliptical and spline steps retain their existing geometry grammar and update
+the endpoint pose from actual CAD derivatives at the segment's model scale.
+At a corner, up follows the shortest tangent rotation; an antiparallel corner
+uses up as the half-turn axis. Along smooth segments, rotation-minimizing
+transport integrates `du/dq = -t * (u dot dt/dq)` with adaptive DOP853
+(`rtol=1e-10`, `atol=1e-12`, maximum step one-sixteenth of the parameter range),
+then re-orthonormalizes the endpoint. Circular relative turns use their exact
+rigid rotation. No torsion-derived Frenet frame or world-axis reset is used
+for routing. Zero-tangent degeneracy fails rather than inventing a pose.
+
+Final Curve values contain geometry, not a routing frame; pipe orientation
+retains the existing corrected Frenet contract. Project round trips retain
+the resulting geometry and named faces; a new Path may start from those faces
+after read-back, without a Path-specific store codec. Focused gate:
+`tests/unit/test_geo_paths_foundation.py`.
 
 ### 8.5 Owned topology, selectors and persistence
 

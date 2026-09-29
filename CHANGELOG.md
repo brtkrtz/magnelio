@@ -11,6 +11,11 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Immutable relative Path poses from a world point or planar owned face,
+  with forward runs, exact left/right circular bends, spatial target-tangent
+  turns and straight continuation to a world plane. Absolute steps update
+  the pose and transport up without added tangent twist. The geometry guide
+  and topology tutorial route an oblique hollow coax to the domain boundary.
 - Owner-bound face, edge and vertex references with semantic selection,
   read-only CAD measurements, connectivity and explicit detachment. Named
   selections follow affine placements and provable construction histories;

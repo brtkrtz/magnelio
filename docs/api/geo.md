@@ -42,6 +42,14 @@ owned selections through `edges=` / `faces=` for fillet and chamfer and
 `openings=` for shell. See the [operation guide](../methods/geometry.md) for
 eligibility, sweep roll, owner identity and materialless construction solids.
 
+`Path.from_pose(point, tangent, up)` and `Path.from_face(face_ref, up=...)`
+seed immutable relative routes. Read `current`, `tangent` and `up`; append
+`forward`, exact `turn_left` / `turn_right`, a spatial `turn_to`, or
+`straight_to_plane`. Absolute steps remain available and update the pose.
+The {ref}`routing guide <geometry-routed-paths>` defines left/right,
+rotation-minimizing transport, plane offsets and underdetermined bends.
+Path's up direction guides routing; it does not select a sweep frame.
+
 ```{eval-rst}
 .. automodule:: magnelio.geo
    :members:

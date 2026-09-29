@@ -208,9 +208,7 @@ def test_documented_profile_recipes_execute():
 
     root = Path(__file__).resolve().parents[2]
     methods = (root / "docs/methods/geometry.md").read_text()
-    methods = methods.split("## Exact curves and planar profiles", 1)[1].split(
-        "## Owned topology", 1
-    )[0]
+    methods = methods.split("## Exact curves and planar profiles", 1)[1].split("\n## ", 1)[0]
     sources = [
         (methods, 30 * math.pi * 1e-9, "tube"),
         (

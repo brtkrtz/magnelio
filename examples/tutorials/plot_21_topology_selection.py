@@ -9,6 +9,7 @@ that the bore is part of the face topology.
 
 This is geometry only and takes seconds. The face reference stays bound to its
 owner; its construction verbs provide independent solids for an extension.
+An explicit path pose then bends the placed face towards a domain plane.
 """
 
 import math
@@ -23,9 +24,9 @@ from magnelio import geo, plots
 # oriented end, even if the near point also approaches another boundary.
 # Registration returns a new body; the untagged input remains unchanged.
 
-shield = geo.Cylinder(radius=2e-3, inner_radius=1e-3, height=6e-3, material="pec")
-shield = shield.tag_face("port", near=(1.5e-3, 0, 6e-3), normal="z")
-shield = shield.rotated("y", 30)
+shield = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3, height=6e-3, material="pec")
+shield = shield.tag_face("port", near=(6e-3, 1.5e-3, 0), normal="x")
+shield = shield.rotated("z", 22.5)
 port = shield.face("port")
 
 assert math.isclose(port.area, 3 * math.pi * 1e-6, rel_tol=1e-12)
@@ -42,34 +43,47 @@ assert len(port.edges) == 2
 # and owner material feed the sweep; no profile reconstruction is required.
 
 profile = port.detached()
-spine = geo.Curve.line(
-    port.centroid, tuple(c + 3e-3 * n for c, n in zip(port.centroid, port.normal))
-)
+spine = geo.Path.from_face(port, up="z").forward(3e-3).curve()
 extension = port.swept(spine)
 assert math.isclose(extension.volume(), port.area * 3e-3, rel_tol=1e-12)
 
 fig, ax = plots.plot_cross_section(
-    [shield, extension], "y", 0, title="Named coax end face: the placed bore continues"
+    [shield, extension], "z", 0, title="Named coax end face: the placed bore continues"
 )
 
 # %%
-# Exact bend from a placed face
-# -------------------------------
+# Relative bend to a domain plane
+# --------------------------------
 #
-# An absolute arc already determines the bend geometrically. Here the coax
-# starts along +y, turns toward -x and retains its bore. The length times the
-# face area is an independent check on the resulting metal volume.
+# ``from_face`` starts at the annulus centroid, along its outward normal.
+# With up along +z, right points towards ``tangent x up``. A 22.5-degree
+# right turn straightens the oblique coax towards +x; the following run ends
+# at the world plane x = 20 mm. Radius fixes the exact circular bend.
+# The original path can be branched because its pose is immutable.
 
-bend_shield = geo.Cylinder(
-    origin=(8e-3, 0, 0), axis="y", radius=2e-3, inner_radius=1e-3, height=-3e-3, material="pec"
+XMAX = 20e-3
+BEND_RADIUS = 8e-3
+route = (
+    geo.Path.from_face(port, up="z")
+    .turn_right(radius=BEND_RADIUS, angle_deg=22.5)
+    .straight_to_plane(normal="x", position=XMAX)
 )
-bend_port = bend_shield.face(normal="y")
-bend_spine = geo.Curve.arc((8e-3, 0, 0), (8e-3 / 2**0.5, 8e-3 / 2**0.5, 0), (0, 8e-3, 0))
-elbow = bend_port.swept(bend_spine)
-assert math.isclose(elbow.volume(), bend_port.area * bend_spine.length, rel_tol=1e-9)
+bend_spine = route.curve()
+elbow = port.swept(bend_spine)
+assert math.isclose(route.current[0], XMAX, rel_tol=1e-12)
+assert all(math.isclose(t, e, abs_tol=1e-12) for t, e in zip(route.tangent, (1, 0, 0)))
+assert math.isclose(elbow.volume(), port.area * bend_spine.length, rel_tol=1e-9)
+outlet = elbow.face(normal="x")
+assert len(outlet.edges) == 2
+assert math.isclose(outlet.centroid[0], XMAX, rel_tol=1e-12)
 fig, ax = plots.plot_cross_section(
-    [bend_shield, elbow], "z", 0, title="Face-based coax sweep: the bore follows the bend"
+    [shield, elbow], "z", 0, title="Relative coax bend: the open bore reaches the domain plane"
 )
+ax.axvline(XMAX * 1e3, color="gray", linestyle="--", label="Domain plane")
+xmin, xmax = ax.get_xlim()
+margin = 0.05 * (xmax - xmin)
+ax.set_xlim(xmin - margin, xmax + margin)
+ax.legend()
 
 # %%
 # Referenced openings and boundary edges

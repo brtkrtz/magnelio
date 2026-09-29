@@ -14,8 +14,9 @@ Boolean ``+``, ``-`` and ``&`` and their explicit :class:`Union`,
 Boolean operand; affine transforms distribute over its members.
 
 :class:`Profile` factories build planar regions from exact closed curves,
-including intrinsic holes.  :class:`Path` draws a curve
-segment by segment, while :class:`ThinWire` is an EM mesh declaration around a
+including intrinsic holes.  :class:`Path` draws a curve through absolute
+segments or an immutable relative pose seeded from a point or planar face,
+while :class:`ThinWire` is an EM mesh declaration around a
 curve rather than a standalone CAD dimension.
 
 ``GeometryModel`` lives in the core ``magnelio`` namespace; every other
