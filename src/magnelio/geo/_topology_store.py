@@ -44,6 +44,7 @@ def to_recipe(owner):
     if not has_names(owner):
         return None
     from magnelio.geo import Curve, Profile, Solid, Surface
+    from magnelio.geo.partition import _PartitionSolid
     from magnelio.geo.topology import _TaggedSolid
     from magnelio.geo.transforms import _TransformedShape
     from magnelio.io.project import _material_to_dict
@@ -78,6 +79,16 @@ def to_recipe(owner):
                 "operation": "transform",
                 "source": encode(shape._inner),
                 "matrix": shape._transform.matrix,
+            }
+        elif isinstance(shape, _PartitionSolid) and has_names(shape):
+            scale = _scale(shape)
+            node = {
+                "operation": "partition_piece",
+                "source": encode(shape._source),
+                "cutter": encode(shape._cutter) if shape._cutter is not None else None,
+                "plane": shape._plane,
+                "scale": scale,
+                "brep": _brep_text(shape._occ_shape(scale)),
             }
         elif has_names(shape):
             node = {
@@ -145,6 +156,7 @@ def to_recipe(owner):
 
 def from_recipe(recipe):
     from magnelio.geo import Curve, Profile, Surface, modifications, operations
+    from magnelio.geo.partition import partition
     from magnelio.geo.topology import _cast, _detached_class, _TaggedSolid
     from magnelio.geo.transforms import Transform
     from magnelio.io.project import _material_from_dict
@@ -212,6 +224,25 @@ def from_recipe(recipe):
             )
         elif op == "transform":
             shape = Transform(node["matrix"]) @ decode(node["source"])
+        elif op == "partition_piece":
+            source = decode(node["source"])
+            cutter = decode(node["cutter"]) if node["cutter"] is not None else None
+            plane = node["plane"]
+            pieces = (
+                partition(source, cutter)
+                if cutter is not None
+                else partition(source, normal=plane[0], position=plane[1])
+            )
+            matches = [
+                piece
+                for piece in pieces
+                if _brep_text(piece._occ_shape(node["scale"])) == node["brep"]
+            ]
+            if len(matches) != 1:
+                raise TopologyEvolutionError(
+                    "A partition region has no unique exact construction match."
+                )
+            shape = matches[0]
         elif op in classes:
             arguments = {key: value(obj) for key, obj in node["arguments"].items()}
             cls = classes[op]

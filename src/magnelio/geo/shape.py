@@ -117,6 +117,55 @@ class Shape:
         # by s^3 (lossless to undo: s is a power of two).
         return abs(occ_volume(self._occ_shape(scale))) / scale**3
 
+    def partition(self, cutter=None, *, normal=None, position=None):
+        """Split this solid or sheet into independent connected regions.
+
+        Parameters
+        ----------
+        cutter : Solid or Sheet, optional
+            Geometry whose boundary partitions this shape.
+        normal : str or sequence of float, optional
+            World normal of a cutting plane. Requires *position* and excludes
+            *cutter*.
+        position : float, optional
+            Signed plane offset [m], measured as ``normal dot point``.
+
+        Returns
+        -------
+        tuple of Solid or Sheet
+            Independently owned regions in kernel order. A non-cut returns
+            one independent region. Order is not persistent across CAD edits.
+        """
+        from magnelio.geo.partition import partition
+
+        return partition(self, cutter, normal=normal, position=position)
+
+    def section(self, cutter=None, *, normal=None, position=None, filled=False):
+        """Intersect this solid or sheet with a cutter or world plane.
+
+        Parameters
+        ----------
+        cutter : Solid or Sheet, optional
+            Intersecting geometry; excludes a plane declaration.
+        normal : str or sequence of float, optional
+            World plane normal; requires *position*.
+        position : float, optional
+            Signed world plane offset [m].
+        filled : bool, optional
+            Return planar Profiles with holes instead of boundary Curves.
+            Requires a Solid receiver and an explicit plane.
+
+        Returns
+        -------
+        tuple of Curve or Profile
+            Independent intersection geometry. No intersection returns an
+            empty tuple. A coincident face raises rather than choosing a
+            one-dimensional interpretation.
+        """
+        from magnelio.geo.partition import section
+
+        return section(self, cutter, normal=normal, position=position, filled=filled)
+
     # ── CSG operators ─────────────────────────────────────────────────
 
     def __add__(self, other):

@@ -476,6 +476,50 @@ self-intersection. [Tutorial 23](../tutorials/plot_23_sweep_twist_draft.rst)
 shows the twisted rectangle and the drafted annulus with independent volume
 and outlet checks.
 
+## Partition and section
+
+`shape.partition(cutter)` splits a Solid or Sheet at another Solid or Sheet.
+For a world plane, use `shape.partition(normal=..., position=...)`, with
+`normal dot point = position` and `position` in metres. The result is a tuple
+of independently owned connected regions of the source's dimension. Each
+region inherits the source material; the cutter supplies geometry, not
+material. A plane, sheet or body can cut at an oblique angle. A cut that does
+not separate a connected region, including a tangent contact or a coincident
+boundary, returns one independent region. An already disconnected source can
+return several regions even without a new cut. The source remains unchanged.
+
+`shape.section(...)` uses the same cutter grammar and returns exact standalone
+Curves at the intersection. It returns an empty tuple when there is no curve.
+For a Solid and an explicit world plane, `filled=True` returns bounded planar
+Profiles instead. A profile retains intrinsic holes, and disconnected islands
+are separate profiles. A face coincident with the cutter has a two-dimensional
+overlap, so `section` raises rather than treating its arbitrary boundary as a
+one-dimensional intersection. A tangency with only a point has no curve.
+
+```python
+import math
+from magnelio import geo
+
+tube = geo.Cylinder(origin=(0, 0, 0), radius=2e-3, inner_radius=1e-3,
+                    height=6e-3, material="pec")
+parts = tube.partition(normal="z", position=3e-3)
+loops = tube.section(normal="z", position=3e-3)
+(ring,) = tube.section(normal="z", position=3e-3, filled=True)
+assert len(parts) == 2 and len(loops) == 2
+assert math.isclose(sum(part.volume() for part in parts), tube.volume())
+assert math.isclose(ring.area, math.pi * ((2e-3)**2 - (1e-3)**2))
+```
+
+Result order is one kernel evaluation's order, not a persistent identifier.
+Do not assign physical meaning to tuple positions after changing the CAD
+model. Named topology follows provable kernel history: a singular name that
+splits reports an error, while a deliberately named set can retain its
+successors. A result region owns its selections independently and project
+read-back reconstructs the selected region without storing a numeric face
+index. New cut faces do not inherit names from unrelated source faces.
+[Tutorial 24](../tutorials/plot_24_partition_section.rst) shows the hollow
+component, filled annulus and an oblique sheet cutter.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:

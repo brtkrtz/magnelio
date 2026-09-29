@@ -63,6 +63,14 @@ the selected frame's section planes. See the
 [twist and draft guide](../methods/geometry.md) for arc-length laws, fitting
 accuracy, boundary closure and periodic routes, and Tutorial 23 for worked use.
 
+`partition(cutter)` or `partition(normal=..., position=...)` returns independent
+connected Solid or Sheet regions, inheriting the source material. `section`
+with the same cutter grammar returns intersection Curves; an explicit planar
+`filled=True` section of a Solid returns Profiles with holes. Empty cuts,
+tangencies, coincident faces and named-topology splits have explicit rules in
+the [partition and section guide](../methods/geometry.md). Tutorial 24 shows
+a hollow component and an oblique cutter.
+
 ```{eval-rst}
 .. automodule:: magnelio.geo
    :members:

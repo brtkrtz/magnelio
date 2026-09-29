@@ -11,6 +11,11 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- CAD partitioning of solids and sheets by a plane or geometry cutter, with
+  independent material-preserving regions. Exact intersection curves and
+  explicitly filled planar sections retain disconnected regions and holes.
+  The geometry guide and Tutorial 24 show both workflows.
+
 - Constant sweep twist and draft: total roll distributed over path arc length,
   signed normal-offset draft preserving bores, and an optional fitting tolerance.
   The geometry guide and Tutorial 23 explain both construction laws.

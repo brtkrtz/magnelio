@@ -23084,3 +23084,32 @@ All 48 new gates and 901 relevant tests pass. Fresh Sphinx executes Tutorial 23
 and reuses 34 previously verified outputs; repository gates pass.
 Verification: `investigations/geo-api-foundation/WP63-VERIFICATION.md`
 (internal record). WP6 remains open; only WP6.3 is added in this slice.
+
+**WP6.4 partition and section (2026-09-29).** Solid and Sheet values now
+offer `partition(cutter)` or `partition(normal=..., position=...)`. A cutter
+is a standalone Solid or Sheet; the plane is the signed world equation
+`unit_normal dot point = position`. OCC Splitter partitions the source in one
+evaluation and exposes every connected region of the source's dimension as
+an independent value. The source material is inherited, the cutter material
+is irrelevant, and tuple order is explicitly not persistent across topology
+edits. A no-cut, tangent contact or coincident boundary returns the source as
+one independent region; an already disconnected source can yield several.
+The developer accepted this no-cut/coincidence rule before implementation.
+
+`section` with the same cutter grammar returns connected exact intersection
+wires as standalone Curve values; no curve returns an empty tuple. For a Solid
+and an explicit plane, `filled=True` intersects the solid with the plane and
+returns planar Profile regions, preserving holes and disconnected islands.
+A shared face region raises instead of interpreting its perimeter as a
+one-dimensional section. A point tangency has no curve. Filled geometry is
+requested explicitly, rather than silently changing the return dimension.
+
+Named source selections follow the Splitter history across the whole result
+before distribution to pieces. Singular splits or unprovable successors fail
+eagerly; a registered set can retain successors on multiple pieces. New cut
+faces receive no source names. Named result replay stores the construction
+operands plus an exact BREP match for the chosen region, never an OCC numeric
+subshape index. Model scales remain power-of-two safe and affine rescaling
+maps member identities through the transform builder. Gate:
+`tests/unit/test_geo_partition_foundation.py`; methods/API prose and Tutorial
+24 exercise the public contract. WP6.5-WP6.12 remain open.

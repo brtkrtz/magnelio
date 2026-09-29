@@ -847,6 +847,24 @@ were explicitly excluded. The advanced-CAD programme remains open. An explicit
 supplies its owner Solid's material.  Construction solids without material
 remain valid Boolean tools but cannot enter `GeometryModel` directly.
 
+WP6.4 adds `partition(cutter=None, *, normal=None, position=None)` and
+`section(cutter=None, *, normal=None, position=None, filled=False)` on Solid
+and Sheet. A cutter is a Solid or Sheet; a plane uses a unit world normal and
+signed metre offset. Partition returns an independent connected Solid or
+Sheet for each source region in one kernel evaluation, retaining source
+material and dimension. No cut, tangency and coincident boundaries return an
+independent unchanged region; pre-existing disconnected regions remain
+separate. Result order is not a persistent identifier. Ordinary section
+returns exact connected Curve wires, empty if there is no one-dimensional
+intersection. Explicit `filled=True` requires a Solid and a world plane and
+returns planar Profile regions with holes. Shared face regions raise rather
+than silently taking their boundary; point tangency gives no curve. Named
+source topology follows global Splitter history and then assigns successors
+to owned output regions. Singular splits fail, deliberate sets survive,
+unrelated new cut faces remain unnamed. Named result replay identifies the
+chosen region by exact BREP matching of reconstructed partition results,
+without numeric kernel indices. Gate: `tests/unit/test_geo_partition_foundation.py`.
+
 #### Relative routing poses (WP5)
 
 `Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;
