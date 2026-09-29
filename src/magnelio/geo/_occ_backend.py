@@ -7905,7 +7905,12 @@ def occ_volume(shape) -> float:
     from OCC.Core.GProp import GProp_GProps  # noqa: PLC0415
 
     props = GProp_GProps()
-    brepgprop.VolumeProperties(shape, props)
+    # DD-275: the default fixed mass quadrature over-read rebuilt rational
+    # tangent surfaces by 0.84%. Span-aware adaptive Gauss-Kronrod integration
+    # also retains analytic precision for conics and trimmed curved sheets.
+    error = brepgprop.VolumePropertiesGK(shape, props, 1e-9, False, True)
+    if error < 0:
+        raise RuntimeError("Geometry volume integration failed.")
     return props.Mass()
 
 
@@ -8464,6 +8469,42 @@ def face_outward_normal(face):
 
 
 def make_tangent_blend(face_a, face_b, tension):
+    """Build tangent transitions for corresponding outer and inner wires."""
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+    from OCC.Core.BRepGProp import brepgprop
+    from OCC.Core.GProp import GProp_GProps
+
+    from magnelio.geo.topology import _normal
+
+    def wires(face):
+        outer = extract_face_wire(face)
+        return [outer] + [w for w in _shape_wires(face) if not w.IsSame(outer)]
+
+    boundaries_a, boundaries_b = wires(face_a), wires(face_b)
+    if len(boundaries_a) != len(boundaries_b):
+        raise ValueError("lofted() profiles must have the same number of holes.")
+    props_a, props_b = GProp_GProps(), GProp_GProps()
+    brepgprop.SurfaceProperties(face_a, props_a)
+    brepgprop.SurfaceProperties(face_b, props_b)
+    poses = (
+        props_a.CentreOfMass().Coord(),
+        props_b.CentreOfMass().Coord(),
+        _normal(face_a),
+        _normal(face_b),
+    )
+    solid = _make_tangent_blend_outer(face_a, face_b, tension, poses=poses)
+    for a, b in zip(boundaries_a[1:], boundaries_b[1:]):
+        caps = []
+        for wire, normal in ((a, poses[2]), (b, poses[3])):
+            cap = BRepBuilderAPI_MakeFace(wire, True).Face()
+            if sum(x * y for x, y in zip(_normal(cap), normal)) < 0:
+                cap.Reverse()
+            caps.append(cap)
+        solid = boolean_difference(solid, _make_tangent_blend_outer(*caps, tension, poses=poses))
+    return solid
+
+
+def _make_tangent_blend_outer(face_a, face_b, tension, *, poses=None):
     """Blend two faces so the solid meets each of them at a right angle.
 
     Two constructions, chosen by how the faces are posed (DD-144, DD-250):
@@ -8537,6 +8578,8 @@ def make_tangent_blend(face_a, face_b, tension):
     point_a, point_b = centroid(face_a), centroid(face_b)
     normal_a = face_outward_normal(face_a)
     normal_b = face_outward_normal(face_b)
+    if poses is not None:
+        point_a, point_b, normal_a, normal_b = poses
     span = math.sqrt(sum((b - a) ** 2 for a, b in zip(point_a, point_b)))
     if span <= 0.0:
         raise ValueError(
@@ -9501,7 +9544,7 @@ def make_sweep(profile_face, spine_wire):
         from OCC.Core.BRepGProp import brepgprop  # noqa: PLC0415
         from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe  # noqa: PLC0415
         from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
-        from OCC.Core.gp import gp_Ax3, gp_Dir, gp_Trsf, gp_Vec  # noqa: PLC0415
+        from OCC.Core.gp import gp_Dir, gp_Trsf, gp_Vec  # noqa: PLC0415
         from OCC.Core.GProp import GProp_GProps  # noqa: PLC0415
     except ImportError as exc:
         raise ImportError("pythonocc-core is required for sweep.") from exc
@@ -9524,11 +9567,27 @@ def make_sweep(profile_face, spine_wire):
         raise ValueError("degenerate spine — zero start tangent.")
     tangent = gp_Dir(tangent_vec)
 
-    # Rigidly move the profile from its own frame to the spine-start frame.
-    frame_from = gp_Ax3(centroid, normal, _perp_dir(normal))
-    frame_to = gp_Ax3(start_pnt, tangent, _perp_dir(tangent))
+    # DD-275: shortest normal-to-tangent rotation transports the real
+    # boundary geometry without reconstructing canonical in-plane frames.
+    # The antiparallel case needs an explicit roll convention: use the plane's
+    # actual X axis as the half-turn axis, preserving its width direction.
+    from magnelio.geo.topology import _normal
+
+    normal = gp_Dir(*_normal(profile_face))
+    cross = gp_Vec(normal).Crossed(gp_Vec(tangent))
+    dot = gp_Vec(normal).Dot(gp_Vec(tangent))
     trsf = gp_Trsf()
-    trsf.SetDisplacement(frame_from, frame_to)
+    if cross.Magnitude() > 1e-12:
+        from OCC.Core.gp import gp_Ax1
+
+        trsf.SetRotation(gp_Ax1(centroid, gp_Dir(cross)), math.atan2(cross.Magnitude(), dot))
+    elif dot < 0:
+        from OCC.Core.gp import gp_Ax1
+
+        trsf.SetRotation(gp_Ax1(centroid, surf.Plane().XAxis().Direction()), math.pi)
+    shift = gp_Trsf()
+    shift.SetTranslation(gp_Vec(centroid, start_pnt))
+    trsf = shift.Multiplied(trsf)
     moved = _history_result(BRepBuilderAPI_Transform(profile_face, trsf, True))
 
     pipe = BRepOffsetAPI_MakePipe(spine_wire, moved)

@@ -26,6 +26,14 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Profile operations accept suitable owned face references directly; lofts can
+  mix planar sheets and faces, retaining holes through tangent transitions too.
+  Fillet, chamfer and shell accept owned edge/face selections and reject stale
+  owners. Point conveniences now report ambiguity at the operation call.
+- Sweeps retain a placed section's in-plane roll through shortest-rotation
+  alignment. Forward thickening follows its oriented normal. Materialless
+  sections consistently produce construction solids for Boolean use.
+
 - Named translations and rotations retain `repeat`, `copy`, `unite` and
   `group`; mirroring retains copy and aggregation options. Explicit Group or
   Union aggregation is honoured even for one translated or rotated copy.
@@ -34,6 +42,9 @@ major version is 0, minor releases may change the public API.
   and matches inner boundaries in construction order; all sections must
   have the same number of holes. Profile factories validate closure,
   coplanarity, intersections and nesting at construction.
+
+- Geometry volume queries use adaptive integration with spline spans, avoiding
+  inaccurate fixed-quadrature measurements of rational tangent transitions.
 
 ### Removed
 

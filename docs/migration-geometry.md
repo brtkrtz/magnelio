@@ -85,4 +85,41 @@ geometry now retains names by replaying their semantic origins and construction
 histories; older projects without this metadata continue to load.
 
 [Tutorial 21](tutorials/plot_21_topology_selection.rst) names a coax end face,
-rotates its owner and detaches the placed annulus for a continuation.
+rotates its owner and sweeps the placed annulus directly for a continuation.
+
+## Uniform operations and referenced modifications
+
+Use the selected FaceRef itself for extrusion, revolution, sweep, thickness
+and loft. Detachment is needed only for independent placement. Replace loose
+point lofts with `start_face.lofted(end_face)`; `geo.Loft` can mix profiles,
+planar sheets and face references. Holes survive all forms, including tangent
+transitions. The start section supplies an omitted material.
+
+| Previous form | Reference form |
+| --- | --- |
+| `body.extruded(vector, face_near=p)` | `body.face(near=p).extruded(vector)` |
+| `a.lofted(p, b, q)` | `a.face(near=p).lofted(b.face(near=q))` |
+| `body.filleted(face_near=p, radius=r)` | `body.filleted(faces=body.face(near=p), radius=r)` |
+| `body.chamfered(near=p, distance=d)` | `body.chamfered(edges=body.edge(near=p), distance=d)` |
+| `body.shelled(t, opening_face_near=p)` | `body.shelled(t, openings=body.face(near=p))` |
+
+The point forms remain available and now reject ambiguous picks immediately.
+Refs must belong to the exact receiver of an owner modification. After
+transforming an owner, retrieve its refs again. A sweep transports the actual
+profile by the shortest normal-to-tangent rotation, preserving its in-plane
+roll; an already aligned section is kept as placed. This can change the roll
+of asymmetric sections previously aligned through canonical world frames.
+Thickening forward now follows the section's oriented normal rather than a
+canonical positive world component.
+
+Materialless profile operations now consistently produce construction solids
+for Boolean use. Such results still require a material before model assembly.
+
+```python
+from magnelio import geo
+
+body = geo.Brick(size=(4e-3, 3e-3, 2e-3), material="pec")
+cap = body.face(normal="z")
+extension = cap.extruded((0, 0, 3e-3))
+housing = body.shelled(0.2e-3, openings=cap)
+```

@@ -15,6 +15,31 @@ class Sheet(Shape):
     cannot yet be meshed; give it a resolved physical thickness first.
     """
 
+    def lofted(self, other, *, material=None, blend="spline", tension=None):
+        """Connect this planar sheet to another section with a Solid.
+
+        Parameters
+        ----------
+        other : Profile or Sheet or FaceRef
+            Planar end section in its actual world placement. All sections
+            need the same number of holes, matched in boundary order.
+        material : Material or str, optional
+            Override this sheet's material; otherwise it is inherited.
+            Materialless sections produce construction solids for Boolean use.
+        blend : {'spline', 'ruled', 'tangent'}, optional
+            Interpolation mode. Tangent transitions leave both oriented normals.
+        tension : float or tuple of float, optional
+            Positive tangent reach fractions, only for tangent blending.
+
+        Returns
+        -------
+        Solid
+            Independent transition retaining all corresponding boundaries.
+        """
+        from magnelio.geo.modifications import loft_profiles
+
+        return loft_profiles(self, other, material=material, blend=blend, tension=tension)
+
 
 @dataclass
 class Profile(Sheet):

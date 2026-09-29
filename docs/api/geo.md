@@ -34,6 +34,14 @@ distinguish missing, tied and lost selections. The
 {ref}`owned topology guide <geometry-owned-topology>`
 explains measurements, detachment, history failures and project persistence.
 
+Profile operations also accept suitable FaceRef values directly. `face.extruded`,
+`revolved`, `swept`, `thickened` and `lofted` return independent Solid geometry,
+retaining holes and inheriting the owner's material. `Loft` accepts the same
+planar sections, as well as closed Curve outlines. Solid modifications accept
+owned selections through `edges=` / `faces=` for fillet and chamfer and
+`openings=` for shell. See the [operation guide](../methods/geometry.md) for
+eligibility, sweep roll, owner identity and materialless construction solids.
+
 ```{eval-rst}
 .. automodule:: magnelio.geo
    :members:

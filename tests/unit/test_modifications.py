@@ -687,9 +687,8 @@ class TestThickened:
         mat = Material.pec()
         assert self._sheet(mat).thickened(thickness=self.T).material == mat
 
-    def test_construction_profile_needs_a_material(self):
-        with pytest.raises(ValueError, match="requires an explicit material"):
-            self._sheet().thickened(thickness=self.T)
+    def test_construction_profile_produces_a_construction_solid(self):
+        assert self._sheet().thickened(thickness=self.T).material is None
 
     def test_solid_is_sent_to_shelled(self):
         solid = Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material=Material.pec())

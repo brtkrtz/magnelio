@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-28.*  **Released v0.8.2** (2026-09-09): **DD-270**
+*Last updated: 2026-09-29.*  **Released v0.8.2** (2026-09-09): **DD-270**
 the Poynting vector as a derived view of any recorded field (`poynting()`,
 `"S"` in the component vocabulary), **DD-271** three more readings of an
 S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
@@ -33,17 +33,17 @@ Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
-On `feat/geo-api-foundation`, WP0-WP3 implement dimensional/affine geometry,
-exact Curve/Profile factories with holes, owned topology and named histories.
-All 148 foundation gates and 41 API-documentation gates pass. The full suite
-passes 3799/40 skipped; 642 final regressions and 33/33 gallery examples pass; fresh Sphinx is clean.
+On `feat/geo-api-foundation`, WP0-WP4 implement dimensional/affine geometry,
+exact Curve/Profile factories, owned topology, names and uniform operations.
+All 216 foundation gates, 746 final relevant tests, 33/33 gallery examples and fresh Sphinx pass.
+Full suite: 3852 passed / 40 skipped / one QTEM failure identical on unchanged WP3.
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
 
 ## Recent decisions
 Newest first, one line each; the full record is the DD entry.
-* **DD-275** (2026-09-28, branch `feat/geo-api-foundation`, WP0-WP3) — dimensional geometry, exact curves, Profile factories with intrinsic holes, and affine array/copy/group/fusion options are implemented and documented. Owner-bound face/edge/vertex refs now provide semantic selectors, immutable tags, read-only measurements and explicit detachment. Names follow affine placements and provable OCC histories; ties, lost/split singular names and operand-name conflicts raise explicitly. Deliberate sets retain splits/merges, with deletion still refused. Project geometry persists semantic origins and named construction branches without subshape indices, validating cardinality on replay. Per-owner/per-scale inventories and bounding-box screening support hundreds of faces. Methods/API prose, upgrade guide and Tutorial 21 cover this slice; direct FaceRef-consuming operations remain WP4 and relative paths WP5. All 148 foundation gates and 41 API-documentation tests pass; full suite 3799/40 skipped, 642 final regressions, 33/33 gallery examples and fresh Sphinx pass. Internal dossier: `investigations/geo-api-foundation/`; focused gate: `tests/unit/test_geo_topology_foundation.py`.
+* **DD-275** (2026-09-28, amended 2026-09-29, branch `feat/geo-api-foundation`, WP0-WP4) — dimensional/affine geometry, exact curves, intrinsic Profile holes, owned refs and named histories are implemented. Uniform Profile/eligible Sheet/FaceRef construction verbs retain holes, material and placed roll; materialless inputs produce Boolean tools. Fillet/chamfer boundaries and shell openings accept exact-owner refs and sets, with eager ambiguity/category/mode errors. Selected modifications rescale through exact affine history; project recipes replay reference origins and uniquely matching connected snapshots without subshape indices. Tangent bores use full-section poses; shared span-aware volume integration avoids fixed-quadrature error. Methods/API prose, upgrade guide and Tutorials 14/21 cover the slice. WP5 relative paths are next; verification: `investigations/geo-api-foundation/WP4-VERIFICATION.md` (internal record); focused gate: `tests/unit/test_geo_operations_foundation.py`.
 * **DD-274** (2026-09-23) — viewer destination is independent of its rendering backend.  A plain script now serves the complete Magnelio toolbar through trame and opens it in the system browser; `target="native"` retains the PyVista/VTK window.  `target="inline"` keeps the Jupyter widget.  Zed's `kernel-zed-*.json` identity selects the browser automatically despite its ipykernel; `plots.configure_viewer(target="browser")` is the once-per-kernel switch for other editor REPLs that do not render the asynchronously filled `VBox`.  The browser server binds loopback on a daemon thread and is reused; missing trame warns and falls back to native.  `mode` remains `client`/`server`/`trame`/`static`/`none`, with `none` still returning the plotter.
   CI compatibility: PyVista 0.49 stores viewers in `trame_pyvista.ui`; OCC 8 requires an explicit trace-clearance check beyond offset contour counting (DD-135).
 * **DD-273** (2026-09-09, branch `feat/surface-current`) — the surface current is the wall-loss booking, read as a vector.  `surface_current(mesh)` on any recording, spectrum or `FieldState` gives `J_s = n × H` per wall patch; `enumerate_wall_patches` reads the [[DD-087]] enumeration the other way round (per patch: conformal area, outward normal `−w/‖w‖`, and *which* sample contributions it booked).  Magnitude from the loss booking (`|J_s|²A = Σw|H|²`, so `power_loss` **is** `MonitorWallLoss` — measured 0.9998 on a real run), direction from `n × H` with the weight-averaged samples.  Accuracy is inherited and does not refine away: coax inner conductor 1.3 %, shield 5.0 % against `√(P/Z₀)`, because the DD-098 pullback is calibrated on the quadratic loss while the current is linear in H; shipped deliberately, since the distribution is what a current picture is read for.  Four traps, all measured: grid quantities vs. physical fields ([[DD-085]], factor 1500), wall cells of a curved conductor are PEC-classified (dropping them loses 83 % of a mantle), a port plane holds the feed's *cross-section* and not a wall (+9.5 %, hence `exclude_faces=`), and a viewer display group must be registered in `_GROUPS` or its actor is built, filled and never shown.  `PECSurfaceData` removed: built for every conformal mesh, stored in every project, read by nothing, and it booked the *normal* H component.  Record `investigations/surface-current/` (internal dossier).
@@ -317,7 +317,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **Geometry API foundation (DD-275)** — WP0-WP3 are implemented: dimensional hierarchy, exact curves/Profile holes, affine convenience, owned topology, semantic/named selection, history failures and project replay. `Face`, `Curve.covered()` and `PlanarSheet` are removed. Methods and Tutorial 21 document coax face selection after placement, detachment and intentional splits. WP4-WP6 remain; uniform FaceRef-consuming operations begin in WP4. Full suite 3799/40 skipped, 642 final regressions, 33/33 gallery examples and fresh Sphinx pass.
+* **Geometry API foundation (DD-275)** — WP0-WP4 are implemented and documented: dimensional/affine geometry, exact curves/Profile holes, owned topology, names, history failures, uniform profile/face operations and exact project replay. Tutorial 21 directly sweeps the placed coax face and shows an absolute hollow bend and reference-based modifications. WP5 relative Path poses and WP6 advanced CAD remain open. All 746 final relevant tests, 33/33 gallery examples and fresh Sphinx pass; the full-suite QTEM length-law failure reproduces identically on WP3.
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

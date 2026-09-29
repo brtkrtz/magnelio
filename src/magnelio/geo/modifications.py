@@ -3,7 +3,7 @@ Shape modifications: chamfer, fillet, extrude, loft.
 
 These functions modify or derive shapes from existing geometry.
 Chamfer/fillet use edge selection; extrude/loft use face selection
-— both based on point proximity (``face_near``/``near``).
+— owned references are the core; point selectors delegate to semantic selection.
 """
 
 from __future__ import annotations
@@ -19,35 +19,107 @@ from magnelio.geo.shape import Solid
 from magnelio.materials.material import resolve_material
 
 
-def _check_edge_selector(verb, near, face_near, edges):
-    """Reject an edge selection that names zero or several modes.
+def _require_solid(shape, verb):
+    if not isinstance(shape, Solid):
+        raise TypeError(f"{verb}() requires a Solid; got {type(shape).__name__}.")
 
-    The kernel-side selector checks this too, but only when the solid is
-    finally built — long after the call that got it wrong, and typically
-    inside a plot or a mesh build.
-    """
-    modes = sum(x is not None for x in (near, face_near, edges))
-    if modes != 1:
-        given = [
-            name
-            for name, value in (("near", near), ("face_near", face_near), ("edges", edges))
-            if value is not None
-        ]
-        got = f"got {', '.join(given)}" if given else "got none of them"
-        raise ValueError(
-            f"{verb}() takes exactly one of near=, face_near= or edges= to "
-            f"select the edges to work on; {got}."
+
+def _profile_input(shape, verb, *, planar=False):
+    from magnelio.geo.topology import FaceRef
+
+    if isinstance(shape, FaceRef):
+        shape = shape.detached()
+    if not isinstance(shape, Sheet):
+        hint = (
+            " Use shelled() for a Solid."
+            if verb == "thickened"
+            else " Select a face and use lofted()."
+            if verb == "Loft"
+            else ""
         )
-    if edges is not None and edges != "all":
-        raise ValueError(f"{verb}(edges=...) takes only 'all'; got {edges!r}.")
+        raise TypeError(
+            f"{verb}() requires a Profile, eligible Sheet or FaceRef; "
+            f"got {type(shape).__name__}.{hint}"
+        )
+    if planar and not isinstance(shape, Profile):
+        from magnelio.geo.topology import _is_planar, _scale
+
+        scale = _scale(shape)
+        raw = shape._occ_shape(scale)
+        if not _is_planar(raw):
+            raise ValueError(f"{verb}() requires a planar Sheet or FaceRef.")
+        shape = FaceRef(shape, raw, scale).detached()
+    return shape
 
 
-def chamfer(shape, *, near=None, face_near=None, edges=None, distance):
+def _refs(shape, value, classes, verb):
+    from magnelio.geo.topology import EdgeSetRef, FaceSetRef
+
+    if isinstance(value, classes):
+        refs = tuple(value) if isinstance(value, (EdgeSetRef, FaceSetRef)) else (value,)
+    elif isinstance(value, (tuple, list)):
+        refs = tuple(r for item in value for r in _refs(shape, item, classes, verb))
+    else:
+        accepted = ", ".join(cls.__name__ for cls in classes)
+        raise TypeError(f"{verb}() selection requires {accepted}; got {type(value).__name__}.")
+    if not refs:
+        raise ValueError(f"{verb}() selection must not be empty.")
+    if any(ref.owner is not shape for ref in refs):
+        raise ValueError(f"{verb}() references must belong to this exact Solid owner.")
+    if len({ref._scale for ref in refs}) != 1:
+        raise ValueError(f"{verb}() references must share a model scale.")
+    return refs
+
+
+def _points(value, verb):
+    try:
+        return (point3(value, verb),)
+    except (TypeError, ValueError) as error:
+        try:
+            points = tuple(value)
+        except TypeError:
+            raise error from None
+        if not points:
+            raise ValueError(f"{verb} requires a non-empty sequence of world points.")
+        return tuple(point3(p, verb) for p in points)
+
+
+def _edge_selection(shape, verb, near, face_near, edges, faces):
+    from magnelio.geo.topology import EdgeRef, EdgeSetRef, FaceRef, FaceSetRef
+
+    _require_solid(shape, verb)
+    modes = sum(x is not None for x in (near, face_near, edges, faces))
+    if modes != 1:
+        raise ValueError(
+            f"{verb}() takes exactly one of near=, face_near= or edges= "
+            "(or faces=) to select the edges to work on."
+        )
+    if near is not None:
+        return tuple(shape.edge(near=p) for p in _points(near, f"{verb}(near)"))
+    if face_near is not None:
+        faces = shape.face(near=point3(face_near, f"{verb}(face_near)"))
+    if faces is not None:
+        return tuple(e for f in _refs(shape, faces, (FaceRef, FaceSetRef), verb) for e in f.edges)
+    if isinstance(edges, str):
+        if edges != "all":
+            raise ValueError(f"{verb}(edges=...) takes only 'all' as a string; got {edges!r}.")
+        return tuple(shape.edges())
+    return _refs(shape, edges, (EdgeRef, EdgeSetRef), verb)
+
+
+def _selected_edges(refs):
+    if refs:
+        from magnelio.geo._topology_history import _unique
+
+        return _unique([ref._shape for ref in refs])
+    return []
+
+
+def chamfer(shape, *, near=None, face_near=None, edges=None, faces=None, distance):
     """Implementation of :meth:`magnelio.geo.Shape.chamfered`.
 
     Exactly one of *near*, *face_near* or *edges* must be specified.
     """
-    _check_edge_selector("chamfered", near, face_near, edges)
     if isinstance(distance, (tuple, list)):
         if len(distance) != 2:
             raise ValueError(
@@ -57,17 +129,18 @@ def chamfer(shape, *, near=None, face_near=None, edges=None, distance):
         distance = tuple(positive(d, "chamfered(distance)") for d in distance)
     else:
         distance = positive(distance, "chamfered(distance)")
-    return finish(_ChamferedShape(shape, near, face_near, edges, distance))
+    edges = _edge_selection(shape, "chamfered", near, face_near, edges, faces)
+    return finish(_ChamferedShape(shape, None, None, edges, distance))
 
 
-def fillet(shape, *, near=None, face_near=None, edges=None, radius):
+def fillet(shape, *, near=None, face_near=None, edges=None, faces=None, radius):
     """Implementation of :meth:`magnelio.geo.Shape.filleted`.
 
     Exactly one of *near*, *face_near* or *edges* must be specified.
     """
-    _check_edge_selector("filleted", near, face_near, edges)
     radius = positive(radius, "filleted(radius)")
-    return finish(_FilletedShape(shape, near, face_near, edges, radius))
+    edges = _edge_selection(shape, "filleted", near, face_near, edges, faces)
+    return finish(_FilletedShape(shape, None, None, edges, radius))
 
 
 @dataclass
@@ -87,12 +160,16 @@ class _ChamferedShape(Solid):
         from magnelio.geo._occ_backend import make_chamfer, resolve_edges  # noqa: PLC0415
 
         occ_shape = self._inner._occ_shape(scale)
-        selected = resolve_edges(
-            occ_shape,
-            near=self._near,
-            face_near=self._face_near,
-            edges=self._edges,
-            scale=scale,
+        selected = (
+            _selected_edges(self._edges)
+            if not isinstance(self._edges, str) and self._edges is not None
+            else resolve_edges(
+                occ_shape,
+                near=self._near,
+                face_near=self._face_near,
+                edges=self._edges,
+                scale=scale,
+            )
         )
         return make_chamfer(occ_shape, selected, self._distance, scale=scale)
 
@@ -106,17 +183,16 @@ def extrude(shape, *, vector, face_near=None, material=None):
     Uses ``BRepPrimAPI_MakePrism``.
     """
     material = resolve_material(material, "extruded(material=...)")
-    if isinstance(shape, Sheet):
-        if material is None and shape.material is None:
-            raise ValueError(
-                "Extruding a construction profile (material=None) requires "
-                "an explicit material= for the resulting solid."
-            )
-    elif face_near is None:
-        raise ValueError(
-            "extrude() on a solid requires face_near= to select the face "
-            "to extrude (only a standalone sheet may omit it)."
-        )
+    if isinstance(shape, Solid):
+        if face_near is None:
+            raise ValueError("extruded() on a Solid requires face_near= or use a FaceRef.")
+        selected = shape.face(near=point3(face_near, "extruded(face_near)"))
+        vector = vector3(vector, "extruded(vector)", nonzero=True)
+        return finish(_ExtrudedFaceShape(shape, selected, vector, material))
+    elif face_near is not None:
+        raise ValueError("extruded(face_near=) applies only to a Solid.")
+    shape = _profile_input(shape, "extruded")
+    face_near = None
     vector = vector3(vector, "extruded(vector)", nonzero=True)
     return finish(_ExtrudedFaceShape(shape, face_near, vector, material))
 
@@ -206,7 +282,7 @@ def _check_tension(tension, *, blend):
         raise ValueError(
             f"tension must be a single value or a (start, end) pair; got {len(values)} values."
         )
-    values = tuple(float(v) for v in values)
+    values = tuple(positive(v, "tension") for v in values)
     if any(v <= 0.0 for v in values):
         raise ValueError(f"tension must be positive; got {values}.")
     return values
@@ -225,9 +301,14 @@ def loft(
     material = resolve_material(material, "lofted(material=...)")
     _check_blend(blend, allow_tangent=True)
     tension = _check_tension(tension, blend=blend)
-    return finish(
-        _LoftedShape(shape_a, face_near_a, shape_b, face_near_b, material, blend, tension)
-    )
+    _require_solid(shape_a, "lofted")
+    _require_solid(shape_b, "lofted")
+    a = shape_a.face(near=point3(face_near_a, "lofted(face_near)"))
+    b = shape_b.face(near=point3(face_near_b, "lofted(other_face_near)"))
+    sections = [_profile_input(ref, "lofted", planar=True) for ref in (a, b)]
+    if len(_boundaries(sections[0])) != len(_boundaries(sections[1])):
+        raise ValueError("lofted() profiles must have the same number of holes.")
+    return finish(_LoftedShape(shape_a, a, shape_b, b, material, blend, tension))
 
 
 def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=None):
@@ -236,14 +317,9 @@ def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=
     Uses ``BRepPrimAPI_MakeRevol``.
     """
     from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
-    from magnelio.geo._sheet import Profile  # noqa: PLC0415
 
     material = resolve_material(material, "revolved(material=...)")
-    if isinstance(profile, Profile) and material is None and profile.material is None:
-        raise ValueError(
-            "Revolving a construction profile (material=None) requires an "
-            "explicit material= for the resulting solid."
-        )
+    profile = _profile_input(profile, "revolved", planar=True)
     normalize_axis(axis, "revolved(axis)")
     angle_deg = finite(angle_deg, "revolved(angle_deg)")
     if not -360.0 <= angle_deg <= 360.0 or angle_deg == 0.0:
@@ -255,18 +331,26 @@ def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=
     return finish(_RevolvedShape(profile, axis, angle_deg, origin, material))
 
 
-def shell(shape, *, thickness, opening_face_near=None):
+def shell(shape, *, thickness, opening_face_near=None, openings=None):
     """Implementation of :meth:`magnelio.geo.Shape.shelled`.
 
     Uses ``BRepOffsetAPI_MakeThickSolid`` with an inward offset.
     """
-    if isinstance(shape, Sheet):
-        raise TypeError(
-            "shelled() hollows a solid, but this is a sheet. To "
-            "grow a sheet into a solid slab use thickened()."
+    from magnelio.geo.topology import FaceRef, FaceSetRef
+
+    if not isinstance(shape, Solid):
+        raise TypeError("shelled() requires a Solid; grow a Sheet with thickened().")
+    if opening_face_near is not None and openings is not None:
+        raise ValueError("shelled() takes either openings= or opening_face_near=.")
+    if opening_face_near is not None:
+        openings = tuple(
+            shape.face(near=p) for p in _points(opening_face_near, "shelled(opening_face_near)")
         )
+    openings = (
+        None if openings is None else _refs(shape, openings, (FaceRef, FaceSetRef), "shelled")
+    )
     thickness = positive(thickness, "shelled(thickness)")
-    return finish(_ShelledShape(shape, thickness, opening_face_near))
+    return finish(_ShelledShape(shape, thickness, openings))
 
 
 def thicken(sheet, *, thickness, direction="forward", material=None):
@@ -275,23 +359,23 @@ def thicken(sheet, *, thickness, direction="forward", material=None):
     A prism along the sheet's own plane normal for a planar sheet, a
     normal offset for a curved one.
     """
-    if not isinstance(sheet, Sheet):
-        raise TypeError(
-            f"thickened() grows a sheet into a solid, but this is a "
-            f"{type(sheet).__name__}. To hollow a solid use shelled()."
-        )
+    sheet = _profile_input(sheet, "thickened")
     material = resolve_material(material, "thickened(material=...)")
     thickness = positive(thickness, "thickened(thickness)")
     if direction not in ("forward", "backward", "symmetric"):
         raise ValueError(
             f"direction must be 'forward', 'backward' or 'symmetric'; got {direction!r}"
         )
-    if material is None and sheet.material is None:
-        raise ValueError(
-            "Thickening a construction profile (material=None) requires an "
-            "explicit material= for the resulting solid."
-        )
-    return _ThickenedSheet(sheet, thickness, direction, material)
+    if not isinstance(sheet, Profile):
+        from magnelio.geo.topology import FaceRef, _is_planar, _scale
+
+        scale = _scale(sheet)
+        raw = sheet._occ_shape(scale)
+        if _is_planar(raw):
+            sheet = FaceRef(sheet, raw, scale).detached()
+        elif direction == "symmetric":
+            raise ValueError("thickened(direction='symmetric') requires a planar Sheet or FaceRef.")
+    return finish(_ThickenedSheet(sheet, thickness, direction, material))
 
 
 @dataclass
@@ -309,7 +393,11 @@ class _ShelledShape(Solid):
         from magnelio.geo._occ_backend import make_thick_solid, resolve_faces  # noqa: PLC0415
 
         occ_shape = self._inner._occ_shape(scale)
-        openings = resolve_faces(occ_shape, self._opening_face_near, scale=scale)
+        openings = (
+            _selected_edges(self._opening_face_near)
+            if self._opening_face_near and not isinstance(self._opening_face_near[0], (tuple, list))
+            else resolve_faces(occ_shape, self._opening_face_near, scale=scale)
+        )
         return make_thick_solid(occ_shape, openings, self._thickness, scale=scale)
 
     def _analytic_bbox(self):
@@ -333,7 +421,6 @@ class _ThickenedSheet(Solid):
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
         from magnelio.geo._occ_backend import (  # noqa: PLC0415
-            face_plane_normal,
             is_planar_face,
             make_extrude,
             make_thick_face,
@@ -343,7 +430,9 @@ class _ThickenedSheet(Solid):
         face = self._inner._occ_shape(scale)
         if not is_planar_face(face):
             return make_thick_face(face, self._thickness, self._direction, scale=scale)
-        normal = face_plane_normal(face)
+        from magnelio.geo.topology import _normal
+
+        normal = _normal(face)
         if self._direction == "backward":
             normal = tuple(-c for c in normal)
         if self._direction == "symmetric":
@@ -360,7 +449,7 @@ class _ThickenedSheet(Solid):
         return pad_box(self._inner._analytic_bbox(), self._thickness)
 
 
-def sweep(profile, spine, *, material=None):
+def sweep(profile, spine, *, face_near=None, material=None):
     """Implementation of :meth:`magnelio.geo.Shape.swept`.
 
     Uses ``BRepOffsetAPI_MakePipe``, orienting the result by the pipe
@@ -369,11 +458,13 @@ def sweep(profile, spine, *, material=None):
     from magnelio.geo.curves import Curve  # noqa: PLC0415
 
     material = resolve_material(material, "swept(material=...)")
-    if material is None and getattr(profile, "material", None) is None:
-        raise ValueError(
-            "Sweeping a construction profile (material=None) requires an "
-            "explicit material= for the resulting solid."
-        )
+    if isinstance(profile, Solid):
+        if face_near is None:
+            raise ValueError("swept() on a Solid requires face_near= or use a FaceRef.")
+        profile = profile.face(near=point3(face_near, "swept(face_near)"))
+    elif face_near is not None:
+        raise ValueError("swept(face_near=) applies only to a Solid.")
+    profile = _profile_input(profile, "swept", planar=True)
     if not isinstance(spine, Curve):
         raise TypeError(
             f"swept() needs a Curve as its spine, but got a "
@@ -409,7 +500,11 @@ class _ExtrudedFaceShape(Solid):
             face = self._inner._occ_shape(scale)
         else:
             occ_shape = self._inner._occ_shape(scale)
-            face = find_nearest_face(occ_shape, self._face_near, scale=scale)
+            face = (
+                self._face_near._shape
+                if hasattr(self._face_near, "owner")
+                else find_nearest_face(occ_shape, self._face_near, scale=scale)
+            )
         return make_extrude(face, self._vector, scale=scale)
 
     def _analytic_bbox(self):
@@ -440,19 +535,36 @@ class _LoftedShape(Solid):
         from magnelio.geo._occ_backend import (  # noqa: PLC0415
             extract_face_wire,
             find_nearest_face,
-            make_loft,
             make_tangent_blend,
         )
 
-        face_a = find_nearest_face(self._shape_a._occ_shape(scale), self._face_near_a, scale=scale)
-        face_b = find_nearest_face(self._shape_b._occ_shape(scale), self._face_near_b, scale=scale)
+        face_a = (
+            self._face_near_a._shape
+            if hasattr(self._face_near_a, "owner")
+            else find_nearest_face(self._shape_a._occ_shape(scale), self._face_near_a, scale=scale)
+        )
+        face_b = (
+            self._face_near_b._shape
+            if hasattr(self._face_near_b, "owner")
+            else find_nearest_face(self._shape_b._occ_shape(scale), self._face_near_b, scale=scale)
+        )
+        if hasattr(self._face_near_b, "owner") and self._face_near_b._scale != scale:
+            from magnelio.geo.topology import _cast, _rescale_copy
+
+            face_b = _cast(_rescale_copy(face_b, self._face_near_b._scale, scale), "face")
         if self._blend == "tangent":
             # The spine is derived from the faces themselves, so it comes
             # out in whatever unit they carry — no rescaling needed here.
             return make_tangent_blend(face_a, face_b, self._tension)
-        wire_a = extract_face_wire(face_a)
-        wire_b = extract_face_wire(face_b)
-        return make_loft([wire_a, wire_b], is_solid=True, is_ruled=self._blend == "ruled")
+        from magnelio.geo._occ_backend import _shape_wires, make_profile_loft
+
+        def boundaries(face):
+            outer = extract_face_wire(face)
+            return [outer] + [w for w in _shape_wires(face) if not w.IsSame(outer)]
+
+        return make_profile_loft(
+            [boundaries(face_a), boundaries(face_b)], is_ruled=self._blend == "ruled"
+        )
 
     def _analytic_bbox(self):
         from magnelio.geo._scaling import box_diagonal, pad_box, union_boxes  # noqa: PLC0415
@@ -482,8 +594,8 @@ class Loft(Solid):
 
     Parameters
     ----------
-    *sections : Profile or closed Curve
-        At least two cross-sections, in the order the solid passes
+    *sections : Profile or Sheet or FaceRef or Curve
+        At least two planar cross-sections, in the order the solid passes
         through them. Profiles contribute their outer boundary and all holes,
         matched in boundary order. Every section needs the same hole count.
         The sections should wind the same way — a reversed one produces a
@@ -493,7 +605,7 @@ class Loft(Solid):
         passes one smooth surface through all of them; ``'ruled'`` joins
         them with straight surfaces, so the solid is a stack of frusta.
     material : Material, optional
-        Material of the lofted solid. Defaults to the first profile
+        Material of the lofted solid. Defaults to the first
         section's material; without one the result is a construction solid.
     name : str, optional
         Optional label.
@@ -501,7 +613,7 @@ class Loft(Solid):
     Raises
     ------
     TypeError
-        If a section is a solid (use :meth:`~magnelio.geo.Shape.lofted`)
+        If a section is a solid (select a FaceRef first)
         or a :class:`~magnelio.geo.Group`.
     ValueError
         If fewer than two sections are given, a Curve section is not
@@ -529,27 +641,22 @@ class Loft(Solid):
         _check_blend(blend, allow_tangent=False)
         if len(sections) < 2:
             raise ValueError(f"A Loft needs at least 2 cross-sections; got {len(sections)}.")
+        normalized = []
         for index, section in enumerate(sections):
             if isinstance(section, Curve):
                 if section._ends is not None and not section.is_closed:
                     raise ValueError(
-                        f"Loft section {index} is an open curve.  Every "
-                        f"cross-section must be a closed outline — chain it "
-                        f"with joined() or draw it with Path(...).closed()."
+                        f"Loft section {index} is an open curve; use a closed outline."
                     )
-            elif not isinstance(section, Profile):
-                raise TypeError(
-                    f"Loft section {index} is a {type(section).__name__}. "
-                    f"Sections must be Profile values or closed "
-                    f"Curve values; to loft between faces of two "
-                    f"existing solids use the lofted() verb instead."
-                )
+                section = Profile.from_wires(section)
+            normalized.append(_profile_input(section, "Loft", planar=True))
+        sections = tuple(normalized)
         self.sections = sections
         self.blend = blend
         self.material = resolve_material(material, "Loft(material=...)")
         if self.material is None:
             self.material = getattr(sections[0], "material", None)
-        counts = {len(s.boundary()) if isinstance(s, Profile) else 1 for s in sections}
+        counts = {len(_boundaries(s)) for s in sections}
         if len(counts) != 1:
             raise ValueError("Loft profiles must have the same number of holes.")
         self.name = name
@@ -557,14 +664,8 @@ class Loft(Solid):
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
         from magnelio.geo._occ_backend import make_profile_loft  # noqa: PLC0415
-        from magnelio.geo.curves import Curve  # noqa: PLC0415
 
-        wires = [
-            [s._occ_shape(scale)]
-            if isinstance(s, Curve)
-            else [c._occ_shape(scale) for c in s.boundary()]
-            for s in self.sections
-        ]
+        wires = [[c._occ_shape(scale) for c in _boundaries(s)] for s in self.sections]
         return make_profile_loft(wires, is_ruled=self.blend == "ruled")
 
     def _analytic_bbox(self):
@@ -595,12 +696,16 @@ class _FilletedShape(Solid):
         from magnelio.geo._occ_backend import make_fillet, resolve_edges  # noqa: PLC0415
 
         occ_shape = self._inner._occ_shape(scale)
-        selected = resolve_edges(
-            occ_shape,
-            near=self._near,
-            face_near=self._face_near,
-            edges=self._edges,
-            scale=scale,
+        selected = (
+            _selected_edges(self._edges)
+            if not isinstance(self._edges, str) and self._edges is not None
+            else resolve_edges(
+                occ_shape,
+                near=self._near,
+                face_near=self._face_near,
+                edges=self._edges,
+                scale=scale,
+            )
         )
         return make_fillet(occ_shape, selected, self._radius, scale=scale)
 
@@ -692,3 +797,54 @@ class _SweptShape(Solid):
             self._spine._analytic_bbox(),
             box_diagonal(self._profile._analytic_bbox()),
         )
+
+
+def _boundaries(sheet):
+    from magnelio.geo.topology import FaceRef, _scale
+
+    if isinstance(sheet, Profile):
+        return sheet.boundary()
+    return FaceRef(sheet, sheet._occ_shape(_scale(sheet)), _scale(sheet)).detached().boundary()
+
+
+def loft_profiles(start, end, *, material=None, blend="spline", tension=None):
+    """Build a two-section loft from the same categories as other profile verbs."""
+    from magnelio.geo._topology_history import finish
+
+    _check_blend(blend, allow_tangent=True)
+    tension = _check_tension(tension, blend=blend)
+    start = _profile_input(start, "lofted", planar=True)
+    end = _profile_input(end, "lofted", planar=True)
+    if len(_boundaries(start)) != len(_boundaries(end)):
+        raise ValueError("lofted() profiles must have the same number of holes.")
+    if blend != "tangent":
+        return Loft(start, end, blend=blend, material=material)
+    return finish(
+        _ProfileBlend(start, end, resolve_material(material, "lofted(material=...)"), tension)
+    )
+
+
+@dataclass
+class _ProfileBlend(Solid):
+    _shape_a: object
+    _shape_b: object
+    _material: object
+    _tension: tuple
+
+    @property
+    def material(self):
+        return self._material if self._material is not None else self._shape_a.material
+
+    @cached_occ_shape
+    def _occ_shape(self, scale=1.0):
+        from magnelio.geo._occ_backend import make_tangent_blend
+
+        return make_tangent_blend(
+            self._shape_a._occ_shape(scale), self._shape_b._occ_shape(scale), self._tension
+        )
+
+    def _analytic_bbox(self):
+        from magnelio.geo._scaling import box_diagonal, pad_box, union_boxes
+
+        box = union_boxes([self._shape_a._analytic_bbox(), self._shape_b._analytic_bbox()])
+        return pad_box(box, max(0.25, 1.5 * max(self._tension)) * box_diagonal(box))

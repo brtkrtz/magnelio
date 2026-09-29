@@ -110,7 +110,25 @@ def to_recipe(owner):
         nodes[index] = {**node, **metadata}
         return {"node": index}
 
+    def reference(ref):
+        origin = ref._origin
+        if origin is None:
+            raise TopologyEvolutionError("A construction reference has no replayable origin.")
+        if "parent" in origin:
+            data = {"parent": reference(origin["parent"])}
+            if "connection" in origin:
+                data["connection"] = origin["connection"]
+            else:
+                data["member_brep"] = _brep_text(origin["member_shape"])
+        else:
+            data = {**origin, "owner": encode(ref.owner)}
+        return {"reference": data, "scale": ref._scale}
+
     def value(obj):
+        from magnelio.geo.topology import TopologyRef
+
+        if isinstance(obj, TopologyRef):
+            return reference(obj)
         if isinstance(obj, Shape):
             return encode(obj)
         if isinstance(obj, (tuple, list)):
@@ -148,6 +166,7 @@ def from_recipe(recipe):
                     "_SweptShape",
                     "_ShelledShape",
                     "_ThickenedSheet",
+                    "_ProfileBlend",
                 ),
             ),
         )
@@ -214,7 +233,34 @@ def from_recipe(recipe):
         cache[index] = shape
         return shape
 
+    def reference(data, scale):
+        from magnelio.geo.topology import select
+
+        if "owner" in data:
+            return select(
+                decode(data["owner"]),
+                data["kind"],
+                data["name"],
+                plural=data["plural"],
+                _model_scale=scale,
+                **data["selectors"],
+            )
+        parent_node = data["parent"]
+        parent = reference(parent_node["reference"], parent_node["scale"])
+        if "connection" in data:
+            if data["connection"] != "edges":
+                raise TopologyEvolutionError("Unsupported reference connection.")
+            return parent.edges
+        matches = [ref for ref in parent if _brep_text(ref._shape) == data["member_brep"]]
+        if len(matches) != 1:
+            raise TopologyEvolutionError(
+                "A connected reference has no unique exact snapshot match."
+            )
+        return matches[0]
+
     def value(obj):
+        if isinstance(obj, dict) and "reference" in obj:
+            return reference(obj["reference"], obj["scale"])
         if isinstance(obj, dict) and "node" in obj:
             return decode(obj)
         if isinstance(obj, list):

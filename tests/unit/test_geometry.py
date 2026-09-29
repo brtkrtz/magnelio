@@ -2420,13 +2420,17 @@ class TestExtrudeFace:
 
     _RECT = [(0, 0), (4e-3, 0), (4e-3, 3e-3), (0, 3e-3)]
 
-    def test_construction_face_requires_material(self):
-        """A material-less Face needs an explicit material= to extrude."""
+    def test_construction_face_produces_a_boolean_tool(self):
+        """A material-less Profile produces a construction Solid."""
         from magnelio.geo import Profile
         from magnelio.geo.modifications import extrude
 
-        with pytest.raises(ValueError, match="requires an explicit material"):
-            extrude(Profile.polygon([(u, v, 0.0) for u, v in self._RECT]), vector=(0, 0, 0.005))
+        assert (
+            extrude(
+                Profile.polygon([(u, v, 0.0) for u, v in self._RECT]), vector=(0, 0, 0.005)
+            ).material
+            is None
+        )
 
     def test_solid_still_requires_face_near(self):
         """The solid form of extrude still needs face_near."""
@@ -2646,11 +2650,10 @@ class TestRevolve:
             material=material,
         )
 
-    def test_construction_face_requires_material(self):
+    def test_construction_face_produces_a_boolean_tool(self):
         from magnelio.geo.modifications import revolve
 
-        with pytest.raises(ValueError, match="requires an explicit material"):
-            revolve(self._ring_profile(), axis="z")
+        assert revolve(self._ring_profile(), axis="z").material is None
 
     def test_full_revolution_pappus_volume(self):
         """360° revolution volume matches Pappus' theorem."""
@@ -2752,12 +2755,13 @@ class TestSweep:
         brepgprop.VolumeProperties(shape._occ_shape(), p)
         return p.Mass()
 
-    def test_construction_profile_requires_material(self):
+    def test_construction_profile_produces_a_boolean_tool(self):
         from magnelio.geo import Curve
         from magnelio.geo.modifications import sweep
 
-        with pytest.raises(ValueError, match="requires an explicit material"):
-            sweep(self._square(0.5e-3), Curve.polyline([(0, 0, 0), (0, 0, 5e-3)]))
+        assert (
+            sweep(self._square(0.5e-3), Curve.polyline([(0, 0, 0), (0, 0, 5e-3)])).material is None
+        )
 
     def test_straight_spine_exact_volume(self):
         """A straight sweep has volume exactly profile_area × length."""
@@ -3043,10 +3047,9 @@ class TestProfileFromWires:
         rod = Profile.from_wires(back.joined(front)).extruded(vector=(0, 0, h), material=_air())
         assert _volume(rod) == pytest.approx(math.pi * r * r / 2 * h, rel=1e-12)
 
-    def test_construction_sheet_needs_material_to_extrude(self):
+    def test_construction_sheet_extrudes_as_a_boolean_tool(self):
         _occ()
-        with pytest.raises(ValueError, match="requires an explicit material"):
-            Profile.from_wires(self._square()).extruded(vector=(0, 0, 0.001))
+        assert Profile.from_wires(self._square()).extruded(vector=(0, 0, 0.001)).material is None
 
     def test_non_planar_profile_rejected_by_the_kernel(self):
         from magnelio.geo import Path

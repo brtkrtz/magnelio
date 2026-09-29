@@ -99,8 +99,9 @@ It cannot create, close, or merge holes partway through a transition. As for
 any loft or sweep, valid sections alone cannot guarantee that the resulting
 three-dimensional body avoids crossing itself. A material supplied to an
 operation overrides the profile material; otherwise the material is inherited
-(`Loft` uses its first section). Construction profiles need an explicit
-material for extrusion, revolution and sweep.
+(`Loft` uses its first section). Without a material, all profile operations
+produce construction solids suitable as Boolean tools. Assign a material before
+adding the resulting body to a `GeometryModel`.
 
 (geometry-owned-topology)=
 ## Owned topology and named selections
@@ -139,8 +140,7 @@ coax = geo.Cylinder(radius=2e-3, inner_radius=1e-3, height=5e-3, material="pec")
 coax = coax.tag_face("port", near=(1.5e-3, 0, 5e-3), normal="z")
 coax = coax.rotated("y", 22.5)
 port = coax.face("port")
-profile = port.detached()
-extension = profile.extruded(tuple(1e-3 * n for n in port.normal))
+extension = port.extruded(tuple(1e-3 * n for n in port.normal))
 ```
 
 Names are non-empty strings, unique per topology kind on their owner.
@@ -196,14 +196,94 @@ outer face to both an outer and an inner face; use a deliberate set when that
 is intended. A face-to-face loft built from boundary wires may provide no
 provable face successor, so retaining that singular tag fails explicitly.
 Detaching a face creates independent geometry and intentionally leaves the
-owner's names behind. Existing profile construction verbs and loose-point
-solid modification verbs retain their signatures.
+owner's names behind. Direct FaceRef construction also produces independent
+geometry: the selected face supplies its shape and material, while selection
+registrations stay on the original owner. Modifying the owner itself retains
+the established history rules.
 
 Projects persist the semantic origin of each name and the relevant construction
 path, with exact geometry snapshots at untagged origins. Read-back replays that
 path and validates the registered and final cardinalities before exposing names.
 It stores no subshape enumeration indices. Topology enumeration is cached per
 owner and model scale; repeated named lookup resolves from the owner's cache.
+
+## Uniform profile operations
+
+The same section categories feed extrusion, revolution, sweep and loft:
+`Profile`, an eligible standalone `Sheet`, or a selected `FaceRef`. Every
+operation returns an independent `Solid`; it does not fuse the new volume
+into the section's owner. An explicit `material=` overrides inheritance;
+otherwise the section supplies its material, or a FaceRef supplies its owner's
+material. A materialless section produces a materialless construction solid.
+
+| Operation | Eligible section | Placement |
+| --- | --- | --- |
+| `section.extruded(vector)` | Planar or curved sheet/face | Actual world geometry plus the extrusion vector |
+| `section.revolved(axis, origin=...)` | Planar sheet/face | Actual world geometry around the stated axis |
+| `section.swept(spine)` | Planar sheet/face | Centroid at spine start, normal aligned with its start tangent |
+| `section.lofted(other)` / `Loft(*sections)` | Planar sheets/faces | Actual world placement of every section |
+| `section.thickened(thickness)` | Planar or curved sheet/face | Offset along its oriented normal; symmetric only for planar sections |
+
+`Loft` also accepts closed planar Curves as a convenience and converts them
+into profiles. All inner boundaries survive. Loft sections must have the same
+hole count; outer boundaries match each other and holes match in boundary
+order. Tangent lofts preserve the holes too, with the same spine and end
+normal conditions applied to every boundary. A nonplanar sweep, revolution or
+loft section raises `ValueError` at the call; a category mismatch raises
+`TypeError`. Valid sections can still produce a self-intersecting or otherwise
+invalid solid for an unsuitable path or axis; the CAD operation then fails.
+
+For a sweep, the shortest rotation from the oriented section normal to the
+spine tangent transports its actual boundary. An already aligned section
+retains its in-plane roll exactly. If the normal is opposite to the tangent,
+the half-turn uses the section plane's X direction. The pipe then uses the
+kernel's corrected Frenet transport; further twist and frame modes are not
+exposed. Flat spline sheets are re-covered with their exact boundaries as
+planar sections. The following annular face continues around an exact bend:
+
+```python
+from magnelio import geo
+
+shield = geo.Cylinder(origin=(8e-3, 0, 0), axis="y", radius=2e-3,
+                      inner_radius=1e-3, height=-3e-3, material="pec")
+port = shield.face(normal="y")
+spine = geo.Curve.arc((8e-3, 0, 0), (8e-3 / 2**0.5, 8e-3 / 2**0.5, 0),
+                     (0, 8e-3, 0))
+extension = port.swept(spine)
+```
+
+Detach only when the section needs its own placement. `port.swept(spine)`
+consumes the selected shape directly and leaves the owner's names on that
+owner. `body.swept(spine, face_near=p)` and the existing Solid extrusion and
+loft point forms remain conveniences that select a temporary FaceRef.
+They use the same ambiguity checks as `body.face(near=p)`.
+
+### Referenced edges and openings
+
+Fillet and chamfer modify a Solid with `edges=` taking an EdgeRef, EdgeSetRef,
+or sequence of them, or `faces=` taking a FaceRef, FaceSetRef, or sequence of
+them to select their boundary edges. Shell openings use the same face forms
+through `openings=`. References must belong to the exact receiver; references
+from an identical copy or a previous owner are rejected. Re-select on a new
+owner after every placement or construction. For example:
+
+```python
+block = geo.Brick(size=(10e-3, 8e-3, 6e-3), material="pec")
+housing = block.shelled(0.5e-3, openings=block.face(normal="z"))
+rim = block.face(normal="z").edges
+rounded = block.filleted(edges=rim, radius=0.2e-3)
+bevelled = block.chamfered(faces=block.face(normal="z"), distance=0.2e-3)
+```
+
+Select exactly one mode: `edges`, `faces`, `near` or `face_near` for fillet and
+chamfer; `openings` or `opening_face_near` for shell. Omit shell openings for
+a closed void. The retained point forms now select semantically and refuse
+tied picks; `edges="all"` explicitly selects all edges. Empty reference sets,
+wrong topology kinds, stale owners and conflicting modes fail at the call.
+Selected operations retain exact identity when the surrounding model changes
+its numerical build scale. Projects replay reference origins on their original
+immutable owners, with exact snapshot checks for individual connected edges;
+no persistent kernel indices or nearest retargeting are used.
 
 ## Placement and transform composition
 
@@ -288,8 +368,8 @@ Two constructors build a body that changes cross-section along its
 length.  `Loft(*sections)` takes the profiles themselves — planar
 sheets or closed curves, as many as the shape needs, in the order the
 body passes through them — and is the way to draw a horn or a
-multi-step matching section from sketches.  `a.lofted(near_a, b,
-near_b)` takes one face of an existing body and one face of another,
+multi-step matching section from sketches. `face_a.lofted(face_b)` takes
+one selected face of an existing body and one face of another,
 and bridges them; the profiles are read off the two faces, so the
 transition fits both parts exactly and follows them when a dimension
 changes.

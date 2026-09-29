@@ -22484,8 +22484,8 @@ or server is started for them.
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
 **Date:** 2026-09-28.
-**Status:** Accepted as the geometry-foundation contract; WP0 through WP3 are
-implemented on `feat/geo-api-foundation`, with WP4 next.
+**Status:** Accepted as the geometry-foundation contract; WP0 through WP4 are
+implemented on `feat/geo-api-foundation`, with WP5 next.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -22871,3 +22871,62 @@ planarity corrections, covered by the final relevant run). All 33 selected
 gallery examples execute; a fresh Sphinx build and repository gates pass.
 Private verification and performance records are in
 `investigations/geo-api-foundation/WP3-VERIFICATION.md` (internal record).
+
+
+**WP4 implementation (2026-09-29).** One section adapter accepts standalone
+Profile, eligible Sheet and FaceRef inputs. Extrusion/thickening retain curved
+sheet support; revolution, sweep and loft require geometric planarity and
+re-cover flat spline sections from exact boundaries. Direct FaceRef verbs use
+the selected face's geometry and owner's material and produce independent
+solids; the original owner's registrations remain there, as they do for
+explicit detachment. Owner modifications retain the established named-history
+rules. Explicit material overrides win; all materialless sections now produce
+construction solids for Boolean use, consistently with [[DD-127]].
+
+`FaceRef.extruded/revolved/swept/thickened/lofted` and mixed `Loft` sections
+retain intrinsic holes. Two-section spline/ruled lofts use the same boundary
+matching as Loft. Tangent transitions construct corresponding hole tools with
+the full section's centroid and oriented normal conditions, preserving
+nonconcentric bores and spatial bends. Geometry volume measurement now uses
+span-aware adaptive Gauss-Kronrod integration: OCC's default mass quadrature
+over-read a valid constant annular transition by 0.84%. The adaptive result
+agrees with area-times-length within the kernel's loft approximation tolerance;
+the same measurement applies after placement, tagging, CSG and project read-back.
+Analytic conic and curved-sheet volume regressions retain their established
+precision; no operation-specific or geometry-specific quadrature switch is used.
+
+Fillet/chamfer accept owned edges through `edges=` or face boundaries through
+`faces=`; shell accepts faces through `openings=`. Singular refs, deliberate
+sets and sequences are accepted, with deduplication. References must belong to
+the exact receiver, including after zero-displacement placement. Wrong kinds,
+stale owners, empty selections and conflicting modes fail at the call. Retained
+point conveniences resolve semantic refs immediately; ties no longer depend on
+kernel enumeration order. Solid extrusion/loft conveniences preserve their
+existing history contract, including explicit name loss where kernel histories
+cannot prove identity; direct independent FaceRef construction does not carry
+unrelated owner names into its result.
+
+Selected owner modifications build once at the reference's resolved model
+scale, then rescale the completed result and its names through exact affine
+history for other model scales. This preserves input membership without
+persistent indices or geometrical retargeting. Additive project recipe codecs
+retain reference origins on their original immutable owners; connected set
+members use strict exact BREP snapshot matching, with unique-match failure,
+rather than OCC indices or a nearest pick. Old recipe codecs remain readable.
+
+Sweep placement uses the shortest rotation from the oriented section normal
+to the spine start tangent, carrying the actual boundary and its in-plane roll.
+An aligned section is preserved. The antiparallel convention uses the plane's
+actual X direction as the half-turn axis. Existing corrected Frenet transport
+continues along the pipe; user-selectable frame/twist modes stay in WP6.
+Planar thickening forward now follows the oriented normal, including reflected
+faces, rather than canonicalising its largest world component positive.
+
+Gate: `tests/unit/test_geo_operations_foundation.py`, with analytic annular
+extrusion/revolution/sweep/loft measurements, placed asymmetric roll, spatial
+tangent bores, offset multiple holes, Sheet eligibility, wrong owners, selection
+errors, reference-scale changes, exact project replay and executed methods/
+upgrade recipes. Methods/API prose, the upgrade guide and Tutorials 14/21
+show the same public grammar; Tutorial 21's absolute circular bend is not a
+relative Path implementation. Verification is recorded in
+`investigations/geo-api-foundation/WP4-VERIFICATION.md` (internal record).

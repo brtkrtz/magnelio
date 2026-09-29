@@ -98,7 +98,7 @@ def test_references_are_read_only_owner_views_not_geometry():
     with pytest.raises(AttributeError):
         f.area = 0
     assert not hasattr(f, "translated")
-    assert not hasattr(f, "extruded")  # Uniform operations belong to WP4.
+    assert hasattr(f, "extruded")  # WP4 consumes refs without independent placement.
     with pytest.raises(TypeError):
         mio.GeometryModel().add(f)
     with pytest.raises(TypeError):
@@ -369,7 +369,7 @@ def test_topology_methods_documentation_recipes_execute():
     import re
 
     text = (Path(__file__).resolve().parents[2] / "docs/methods/geometry.md").read_text()
-    text = text.split("## Owned topology", 1)[1].split("## Placement", 1)[0]
+    text = text.split("## Owned topology", 1)[1].split("## Uniform profile operations", 1)[0]
     blocks = re.findall(r"```python\n(.*?)```", text, re.DOTALL)
     assert blocks
     namespace = {}

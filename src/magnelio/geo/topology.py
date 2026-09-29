@@ -171,6 +171,7 @@ class TopologyRef:
     owner: object
     _shape: object
     _scale: float
+    _origin: object = None
 
     def bounding_box(self):
         """Return world-coordinate minimum and maximum corners in metres."""
@@ -283,7 +284,12 @@ class FaceRef(TopologyRef):
     @property
     def edges(self):
         """EdgeSetRef: Unique boundary edges, including inner boundaries."""
-        return EdgeSetRef(self.owner, _subshapes(self._shape, "edge"), self._scale)
+        return EdgeSetRef(
+            self.owner,
+            _subshapes(self._shape, "edge"),
+            self._scale,
+            {"parent": self, "connection": "edges"},
+        )
 
     @property
     def vertices(self):
@@ -324,13 +330,124 @@ class FaceRef(TopologyRef):
             shape, self._scale, self.bounding_box(), self.owner.material
         )
 
+    def extruded(self, vector, *, material=None):
+        """Return a standalone Solid extruded from this face, retaining holes.
+
+        Parameters
+        ----------
+        vector : tuple of float
+            World extrusion vector in metres, non-zero.
+        material : Material or str, optional
+            Override the owner's material; otherwise it is inherited.
+
+        Returns
+        -------
+        Solid
+            Independent continuation. Owner registrations remain on the owner.
+        """
+        from magnelio.geo.modifications import extrude
+
+        return extrude(self, vector=vector, material=material)
+
+    def revolved(self, axis, angle_deg=360.0, *, origin=(0.0, 0.0, 0.0), material=None):
+        """Return a Solid of revolution from this planar face.
+
+        Parameters
+        ----------
+        axis : str or tuple of float
+            Revolution axis letter or non-zero vector.
+        angle_deg : float, optional
+            Non-zero angle of at most a full turn, in degrees.
+        origin : tuple of float, optional
+            World point on the revolution axis, in metres.
+        material : Material or str, optional
+            Override the owner's material.
+
+        Returns
+        -------
+        Solid
+            Independent solid retaining the face's holes.
+        """
+        from magnelio.geo.modifications import revolve
+
+        return revolve(self, axis=axis, angle_deg=angle_deg, origin=origin, material=material)
+
+    def swept(self, spine, *, material=None):
+        """Return a Solid by sweeping this planar face along a Curve.
+
+        Parameters
+        ----------
+        spine : Curve
+            World sweep path. The centroid moves to its start and the outward
+            normal aligns with its tangent by the shortest rotation. In-plane
+            roll is retained; an already aligned face stays in its actual pose.
+        material : Material or str, optional
+            Override the owner's material.
+
+        Returns
+        -------
+        Solid
+            Independent continuation with every hole retained.
+        """
+        from magnelio.geo.modifications import sweep
+
+        return sweep(self, spine, material=material)
+
+    def thickened(self, thickness, *, direction="forward", material=None):
+        """Return a Solid offset from this face.
+
+        Parameters
+        ----------
+        thickness : float
+            Positive thickness in metres.
+        direction : {'forward', 'backward', 'symmetric'}, optional
+            Forward follows the outward normal. Symmetric requires planarity.
+        material : Material or str, optional
+            Override the owner's material.
+
+        Returns
+        -------
+        Solid
+            Independent slab or curved offset.
+        """
+        from magnelio.geo.modifications import thicken
+
+        return thicken(self, thickness=thickness, direction=direction, material=material)
+
+    def lofted(self, other, *, material=None, blend="spline", tension=None):
+        """Return a Solid connecting this planar face to another section.
+
+        Parameters
+        ----------
+        other : Profile or Sheet or FaceRef
+            Planar end section. Hole counts must agree; boundary order fixes
+            correspondence. Tangent blending uses the oriented face normals.
+        material : Material or str, optional
+            Override the start owner's material.
+        blend : {'spline', 'ruled', 'tangent'}, optional
+            Surface interpolation or a transition leaving both face normals.
+        tension : float or tuple of float, optional
+            Positive tangent reach fractions, only for tangent blending.
+
+        Returns
+        -------
+        Solid
+            Independent transition retaining all holes.
+        """
+        from magnelio.geo.modifications import loft_profiles
+
+        return loft_profiles(self, other, material=material, blend=blend, tension=tension)
+
 
 class _RefSet(TopologyRef):
     def __len__(self):
         return len(self._shape)
 
     def __iter__(self):
-        return (self._member_type(self.owner, s, self._scale) for s in self._shape)
+        return (
+            self._member_type(self.owner, s, self._scale, {"parent": self, "member_shape": s})
+            for s in self._shape
+        )
 
     def bounding_box(self):
         """Return a world bounding box enclosing every member, in metres."""
@@ -376,6 +493,9 @@ class _DetachedSheet:
         self.material = material
         self.name = None
         self._occ_shape_cache = {}
+
+    def __repr__(self):
+        return f"{type(self).__name__}(material={self.material!r})"
 
     def _occ_shape(self, scale=1.0):
         if scale not in self._occ_shape_cache:
@@ -534,7 +654,22 @@ def select(
         ("face", True): FaceSetRef,
         ("edge", True): EdgeSetRef,
     }[(kind, plural)]
-    return cls(owner, members if plural else members[0], scale)
+    origin = {
+        "kind": kind,
+        "name": name,
+        "plural": plural,
+        "selectors": {
+            key: value
+            for key, value in (
+                ("near", near),
+                ("normal", normal),
+                ("surface_type", surface_type),
+                ("curve_type", curve_type),
+            )
+            if value is not None
+        },
+    }
+    return cls(owner, members if plural else members[0], scale, origin)
 
 
 def tag(owner, kind, name, *, plural=False, **selectors):

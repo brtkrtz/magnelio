@@ -151,15 +151,16 @@ EXPECTED_SHAPE_VERB_SIGNATURES = {
     ),
     "scaled": "(self, factor, center=(0.0, 0.0, 0.0))",
     "mirrored": "(self, normal, position=0.0, *, copy=False, unite=False, group=False)",
-    "chamfered": "(self, *, near=None, face_near=None, edges=None, distance)",
-    "filleted": "(self, *, near=None, face_near=None, edges=None, radius)",
+    "chamfered": "(self, *, near=None, face_near=None, edges=None, faces=None, distance)",
+    "filleted": "(self, *, near=None, face_near=None, edges=None, faces=None, radius)",
     "extruded": "(self, vector, *, face_near=None, material=None)",
     "revolved": "(self, axis, angle_deg=360.0, *, origin=(0.0, 0.0, 0.0), material=None)",
-    "swept": "(self, spine, *, material=None)",
-    "shelled": "(self, thickness, *, opening_face_near=None)",
+    "swept": "(self, spine, *, face_near=None, material=None)",
+    "shelled": "(self, thickness, *, opening_face_near=None, openings=None)",
     "thickened": "(self, thickness, *, direction='forward', material=None)",
     "lofted": (
-        "(self, face_near, other, other_face_near, *, material=None, blend='spline', tension=None)"
+        "(self, face_near, other=None, other_face_near=None, *, "
+        "material=None, blend='spline', tension=None)"
     ),
 }
 
@@ -244,7 +245,7 @@ def test_transform_defaults_preserve_category_and_arrays_are_explicit():
     assert all(isinstance(s, geo.Solid) for s in copies)
 
 
-def test_face_selection_is_a_loose_point_consumed_by_the_operation():
+def test_point_convenience_selects_the_same_owned_face_for_extrusion():
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     body = geo.Brick(size=(1.0, 1.0, 1.0), material=_air())
 
@@ -255,12 +256,7 @@ def test_face_selection_is_a_loose_point_consumed_by_the_operation():
     assert isinstance(body.face(near=(0.5, 0.5, 1.0)), geo.FaceRef)
 
 
-def test_equidistant_nearest_face_currently_uses_kernel_order():
-    pytest.importorskip("OCC.Core.BRepPrimAPI")
-    from magnelio.geo._occ_backend import find_nearest_face
-
-    body = geo.Brick(size=(1.0, 1.0, 1.0), material=_air())
-
-    # The centre is equidistant from all six faces.  The old selector returns
-    # one of them instead of reporting an ambiguity.
-    assert find_nearest_face(body._occ_shape(), (0.5, 0.5, 0.5)) is not None
+def test_equidistant_operation_selection_raises_instead_of_using_kernel_order():
+    body = geo.Brick(size=(1, 1, 1), material=_air())
+    with pytest.raises(geo.AmbiguousTopologyError):
+        body.extruded((0, 0, 1), face_near=(0.5, 0.5, 0.5))

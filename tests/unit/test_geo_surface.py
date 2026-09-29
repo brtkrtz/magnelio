@@ -131,9 +131,8 @@ class TestExtrudeAndThicken:
         assert solid.volume() == pytest.approx(math.pi * (D / 2) ** 2 * T, rel=1e-4)
         assert solid.material.is_pec
 
-    def test_extruding_a_construction_sheet_needs_a_material(self, dish):
-        with pytest.raises(ValueError, match="material"):
-            dish.extruded(vector=(0.0, 0.0, -T))
+    def test_extruding_a_construction_sheet_produces_a_boolean_tool(self, dish):
+        assert dish.extruded(vector=(0.0, 0.0, -T)).material is None
 
     def test_thickened_forward_grows_along_the_dominant_normal(self, dish):
         shell = dish.thickened(thickness=T, material="pec")
@@ -151,7 +150,7 @@ class TestExtrudeAndThicken:
         assert z_lo < (XC - D / 2) ** 2 / (4 * F) - 0.5 * T
 
     def test_symmetric_is_planar_only(self, dish):
-        with pytest.raises(ValueError, match="planar sheets only"):
+        with pytest.raises(ValueError, match="planar Sheet or FaceRef"):
             dish.thickened(thickness=T, direction="symmetric", material="pec").volume()
 
     def test_thicken_refuses_a_folded_offset_loudly(self):

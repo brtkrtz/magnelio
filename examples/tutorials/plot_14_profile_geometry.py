@@ -285,7 +285,7 @@ fig, ax = plots.plot_cross_section(
 # surface through all of them, for a flared horn.
 #
 # Where the two ends are faces of solids that already exist, the
-# :meth:`~magnelio.geo.Shape.lofted` verb takes those instead, and adds a
+# :meth:`~magnelio.geo.FaceRef.lofted` verb takes those instead, and adds a
 # third mode: ``blend="tangent"`` leaves each face along its own normal,
 # so the transition meets both parts without a crease.  Between two
 # faces that look at each other -- the two ends of a waveguide taper --
@@ -302,6 +302,26 @@ def square(half, z):
 taper = geo.Loft(square(4.0e-3, 0.0), square(10.0e-3, 18.0e-3), blend="ruled", material="pec")
 
 fig, ax = plots.plot_cross_section([taper], "y", 0.0, title="a ruled taper between two squares")
+
+# %%
+# A selected face is a section too
+# --------------------------------
+#
+# The same loft grammar consumes a Profile or the end face of an existing body.
+# Both annular faces contribute their bore, so the transition is hollow.
+
+start_body = geo.Cylinder(radius=2e-3, inner_radius=1e-3, height=2e-3, material="pec")
+end_body = geo.Cylinder(
+    origin=(0, 0, 8e-3), radius=3e-3, inner_radius=1.5e-3, height=2e-3, material="pec"
+)
+transition = start_body.face(normal="z").lofted(end_body.face(normal=(0, 0, -1)), blend="ruled")
+assert transition.volume() > 0
+fig, ax = plots.plot_cross_section(
+    [start_body, transition, end_body],
+    "y",
+    0,
+    title="Face-to-face loft: matching annular boundaries",
+)
 
 # %%
 # What to take away
@@ -327,5 +347,6 @@ fig, ax = plots.plot_cross_section([taper], "y", 0.0, title="a ruled taper betwe
 #   two routes to the same part agreeing.
 #
 # A profile carrying no material is a *construction* profile: it is not
-# a physical object and cannot be meshed on its own, which is why the
-# verbs that turn it into a solid ask for the material explicitly.
+# a physical object and cannot be meshed on its own. Its solid-producing
+# verbs also allow materialless Boolean tools. Supply ``material=`` to the
+# operation when the result is intended for model assembly.

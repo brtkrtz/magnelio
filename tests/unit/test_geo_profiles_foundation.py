@@ -213,7 +213,11 @@ def test_documented_profile_recipes_execute():
     )[0]
     sources = [
         (methods, 30 * math.pi * 1e-9, "tube"),
-        ((root / "docs/migration-geometry.md").read_text(), 60e-9, "body"),
+        (
+            (root / "docs/migration-geometry.md").read_text().split("## Uniform operations", 1)[0],
+            60e-9,
+            "body",
+        ),
     ]
     for text, expected, name in sources:
         for snippet in re.findall(r"```python\n(.*?)```", text, re.DOTALL):

@@ -8,7 +8,7 @@ uses a coax shield: its selected end is an annulus, so detaching it also shows
 that the bore is part of the face topology.
 
 This is geometry only and takes seconds. The face reference stays bound to its
-owner; a detached profile provides the standalone geometry for an extension.
+owner; its construction verbs provide independent solids for an extension.
 """
 
 import math
@@ -33,20 +33,59 @@ assert port.is_planar
 assert len(port.edges) == 2
 
 # %%
-# Detach to continue the shield
-# ------------------------------
+# Sweep the selected face directly
+# --------------------------------
 #
 # A FaceRef has an owner and no independent placement methods. Detachment
-# returns a Profile with the actual orientation and bore, carrying the owner's
-# material. Extrude it along the face's outward normal to grow a continuation.
+# returns a Profile when independent placement is needed. To continue the
+# existing shield, consume the FaceRef directly. Its actual annular boundary
+# and owner material feed the sweep; no profile reconstruction is required.
 
 profile = port.detached()
-extension = profile.extruded(tuple(3e-3 * component for component in port.normal))
+spine = geo.Curve.line(
+    port.centroid, tuple(c + 3e-3 * n for c, n in zip(port.centroid, port.normal))
+)
+extension = port.swept(spine)
 assert math.isclose(extension.volume(), port.area * 3e-3, rel_tol=1e-12)
 
 fig, ax = plots.plot_cross_section(
     [shield, extension], "y", 0, title="Named coax end face: the placed bore continues"
 )
+
+# %%
+# Exact bend from a placed face
+# -------------------------------
+#
+# An absolute arc already determines the bend geometrically. Here the coax
+# starts along +y, turns toward -x and retains its bore. The length times the
+# face area is an independent check on the resulting metal volume.
+
+bend_shield = geo.Cylinder(
+    origin=(8e-3, 0, 0), axis="y", radius=2e-3, inner_radius=1e-3, height=-3e-3, material="pec"
+)
+bend_port = bend_shield.face(normal="y")
+bend_spine = geo.Curve.arc((8e-3, 0, 0), (8e-3 / 2**0.5, 8e-3 / 2**0.5, 0), (0, 8e-3, 0))
+elbow = bend_port.swept(bend_spine)
+assert math.isclose(elbow.volume(), bend_port.area * bend_spine.length, rel_tol=1e-9)
+fig, ax = plots.plot_cross_section(
+    [bend_shield, elbow], "z", 0, title="Face-based coax sweep: the bore follows the bend"
+)
+
+# %%
+# Referenced openings and boundary edges
+# ---------------------------------------
+#
+# References passed to an owner modification must belong to that exact body.
+# Shell openings take faces; fillet and chamfer take faces or their edges.
+
+housing_block = geo.Brick(size=(10e-3, 8e-3, 6e-3), material="pec")
+opening = housing_block.face(normal="z")
+housing = housing_block.shelled(0.5e-3, openings=opening)
+rounded = housing_block.filleted(edges=opening.edges, radius=0.2e-3)
+bevelled = housing_block.chamfered(faces=opening, distance=0.2e-3)
+assert housing.volume() < housing_block.volume()
+assert rounded.volume() < housing_block.volume()
+assert bevelled.volume() < housing_block.volume()
 
 # %%
 # Deliberate sets for a split

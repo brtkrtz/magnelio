@@ -5,7 +5,7 @@
 > This is the internal design reference; the user-facing API reference
 > is the Sphinx documentation (`docs/api`).
 >
-> Last updated: 2026-09-28
+> Last updated: 2026-09-29
 
 ## Table of Contents
 
@@ -691,7 +691,8 @@ member-wise Group placement, and Solid-only CSG; WP2 implements exact curves
 and validated planar Profile factories, including intrinsic holes. The
 migration boundary is characterized in `tests/unit/test_geo_api_baseline.py`;
 WP3 implements owned topology, semantic/named selection, history and project
-replay. WP4 and WP5 implement uniform operations and relative paths below.  A name listed here must not be
+replay. WP4 implements the uniform operations below; WP5 relative paths remain
+open. A name listed here must not be
 documented as shipped until its work package lands.
 
 Standalone geometry is dimensional:
@@ -790,10 +791,34 @@ CSG operators are `Solid`-only:
 | `a - b` / `Difference(base, *tools, ...)` | Boolean difference |
 | `Group(*geometry, name=None)` | Non-CSG aggregate; transforms distribute |
 
-Profile-consuming operations accept a standalone `Profile` or an eligible
-planar `FaceRef` and return a `Solid`.  They include extrusion, revolution,
-sweep, and loft.  Chamfer, fillet, and shell are `Solid` operations and use
-owned edge/face refs rather than loose nearest points.  An explicit
+Profile-consuming operations accept standalone Profile, eligible Sheet or
+FaceRef inputs and return independent Solid geometry. Extrusion and thickening
+also accept curved sections; revolution, sweep and loft require planarity.
+Geometrically flat spline sheets are re-covered from exact boundaries. All
+operations preserve holes; Loft accepts mixed planar sections and closed Curve
+conveniences. Direct FaceRef construction keeps owner registrations on that
+original owner. Two-section tangent lofts construct corresponding hole tools
+under the same full-section centroid/normal conditions. Geometry volume measurement uses span-aware adaptive
+Gauss-Kronrod integration with spline spans, including composed/placed results
+and project read-back of rebuilt rational tangent surfaces.
+
+Chamfer and fillet accept EdgeRef/EdgeSetRef inputs through `edges=` or
+FaceRef/FaceSetRef boundaries through `faces=`. Shell accepts face refs through
+`openings=`. Each also accepts sequences, deduplicated; refs must belong to the
+exact receiver. Point conveniences remain, selecting semantic refs immediately
+and rejecting ties. Conflicting modes, wrong kinds and empty selections fail at
+the public call. Selected modifications build at the refs' resolved scale and
+rescale the result/names exactly, preserving membership at other model scales.
+Replay retains immutable reference origins; connected set members validate
+unique exact BREP snapshot equality, never persistent topology indices or nearest
+retargeting.
+
+Sweep alignment transports the real section boundary by the shortest oriented
+normal-to-start-tangent rotation, preserving in-plane roll for aligned sections.
+Antiparallel normals use the plane X direction as a half-turn axis; subsequent
+transport remains corrected Frenet. Planar thickening forward follows the
+oriented sheet/face normal. Relative poses and configurable frame/twist modes
+remain WP5/WP6 respectively.  An explicit
 `material=` wins; otherwise a Profile supplies its material and a `FaceRef`
 supplies its owner Solid's material.  Construction solids without material
 remain valid Boolean tools but cannot enter `GeometryModel` directly.
@@ -861,7 +886,7 @@ planar non-plane faces detach by covering their exact wires with a plane.
 
 The shipped history adapter covers affine, extrusion, revolution, sweep, loft,
 Boolean, fillet/chamfer and shell kernel steps. Only Solid owners can register
-names; direct FaceRef-consuming operations remain WP4. A wire-based loft may
+names; WP4 implements direct FaceRef-consuming operations. A wire-based loft may
 have no provable face successor, while shell offsets may split an original face
 into outer and inner faces. Such evolution follows the failure rules, not
 geometric rematching. `tests/unit/test_geo_topology_foundation.py` is the gate.
