@@ -825,8 +825,24 @@ tangent. Non-default frames use MakePipeShell with every outer/inner boundary
 pinned to the same spine start vertex; hole solids are subtracted. The default
 MakePipe route is retained. Planar thickening forward follows the
 oriented sheet/face normal. Path routing poses are independent of this pipe
-orientation. Pipe frame modes are implemented as a first WP6 slice; twist/draft
-laws and intersection-checking modes remain open. An explicit
+orientation. Nonzero `twist_deg` adds right-hand roll about the transported
+section normal, uniformly over true arc length; `draft_deg` defines signed
+planar offset `s*tan(angle)`, growing the exterior and shrinking holes for
+positive angles. Polygon offsets use intersection joins. Roll preserves fixed
+and oblique section planes; the draft angle is a spatial wall angle only on a
+straight perpendicular route. Sections retain their boundary topology.
+Law sweeps normalize CAD units, transport native compatible frames, integrate
+and invert arc length with controlled accuracy, and fit isoparametric spline
+sections separately over tangent-connected edge spans. Explicit correspondence
+retains roll. Elliptic normal offsets preserve their native curve parameters
+through a bounded spline representation. Quarter/middle/three-quarter stations and nine points per edge
+in both distance directions govern adaptive refinement; `tolerance` is an
+absolute sampled-fit target, default profile diagonal times 1e-6, not a global
+surface-error certificate. Unattainable fits raise. Compatible closed sections
+are sewn at the seam; nonperiodic laws and sharp route joints are rejected.
+Boundary solids are fused over edge spans and holes subtracted. Zero laws keep
+the previous pipe route. Extra sweep validity/self-intersection diagnostics
+were explicitly excluded. The advanced-CAD programme remains open. An explicit
 `material=` wins; otherwise a Profile supplies its material and a `FaceRef`
 supplies its owner Solid's material.  Construction solids without material
 remain valid Boolean tools but cannot enter `GeometryModel` directly.

@@ -22486,7 +22486,8 @@ or server is started for them.
 **Date:** 2026-09-28.
 **Status:** Accepted as the geometry-foundation contract; WP0 through WP5 are
 implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation
-slice is implemented and the remaining advanced-CAD roadmap stays open.
+and constant twist/draft slices are implemented; the remaining advanced-CAD
+roadmap stays open.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -23020,6 +23021,66 @@ executed methods recipe. All 42 new gates and 853 relevant regressions pass.
 Methods/API prose, Unreleased changelog and Tutorial 22 explain the same contract;
 the fresh Sphinx build executes the new tutorial and reuses the 33 previously
 verified WP5 outputs. Record: `investigations/geo-api-foundation/WP6-ORIENTATION-VERIFICATION.md`
-(internal record). The broad remainder of WP6 has no frozen contracts yet;
-the private scope inventory proposes explicit packages and a scope question
-remains pending. This entry does not mark the whole WP6 complete.
+(internal record). The developer requested committing orientation and
+concretizing the remainder. `investigations/geo-api-foundation/WP6-CONTRACTS.md`
+(internal record) proposes complete topic coverage, dependencies and acceptance
+conditions. Subsequent accepted twist/draft implementation is recorded below;
+physical bend/blend decisions and the other advanced operations remain open.
+
+**WP6.2 cancelled (2026-09-29).** The developer does not need additional sweep
+validity/self-intersection diagnostics for the interactive modeling workflow.
+No new checker, validation option or automatic repair is added. Existing argument
+checks and kernel construction errors remain unchanged. This is an explicit
+scope decision, not an implemented feature; later work does not depend on the
+cancelled package.
+
+**WP6.3 constant sweep laws (2026-09-29).** The developer accepted both total
+twist and constant draft. `Shape.swept` and `FaceRef.swept` add `twist_deg=0.0`,
+`draft_deg=0.0` and optional absolute `tolerance` [m]. Additional roll is
+`theta(s)=twist_deg*s/L`, right-handed about the transported section normal.
+This preserves fixed/fixed-binormal plane constraints, including oblique
+sections. Signed planar offset is `d(s)=s*tan(draft_deg)`; positive draft grows
+the exterior and shrinks holes. For straight perpendicular sections it is the
+wall angle. On other routes it remains the section-offset rate per arc length.
+Polygon joins use intersection/miter offsets. Scaling laws do not implement
+this contract. Both zero laws retain the previous pipe builders exactly.
+
+The nonzero-law backend copies boundary curves without source-face pcurves,
+canonicalizes their oriented wire containers and normalizes CAD length scales.
+This avoids an installed-kernel crash on sub-unit negative circle offsets and
+incorrect interpolation of reversed hole-wire containers. Source ownership
+and materials remain independent. Compatible native trihedra provide transport;
+span-aware adaptive quadrature and bracketed inversion determine arc-length
+stations. Default kernel abscissa tolerances were too coarse for this fit.
+Fixed-frame reference vectors are projected perpendicular to the initial tangent.
+
+Explicitly corresponding sections use isoparametric ThruSections fitting with
+compatibility retargeting disabled. Separate tangent-connected edge spans retain
+line/arc curvature jumps rather than smoothing the joint. Boundary solids fuse
+across spans; hole tools are subtracted. MakePipeShell multi-section simulation
+was discarded after incompatible circular wires and mutable simulation caches
+were observed. The sampled fit target defaults to the initial profile diagonal
+times 1e-6. Quarter/middle/three-quarter stations between constraints compare
+nine points per edge in both distance directions. This is not a global
+Hausdorff certificate or the cancelled self-intersection checker. Refinement
+is bounded to 4097 sections per edge span; below kernel resolution or at an
+unattainable fit the operation raises RuntimeError.
+
+Topology-changing section offsets, collapsing holes and sharp path joints raise
+rather than silently changing the section or inventing a joint. Closed routes
+require matching start/end boundary geometry and transported roll; nonzero draft
+cannot meet that condition. Compatible periodic seams are sewn. Elliptic offsets use parameter-preserving normal curves with a bounded spline
+representation after canonical quadrant segmentation: the kernel's generic
+elliptic offset changed section parameter correspondence. Newly constructed
+pcurves and 3-D curves synchronize parameter tolerances without changing the
+outline or source ownership. This is boundary assembly, not global geometric
+repair or self-intersection checking. Named result
+project recipes retain exact scaled BREP snapshots; public keywords are additive.
+Gate: `tests/unit/test_geo_sweep_laws.py`, including independent cuts, analytic
+volumes/slopes, asymmetric and curved outlines, holes, all frame modes, model
+scales, reflected chirality, ownership/materials, closed seams, meshing and
+project replay. Methods/API prose and Tutorial 23 explain the same laws.
+All 48 new gates and 901 relevant tests pass. Fresh Sphinx executes Tutorial 23
+and reuses 34 previously verified outputs; repository gates pass.
+Verification: `investigations/geo-api-foundation/WP63-VERIFICATION.md`
+(internal record). WP6 remains open; only WP6.3 is added in this slice.

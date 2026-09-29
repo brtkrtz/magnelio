@@ -413,6 +413,69 @@ sections and paths that form a valid solid; kernel failures raise RuntimeError.
 [Tutorial 22](../tutorials/plot_22_sweep_orientation.rst) compares perpendicular
 and parallel transport, checks both volumes and displays their end apertures.
 
+## Sweep twist and draft
+
+`swept(twist_deg=..., draft_deg=...)` adds two constant construction laws to
+any planar section. Both default to zero. `twist_deg` is the **total additional
+roll**, in degrees, rather than degrees per metre. At travelled spine arc length
+`s` on a route of total length `L`, the roll is `twist_deg * s / L`. Positive
+roll follows the right-hand rule about the transported section normal, starting
+at zero. It rotates the actual outline and every hole together. For sections
+perpendicular to the route this axis is the local tangent. Fixed and fixed-binormal
+modes retain their section planes; twist rotates within those planes.
+
+`draft_deg` is a **constant section-offset angle**, strictly between -90 and
+90 degrees. The signed offset in the section plane is
+`d(s) = s * tan(draft_deg)`: positive draft expands the material region, growing
+the exterior and shrinking holes; negative draft reverses both changes. On a
+straight perpendicular route this is the wall angle to the sweep direction.
+On a curved or oblique route the definition remains the offset per travelled
+arc length; the resulting spatial wall angle also depends on transport and
+curvature. Polygon corners use intersecting offset lines (mitred joins).
+Draft is a normal offset, so a rectangle's two dimensions grow by the same
+distance and a bore shrinks. Scaling the whole section would have different
+effects.
+
+```python
+import math
+from magnelio import geo
+
+length = 4e-3
+route = geo.Curve.line((0, 0, 0), (0, 0, length))
+aperture = geo.Profile.rectangle((0, 0, 0), (2e-3, 1e-3), material="air")
+twisted = aperture.swept(route, twist_deg=90)
+
+annulus = geo.Profile.from_wires(
+    geo.Curve.circle((0, 0, 0), 2e-3),
+    [geo.Curve.circle((0, 0, 0), 0.3e-3)],
+    material="pec",
+)
+drafted = annulus.swept(route, draft_deg=1)
+delta = length * math.tan(math.radians(1))
+outlet_area = math.pi * ((2e-3 + delta)**2 - (0.3e-3 - delta)**2)
+assert math.isclose(drafted.face(normal="z").area, outlet_area, rel_tol=2e-7)
+```
+
+Nonzero laws construct fitted B-spline side surfaces through sections ordered
+by arc length. `tolerance=` is an absolute length in metres; its default is
+one millionth of the initial profile's bounding-box diagonal. Adaptive refinement
+checks quarter, middle and three-quarter stations between constraints, sampling
+nine points per edge in both distance directions. This controls a sampled
+section fit; it is not a certified maximum surface error. An unattainable fit
+raises `RuntimeError`. Zero laws retain the established pipe construction.
+
+Section boundaries must retain their topology. A closing hole, disappearing
+outline or split offset raises `ValueError` rather than deleting that boundary.
+Use smooth routes or tangent-connected edges; sharp route corners do not acquire
+an implicit rounding or joint rule. A closed route requires matching initial
+and final sections, including transported roll; nonzero draft cannot meet that
+condition. A compatible periodic twist is sewn at the seam.
+Material inheritance, direct `FaceRef` construction and independent ownership
+follow the ordinary sweep rules. The construction does not certify absence of
+self-intersection. [Tutorial 23](../tutorials/plot_23_sweep_twist_draft.rst)
+shows the twisted rectangle and the drafted annulus with independent volume
+and outlet checks.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:

@@ -9512,7 +9512,16 @@ def _perp_dir(d):
     return gp_Dir(v)
 
 
-def make_sweep(profile_face, spine_wire, *, frame="corrected_frenet", binormal=None):
+def make_sweep(
+    profile_face,
+    spine_wire,
+    *,
+    frame="corrected_frenet",
+    binormal=None,
+    twist_deg=0.0,
+    draft_deg=0.0,
+    tolerance=None,
+):
     """Sweep a planar profile face along a spine wire to produce a solid.
 
     ``BRepOffsetAPI_MakePipe`` uses the profile at the position it already
@@ -9589,6 +9598,30 @@ def make_sweep(profile_face, spine_wire, *, frame="corrected_frenet", binormal=N
     shift.SetTranslation(gp_Vec(centroid, start_pnt))
     trsf = shift.Multiplied(trsf)
     moved = _history_result(BRepBuilderAPI_Transform(profile_face, trsf, True))
+
+    if twist_deg or draft_deg:
+        from OCC.Core.TopoDS import topods
+
+        from magnelio.geo._sweep_laws import _transform, make_law_sweep
+
+        diagonal = _occ_bbox_diagonal(moved)
+        tolerance = diagonal * 1e-6 if tolerance is None else tolerance
+        factor = 2.0 ** round(math.log2(128 / diagonal))
+        anchor = np.array(start_pnt.XYZ().Coord())
+        rotation = np.eye(3) * factor
+        local_profile = topods.Face(_transform(moved, rotation, -factor * anchor))
+        local_spine = topods.Wire(_transform(spine_wire, rotation, -factor * anchor))
+        result = make_law_sweep(
+            local_profile,
+            local_spine,
+            frame,
+            binormal,
+            tangent,
+            twist_deg,
+            draft_deg,
+            tolerance * factor,
+        )
+        return _transform(result, np.eye(3) / factor, anchor)
 
     if frame != "corrected_frenet":
         return _oriented_sweep(moved, spine_wire, frame, binormal, tangent)

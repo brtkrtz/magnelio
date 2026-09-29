@@ -56,6 +56,13 @@ reject that argument. See the [sweep orientation guide](../methods/geometry.md)
 for oblique sections, volume rules and curvature degeneracies, and Tutorial 22
 for parallel-aperture transitions.
 
+`swept(twist_deg=..., draft_deg=..., tolerance=...)` adds uniform total roll
+and a constant signed section-offset angle. Positive draft grows the exterior
+and shrinks holes. Twist acts about the transported section normal and preserves
+the selected frame's section planes. See the
+[twist and draft guide](../methods/geometry.md) for arc-length laws, fitting
+accuracy, boundary closure and periodic routes, and Tutorial 23 for worked use.
+
 ```{eval-rst}
 .. automodule:: magnelio.geo
    :members:

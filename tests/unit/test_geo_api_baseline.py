@@ -156,7 +156,8 @@ EXPECTED_SHAPE_VERB_SIGNATURES = {
     "extruded": "(self, vector, *, face_near=None, material=None)",
     "revolved": "(self, axis, angle_deg=360.0, *, origin=(0.0, 0.0, 0.0), material=None)",
     "swept": (
-        "(self, spine, *, face_near=None, material=None, frame='corrected_frenet', binormal=None)"
+        "(self, spine, *, face_near=None, material=None, frame='corrected_frenet', "
+        "binormal=None, twist_deg=0.0, draft_deg=0.0, tolerance=None)"
     ),
     "shelled": "(self, thickness, *, opening_face_near=None, openings=None)",
     "thickened": "(self, thickness, *, direction='forward', material=None)",

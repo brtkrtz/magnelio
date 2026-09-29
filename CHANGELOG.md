@@ -11,6 +11,10 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Constant sweep twist and draft: total roll distributed over path arc length,
+  signed normal-offset draft preserving bores, and an optional fitting tolerance.
+  The geometry guide and Tutorial 23 explain both construction laws.
+
 - Explicit sweep orientation modes: Frenet, parallel world sections and fixed
   binormal transport, alongside the unchanged corrected Frenet default. The
   geometry guide and parallel-aperture tutorial explain section orientation,

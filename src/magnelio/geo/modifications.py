@@ -450,15 +450,29 @@ class _ThickenedSheet(Solid):
 
 
 def sweep(
-    profile, spine, *, face_near=None, material=None, frame="corrected_frenet", binormal=None
+    profile,
+    spine,
+    *,
+    face_near=None,
+    material=None,
+    frame="corrected_frenet",
+    binormal=None,
+    twist_deg=0.0,
+    draft_deg=0.0,
+    tolerance=None,
 ):
     """Implementation of :meth:`magnelio.geo.Shape.swept`.
 
-    Uses ``BRepOffsetAPI_MakePipe``, orienting the result by the pipe
-    trihedron.
+    Zero laws retain the pipe builders; nonzero laws fit arc-length sections.
     """
     from magnelio.geo.curves import Curve  # noqa: PLC0415
 
+    twist_deg = finite(twist_deg, "swept(twist_deg)")
+    draft_deg = finite(draft_deg, "swept(draft_deg)")
+    if abs(draft_deg) >= 90:
+        raise ValueError("swept(draft_deg) must be strictly between -90 and 90 degrees.")
+    if tolerance is not None:
+        tolerance = positive(tolerance, "swept(tolerance)")
     modes = ("corrected_frenet", "frenet", "fixed", "fixed_binormal")
     if frame not in modes:
         raise ValueError(f"swept(frame=...) must be one of {modes}; got {frame!r}.")
@@ -502,7 +516,9 @@ def sweep(
         direction = gp_Vec(*binormal)
         if tangent.Crossed(direction).Magnitude() <= 1e-12 * tangent.Magnitude():
             raise ValueError("swept(binormal=...) must not be parallel to the spine tangent.")
-    return finish(_SweptShape(profile, spine, material, frame, binormal))
+    return finish(
+        _SweptShape(profile, spine, material, frame, binormal, twist_deg, draft_deg, tolerance)
+    )
 
 
 @dataclass
@@ -807,6 +823,9 @@ class _SweptShape(Solid):
     _material: object
     _frame: str = "corrected_frenet"
     _binormal: object = None
+    _twist_deg: float = 0.0
+    _draft_deg: float = 0.0
+    _tolerance: float | None = None
 
     @property
     def material(self):
@@ -823,6 +842,9 @@ class _SweptShape(Solid):
             self._spine._occ_shape(scale),
             frame=self._frame,
             binormal=self._binormal,
+            twist_deg=self._twist_deg,
+            draft_deg=self._draft_deg,
+            tolerance=None if self._tolerance is None else self._tolerance * scale,
         )
 
     def _analytic_bbox(self):
@@ -831,9 +853,22 @@ class _SweptShape(Solid):
         # The profile is re-positioned onto the spine start, so its
         # absolute location is irrelevant — pad the spine box by the
         # profile's full diagonal (conservative for any orientation).
+        padding = box_diagonal(self._profile._analytic_bbox())
+        if self._draft_deg:
+            from magnelio.geo._sweep_laws import draft_radius
+            from magnelio.geo.topology import _scale
+
+            scale = _scale(self._profile)
+            padding += (
+                draft_radius(
+                    self._profile._occ_shape(scale),
+                    self._spine.length * math.tan(math.radians(self._draft_deg)) * scale,
+                )
+                / scale
+            )
         return pad_box(
             self._spine._analytic_bbox(),
-            box_diagonal(self._profile._analytic_bbox()),
+            padding,
         )
 
 

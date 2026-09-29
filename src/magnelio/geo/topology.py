@@ -372,7 +372,17 @@ class FaceRef(TopologyRef):
 
         return revolve(self, axis=axis, angle_deg=angle_deg, origin=origin, material=material)
 
-    def swept(self, spine, *, material=None, frame="corrected_frenet", binormal=None):
+    def swept(
+        self,
+        spine,
+        *,
+        material=None,
+        frame="corrected_frenet",
+        binormal=None,
+        twist_deg=0.0,
+        draft_deg=0.0,
+        tolerance=None,
+    ):
         """Return a Solid by sweeping this planar face along a Curve.
 
         Parameters
@@ -391,6 +401,14 @@ class FaceRef(TopologyRef):
         binormal : str or tuple of float, optional
             Required only for fixed binormal transport; it must not be parallel
             to the spine tangent.
+        twist_deg : float, optional
+            Total additional right-hand roll about the transported section
+            normal [degrees], uniform over arc length.
+        draft_deg : float, optional
+            Constant section-offset angle [degrees]. Positive values grow the
+            exterior and shrink holes; absolute values must be below 90.
+        tolerance : float, optional
+            Sampled fitting tolerance [m], default one millionth of the profile diagonal.
 
         Returns
         -------
@@ -399,7 +417,16 @@ class FaceRef(TopologyRef):
         """
         from magnelio.geo.modifications import sweep
 
-        return sweep(self, spine, material=material, frame=frame, binormal=binormal)
+        return sweep(
+            self,
+            spine,
+            material=material,
+            frame=frame,
+            binormal=binormal,
+            twist_deg=twist_deg,
+            draft_deg=draft_deg,
+            tolerance=tolerance,
+        )
 
     def thickened(self, thickness, *, direction="forward", material=None):
         """Return a Solid offset from this face.

@@ -424,7 +424,16 @@ class Shape:
         return revolve(self, axis=axis, angle_deg=angle_deg, origin=origin, material=material)
 
     def swept(
-        self, spine, *, face_near=None, material=None, frame="corrected_frenet", binormal=None
+        self,
+        spine,
+        *,
+        face_near=None,
+        material=None,
+        frame="corrected_frenet",
+        binormal=None,
+        twist_deg=0.0,
+        draft_deg=0.0,
+        tolerance=None,
     ):
         """Sweep a planar Sheet along a Curve into an independent Solid.
 
@@ -454,6 +463,17 @@ class Shape:
         binormal : str or tuple of float, optional
             Required only for fixed binormal transport. Must not be parallel
             to the spine tangent. Path's up direction does not set this value.
+        twist_deg : float, optional
+            Total additional right-hand roll about the transported section
+            normal [degrees], distributed uniformly over spine arc length.
+        draft_deg : float, optional
+            Constant section-offset angle [degrees], strictly between -90 and
+            90. Offset equals travelled arc length times its tangent. Positive
+            values expand the exterior and shrink holes. For perpendicular
+            straight sections this is the wall angle to the sweep direction.
+        tolerance : float, optional
+            Sampled section-fitting tolerance [m] for nonzero twist or draft.
+            Defaults to one millionth of the initial profile diagonal.
 
         Returns
         -------
@@ -463,7 +483,15 @@ class Shape:
         from magnelio.geo.modifications import sweep  # noqa: PLC0415
 
         return sweep(
-            self, spine, face_near=face_near, material=material, frame=frame, binormal=binormal
+            self,
+            spine,
+            face_near=face_near,
+            material=material,
+            frame=frame,
+            binormal=binormal,
+            twist_deg=twist_deg,
+            draft_deg=draft_deg,
+            tolerance=tolerance,
         )
 
     def shelled(self, thickness, *, opening_face_near=None, openings=None):
