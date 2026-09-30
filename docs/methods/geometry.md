@@ -574,6 +574,61 @@ without persistent kernel face numbers.
 [Tutorial 25](../tutorials/plot_25_imprint_insert.rst) shows both operations
 on a housing and an inserted material body.
 
+## Project curves onto bounded faces
+
+`curve.projected_onto(target, ...)` maps a standalone Curve to a bounded
+`Sheet` or an owned `FaceRef`. The selected face's actual rim and holes apply;
+the operation never substitutes an untrimmed underlying surface. Its result is
+a tuple of independent Curves, because clipping can split one source path into
+several pieces. The target and source remain unchanged, and a `FaceRef` stays
+bound to its owner.
+
+Choose exactly one policy:
+
+| Policy | Meaning |
+| --- | --- |
+| `direction=(dx, dy, dz)` | Parallel rays from the source curve in an explicit world direction. |
+| `perspective_source=(x, y, z)` | Rays from a world point through the source curve. |
+| `closest=True` | Nearest points on the bounded target, including its rim. |
+
+The ray policies use forward rays. By default, the first target hit along each
+ray is used; `all_hits=True` retains every forward branch, such as both walls
+of a cylinder. Hits behind the source curve are excluded. If the source crosses
+the near wall, the first-hit trace switches to the next forward wall and the
+two resulting curves remain separate. A ray lying in a target face has a
+zero-distance first hit; requesting all its infinitely many hits raises. The
+closest-point policy follows the actual trimmed region and adaptively fits an
+on-surface curve to `tolerance` (metres). Its default is one millionth of the
+source extent, subject to CAD kernel precision. Boundary segments such as a
+circular hole rim retain their exact edge geometry. A discontinuous nearest
+assignment or a singular target parameterisation raises rather than joining
+unrelated branches.
+
+If any part of a ray-projected source curve misses the target, the ordinary
+call raises. Add `clip=True` to retain only covered curve pieces, including
+pieces separated by a hole. A complete miss raises without clipping and
+returns an empty tuple with `clip=True`. Tangential contact that forms a
+curve is kept; a point-only contact does not create a Curve. `clip` and
+`all_hits` apply only to ray projection; nearest-point projection already
+uses the bounded face.
+
+```python
+from magnelio import geo
+
+housing = geo.Cylinder(radius=5e-3, height=10e-3)
+wall = housing.face(near=(5e-3, 0, 5e-3))
+sketch = geo.Curve.line((8e-3, -2e-3, 5e-3), (8e-3, 2e-3, 5e-3))
+(trace,) = sketch.projected_onto(wall, direction=(-1, 0, 0))
+wire = geo.ThinWire(trace, radius=20e-6)
+assert trace.length > sketch.length
+```
+
+`trace` is a geometric centreline, without material. The `ThinWire` declaration
+supplies a PEC sub-cell conductor when added to a suitable model; a resolved
+conductor can instead be built from the projected path. The cylinder example
+uses the near wall automatically. [Tutorial 26](../tutorials/plot_26_project_curve.rst)
+shows the housing patch, the far-wall option and explicit clipping.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:

@@ -147,6 +147,64 @@ class Curve(Shape):
         diag = box_diagonal(self._analytic_bbox())
         return _JOIN_RTOL * diag if diag > 0.0 else 0.0
 
+    def projected_onto(
+        self,
+        target,
+        *,
+        direction=None,
+        perspective_source=None,
+        closest=False,
+        clip=False,
+        all_hits=False,
+        tolerance=None,
+    ) -> tuple["Curve", ...]:
+        """Project this curve onto a bounded sheet or selected face.
+
+        Specify exactly one projection policy: a world ``direction`` for
+        parallel forward rays, a ``perspective_source`` point for rays through
+        this curve, or ``closest=True`` for nearest-point projection. The
+        actual boundary and holes of *target* are respected.
+
+        Parameters
+        ----------
+        target : Sheet or FaceRef
+            Bounded target in its world placement.
+        direction : str or sequence of float, optional
+            Forward world direction for parallel rays.
+        perspective_source : sequence of float, optional
+            World point from which rays pass through this curve.
+        closest : bool, optional
+            Use nearest points on the bounded target instead of rays.
+        clip : bool, optional
+            For rays, keep only the covered pieces. Without it, partial
+            coverage raises. Not used for closest-point projection.
+        all_hits : bool, optional
+            For ray projection, retain every forward branch. Otherwise the
+            first hit along each ray is selected.
+        tolerance : float, optional
+            Requested nearest-trace fitting tolerance in metres. Applies only with
+            ``closest=True``. Defaults to one millionth of the source curve's
+            bounding-box diagonal, subject to CAD kernel precision.
+
+        Returns
+        -------
+        tuple of Curve
+            Independent projected curve pieces. A wholly missed target raises
+            unless ray clipping is enabled, which returns an empty tuple.
+        """
+        from magnelio.geo.projection import project_curve
+
+        return project_curve(
+            self,
+            target,
+            direction=direction,
+            perspective_source=perspective_source,
+            closest=closest,
+            clip=clip,
+            all_hits=all_hits,
+            tolerance=tolerance,
+        )
+
     @property
     def is_closed(self) -> bool:
         """Whether this curve's end meets its start, forming a loop.

@@ -888,6 +888,27 @@ meshing but evolves only the retained body's named topology. Imprinted and
 inserted named results replay through construction recipes, with an exact BREP
 check for the imprinted body. Gate: `tests/unit/test_geo_imprint_insert.py`.
 
+WP6.6 adds `Curve.projected_onto(target, *, direction=None,
+perspective_source=None, closest=False, clip=False, all_hits=False,
+tolerance=None)`. The target is a bounded Sheet or FaceRef in world placement;
+the output is a tuple of standalone Curves. Exactly one projection policy is
+required. Parallel and perspective rays use the first forward hit by default,
+or all forward branches with `all_hits=True`; a source crossing a target face
+is split before rank selection. A partial ray image raises unless `clip=True`
+requests its trimmed pieces. A whole miss under clipping gives an empty tuple.
+A coincident ray has a zero-distance first image; its continuum of all hits
+raises. Closest-point projection minimizes distance over the actual trimmed
+face, including boundaries. The trace is adaptively fitted on the surface with
+an absolute metre `tolerance` (default source-box diagonal times 1e-6, with a
+scale-aware kernel floor). Exact boundary edges are reused when the closest
+trace follows a trim; a post-fit Common checks that the result stays within
+the face and seeds local refinement at missed trim crossings. Discontinuous
+nearest assignments and surface parameter singularities raise; `clip` and
+`all_hits` are invalid in closest mode. An independent projected Curve can
+feed ordinary geometry construction, and the resulting body can be persisted.
+Gate:
+`tests/unit/test_geo_projection_foundation.py`.
+
 #### Relative routing poses (WP5)
 
 `Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;

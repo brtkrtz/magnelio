@@ -23142,3 +23142,44 @@ regions use the existing Difference construction recipe with this narrower
 history, and full project read-back is tested. Methods/API prose and Tutorial
 25 give the housing/dielectric recipe; gate:
 `tests/unit/test_geo_imprint_insert.py`. WP6.6-WP6.12 remain open.
+
+**WP6.6 bounded curve projection (2026-09-30).** The developer chose all
+three explicit projection policies: world-direction parallel rays, rays from
+a world perspective point through the source curve, and closest points on the
+selected bounded target. Ray projection rejects partial coverage by default;
+`clip=True` keeps only covered pieces. The ordinary ray call selects the first
+forward hit, while `all_hits=True` keeps every forward branch. The selected
+`Sheet` or owned `FaceRef` is used with its actual outer trim and holes. All
+outputs are independent Curve values; FaceRefs remain attached to their
+original owner. A complete ray miss raises unless clipping requests an empty
+tuple. A tangent line is retained, while an isolated point cannot produce a
+Curve. A ray lying in the target has a zero-distance first hit, but infinitely
+many hits under `all_hits=True`, which raises.
+
+`BRepProj_Projection` constructs exact bounded ray wires but treats its
+direction as an infinite line. Forward ray intersection filters back-facing
+results and ranks the first hit. Section/Splitter divides the source at
+source-target crossings, so the first-hit trace can change walls without
+keeping a whole wrong branch. Candidate wires are checked against source
+rays; endpoints on a true trim edge detect even narrow clipped gaps, while
+reverse branch checks retain small target pieces between source samples.
+Periodic target seams are not treated as outer boundaries. Coincident
+on-target portions are recovered by an exact Common when line projection is
+degenerate. A remaining depth-rank transition within one unsplit projected
+wire raises instead of silently returning a mixed branch.
+
+Closest-point projection uses trimmed-face distance extrema and separately
+checks exact boundary curves to avoid CAD seam vertex snapping. Its trace is
+fitted adaptively in surface parameter space to an explicit metre tolerance
+(default one millionth of source extent with a scale-aware kernel floor), so
+the curve stays on the underlying surface. Runs on one trim edge use exact
+boundary subedges, including circular hole rims. A discontinuous nearest
+assignment and target parameter singularity raise; the algorithm does not
+invent a bridge through a hole or pole. A final exact Common checks that the
+fitted wire stays inside the trimmed face; missing segments seed local source
+refinement at the trim crossings. Reversed boundary runs retain their short
+arc orientation. Closest-point projection has no `clip` or `all_hits` policy.
+A body built from the projected curve replays through the project store as
+exact BREP geometry. Gate:
+`tests/unit/test_geo_projection_foundation.py`; methods/API prose and Tutorial
+26 cover the housing/trace recipe. WP6.7-WP6.12 remain open.
