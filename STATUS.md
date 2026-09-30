@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-29.*  **Released v0.8.2** (2026-09-09): **DD-270**
+*Last updated: 2026-09-30.*  **Released v0.8.2** (2026-09-09): **DD-270**
 the Poynting vector as a derived view of any recorded field (`poynting()`,
 `"S"` in the component vocabulary), **DD-271** three more readings of an
 S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
@@ -33,17 +33,17 @@ Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
-On `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3/WP6.4 are implemented.
-Sweeps retain frame/twist/draft laws; partition and section return independent regions, exact curves and explicitly filled profiles with holes.
-All 22 WP6.4 tests and 973 relevant geometry/API/project/integration gates pass; Tutorial 24 and fresh Sphinx pass.
-WP6 remains open; WP6.2 is cancelled. WP6.5-WP6.12 remain; contracts: `investigations/geo-api-foundation/WP6-CONTRACTS.md` (internal record). Latest full physics run is WP5 with the unchanged-WP3 QTEM length-law failure.
+On `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3-WP6.5 are implemented.
+WP6.5 imprints receiver faces and trims material bodies by explicit priority; voids remove material. Its 23 tests and 914 broader relevant gates pass; fresh Sphinx includes Tutorial 25.
+WP6.4 and WP6.5 are committed locally; the host SSH configuration blocked their automatic private-remote backup. WP6 remains open; WP6.2 is cancelled.
+WP6.6-WP6.12 remain; contracts: `investigations/geo-api-foundation/WP6-CONTRACTS.md` (internal record). Latest full physics run is WP5 with the unchanged-WP3 QTEM length-law failure.
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
 
 ## Recent decisions
 Newest first, one line each; the full record is the DD entry.
-* **DD-275** (2026-09-28, amended 2026-09-29, branch `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3/WP6.4) — dimensional/affine geometry, exact curves/Profile holes, owned topology and named histories are implemented. Path carries immutable world poses and exact relative bends. Sweep frames, constant twist and signed draft retain real section geometry. Partition splits Solid/Sheet by world planes or geometric cutters; Section returns exact curves or explicitly filled planar profiles with holes. Named partition successors use whole-result OCC history and exact project replay; singular splits fail. Methods/API prose and Tutorials 21-24 cover these contracts. WP6 remains open; WP6.2 is cancelled. Focused WP6.4 gate: `tests/unit/test_geo_partition_foundation.py`.
+* **DD-275** (2026-09-28, amended 2026-09-30, branch `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3-WP6.5) — dimensional geometry, affine values, exact curves/Profile holes, owned topology and named histories are implemented. Path carries world poses and relative bends. Sweeps retain frame/twist/draft laws. Partition returns independent Solid/Sheet regions; Section returns exact curves or filled profiles. Directed Imprint splits receiver faces without volume change. Insert assigns material overlap by explicit priority and removes void tools, independently of model order. Named receiver history and project replay are verified; singular splits and deleted names fail. Methods/API prose and Tutorials 21-25 cover these contracts. WP6.6-WP6.12 remain; WP6.2 is cancelled. WP6.5 gate: `tests/unit/test_geo_imprint_insert.py`.
 * **DD-274** (2026-09-23) — viewer destination is independent of its rendering backend.  A plain script now serves the complete Magnelio toolbar through trame and opens it in the system browser; `target="native"` retains the PyVista/VTK window.  `target="inline"` keeps the Jupyter widget.  Zed's `kernel-zed-*.json` identity selects the browser automatically despite its ipykernel; `plots.configure_viewer(target="browser")` is the once-per-kernel switch for other editor REPLs that do not render the asynchronously filled `VBox`.  The browser server binds loopback on a daemon thread and is reused; missing trame warns and falls back to native.  `mode` remains `client`/`server`/`trame`/`static`/`none`, with `none` still returning the plotter.
   CI compatibility: PyVista 0.49 stores viewers in `trame_pyvista.ui`; OCC 8 requires an explicit trace-clearance check beyond offset contour counting (DD-135).
 * **DD-273** (2026-09-09, branch `feat/surface-current`) — the surface current is the wall-loss booking, read as a vector.  `surface_current(mesh)` on any recording, spectrum or `FieldState` gives `J_s = n × H` per wall patch; `enumerate_wall_patches` reads the [[DD-087]] enumeration the other way round (per patch: conformal area, outward normal `−w/‖w‖`, and *which* sample contributions it booked).  Magnitude from the loss booking (`|J_s|²A = Σw|H|²`, so `power_loss` **is** `MonitorWallLoss` — measured 0.9998 on a real run), direction from `n × H` with the weight-averaged samples.  Accuracy is inherited and does not refine away: coax inner conductor 1.3 %, shield 5.0 % against `√(P/Z₀)`, because the DD-098 pullback is calibrated on the quadratic loss while the current is linear in H; shipped deliberately, since the distribution is what a current picture is read for.  Four traps, all measured: grid quantities vs. physical fields ([[DD-085]], factor 1500), wall cells of a curved conductor are PEC-classified (dropping them loses 83 % of a mantle), a port plane holds the feed's *cross-section* and not a wall (+9.5 %, hence `exclude_faces=`), and a viewer display group must be registered in `_GROUPS` or its actor is built, filled and never shown.  `PECSurfaceData` removed: built for every conformal mesh, stored in every project, read by nothing, and it booked the *normal* H component.  Record `investigations/surface-current/` (internal dossier).
@@ -317,7 +317,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **Geometry API foundation (DD-275)** — WP0-WP5 and WP6.1/WP6.3/WP6.4 are implemented and documented. Sweep frame/twist/draft laws retain holes and materials; partition returns independent connected Solid/Sheet regions, and section returns exact Curves or explicit filled Profiles with holes. Named source topology follows the partition history; singular splits fail and named regions replay without numeric IDs. The 22 new tests and 973 relevant gates pass; fresh Sphinx includes Tutorial 24. WP6.5-WP6.12 remain; WP6.2 extra validity diagnostics are cancelled. Latest full physics run remains WP5 with the unchanged-WP3 QTEM failure. Record: `investigations/geo-api-foundation/WP64-VERIFICATION.md` (internal record).
+* **Geometry API foundation (DD-275)** — WP0-WP5 and WP6.1/WP6.3-WP6.5 are implemented and documented. Imprint preserves receiver volume while splitting boundary faces; Insert resolves every positive CAD material overlap by explicit integer ranks, with separate material-less void tools. Named topology and project replay work through both operations; singular splits/deletions fail. The 23 WP6.5 tests and 914 broader relevant gates pass; fresh Sphinx includes Tutorial 25. WP6.6-WP6.12 remain; WP6.2 diagnostics are cancelled. Latest full physics run remains WP5 with the unchanged-WP3 QTEM failure. Record: `investigations/geo-api-foundation/WP65-VERIFICATION.md` (internal record).
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

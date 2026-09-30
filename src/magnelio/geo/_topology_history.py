@@ -90,6 +90,8 @@ def _evolve(owner, built, sources, histories):
         "_RevolvedShape": "revolved()",
         "_SweptShape": "swept()",
         "_ShelledShape": "shelled()",
+        "_ImprintedSolid": "imprint()",
+        "_InsertRegion": "insert()",
         "TransformedSolid": "affine placement",
     }.get(type(owner).__name__, type(owner).__name__)
     operation = label

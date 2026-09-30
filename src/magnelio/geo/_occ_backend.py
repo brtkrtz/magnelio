@@ -1174,10 +1174,15 @@ def _boolean_operands(shape) -> tuple[str | None, tuple]:
     meaning, and the rules stand on the construction ``Difference``,
     ``Union`` and ``Intersection`` state.
     """
-    from magnelio.geo.operations import Difference, Intersection, Union  # noqa: PLC0415
+    from magnelio.geo.operations import (  # noqa: PLC0415
+        Difference,
+        Intersection,
+        Union,
+        _InsertRegion,
+    )
 
     kind = type(shape)
-    if kind is Difference:
+    if kind in (Difference, _InsertRegion):
         return "difference", (shape.base, *shape.tools)
     if kind is Union:
         return "union", tuple(shape.shapes)
@@ -9683,6 +9688,7 @@ def check_pairwise_overlaps(
     materials: list | None = None,
     scale: float = 1.0,
     disjoint: set[tuple[int, int]] | None = None,
+    strict: bool = False,
 ) -> list[tuple[int, int, float]]:
     """Check all shape pairs for volumetric overlap.
 
@@ -9724,6 +9730,10 @@ def check_pairwise_overlaps(
         by every metal piece in it, and its one batch Common against
         all of them (2 118 faces against 320 tools, 3 s on a row of 16
         couplers) proved what the construction already says.
+    strict : bool
+        Raise if a pairwise intersection cannot be constructed, rather than
+        treating that pair as inconclusive. Construction operations need this
+        guarantee before assigning material precedence.
 
     Returns
     -------
@@ -9798,6 +9808,10 @@ def check_pairwise_overlaps(
         if len(js) == 1:
             a, b = min(i, js[0]), max(i, js[0])
             volume = common_volume(a, [b])
+            if volume is None and strict:
+                raise RuntimeError(
+                    f"The CAD kernel could not check overlap between bodies {a} and {b}."
+                )
             if volume is not None and volume > pair_tolerance(a, b):
                 overlaps.append((a, b, volume))
             return

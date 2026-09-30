@@ -31,6 +31,7 @@ from magnelio.geo._sheet import Profile, Sheet
 from magnelio.geo._validate import operand
 from magnelio.geo.curves import Curve
 from magnelio.geo.imported import ImportedSolid
+from magnelio.geo.insert import insert
 from magnelio.geo.modifications import Loft
 from magnelio.geo.operations import Difference, Group, Intersection, Union
 from magnelio.geo.path import Path
@@ -556,6 +557,7 @@ __all__ = [
     "Union",
     "Intersection",
     "Difference",
+    "insert",
     "Loft",
     "Group",
     "ThinWire",

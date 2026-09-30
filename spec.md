@@ -865,6 +865,29 @@ unrelated new cut faces remain unnamed. Named result replay identifies the
 chosen region by exact BREP matching of reconstructed partition results,
 without numeric kernel indices. Gate: `tests/unit/test_geo_partition_foundation.py`.
 
+WP6.5 adds `Solid.imprint(cutter)` and
+`geo.insert(*bodies, priorities=..., voids=...)`. Imprint is directed: only
+the receiver's boundary faces split at intersection curves with a Solid or
+Sheet; its volume and material remain unchanged, and the cutter remains
+independent. OCC Section supplies edges, and SplitShape assigns them to the
+receiver faces. A section with no boundary edges leaves an independent
+receiver. Kernel validity and volume conservation are checked. Named receiver
+topology follows SplitShape history; cutter names do not transfer.
+
+Insert takes material-bearing Solid bodies and an explicit integer rank for
+each. Larger ranks win; an actual equal-rank overlap raises. Pairwise volume
+overlap detection uses every positive kernel volume and is strict about kernel
+failure. For each losing body, one
+N-ary Difference removes every overlapping higher-rank body and every
+overlapping material-less void tool. A void never appears in the output.
+Same-material overlap is trimmed, while mere contact remains separate.
+Completely removed untagged bodies are omitted. The returned Group preserves
+materials and can be flattened into a GeometryModel in any insertion order.
+The internal cut-result subtype retains the Difference operand route for
+meshing but evolves only the retained body's named topology. Imprinted and
+inserted named results replay through construction recipes, with an exact BREP
+check for the imprinted body. Gate: `tests/unit/test_geo_imprint_insert.py`.
+
 #### Relative routing poses (WP5)
 
 `Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;

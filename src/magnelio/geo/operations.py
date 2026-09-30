@@ -206,6 +206,29 @@ class Difference(Solid):
         return self.base._analytic_bbox()
 
 
+class _InsertRegion(Difference):
+    """A material region trimmed by higher-priority bodies or void tools.
+
+    Only the retained body's names evolve. A winning body's names stay on
+    its own independent result rather than leaking into this cut region.
+    """
+
+    def __init__(self, base, *tools):
+        _check_operands((base, *tools), "insert", minimum=2)
+        self.base = base
+        self.tools = tools
+        self.material = base.material
+        self.name = base.name
+        self.color = getattr(base, "color", None)
+        from magnelio.geo._topology_history import has_names, names
+
+        if has_names(base):
+            from magnelio.geo.topology import _scale
+
+            self._topology_inputs = (base,)
+            names(self, _scale(self))
+
+
 @dataclass
 class Group:
     """A logical bundle of shapes that preserves each member's material.

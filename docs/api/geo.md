@@ -71,6 +71,14 @@ tangencies, coincident faces and named-topology splits have explicit rules in
 the [partition and section guide](../methods/geometry.md). Tutorial 24 shows
 a hollow component and an oblique cutter.
 
+`Solid.imprint(cutter)` returns a receiver with faces split at the cutter's
+intersection curves while preserving its volume and material. `insert` takes
+physical Solids with explicit integer priorities and optional material-less
+void tools, trims losing volumes and returns a material-preserving `Group`.
+The [imprint and insert guide](../methods/geometry.md) explains directed face
+selection, equal-priority conflicts and named topology. Tutorial 25 constructs
+a housing with a selectable imprinted contact and a dielectric insert.
+
 ```{eval-rst}
 .. automodule:: magnelio.geo
    :members:

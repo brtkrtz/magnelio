@@ -520,6 +520,60 @@ index. New cut faces do not inherit names from unrelated source faces.
 [Tutorial 24](../tutorials/plot_24_partition_section.rst) shows the hollow
 component, filled annulus and an oblique sheet cutter.
 
+## Imprint and insert
+
+`receiver.imprint(cutter)` splits only the receiver Solid's boundary faces at
+their intersections with a Solid or Sheet cutter. The returned Solid keeps the
+receiver's volume, material and placement; the cutter is untouched. This is a
+directed operation: call it on the body whose faces you need to select. An
+interior cutter that never reaches the receiver's boundary leaves its faces
+unchanged. A contact patch may split a face even when there is no volume
+overlap. Imprint alone does not resolve material overlap in a model.
+
+`geo.insert(*bodies, priorities=..., voids=...)` resolves material overlap
+geometrically. Every body needs a material and one integer priority. A larger
+priority wins shared volume; the lower-priority body is trimmed, and each
+retained body keeps its own material. Equal-priority bodies may be separate,
+but an overlap at equal priority raises an error. The rule is fixed by the
+declared priorities, independent of `GeometryModel.add` order. Results are a
+`Group`, which the model flattens into material bodies. Bodies that only touch
+remain separate; same-material overlap is still trimmed. Every positive
+volume intersection representable by the CAD kernel participates in the
+precedence rule, including a small corner overlap. A completely removed
+unnamed body is omitted.
+
+`voids` are separate, material-less construction Solids. Each void subtracts
+from every physical body it reaches and is not returned as a material region.
+Use a physical body with `material="air"` when air is part of the model; a
+material-less void represents removed geometry. Inputs stay unchanged.
+
+```python
+import math
+from magnelio import geo
+
+housing = geo.Brick(origin=(0, 0, 0), size=(2e-3,)*3, material="pec")
+window = geo.Brick(origin=(1.8e-3, 0.5e-3, 0.5e-3),
+                   size=(0.4e-3, 1e-3, 1e-3))
+housing = housing.imprint(window).tag_face(
+    "contact", near=(2e-3, 1e-3, 1e-3), normal="x")
+dielectric = geo.Brick(origin=(0.5e-3,)*3, size=(1e-3,)*3,
+                       material="air")
+assembly = geo.insert(housing, dielectric, priorities=(0, 1))
+assert math.isclose(sum(part.volume() for part in assembly.members()), 8e-9)
+assert next(assembly.members()).face("contact").area > 0
+```
+
+For several overlapping bodies, assign all priorities in one call. A body is
+trimmed by every higher-priority body that overlaps it, so each point belongs
+to at most one output material. A void wins over every body. Named selections
+on a trimmed or imprinted receiver follow its own kernel history; cutter names
+do not become receiver names. A singular face that splits or disappears raises
+`TopologyEvolutionError`; register a deliberate set when all split faces must
+remain named. Named output bodies replay from the construction in a project,
+without persistent kernel face numbers.
+[Tutorial 25](../tutorials/plot_25_imprint_insert.rst) shows both operations
+on a housing and an inserted material body.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:

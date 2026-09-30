@@ -693,6 +693,31 @@ class Solid(Shape):
     accept only ``Solid`` operands.
     """
 
+    def imprint(self, cutter):
+        """Split this body's boundary faces along a cutter's intersection.
+
+        The receiver keeps its volume and material. Only its boundary
+        topology changes; the cutter remains an independent shape.
+
+        Parameters
+        ----------
+        cutter : Solid or Sheet
+            Shape whose intersection curves split the receiver's faces.
+
+        Returns
+        -------
+        Solid
+            An independent body with imprinted boundary faces.
+
+        Raises
+        ------
+        TopologyEvolutionError
+            If a singular named selection splits or loses its identity.
+        """
+        from magnelio.geo.imprint import imprint
+
+        return imprint(self, cutter)
+
     def face(self, name=None, *, near=None, normal=None, surface_type=None):
         """Select one owned face, or retrieve a registered name.
 

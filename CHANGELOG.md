@@ -11,6 +11,11 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Directed solid-boundary imprinting and explicit-priority material insertion.
+  Inserts preserve separate material bodies, while material-less void tools
+  remove volume from all bodies. The geometry guide and Tutorial 25 show a
+  selectable imprinted contact and a dielectric in a housing.
+
 - CAD partitioning of solids and sheets by a plane or geometry cutter, with
   independent material-preserving regions. Exact intersection curves and
   explicitly filled planar sections retain disconnected regions and holes.

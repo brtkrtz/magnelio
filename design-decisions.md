@@ -22486,8 +22486,9 @@ or server is started for them.
 **Date:** 2026-09-28.
 **Status:** Accepted as the geometry-foundation contract; WP0 through WP5 are
 implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation
-and constant twist/draft slices are implemented; the remaining advanced-CAD
-roadmap stays open.
+and constant twist/draft slices, partition/section, and directed
+imprint/material insertion are implemented; the remaining advanced-CAD roadmap
+stays open.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -23113,3 +23114,31 @@ subshape index. Model scales remain power-of-two safe and affine rescaling
 maps member identities through the transform builder. Gate:
 `tests/unit/test_geo_partition_foundation.py`; methods/API prose and Tutorial
 24 exercise the public contract. WP6.5-WP6.12 remain open.
+
+**WP6.5 directed imprint and material insertion (2026-09-29).** The developer
+accepted the receiver-directed imprint and explicit material winner contract:
+`Solid.imprint(cutter)` splits only the called Solid's boundary faces, leaving
+its volume and material intact and the Solid/Sheet cutter independent. Section
+edges feed SplitShape; a no-intersection build returns an independent Solid.
+Kernel validity and volume equality are checked. SplitShape history carries
+only receiver names; a singular split fails while a deliberate set can retain
+successors. A named imprinted body replays from receiver and cutter with exact
+BREP equality, without numeric face IDs.
+
+`geo.insert(*bodies, priorities=..., voids=...)` takes material-bearing Solids
+and one explicit integer rank each. A larger rank wins any overlap; equal
+ranks may be disjoint but overlapping equals raise. Strict pairwise overlap
+checks abort on kernel failure and count every positive kernel volume, rather
+than applying the model diagnostic's dust threshold: a representable tiny
+corner overlap still needs one material winner. Each body loses all overlapping
+higher-rank bodies and all overlapping material-less void tools in one N-ary
+cut. A void removes material without becoming a physical result. Same-material
+overlaps are still trimmed; contact bodies remain separate. Fully consumed
+untagged bodies are omitted. The output is a material-preserving Group, so
+model insertion order has no material effect. The cut-result subtype reuses
+Difference's operand-aware meshing route and resolves only the retained body's
+names; cutter names cannot leak into its owned selections. Named insert
+regions use the existing Difference construction recipe with this narrower
+history, and full project read-back is tested. Methods/API prose and Tutorial
+25 give the housing/dielectric recipe; gate:
+`tests/unit/test_geo_imprint_insert.py`. WP6.6-WP6.12 remain open.

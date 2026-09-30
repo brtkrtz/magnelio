@@ -39,6 +39,7 @@ EXPECTED_EXPORTS = [
     "Union",
     "Intersection",
     "Difference",
+    "insert",
     "Loft",
     "Group",
     "ThinWire",
@@ -179,6 +180,8 @@ def _assert_box(actual, expected):
 
 def test_curated_exports_are_pinned_during_the_breaking_migration():
     assert geo.__all__ == EXPECTED_EXPORTS
+    assert str(inspect.signature(geo.insert)) == "(*bodies, priorities, voids=())"
+    assert str(inspect.signature(geo.Solid.imprint)) == "(self, cutter)"
 
 
 @pytest.mark.parametrize(("name", "signature"), EXPECTED_CONSTRUCTOR_SIGNATURES.items())

@@ -44,6 +44,7 @@ def to_recipe(owner):
     if not has_names(owner):
         return None
     from magnelio.geo import Curve, Profile, Solid, Surface
+    from magnelio.geo.imprint import _ImprintedSolid
     from magnelio.geo.partition import _PartitionSolid
     from magnelio.geo.topology import _TaggedSolid
     from magnelio.geo.transforms import _TransformedShape
@@ -87,6 +88,15 @@ def to_recipe(owner):
                 "source": encode(shape._source),
                 "cutter": encode(shape._cutter) if shape._cutter is not None else None,
                 "plane": shape._plane,
+                "scale": scale,
+                "brep": _brep_text(shape._occ_shape(scale)),
+            }
+        elif isinstance(shape, _ImprintedSolid) and has_names(shape):
+            scale = _scale(shape)
+            node = {
+                "operation": "imprint",
+                "receiver": encode(shape._receiver),
+                "cutter": encode(shape._cutter),
                 "scale": scale,
                 "brep": _brep_text(shape._occ_shape(scale)),
             }
@@ -166,7 +176,7 @@ def from_recipe(recipe):
     classes = {
         name: getattr(module, name)
         for module, entries in (
-            (operations, ("Union", "Intersection", "Difference")),
+            (operations, ("Union", "Intersection", "Difference", "_InsertRegion")),
             (
                 modifications,
                 (
@@ -243,6 +253,12 @@ def from_recipe(recipe):
                     "A partition region has no unique exact construction match."
                 )
             shape = matches[0]
+        elif op == "imprint":
+            receiver = decode(node["receiver"])
+            cutter = decode(node["cutter"])
+            shape = receiver.imprint(cutter)
+            if _brep_text(shape._occ_shape(node["scale"])) != node["brep"]:
+                raise TopologyEvolutionError("An imprinted body has no exact construction match.")
         elif op in classes:
             arguments = {key: value(obj) for key, obj in node["arguments"].items()}
             cls = classes[op]
@@ -252,6 +268,8 @@ def from_recipe(recipe):
                 shape = cls(
                     arguments["base"], *arguments["tools"], material=material, name=node["name"]
                 )
+            elif op == "_InsertRegion":
+                shape = cls(arguments["base"], *arguments["tools"])
             elif op == "Intersection":
                 shape = cls(**arguments, material=material, name=node["name"])
             else:
