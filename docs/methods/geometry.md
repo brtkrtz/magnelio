@@ -629,6 +629,71 @@ conductor can instead be built from the projected path. The cylinder example
 uses the near wall automatically. [Tutorial 26](../tutorials/plot_26_project_curve.rst)
 shows the housing patch, the far-wall option and explicit clipping.
 
+## Offset curves and sheets
+
+An offset has a physical distance in metres. For a directed planar `Curve`,
+`curve.offset(distance, normal=...)` moves to the left of traversal for a
+positive distance when viewed along the stated plane normal. A negative
+distance moves right. The normal is required even for a line, since a line
+lies in infinitely many planes. At an outer corner the parallel segments are
+joined by a circular arc; at an inner corner they meet sharply. Open curves
+remain open with their ends at the corresponding normal offsets. A curve may
+collapse or split, so the result is always a tuple of independent Curves.
+
+`Profile.offset(distance)` acts on the *material region*, independent of
+boundary traversal. Positive distance adds material around the outside and
+shrinks holes; negative distance erodes the outside and enlarges holes.
+Rounded outer corners make this a geometric clearance operation rather than
+an affine scale or a mitered polygon. Every surviving disconnected region is
+returned as a Profile. A vanished hole disappears; a completely eroded
+profile returns an empty tuple. At the exact distance where boundaries pinch
+into a zero-width contact, construction can report an invalid boundary.
+
+```python
+import math
+from magnelio import geo
+
+outline = geo.Curve.circle((0, 0, 0), 2e-3)
+bore = geo.Curve.circle((0, 0, 0), 1e-3)
+washer = geo.Profile.from_wires(outline, holes=[bore], material="pec")
+clearance = washer.offset(0.1e-3)
+assert len(clearance) == 1
+assert math.isclose(
+    clearance[0].area,
+    math.pi * ((2.1e-3)**2 - (0.9e-3)**2),
+    rel_tol=1e-8,
+)
+trace = geo.Curve.line((0, 0, 0), (2e-3, 0, 0))
+(left_trace,) = trace.offset(0.1e-3, normal="z")
+assert math.isclose(left_trace.length, trace.length)
+```
+
+A curved `Sheet.offset(distance, tolerance=...)` follows the sheet's oriented
+normal. Positive and negative distances choose opposite sides. The bounded
+rim moves with the surface; a selected face can first be detached with
+`face.detached().offset(...)`. The result remains a zero-thickness Sheet, not
+a thickened solid. The optional tolerance is an absolute sampled geometric
+deviation in metres; by default it is one millionth of the sheet extent,
+subject to CAD resolution. The builder rejects an invalid sheet, a sampled
+fold or singular normal, or a deviation beyond this budget. It does not
+promise a global error certificate between sample stations. A constant
+normal offset can fail on tightly curved geometry even when the distance is
+finite.
+
+```python
+from magnelio import geo
+
+housing = geo.Cylinder(radius=5e-3, height=10e-3)
+wall = housing.face(near=(5e-3, 0, 5e-3)).detached()
+(construction_sheet,) = wall.offset(0.2e-3)
+assert abs(construction_sheet.bounding_box()[1][0] - 5.2e-3) < 2e-6
+```
+
+These operations preserve the source values. Offset Profiles inherit the
+source material; the resulting Sheets and Curves have independent ownership.
+To create physical thickness, extrude or thicken the result explicitly.
+Tutorial 27 combines a conductor clearance with a curved construction sheet.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:

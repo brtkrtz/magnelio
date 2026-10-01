@@ -147,6 +147,35 @@ class Curve(Shape):
         diag = box_diagonal(self._analytic_bbox())
         return _JOIN_RTOL * diag if diag > 0.0 else 0.0
 
+    def offset(self, distance, *, normal):
+        """Return the planar curves a signed distance from this curve.
+
+        Positive distance lies to the left of traversal when viewed along
+        *normal*; negative distance lies to the right. Corners on the outer
+        side are joined by circular arcs. Open ends remain uncapped. The
+        explicit normal fixes the oriented plane even for a straight line.
+
+        Parameters
+        ----------
+        distance : float
+            Signed lateral distance [meters].
+        normal : str or sequence of float
+            Oriented normal of the curve plane.
+
+        Returns
+        -------
+        tuple of Curve
+            Independent offset components; empty if the curve collapses.
+
+        Raises
+        ------
+        ValueError
+            If the curve is not planar or the offset folds or crosses itself.
+        """
+        from magnelio.geo.offsets import offset_curve  # noqa: PLC0415
+
+        return offset_curve(self, distance, normal=normal)
+
     def projected_onto(
         self,
         target,

@@ -909,6 +909,32 @@ feed ordinary geometry construction, and the resulting body can be persisted.
 Gate:
 `tests/unit/test_geo_projection_foundation.py`.
 
+WP6.7 adds independent offsets in three distinct meanings. A directed planar
+`Curve.offset(distance, *, normal)` requires an explicit oriented plane and
+returns a tuple of Curves. Positive is left of traversal, negative right;
+outer corners are circular, inner corners intersect, and open ends have no
+caps. A collapsed curve gives an empty tuple; a curvature cusp or invalid
+contour raises. Model-scale normalization keeps the CAD offset stable for
+small as well as large geometry. `Profile.offset(distance)` offsets its
+material region independent of boundary winding: positive expands the
+exterior and shrinks holes, negative erodes the exterior and grows holes.
+Every disconnected surviving region is returned as an independent Profile
+with inherited material. Complete collapse gives an empty tuple; an exact
+zero-width pinch can raise for invalid topology. Round clearance joins here
+are distinct from the sweep draft's intersection joins.
+
+Curved `Sheet.offset(distance, *, tolerance=None)` moves the actual bounded
+face along its oriented normal and returns an independent zero-thickness
+Surface in a tuple. The signed distance selects side. The default absolute
+metre tolerance is the larger of one millionth of the source extent and the
+kernel-resolution distance at the model scale. The kernel result must be a
+single valid face with no reported self-intersection; sampled derivatives
+must preserve local orientation and sampled normal displacement must fit
+the budget. This gate is not a global surface-error certificate. A curved
+owned face is detached before offsetting. Offset geometry used in a stored
+body replays from its exact BREP snapshot. Gate:
+`tests/unit/test_geo_offsets_foundation.py`.
+
 #### Relative routing poses (WP5)
 
 `Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;

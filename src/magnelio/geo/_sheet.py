@@ -15,6 +15,36 @@ class Sheet(Shape):
     cannot yet be meshed; give it a resolved physical thickness first.
     """
 
+    def offset(self, distance, *, tolerance=None):
+        """Return a curved sheet shifted along its oriented normal.
+
+        Positive distance follows the sheet normal; negative distance goes
+        to the opposite side. The actual trimmed boundary moves with the
+        sheet. This operation does not give a sheet physical thickness.
+
+        Parameters
+        ----------
+        distance : float
+            Signed normal distance [meters].
+        tolerance : float, optional
+            Maximum sampled geometric deviation [meters]. Defaults to one
+            millionth of the sheet extent, subject to the CAD resolution.
+
+        Returns
+        -------
+        tuple of Surface
+            Independent offset sheet in a tuple.
+
+        Raises
+        ------
+        ValueError
+            If the normal offset folds, becomes singular, or exceeds the
+            geometric tolerance.
+        """
+        from magnelio.geo.offsets import offset_sheet  # noqa: PLC0415
+
+        return offset_sheet(self, distance, tolerance=tolerance)
+
     def lofted(self, other, *, material=None, blend="spline", tension=None):
         """Connect this planar sheet to another section with a Solid.
 
@@ -58,6 +88,32 @@ class Profile(Sheet):
     _holes: tuple = ()
     material: object = None
     name: str | None = None
+
+    def offset(self, distance):
+        """Dilate or erode this planar material region.
+
+        Positive distance grows the exterior and shrinks holes; negative
+        distance erodes the exterior and enlarges holes. Corner transitions
+        use circular arcs. Every disconnected surviving region is returned.
+
+        Parameters
+        ----------
+        distance : float
+            Signed boundary distance [meters].
+
+        Returns
+        -------
+        tuple of Profile
+            Independent regions, or an empty tuple after total collapse.
+
+        Raises
+        ------
+        ValueError
+            If the offset boundaries become invalid.
+        """
+        from magnelio.geo.offsets import offset_profile  # noqa: PLC0415
+
+        return offset_profile(self, distance)
 
     def __post_init__(self):
         from magnelio.geo._scaling import choose_scale  # noqa: PLC0415

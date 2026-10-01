@@ -22485,10 +22485,10 @@ or server is started for them.
 
 **Date:** 2026-09-28.
 **Status:** Accepted as the geometry-foundation contract; WP0 through WP5 are
-implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation
-and constant twist/draft slices, partition/section, and directed
-imprint/material insertion are implemented; the remaining advanced-CAD roadmap
-stays open.
+implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation,
+constant twist/draft, partition/section, directed imprint/material insertion,
+curve projection and geometry-offset slices are implemented; the remaining
+advanced-CAD roadmap stays open.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -23183,3 +23183,46 @@ A body built from the projected curve replays through the project store as
 exact BREP geometry. Gate:
 `tests/unit/test_geo_projection_foundation.py`; methods/API prose and Tutorial
 26 cover the housing/trace recipe. WP6.7-WP6.12 remain open.
+
+**WP6.7 independent geometry offsets (2026-10-01).** The developer accepted
+round outer joins for planar offsets, every surviving disconnected profile
+region, an empty tuple after full collapse, and a documented default error
+budget for curved sheets. `Curve.offset(distance, normal=...)` requires an
+explicit oriented world plane. Positive distance is left of traversal when
+viewed along its normal, negative is right. Open ends are uncapped. The
+one-sided Open CASCADE offset uses an explicit plane face for straight lines;
+closed wires use their own face. Open lines and arcs choose the kernel wire
+direction whose endpoints agree with the requested normal-cross-tangent
+side: the kernel ignored the distance sign and chose opposite conventions
+for a line and a circular arc. Normalised power-of-two CAD scale avoids the
+installed kernel's crash on negative sub-unit circle offsets. A circle that
+closes at its radius returns no curve; an elliptic curve offset that crosses
+its minimum curvature radius raises for a cusp. Result components are
+independent Curves, with no source mutation.
+
+`Profile.offset(distance)` acts on the material region, regardless of wire
+traversal: positive grows the exterior and reduces holes; negative erodes the
+exterior and enlarges holes. Rounded joins implement geometric clearance,
+distinct from the intersection joins of the constant sweep-draft law. Each
+boundary offsets at a normalised scale and the planar face difference resolves
+holes and all separate regions. Circle/ellipse collapse is explicit; ellipse
+offsets below cusp use the parameter-preserving section construction, while
+post-cusp region erosion uses the kernel's region contour rather than exposing
+an invalid standalone offset Curve. A zero-width pinch is an invalid boundary
+and raises. Surviving Profiles inherit source material, and total collapse
+returns an empty tuple. No largest-component tie-breaker exists.
+
+`Sheet.offset(distance, tolerance=None)` moves the actual bounded face along
+its oriented normal, retaining its trimmed rim. Positive/negative signs choose
+opposite sides; the output remains a zero-thickness Surface. The default
+absolute tolerance is the greater of one millionth of the source extent and
+the CAD resolution at the source model scale. The normal-offset result must
+have one valid face, no kernel-reported self-intersection, a consistent sampled
+Jacobian orientation and sampled normal displacement within the budget.
+These samples are an error gate, not a global Hausdorff certificate. A fold,
+singular normal, invalid face or unattainable tolerance fails rather than
+silently returning a plausible-looking sheet. A FaceRef must be explicitly
+detached before independent offsetting. Derived shapes round-trip as exact
+BREP origins when used in stored solids. Methods/API prose, Tutorial 27 and
+`tests/unit/test_geo_offsets_foundation.py` cover the public contract.
+WP6.8-WP6.12 remain open; WP6.2 remains cancelled.

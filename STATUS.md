@@ -33,17 +33,17 @@ Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
-On `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3-WP6.6 are implemented.
-WP6.6 projects Curves to bounded sheets/faces by parallel, perspective or closest-point policy, selecting first/all forward branches and requiring explicit clipping. Its 24 focused tests and 941 broader relevant gates pass; fresh Sphinx includes Tutorial 26.
+On `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3-WP6.7 are implemented.
+WP6.7 adds directed round-join Curve offsets, full-region Profile clearance/erosion with all separate results, and bounded curved-Sheet normal offsets with a default sampled error budget. Its 19 focused and 960 broader relevant tests pass; fresh Sphinx includes Tutorial 27.
 WP6.4-WP6.6 are committed locally; the host SSH configuration blocked their automatic private-remote backup. WP6 remains open; WP6.2 is cancelled.
-WP6.7-WP6.12 remain; contracts: `investigations/geo-api-foundation/WP6-CONTRACTS.md` (internal record). Latest full physics run is WP5 with the unchanged-WP3 QTEM length-law failure.
+WP6.8-WP6.12 remain; contracts: `investigations/geo-api-foundation/WP6-CONTRACTS.md` (internal record). Latest full physics run is WP5 with the unchanged-WP3 QTEM length-law failure.
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
 
 ## Recent decisions
 Newest first, one line each; the full record is the DD entry.
-* **DD-275** (2026-09-28, amended 2026-09-30, branch `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3-WP6.6) — dimensional geometry, affine values, exact curves/Profile holes, owned topology and named histories are implemented. Path carries world poses and relative bends. Sweeps retain frame/twist/draft laws. Partition returns independent Solid/Sheet regions; Section returns exact curves or filled profiles. Directed Imprint splits receiver faces without volume change. Insert assigns material overlap by explicit priority and removes void tools. Bounded Curve projection supports parallel, perspective and closest-point policies, first/all forward ray branches and explicit clipping. Nearest traces follow exact trim edges; discontinuities and surface singularities fail. Methods/API prose and Tutorials 21-26 cover these contracts. WP6.7-WP6.12 remain; WP6.2 is cancelled. WP6.6 gate: `tests/unit/test_geo_projection_foundation.py`.
+* **DD-275** (2026-09-28, amended 2026-10-01, branch `feat/geo-api-foundation`, WP0-WP5 and WP6.1/WP6.3-WP6.7) — dimensional geometry, affine values, exact curves/Profile holes, owned topology and named histories are implemented. Path carries world poses and relative bends. Sweeps retain frame/twist/draft laws. Partition returns independent Solid/Sheet regions; Section returns exact curves or filled profiles. Directed Imprint splits receiver faces without volume change. Insert assigns material overlap by explicit priority and removes void tools. Bounded Curve projection supports parallel, perspective and closest-point policies. Offsets now provide signed planar Curve placement, material-region Profile clearance/erosion and bounded Sheet normal placement. Methods/API prose and Tutorials 21-27 cover these contracts. WP6.8-WP6.12 remain; WP6.2 is cancelled. WP6.7 gate: `tests/unit/test_geo_offsets_foundation.py`.
 * **DD-274** (2026-09-23) — viewer destination is independent of its rendering backend.  A plain script now serves the complete Magnelio toolbar through trame and opens it in the system browser; `target="native"` retains the PyVista/VTK window.  `target="inline"` keeps the Jupyter widget.  Zed's `kernel-zed-*.json` identity selects the browser automatically despite its ipykernel; `plots.configure_viewer(target="browser")` is the once-per-kernel switch for other editor REPLs that do not render the asynchronously filled `VBox`.  The browser server binds loopback on a daemon thread and is reused; missing trame warns and falls back to native.  `mode` remains `client`/`server`/`trame`/`static`/`none`, with `none` still returning the plotter.
   CI compatibility: PyVista 0.49 stores viewers in `trame_pyvista.ui`; OCC 8 requires an explicit trace-clearance check beyond offset contour counting (DD-135).
 * **DD-273** (2026-09-09, branch `feat/surface-current`) — the surface current is the wall-loss booking, read as a vector.  `surface_current(mesh)` on any recording, spectrum or `FieldState` gives `J_s = n × H` per wall patch; `enumerate_wall_patches` reads the [[DD-087]] enumeration the other way round (per patch: conformal area, outward normal `−w/‖w‖`, and *which* sample contributions it booked).  Magnitude from the loss booking (`|J_s|²A = Σw|H|²`, so `power_loss` **is** `MonitorWallLoss` — measured 0.9998 on a real run), direction from `n × H` with the weight-averaged samples.  Accuracy is inherited and does not refine away: coax inner conductor 1.3 %, shield 5.0 % against `√(P/Z₀)`, because the DD-098 pullback is calibrated on the quadratic loss while the current is linear in H; shipped deliberately, since the distribution is what a current picture is read for.  Four traps, all measured: grid quantities vs. physical fields ([[DD-085]], factor 1500), wall cells of a curved conductor are PEC-classified (dropping them loses 83 % of a mantle), a port plane holds the feed's *cross-section* and not a wall (+9.5 %, hence `exclude_faces=`), and a viewer display group must be registered in `_GROUPS` or its actor is built, filled and never shown.  `PECSurfaceData` removed: built for every conformal mesh, stored in every project, read by nothing, and it booked the *normal* H component.  Record `investigations/surface-current/` (internal dossier).
@@ -100,7 +100,7 @@ Newest first, one line each; the full record is the DD entry.
 ## Script directories
 
 `examples/` is the public-API surface — `examples/tutorials/` holds the
-23 gallery tutorials (21-23 on the foundation branch), with no internal imports.
+26 gallery tutorials (21-27 on the foundation branch), with no internal imports.
 Released tutorials run on the GPU box on pure defaults (the DD-096 criterion is on by
 default, DD-114: the energy criterion alone never fires on a shielded
 lossless structure's TM-cut-off plateau).  `validation/` holds the
@@ -284,7 +284,7 @@ of the run, in double it is flat (−149.12 → −149.13 dB).
 (`pip install -e .[docs]`, `sphinx-build -b html docs
 docs/_build/html`; warning-free — verified with `sphinx -E`, a cached
 rebuild proves nothing).  Pillars: Tutorials (from
-`examples/tutorials/*.py`, 01–20 released, 21/22 on the foundation branch; of which
+`examples/tutorials/*.py`, 01–18 and 20 released, 21–27 on the foundation branch; of which
 tutorial 13, the DR-filter capstone, is ~5.5 min), API reference,
 Numerical methods (thirteen chapters, every method cited, in-house
 derivations marked in prose), Bibliography.  `docs/references.bib`
@@ -317,7 +317,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **Geometry API foundation (DD-275)** — WP0-WP5 and WP6.1/WP6.3-WP6.6 are implemented and documented. WP6.6 projects onto the actual bounded Sheet/FaceRef, selecting first or all forward ray hits, or a closest-point trace; clipping is explicit. Holes, seams, target crossings, singularities, scale and persisted derived geometry have focused coverage. The final 24 WP6.6 tests and 941 broader relevant gates pass; fresh offline Sphinx executes Tutorial 26. WP6.7-WP6.12 remain; WP6.2 diagnostics are cancelled. Latest full physics run remains WP5 with the unchanged-WP3 QTEM failure. Record: `investigations/geo-api-foundation/WP66-VERIFICATION.md` (internal record).
+* **Geometry API foundation (DD-275)** — WP0-WP5 and WP6.1/WP6.3-WP6.7 are implemented and documented. WP6.7 offsets planar Curves by an explicit directed normal, dilates/erodes Profile material regions with holes and all separated results, and shifts bounded curved Sheets along their normals with sampled accuracy and validity gates. Scale, collapse, analytic areas, ownership and persisted derived geometry have focused coverage. Its 19 focused and 960 broader relevant gates pass; fresh offline Sphinx includes Tutorial 27. WP6.8-WP6.12 remain; WP6.2 diagnostics are cancelled. Latest full physics run remains WP5 with the unchanged-WP3 QTEM failure. Record: `investigations/geo-api-foundation/WP67-VERIFICATION.md` (internal record).
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

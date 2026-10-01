@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Directed planar curve offsets with round outer joins and uncapped open
+  ends; material-region offsets for planar profiles that retain holes or
+  every separated surviving region; and bounded curved-sheet normal
+  offsets with a default geometric tolerance. The geometry guide and
+  Tutorial 27 show clearance and curved construction-sheet workflows.
+
 - Directed solid-boundary imprinting and explicit-priority material insertion.
   Inserts preserve separate material bodies, while material-less void tools
   remove volume from all bodies. The geometry guide and Tutorial 25 show a

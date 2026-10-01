@@ -24,6 +24,15 @@ read-only measurements; `Profile.boundary()` returns detached boundary curves.
 See [geometry construction](../methods/geometry.md) for orientation, validation,
 and hole correspondence during lofting.
 
+`Curve.offset(distance, normal=...)` gives directed planar offsets with round
+outer joins and uncapped open ends. `Profile.offset(distance)` dilates or
+erodes the material region, retaining all connected results. A curved
+`Sheet.offset(distance, tolerance=...)` moves along its oriented normal and
+retains the bounded rim. All three return independent results in tuples.
+The [offset guide](../methods/geometry.md) defines signs, hole behavior,
+collapse and the default sampled geometry tolerance; Tutorial 27 gives the
+construction recipe.
+
 Owned topology is separate from standalone geometry: `TopologyRef`,
 `VertexRef`, `EdgeRef`, `FaceRef`, `EdgeSetRef` and `FaceSetRef` hold one
 `Solid` owner. The Solid selectors `face`, `edge`, `vertex`, `faces` and
