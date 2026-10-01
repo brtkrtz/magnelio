@@ -761,6 +761,51 @@ faces: construct a layer with `source_sheet.thickened(...)` **before** applying
 the Bend to that Solid. Tutorial 28 bends two material layers through one
 shared map and checks their expected volumes.
 
+## Wrap a flat component onto a curved patch
+
+`geo.Wrap` uses the same explicit source frame and normal-layer map as
+`geo.Bend`, but maps the **whole** source rather than a finite interval with
+straight continuations. This is useful for a trace and its substrate on a
+curved housing. Define one single-face target patch, assign its parameter
+directions to source `u` and `v` distances, and apply one `Wrap` to the
+material-preserving `Group`. Every source point must lie within the declared
+chart. No nearest-surface or shortest-path correspondence is inferred.
+
+```python
+from magnelio import geo
+
+target = geo.Surface.parametric(
+    lambda u, v: (u, v, 2e-4 * (u / 20e-3) * (1 - u / 20e-3)),
+    u=(0, 20e-3), v=(-5e-3, 5e-3), samples=(25, 9),
+)
+wrap = geo.Wrap(
+    target, origin=(0, 0, 0), along="x", across="y",
+    u=(0, 20e-3), v=(-5e-3, 5e-3), max_strain=0.05,
+)
+board = geo.Brick(
+    origin=(1e-3, -4e-3, -0.3e-3),
+    size=(18e-3, 8e-3, 0.3e-3), material="air",
+)
+trace = geo.Brick(
+    origin=(2e-3, -0.5e-3, 0),
+    size=(16e-3, 1e-3, 0.035e-3), material="pec",
+)
+wrapped = wrap @ geo.Group(board, trace)
+```
+
+The target may curve in both directions. Its in-plane strain must remain
+within the required `max_strain` budget; extension through the occupied
+thickness must not fold. Neither trace length nor material volume is
+promised to remain unchanged. A periodic surface needs an explicitly cut
+chart: the operation does not choose or cross a seam. The target must be one
+regular, hole-free face, though the source may have openings. The result is
+smooth trimmed CAD geometry; `tolerance` controls sampled fit error as for
+`Bend`, and invalid or self-intersecting results raise. These checks sample
+the map and CAD result rather than proving global distortion bounds. The
+source and material ownership remain unchanged; named geometry can be
+reconstructed on project replay. A wrapped Sheet remains a zero-thickness
+Sheet. Tutorial 29 shows a conformal layered trace.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:
@@ -861,6 +906,15 @@ The face-to-face verb adds `blend="tangent"`, which leaves each face
 along its outward normal, so the wall slope at both joints is zero and
 the transition meets both parts without a crease.  It has two regimes,
 chosen from the two normals:
+
+This is the G1 transition choice: it matches the adjoining wall normal
+when that wall follows the selected planar face's outward extrusion
+direction. It does not impose G2 curvature matching, and an adjoining
+wall with another tangent direction needs its own explicitly designed
+transition. Source and end outlines must have corresponding outer edges
+and holes; incompatible counts or a construction that cannot close raise.
+The asymmetric prismatic transition in Tutorial 29 measures matching wall
+normals at both joints.
 
 - **Faces that look at each other** (antiparallel normals: the two ends
   of a taper, coaxial or laterally offset) get a loft whose

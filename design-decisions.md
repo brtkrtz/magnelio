@@ -23258,3 +23258,27 @@ compares the reconstructed solid by symmetric Boolean difference within the
 declared geometry budget. Methods/API prose, Tutorial 28 and
 `tests/unit/test_geo_bend_foundation.py` cover the contract. WP6.9-WP6.12
 and the umbrella WP6 remain open; WP6.2 remains cancelled.
+
+**WP6.9 G1 transitions and surface wrapping (2026-10-01).** The developer
+selected G1, without G2 curvature matching, for transitions and allowed
+doubly curved wrapping subject to an explicit strain limit. The existing
+planar face-to-face `blend="tangent"` is the G1 operation when the adjacent
+walls follow the selected end faces' outward extrusion directions. Its
+Hermite end rows match those wall tangents; the new asymmetric gate samples
+both end wall normals independently. A different adjacent wall tangent
+field is not inferred from a cap. Hole counts and closed CAD topology retain
+their existing construction rules.
+
+`geo.Wrap` shares WP6.8's explicit world source chart and normal-layer map,
+but applies it over the complete source instead of requiring matching rigid
+continuations. The source must fit in both declared chart intervals; the
+one-face target must have a regular, hole-free bounded chart. A periodic
+target needs an explicit seam cut. There is no inferred shortest-path or
+nearest-point mapping. The required `max_strain` bounds sampled principal
+neutral stretches, positive sampled thickness Jacobians reject folds, and
+the existing smooth BREP fitter and validity/interference gates reject bad
+CAD results. Strain and fit samples are not global certificates. All Group
+members share the map while retaining materials; named result replay
+reconstructs and compares geometry. Methods/API prose, Tutorial 29 and
+`tests/unit/test_geo_wrap_foundation.py` cover the public contract.
+WP6.10-WP6.12 and umbrella WP6 remain open; WP6.2 is cancelled.

@@ -961,6 +961,24 @@ Named project replay rebuilds the map and checks geometric equivalence by
 bounding boxes and symmetric Boolean differences. Physical materials stay
 with their independent members. Gate: `tests/unit/test_geo_bend_foundation.py`.
 
+WP6.9 uses the existing planar face-to-face `blend="tangent"` as the G1
+transition for adjoining walls whose tangent follows the selected face's
+outward extrusion direction. Its Hermite end rows match wall normals at
+both ends; no G2 curvature condition is claimed. The asymmetric two-end
+normal gate is in `tests/unit/test_geo_wrap_foundation.py`. Other adjoining
+wall tangent fields are not inferred from the selected caps.
+
+`geo.Wrap` accepts the same one-face target chart, explicit source frame,
+source `u`/`v` extents, required `max_strain`, and optional sampled CAD fit
+budget as Bend. It maps the entire source by `F(u,v,w)=S(u,v)+w*n(u,v)` with
+no rigid exterior segments or boundary pose conditions. The whole source
+bounding box must fit the declared chart. A single chart cannot cross an
+unselected periodic seam. Group mapping preserves individual materials;
+openings and named topology follow the deformed BREP and project replay.
+Sampled principal strain, occupied thickness Jacobian, CAD fit, topology
+and self-interference checks have the same limits as WP6.8. The source may
+change length and volume. Gate: `tests/unit/test_geo_wrap_foundation.py`.
+
 #### Relative routing poses (WP5)
 
 `Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;

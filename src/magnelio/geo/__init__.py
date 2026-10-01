@@ -52,6 +52,7 @@ from magnelio.geo.topology import (
 )
 from magnelio.geo.transforms import Mirror, Rotation, Scale, Transform, Translation
 from magnelio.geo.wire import ThinWire
+from magnelio.geo.wrap import Wrap
 
 if TYPE_CHECKING:
     from magnelio.materials.material import Material

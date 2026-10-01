@@ -41,6 +41,13 @@ The [bend guide](../methods/geometry.md) explains source coordinates,
 nondevelopable strain, rigid interval continuations, sampled error limits and
 named-face splits. Tutorial 28 shows a layered component.
 
+`Wrap` takes the same target chart, source frame, strain limit and sampled
+fit tolerance, then maps the whole source to the target without rigid end
+continuations. It accepts Solid, Sheet and Group operands. The
+[wrapping guide](../methods/geometry.md) specifies chart coverage,
+nondevelopable distortion, seams, openings and layer placement. Tutorial 29
+wraps a trace and its substrate onto a doubly curved patch.
+
 Owned topology is separate from standalone geometry: `TopologyRef`,
 `VertexRef`, `EdgeRef`, `FaceRef`, `EdgeSetRef` and `FaceSetRef` hold one
 `Solid` owner. The Solid selectors `face`, `edge`, `vertex`, `faces` and

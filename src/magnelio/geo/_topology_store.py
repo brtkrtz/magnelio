@@ -49,6 +49,7 @@ def to_recipe(owner):
     from magnelio.geo.partition import _PartitionSolid
     from magnelio.geo.topology import _TaggedSolid
     from magnelio.geo.transforms import _TransformedShape
+    from magnelio.geo.wrap import Wrap
     from magnelio.io.project import _material_to_dict
 
     nodes = []
@@ -105,7 +106,7 @@ def to_recipe(owner):
             bend = shape._bend
             scale = _scale(shape)
             node = {
-                "operation": "bend",
+                "operation": "wrap" if isinstance(bend, Wrap) else "bend",
                 "source": encode(shape._inner),
                 "target": encode(bend.target),
                 "origin": bend.origin,
@@ -188,6 +189,7 @@ def from_recipe(recipe):
     from magnelio.geo.partition import partition
     from magnelio.geo.topology import _cast, _detached_class, _TaggedSolid
     from magnelio.geo.transforms import Transform
+    from magnelio.geo.wrap import Wrap
     from magnelio.io.project import _material_from_dict
 
     if recipe.get("version") != 1:
@@ -278,8 +280,8 @@ def from_recipe(recipe):
             shape = receiver.imprint(cutter)
             if _brep_text(shape._occ_shape(node["scale"])) != node["brep"]:
                 raise TopologyEvolutionError("An imprinted body has no exact construction match.")
-        elif op == "bend":
-            shape = Bend(
+        elif op in ("bend", "wrap"):
+            shape = (Wrap if op == "wrap" else Bend)(
                 decode(node["target"]),
                 origin=node["origin"],
                 along=node["along"],
@@ -295,7 +297,7 @@ def from_recipe(recipe):
                 node["scale"],
                 node["tolerance"],
             ):
-                raise TopologyEvolutionError("A bent body has no exact construction match.")
+                raise TopologyEvolutionError(f"A {op} body has no exact construction match.")
         elif op in classes:
             arguments = {key: value(obj) for key, obj in node["arguments"].items()}
             cls = classes[op]

@@ -83,27 +83,34 @@ class Bend:
     tolerance: float | None = None
 
     def __post_init__(self):
+        operation = type(self).__name__
         if not isinstance(self.target, Sheet):
-            raise TypeError(f"Bend target must be a Sheet; got {type(self.target).__name__}.")
-        origin = point3(self.origin, "Bend(origin)")
-        along = np.asarray(normalize_axis(self.along, "Bend(along)"))
-        across = np.asarray(normalize_axis(self.across, "Bend(across)"))
+            raise TypeError(
+                f"{operation} target must be a Sheet; got {type(self.target).__name__}."
+            )
+        origin = point3(self.origin, f"{operation}(origin)")
+        along = np.asarray(normalize_axis(self.along, f"{operation}(along)"))
+        across = np.asarray(normalize_axis(self.across, f"{operation}(across)"))
         if abs(float(np.dot(along, across))) > 1e-10:
-            raise ValueError("Bend along and across directions must be perpendicular.")
+            raise ValueError(f"{operation} along and across directions must be perpendicular.")
         for label in ("u", "v"):
             span = getattr(self, label)
             if len(span) != 2 or not all(math.isfinite(float(x)) for x in span):
-                raise ValueError(f"Bend {label} must be a finite (start, end) pair.")
+                raise ValueError(f"{operation} {label} must be a finite (start, end) pair.")
             start, end = map(float, span)
             if end <= start:
-                raise ValueError(f"Bend {label} interval must increase.")
+                raise ValueError(f"{operation} {label} interval must increase.")
             object.__setattr__(self, label, (start, end))
         object.__setattr__(self, "origin", origin)
         object.__setattr__(self, "along", tuple(float(x) for x in along))
         object.__setattr__(self, "across", tuple(float(x) for x in across))
-        object.__setattr__(self, "max_strain", positive(self.max_strain, "Bend(max_strain)"))
+        object.__setattr__(
+            self, "max_strain", positive(self.max_strain, f"{operation}(max_strain)")
+        )
         if self.tolerance is not None:
-            object.__setattr__(self, "tolerance", positive(self.tolerance, "Bend(tolerance)"))
+            object.__setattr__(
+                self, "tolerance", positive(self.tolerance, f"{operation}(tolerance)")
+            )
 
     def __matmul__(self, other):
         """Bend a Solid, Sheet or material-preserving Group independently."""
@@ -122,21 +129,22 @@ class Bend:
         across = np.asarray(self.across)
         return np.stack((along, across, np.cross(along, across)), axis=1)
 
-    def _context(self, source, scale):
+    def _context(self, source, scale, *, finite=True):
         from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
         from OCC.Core.BRepTools import breptools
         from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_WIRE
         from OCC.Core.TopoDS import topods
 
+        operation = "Bend" if finite else "Wrap"
         faces = members_of(self.target._occ_shape(scale), TopAbs_FACE, topods.Face)
         if len(faces) != 1:
-            raise ValueError("Bend target must have one continuous surface face.")
+            raise ValueError(f"{operation} target must have one continuous surface face.")
         face = faces[0]
         if len(members_of(face, TopAbs_WIRE, topods.Wire)) != 1:
-            raise ValueError("Bend target chart must be continuous without holes.")
+            raise ValueError(f"{operation} target chart must be continuous without holes.")
         bounds = np.asarray(breptools.UVBounds(face), dtype=float)
         if not np.all(np.isfinite(bounds)) or bounds[1] <= bounds[0] or bounds[3] <= bounds[2]:
-            raise ValueError("Bend target needs a finite, regular surface chart.")
+            raise ValueError(f"{operation} target needs a finite, regular surface chart.")
         frame = self._frame()
         source_box = source._analytic_bbox()
         extent = max(box_diagonal(source_box), box_diagonal(self.target._analytic_bbox()))
@@ -144,14 +152,14 @@ class Bend:
         if tolerance is None:
             tolerance = max(extent * 1e-6, 1e-7 / scale)
         context = _BendContext(
-            self, BRepAdaptor_Surface(face), face, bounds, frame, scale, tolerance
+            self, BRepAdaptor_Surface(face), face, bounds, frame, scale, tolerance, finite
         )
         context.check(source._occ_shape(scale))
         return context
 
 
 class _BendContext:
-    def __init__(self, bend, surface, face, uv, frame, scale, tolerance):
+    def __init__(self, bend, surface, face, uv, frame, scale, tolerance, finite):
         self.bend = bend
         self.surface = surface
         self.face = face
@@ -159,6 +167,8 @@ class _BendContext:
         self.frame = frame
         self.scale = scale
         self.tolerance = tolerance
+        self.finite = finite
+        self.operation = "Bend" if finite else "Wrap"
         self.origin = np.asarray(bend.origin)
         self.end_frame = None
         self.end_anchor = None
@@ -186,9 +196,9 @@ class _BendContext:
 
     def point(self, point):
         u, v, w = self.coordinates(point)
-        if u <= self.bend.u[0]:
+        if self.finite and u <= self.bend.u[0]:
             return np.asarray(point)
-        if u >= self.bend.u[1]:
+        if self.finite and u >= self.bend.u[1]:
             return self.end_anchor + self.end_frame @ np.array((u - self.bend.u[1], v, w))
         neutral, _, _, normal = self.neutral(u, v)
         return neutral + w * normal
@@ -255,9 +265,17 @@ class _BendContext:
             np.min(coordinates[:, 1]) < b.v[0] - self.tolerance
             or np.max(coordinates[:, 1]) > b.v[1] + self.tolerance
         ):
-            raise ValueError("Bend target does not cover the source's transverse extent.")
-        _, _ = self._boundary(b.u[0], start=True)
-        self.end_anchor, self.end_frame = self._boundary(b.u[1], start=False)
+            raise ValueError(
+                f"{self.operation} target does not cover the source's transverse extent."
+            )
+        if self.finite:
+            _, _ = self._boundary(b.u[0], start=True)
+            self.end_anchor, self.end_frame = self._boundary(b.u[1], start=False)
+        elif (
+            np.min(coordinates[:, 0]) < b.u[0] - self.tolerance
+            or np.max(coordinates[:, 0]) > b.u[1] + self.tolerance
+        ):
+            raise ValueError("Wrap target does not cover the source's longitudinal extent.")
         w_min, w_max = np.min(coordinates[:, 2]), np.max(coordinates[:, 2])
         length = max(b.u[1] - b.u[0], b.v[1] - b.v[0])
         step = length * 1e-5
@@ -266,13 +284,17 @@ class _BendContext:
                 U, V = self._parameters(u, v)
                 classifier = BRepClass_FaceClassifier(self.face, gp_Pnt2d(U, V), 1e-9)
                 if classifier.State() not in (TopAbs_IN, TopAbs_ON):
-                    raise ValueError("Bend target does not cover the declared surface chart.")
+                    raise ValueError(
+                        f"{self.operation} target does not cover the declared surface chart."
+                    )
                 _, du, dv, normal = self.neutral(u, v)
                 if (
                     np.max(abs(np.linalg.svd(np.stack((du, dv), axis=1), compute_uv=False) - 1))
                     > b.max_strain + 1e-8
                 ):
-                    raise ValueError("Bend target exceeds the permitted neutral-surface strain.")
+                    raise ValueError(
+                        f"{self.operation} target exceeds the permitted neutral-surface strain."
+                    )
                 if iu % 4 or iv % 4 or u in b.u or v in b.v:
                     continue
                 for w in (w_min, w_max):
@@ -285,7 +307,8 @@ class _BendContext:
                     )
                     if jac <= 1e-8:
                         raise ValueError(
-                            "Bend normal extension folds through the occupied thickness."
+                            f"{self.operation} normal extension folds through the "
+                            "occupied thickness."
                         )
 
     def rigid_surface(self, face, side):
@@ -316,7 +339,7 @@ def _fit_surface(face, context):
     source = BRepAdaptor_Surface(face)
     u0, u1, v0, v1 = breptools.UVBounds(face)
     if not all(map(math.isfinite, (u0, u1, v0, v1))) or u0 >= u1 or v0 >= v1:
-        raise ValueError("Bend source face needs a finite regular parameter chart.")
+        raise ValueError(f"{context.operation} source face needs a finite regular parameter chart.")
     for count in (9, 17, 33, 65):
         points = TColgp_Array2OfPnt(1, count, 1, count)
         for i in range(1, count + 1):
@@ -327,7 +350,7 @@ def _fit_surface(face, context):
         fit = GeomAPI_PointsToBSplineSurface()
         fit.Interpolate(points, Approx_IsoParametric)
         if not fit.IsDone():
-            raise ValueError("Bend could not interpolate a source CAD face.")
+            raise ValueError(f"{context.operation} could not interpolate a source CAD face.")
         surface = fit.Surface()
         for axis, start, end in (("U", u0, u1), ("V", v0, v1)):
             n = getattr(surface, f"Nb{axis}Knots")()
@@ -348,7 +371,7 @@ def _fit_surface(face, context):
         if error <= context.tolerance:
             return surface
     raise ValueError(
-        "Bend could not meet the sampled CAD approximation tolerance "
+        f"{context.operation} could not meet the sampled CAD approximation tolerance "
         f"({error:.3g} m > {context.tolerance:.3g} m)."
     )
 
@@ -366,7 +389,11 @@ def _build_bent(source, bend, scale):
     from OCC.Core.TopoDS import topods
 
     context = bend._context(source, scale)
-    prepared = _split_at_boundaries(source._occ_shape(scale), context)
+    prepared = (
+        _split_at_boundaries(source._occ_shape(scale), context)
+        if context.finite
+        else source._occ_shape(scale)
+    )
     copy = BRepBuilderAPI_Copy(prepared)
     shape = copy.Shape()
 
@@ -391,9 +418,17 @@ def _build_bent(source, bend, scale):
                 for vertex in members_of(face, TopAbs_VERTEX, topods.Vertex)
             ]
         )
-        if len(coordinates) and np.max(coordinates[:, 0]) <= bend.u[0] + context.tolerance:
+        if (
+            context.finite
+            and len(coordinates)
+            and np.max(coordinates[:, 0]) <= bend.u[0] + context.tolerance
+        ):
             surface = context.rigid_surface(face, "start")
-        elif len(coordinates) and np.min(coordinates[:, 0]) >= bend.u[1] - context.tolerance:
+        elif (
+            context.finite
+            and len(coordinates)
+            and np.min(coordinates[:, 0]) >= bend.u[1] - context.tolerance
+        ):
             surface = context.rigid_surface(face, "end")
         else:
             surface = _fit_surface(face, context)
@@ -430,12 +465,14 @@ def _build_bent(source, bend, scale):
                 builder.UpdateEdge(edge, first, second, face, context.tolerance * scale)
     for edge in edges:
         if not breplib.BuildCurve3d(edge):
-            raise ValueError("Bend could not rebuild a shared CAD edge.")
+            raise ValueError(f"{context.operation} could not rebuild a shared CAD edge.")
     breptools.Clean(shape)
     if not BRepCheck_Analyzer(shape).IsValid():
-        raise ValueError("Bend produced invalid CAD topology or inconsistent shared edges.")
+        raise ValueError(
+            f"{context.operation} produced invalid CAD topology or inconsistent shared edges."
+        )
     if not BRepAlgoAPI_Check(shape, False, True).IsValid():
-        raise ValueError("Bend produced self-intersecting CAD geometry.")
+        raise ValueError(f"{context.operation} produced self-intersecting CAD geometry.")
     result(copy)
     return shape
 
