@@ -16,6 +16,11 @@ copy and aggregation options without `repeat`. Default calls and
 `Transform @ geometry` retain one placement. The
 [placement guide](../methods/geometry.md)
 defines counts, return types and material preservation.
+For reusable components, nested Groups retain their member structure under
+placement; each placed Solid owns its own named faces and sets. The guide and
+Tutorial 30 show retrieval from several copies. Only uniform scaling is
+supported by `Scale` and `Transform`; nonuniform matrices and shear are
+rejected.
 
 `Curve.line`, `Curve.circle` and `Curve.ellipse` construct exact wires.
 `Profile.polygon`, `rectangle`, `circle` and `from_wires` construct bounded

@@ -872,6 +872,45 @@ centre. `Transform @ geometry` always produces one placement and has no
 array or aggregation options. Geometry does not right-apply a transform, and `+ vector` is not a
 translation: `+`, `-` and `&` remain solid Boolean operators.
 
+### Place a reusable component
+
+Build and name a component once, then apply a different `Transform` to each
+copy. A `Group` may contain nested groups and different geometry categories;
+each placement distributes to its leaves and keeps the nesting, names and
+materials. For example, a metal shell and a dielectric insert can share a
+datum curve in one authoring component:
+
+```python
+shell = geo.Brick(size=(2e-3, 1e-3, 1e-3), material="pec", name="shell")
+shell = shell.tag_face("contact", normal="z")
+insert = geo.Brick(origin=(0.5e-3, 0.25e-3, 0),
+                   size=(1e-3, 0.5e-3, 1e-3), material="air", name="insert")
+datum = geo.Curve.line((0, 0, 0), (2e-3, 0, 0), name="datum")
+component = geo.Group(geo.Group(shell, insert, name="layers"), datum, name="component")
+poses = [geo.Translation((5e-3 * i, 0, 0)) @ geo.Rotation("z", 90 * i)
+         for i in range(3)]
+copies = [pose @ component for pose in poses]
+contacts = [next(copy.members()).face("contact") for copy in copies]
+```
+
+Each contact belongs to its own placed shell. The source component and other
+copies remain independent values; look up a named face through the placed
+member, rather than moving a `FaceRef` separately. `members()` yields leaves
+in construction order. It does not identify a member by name, so keep a
+handle or choose it deliberately when component layouts change. A `Group`
+is an authoring collection, with no mutable instance state or shared CAD
+storage promise. Adding a Group to `GeometryModel` flattens it; every added
+leaf must meet the model's material and geometry requirements. In this example
+the datum curve is a construction guide, so add the placed physical solids
+instead of the whole Group to a simulation model.
+
+Rotation and reflection preserve measures; uniform scale by `s` changes
+length, area and volume by `abs(s)`, `s²` and `abs(s)³`. Reflection can reverse
+edge traversal, while a named face follows the reflected owner and its outward
+normal. A general `Transform` matrix rejects nonuniform scale and shear, since
+these can change analytic geometry categories. See Tutorial 30 for the
+complete multiple-placement recipe.
+
 A union of bodies that are prisms along one axis over the same
 interval — the strips of a feed network, the pads of a layer, a row of
 posts — is fused in their common plane and raised once, so the result

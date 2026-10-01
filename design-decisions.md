@@ -23282,3 +23282,19 @@ members share the map while retaining materials; named result replay
 reconstructs and compares geometry. Methods/API prose, Tutorial 29 and
 `tests/unit/test_geo_wrap_foundation.py` cover the public contract.
 WP6.10-WP6.12 and umbrella WP6 remain open; WP6.2 is cancelled.
+
+**WP6.10 reusable component placements (2026-10-01).** The existing
+immutable `Transform @ Group` grammar is the component placement contract:
+transforms distribute over recursively nested, mixed-category members and
+preserve each material and name. A selected face or set belongs to its placed
+Solid owner, so a component copy is queried through that owner rather than
+transforming a reference separately. Different copies and the source remain
+independent values. Tagged Solid leaves replay from their construction
+recipes. Reflection preserves measures while changing orientation; uniform
+scale changes lengths, areas and volumes by `|s|`, `s²` and `|s|³`.
+Nonuniform scale and shear remain rejected because the public transform
+preserves similarity and analytic categories. `Group` promises neither
+storage sharing nor mutable assembly instances; model insertion flattens it
+and applies material/geometry eligibility to each leaf. Methods/API prose,
+Tutorial 30 and `tests/unit/test_geo_component_placement.py` cover the
+contract. WP6.11-WP6.12 and umbrella WP6 remain open; WP6.2 is cancelled.
