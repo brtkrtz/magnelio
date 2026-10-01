@@ -62,6 +62,9 @@ Owned topology is separate from standalone geometry: `TopologyRef`,
 distinguish missing, tied and lost selections. The
 {ref}`owned topology guide <geometry-owned-topology>`
 explains measurements, detachment, history failures and project persistence.
+Selected rectangular `FaceRef` values can also define eligible waveguide
+ports and frequency-field recording planes; the [EM face guide](../methods/geometry.md)
+states the exact geometry and domain-boundary requirements.
 
 Profile operations also accept suitable FaceRef values directly. `face.extruded`,
 `revolved`, `swept`, `thickened` and `lofted` return independent Solid geometry,

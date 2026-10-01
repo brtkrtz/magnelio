@@ -33,6 +33,7 @@ construction time via :func:`resolve_declarative_port`:
 from __future__ import annotations
 
 import dataclasses
+import math
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -208,6 +209,57 @@ class PortWaveguide:
     plane: PlaneLike
     corners: Optional[tuple] = None
     n_modes: int = 1
+
+    @classmethod
+    def from_face(cls, face, *, model, name: str, n_modes: int = 1):
+        """Declare a boundary port from an owned rectangular end face.
+
+        Parameters
+        ----------
+        face : FaceRef
+            Singular planar, axis-normal, hole-free rectangular face of a
+            Solid already added to ``model``.
+        model : GeometryModel
+            Model defining the six physical domain faces. The selected face
+            must coincide with one of its PEC domain faces.
+        name : str
+            Unique port name.
+        n_modes : int, default 1
+            Number of modes to solve.
+
+        Returns
+        -------
+        PortWaveguide
+            An ordinary declarative port with explicit world-coordinate
+            corners. The declaration captures the current owner placement;
+            retrieve the named face again after moving its owner.
+        """
+        from magnelio.geo import GeometryModel  # noqa: PLC0415
+        from magnelio.geo._em_face import rectangular_face  # noqa: PLC0415
+
+        axis, sign, lo, hi = rectangular_face(face)
+        if not isinstance(model, GeometryModel):
+            raise TypeError("PortWaveguide.from_face requires a GeometryModel.")
+        if not any(shape is face.owner for shape in model.shapes):
+            raise ValueError("The selected face owner must already be added to the model.")
+        side = "max" if sign > 0 else "min"
+        key = "xyz"[axis] + side
+        domain_lo, domain_hi = model.bounding_box()
+        domain_position = (domain_hi if sign > 0 else domain_lo)[axis]
+        domain_span = domain_hi[axis] - domain_lo[axis]
+        if not math.isclose(lo[axis], domain_position, rel_tol=0, abs_tol=domain_span * 1e-10):
+            raise ValueError(
+                "The selected face is interior; a waveguide port requires a domain face."
+            )
+        if (
+            getattr(model.boundary_conditions, key) != "PEC"
+            or key in model.boundary_conditions.symmetry
+        ):
+            raise ValueError(
+                "A selected port face must coincide with a PEC domain face "
+                "without symmetry or absorber displacement."
+            )
+        return cls(name=name, plane=key, corners=(lo, hi), n_modes=n_modes)
 
     def __post_init__(self) -> None:
         face = normalize_box_face(self.plane)  # fail fast on bad input

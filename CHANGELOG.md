@@ -11,6 +11,11 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Named rectangular CAD faces can define waveguide-port windows and
+  frequency-field recording planes through `from_face` factories, with
+  explicit domain and geometry eligibility checks. The geometry guide and
+  Tutorial 31 show the workflow.
+
 - Freeform neutral-surface bending of existing solids, sheets and layered
   groups, with explicit strain and geometry-tolerance limits. Straight
   continuations remain attached and named topology follows valid face

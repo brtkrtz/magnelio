@@ -1012,6 +1012,46 @@ Two verbs turn the sheet into metal:
   area × thickness) and refuses with a pointer to `extruded()` instead
   of returning a body of the wrong shape.
 
+## Selected faces for ports and field recordings
+
+A named face can supply the plane and bounds of a waveguide port or a
+frequency-domain field recording. The selected face must be planar,
+perpendicular to a world axis, and an exact rectangle without holes. A round
+or trimmed CAD face cannot stand in for its bounding rectangle: that would
+excite or record fields outside the selected area. Both adapters produce the
+same declarations as giving the world-coordinate rectangle explicitly.
+
+```python
+from magnelio import GeometryModel, geo, monitors, ports
+
+guide = geo.Brick(size=(2e-3, 3e-3, 4e-3), material="air")
+guide = guide.tag_face("output", normal="z")
+model = GeometryModel(background="pec").add(guide)
+end = guide.face("output")
+model.add_port(ports.PortWaveguide.from_face(end, model=model, name="output"))
+probe = monitors.MonitorFieldFrequency.from_face(
+    end, freqs=[10e9], fields=["Ex", "Ey"], name="output_fields"
+)
+```
+
+`PortWaveguide.from_face` requires the face's own Solid to be in the model.
+The selected plane must be an actual PEC domain face. An interior face cannot
+become a boundary port; an absorber, PMC wall or symmetry declaration changes
+the physical port plane and is rejected. The existing mode solver still checks
+the selected window and conductor enclosure. `MonitorFieldFrequency.from_face`
+can use an interior rectangle and retains the monitor's usual grid snapping.
+Both declarations capture coordinates at construction: after placing or
+rebuilding a component, retrieve its named face from the new Solid before
+making the declaration. The model and project store keep the resolved
+declarations; named selection recipes remain with the geometry.
+
+Other EM consumers have different sampling regions. Domain boundary
+conditions apply to an entire outer face. `MonitorFluxTime` integrates the
+whole domain cross-section with a positive axis normal. `MonitorFieldSurface`
+and `MonitorFarFieldFrequency` require closed Huygens boxes. A single CAD face
+does not define any of those regions. See [Tutorial 31](../tutorials/plot_31_em_face_adapters.rst)
+for a placed end-face workflow.
+
 ## What the mesher sees
 
 The mesher places grid planes where the geometry has features — the

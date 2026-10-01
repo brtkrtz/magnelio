@@ -22487,8 +22487,8 @@ or server is started for them.
 **Status:** Accepted as the geometry-foundation contract; WP0 through WP5 are
 implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation,
 constant twist/draft, partition/section, directed imprint/material insertion,
-curve projection, geometry-offset and freeform-bend slices are implemented;
-the remaining advanced-CAD roadmap stays open.
+curve projection, geometry-offset, freeform-bend and EM face-adapter slices
+are implemented; the remaining advanced-CAD roadmap stays open.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -23298,3 +23298,22 @@ storage sharing nor mutable assembly instances; model insertion flattens it
 and applies material/geometry eligibility to each leaf. Methods/API prose,
 Tutorial 30 and `tests/unit/test_geo_component_placement.py` cover the
 contract. WP6.11-WP6.12 and umbrella WP6 remain open; WP6.2 is cancelled.
+
+**WP6.11 EM topology adapters (2026-10-01).** Existing FIT consumers define
+their sampling regions independently of CAD. A selected face may become a
+waveguide-port window or frequency-field recording plane only when it is an
+exact, hole-free, axis-normal rectangle; using a curved or trimmed face's
+bounding box would change the physical region. The port owner must belong to
+the model, and its selected plane must coincide with an undisplaced PEC domain
+face. Interior faces are eligible for field recording but not for a boundary
+port. `PortWaveguide.from_face` and `MonitorFieldFrequency.from_face` capture
+the current placed owner's world coordinates and return ordinary declarations,
+so existing mesh, solver and persistence paths remain authoritative. A moved
+owner requires retrieving its named face again. Whole-face boundary
+conditions, full-cross-section flux and closed Huygens recordings cannot be
+represented by one arbitrary CAD face; their numerical regions remain
+unchanged. The private eligibility matrix is
+`investigations/geo-api-foundation/WP611-ELIGIBILITY.md` (internal record).
+Methods/API prose, Tutorial 31 and
+`tests/unit/test_geo_em_face_adapters.py` cover the contract. WP6.12 and
+umbrella WP6 remain open; WP6.2 is cancelled.

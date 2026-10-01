@@ -138,6 +138,40 @@ class MonitorFieldFrequency:
     _slices: dict = field(default_factory=dict, repr=False, init=False)
 
     @classmethod
+    def from_face(cls, face, *, freqs, fields=None, interval=None, name=""):
+        """Record frequency-domain fields on an owned rectangular face.
+
+        Parameters
+        ----------
+        face : FaceRef
+            Singular planar, axis-normal, hole-free rectangular face.
+        freqs : array_like
+            Recorded frequencies [Hz].
+        fields : list[str], optional
+            Field components or groups; defaults to ``["E"]``.
+        interval : float, optional
+            Time between DFT samples [s].
+        name : str, optional
+            Monitor label.
+
+        Returns
+        -------
+        MonitorFieldFrequency
+            Ordinary rectangular-plane monitor. Coordinates capture the
+            current owner placement and use the standard mesh snapping.
+        """
+        from magnelio.geo._em_face import rectangular_face  # noqa: PLC0415
+
+        _, _, lo, hi = rectangular_face(face)
+        return cls(
+            freqs=freqs,
+            corners=(lo, hi),
+            fields=["E"] if fields is None else fields,
+            interval=interval,
+            name=name,
+        )
+
+    @classmethod
     def from_ranges(
         cls,
         *,

@@ -1100,6 +1100,19 @@ raises `ValueError`; selection absence and ties use the public selection
 exceptions; named-topology loss uses `TopologyEvolutionError`; a kernel
 failure after valid input raises `RuntimeError` naming the public operation.
 
+WP6.11 adapts a singular `FaceRef` to an existing waveguide port or
+frequency-field monitor only when the trimmed face is an exact, hole-free,
+axis-normal rectangle. The adapter compares the face area with its rectangle
+rather than using its bounding box as an approximation. A port additionally
+requires its owner to be in the model and its plane to be an actual PEC domain
+face without symmetry or absorber displacement. `PortWaveguide.from_face`
+returns the ordinary `plane`/`corners` declaration; `MonitorFieldFrequency.from_face`
+returns the ordinary degenerate-box declaration. They capture current world
+coordinates and use existing project serialization. Moving an owner requires
+retrieving a new named reference and making a new declaration. Flux, domain
+boundary and Huygens consumers retain their whole-cross-section or closed-box
+semantics; no single-face adapter changes their numerical region.
+
 ### 8.6 BoundaryConditions
 
 A string-typed thin facade.  Each face takes one of
