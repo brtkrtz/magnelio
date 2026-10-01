@@ -22487,8 +22487,8 @@ or server is started for them.
 **Status:** Accepted as the geometry-foundation contract; WP0 through WP5 are
 implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation,
 constant twist/draft, partition/section, directed imprint/material insertion,
-curve projection and geometry-offset slices are implemented; the remaining
-advanced-CAD roadmap stays open.
+curve projection, geometry-offset and freeform-bend slices are implemented;
+the remaining advanced-CAD roadmap stays open.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -23225,4 +23225,36 @@ silently returning a plausible-looking sheet. A FaceRef must be explicitly
 detached before independent offsetting. Derived shapes round-trip as exact
 BREP origins when used in stored solids. Methods/API prose, Tutorial 27 and
 `tests/unit/test_geo_offsets_foundation.py` cover the public contract.
-WP6.8-WP6.12 remain open; WP6.2 remains cancelled.
+WP6.9-WP6.12 remain open; WP6.2 remains cancelled.
+
+**WP6.8 freeform neutral-surface bend (2026-10-01).** The developer selected
+a freely curved neutral surface and one explicit source-to-target chart for
+all members of a component. In source coordinates `(u, v, w)`, the affected
+interval maps to `S(u, v) + w n(u, v)`. This changes volume in general. The
+neutral surface may stretch or shear within a required sampled principal
+strain limit; each occupied thickness must retain a positive sampled
+Jacobian. Material before the interval is unchanged. The target must meet
+the source pose there; its far boundary must provide one rigid tangent frame
+for the attached continuation. Incompatible boundary geometry raises.
+
+`geo.Bend` is an immutable reusable mapping applied with `@` to a Solid,
+Sheet or Group. The target is one regularly parameterized, hole-free Sheet;
+the source may carry arbitrary 3-D CAD faces and openings. The accepted
+result representation is smooth trimmed BREP, not a faceted approximation.
+The implementation splits faces at interval boundaries without partitioning
+the body, fits deformed faces to a scale-aware sampled distance budget,
+rebuilds shared edge curves including both pcurves of periodic seams, and
+checks BREP validity and kernel-reported self-interference. Fully rigid faces
+retain exact transformed surfaces. The default absolute budget is one
+millionth of the source/target extent subject to CAD resolution; unattainable
+fits raise. The strain, Jacobian and surface-fit samples do not prove global
+limits between sample stations. This limit is documented publicly.
+
+The source is immutable and Group members retain their individual materials.
+Named topology follows the source split and copy histories: a singular face
+name that splits fails, while a deliberate set can retain successors. Named
+project replay stores the target and map parameters, rebuilds them and
+compares the reconstructed solid by symmetric Boolean difference within the
+declared geometry budget. Methods/API prose, Tutorial 28 and
+`tests/unit/test_geo_bend_foundation.py` cover the contract. WP6.9-WP6.12
+and the umbrella WP6 remain open; WP6.2 remains cancelled.

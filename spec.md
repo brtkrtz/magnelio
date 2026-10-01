@@ -935,6 +935,32 @@ owned face is detached before offsetting. Offset geometry used in a stored
 body replays from its exact BREP snapshot. Gate:
 `tests/unit/test_geo_offsets_foundation.py`.
 
+WP6.8 adds the reusable `geo.Bend(target, origin=..., along=...,
+across=..., u=..., v=..., max_strain=..., tolerance=None)` value. Applying
+`bend @ Solid`, `bend @ Sheet`, or `bend @ Group` uses one explicit world
+source frame for all members. Source coordinates `(u, v, w)` map inside the
+interval to `S(u, v) + w n(u, v)`, where the one-face target's bounded CAD
+parameter chart corresponds linearly to the declared `u` and `v` intervals.
+The source before the interval remains fixed; after it a single rigid end
+frame is carried tangentially. Both target interval edges must match rigid
+transverse lines within tolerance; the first must match the unchanged source
+pose. A nondevelopable target may strain the neutral plane. The required
+`max_strain` limits sampled principal in-plane stretches, while sampled
+volume Jacobians must stay positive across the occupied normal extent.
+
+The CAD builder imprints interval seams, copies the source topology, fits
+smooth surfaces on deformed faces with an adaptive sampled error gate,
+reassigns every shared edge's pcurves (including periodic seam pairs),
+rebuilds 3-D edge curves, and checks CAD validity and self-interference.
+Fully unchanged and rigidly carried faces retain exact transformed surfaces.
+The default absolute fit budget is the larger of one millionth of the
+source/target extent and kernel resolution at the model scale. This is a
+sampled fit gate, not a global Hausdorff, strain or injectivity certificate.
+Named source topology follows split/copy histories; singular splits fail.
+Named project replay rebuilds the map and checks geometric equivalence by
+bounding boxes and symmetric Boolean differences. Physical materials stay
+with their independent members. Gate: `tests/unit/test_geo_bend_foundation.py`.
+
 #### Relative routing poses (WP5)
 
 `Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;

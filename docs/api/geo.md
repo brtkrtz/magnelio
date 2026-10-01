@@ -33,6 +33,14 @@ The [offset guide](../methods/geometry.md) defines signs, hole behavior,
 collapse and the default sampled geometry tolerance; Tutorial 27 gives the
 construction recipe.
 
+`Bend(target, origin=..., along=..., across=..., u=..., v=...,
+max_strain=..., tolerance=...)` is a reusable freeform neutral-surface map.
+Apply it with `bend @ solid`, `bend @ sheet` or `bend @ group`; the last form
+deforms each member with the same chart and retains separate materials.
+The [bend guide](../methods/geometry.md) explains source coordinates,
+nondevelopable strain, rigid interval continuations, sampled error limits and
+named-face splits. Tutorial 28 shows a layered component.
+
 Owned topology is separate from standalone geometry: `TopologyRef`,
 `VertexRef`, `EdgeRef`, `FaceRef`, `EdgeSetRef` and `FaceSetRef` hold one
 `Solid` owner. The Solid selectors `face`, `edge`, `vertex`, `faces` and

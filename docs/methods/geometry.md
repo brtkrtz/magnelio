@@ -694,6 +694,73 @@ source material; the resulting Sheets and Curves have independent ownership.
 To create physical thickness, extrude or thicken the result explicitly.
 Tutorial 27 combines a conductor clearance with a curved construction sheet.
 
+## Bend existing bodies and sheets
+
+`geo.Bend` deforms existing `Solid` and `Sheet` values. Its neutral `target`
+is a single, continuously parameterized sheet. The explicit world frame
+`origin`, `along`, and `across` assigns each source point three coordinates:
+`u` along the original part, `v` across it, and signed distance `w` from its
+neutral plane. The target's increasing surface parameters correspond to the
+declared `u` and `v` intervals. Inside the bend, one common mapping places
+the neutral point on the target and carries every layer by `w` along the
+target normal. Apply the **same** `Bend` to a `Group` to keep a multilayer
+component aligned. Source values, materials and member identities remain
+independent.
+
+```python
+import math
+import numpy as np
+from magnelio import geo
+
+radius = 10e-3
+length = radius * math.pi / 2
+neutral = geo.Surface.parametric(
+    lambda u, v: (radius * np.sin(u / radius), v,
+                  radius * (1 - np.cos(u / radius))),
+    u=(0, length), v=(-1e-3, 1e-3), samples=(65, 9),
+)
+bend = geo.Bend(
+    neutral, origin=(0, 0, 0), along="x", across="y",
+    u=(0, length), v=(-1e-3, 1e-3), max_strain=0.01,
+)
+layer = geo.Brick(
+    origin=(0, -1e-3, -0.2e-3),
+    size=(length, 2e-3, 0.2e-3), material="pec",
+)
+curved_layer = bend @ layer
+assert curved_layer.volume() > layer.volume()
+```
+
+The interval `u` is finite. Source material before its start remains in its
+original position. Material after its end follows a rigid frame tangent to
+the target's end. The target must meet the source's start plane in position
+and orientation; both transverse boundary curves must admit those rigid
+continuations. An incompatible boundary raises instead of adding a hidden
+transition. The target chart must cover the full transverse extent and have
+no missing patch. A nondevelopable neutral surface generally stretches and
+shears: `max_strain` is a **required, dimensionless sampled limit** on the two
+principal in-plane stretches relative to the flat source. The layer extension
+must retain a positive sampled volume Jacobian. Bending does not conserve
+volume in general: material on the outside of a circular bend lengthens and
+material on the inside shortens.
+
+The result uses smooth trimmed CAD surfaces. The builder splits source faces
+at the interval ends where needed, interpolates deformed faces, rebuilds
+their shared edges, and checks CAD validity and self-interference. A selected
+source face that splits has no singular named successor: register a deliberate
+face set when that is the intended selection. `tolerance` is an absolute
+sampled surface-fit budget in metres; its default is one millionth of the
+source/target extent, subject to CAD resolution. A difficult face can fail
+this budget, in which case choose a larger tolerance that the engineering
+model permits. The sampled strain, Jacobian and fit gates do not constitute
+global mathematical certificates between sample stations. A target made of
+several faces, a singular parameter chart or an unreconstructable source
+face reports an error. The output Sheet has no physical thickness. If the
+sheet crosses an interval boundary, its CAD representation has multiple
+faces: construct a layer with `source_sheet.thickened(...)` **before** applying
+the Bend to that Solid. Tutorial 28 bends two material layers through one
+shared map and checks their expected volumes.
+
 ## Placement and transform composition
 
 The named methods are the normal spelling for one-off placement:

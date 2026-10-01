@@ -11,6 +11,11 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Freeform neutral-surface bending of existing solids, sheets and layered
+  groups, with explicit strain and geometry-tolerance limits. Straight
+  continuations remain attached and named topology follows valid face
+  histories. The geometry guide and Tutorial 28 show a multilayer bend.
+
 - Directed planar curve offsets with round outer joins and uncapped open
   ends; material-region offsets for planar profiles that retain holes or
   every separated surviving region; and bounded curved-sheet normal

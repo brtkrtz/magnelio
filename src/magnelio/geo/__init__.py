@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 
 from magnelio.geo._sheet import Profile, Sheet
 from magnelio.geo._validate import operand
+from magnelio.geo.bend import Bend
 from magnelio.geo.curves import Curve
 from magnelio.geo.imported import ImportedSolid
 from magnelio.geo.insert import insert

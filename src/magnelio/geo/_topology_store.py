@@ -44,6 +44,7 @@ def to_recipe(owner):
     if not has_names(owner):
         return None
     from magnelio.geo import Curve, Profile, Solid, Surface
+    from magnelio.geo.bend import _BentBase
     from magnelio.geo.imprint import _ImprintedSolid
     from magnelio.geo.partition import _PartitionSolid
     from magnelio.geo.topology import _TaggedSolid
@@ -97,6 +98,23 @@ def to_recipe(owner):
                 "operation": "imprint",
                 "receiver": encode(shape._receiver),
                 "cutter": encode(shape._cutter),
+                "scale": scale,
+                "brep": _brep_text(shape._occ_shape(scale)),
+            }
+        elif isinstance(shape, _BentBase) and has_names(shape):
+            bend = shape._bend
+            scale = _scale(shape)
+            node = {
+                "operation": "bend",
+                "source": encode(shape._inner),
+                "target": encode(bend.target),
+                "origin": bend.origin,
+                "along": bend.along,
+                "across": bend.across,
+                "u": bend.u,
+                "v": bend.v,
+                "max_strain": bend.max_strain,
+                "tolerance": bend.tolerance,
                 "scale": scale,
                 "brep": _brep_text(shape._occ_shape(scale)),
             }
@@ -166,6 +184,7 @@ def to_recipe(owner):
 
 def from_recipe(recipe):
     from magnelio.geo import Curve, Profile, Surface, modifications, operations
+    from magnelio.geo.bend import Bend
     from magnelio.geo.partition import partition
     from magnelio.geo.topology import _cast, _detached_class, _TaggedSolid
     from magnelio.geo.transforms import Transform
@@ -259,6 +278,24 @@ def from_recipe(recipe):
             shape = receiver.imprint(cutter)
             if _brep_text(shape._occ_shape(node["scale"])) != node["brep"]:
                 raise TopologyEvolutionError("An imprinted body has no exact construction match.")
+        elif op == "bend":
+            shape = Bend(
+                decode(node["target"]),
+                origin=node["origin"],
+                along=node["along"],
+                across=node["across"],
+                u=node["u"],
+                v=node["v"],
+                max_strain=node["max_strain"],
+                tolerance=node["tolerance"],
+            ) @ decode(node["source"])
+            if not _same_bent_geometry(
+                shape._occ_shape(node["scale"]),
+                _read_snapshot(node["brep"]),
+                node["scale"],
+                node["tolerance"],
+            ):
+                raise TopologyEvolutionError("A bent body has no exact construction match.")
         elif op in classes:
             arguments = {key: value(obj) for key, obj in node["arguments"].items()}
             cls = classes[op]
@@ -329,6 +366,35 @@ def from_recipe(recipe):
             "Named topology cardinality differs from the stored construction history."
         )
     return owner
+
+
+def _same_bent_geometry(actual, expected, scale, tolerance):
+    from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+    from OCC.Core.BRepGProp import brepgprop
+    from OCC.Core.GProp import GProp_GProps
+
+    from magnelio.geo._occ_backend import bounding_box, keep_operands_intact, occ_volume
+
+    actual_box = bounding_box(actual, scale=scale)
+    expected_box = bounding_box(expected, scale=scale)
+    diagonal = sum((hi - lo) ** 2 for lo, hi in zip(*actual_box)) ** 0.5
+    budget = tolerance if tolerance is not None else max(1e-6 * diagonal, 1e-7 / scale)
+    if any(
+        abs(x - y) > 4 * budget
+        for actual_corner, expected_corner in zip(actual_box, expected_box)
+        for x, y in zip(actual_corner, expected_corner)
+    ):
+        return False
+    area = GProp_GProps()
+    brepgprop.SurfaceProperties(expected, area)
+    allowance = max(1e-9 * abs(occ_volume(expected)), 4 * budget * scale * area.Mass())
+    for left, right in ((actual, expected), (expected, actual)):
+        cut = BRepAlgoAPI_Cut(left, right)
+        keep_operands_intact(cut)
+        cut.Build()
+        if not cut.IsDone() or abs(occ_volume(cut.Shape())) > allowance:
+            return False
+    return True
 
 
 class _SnapshotSolid(Solid):
