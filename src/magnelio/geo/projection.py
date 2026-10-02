@@ -110,13 +110,13 @@ def _coincident_wires(source_shape, target_shape, *, length_tolerance=1e-7):
     from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Common
     from OCC.Core.BRepGProp import brepgprop
     from OCC.Core.GProp import GProp_GProps
-    from OCC.Core.ShapeAnalysis import ShapeAnalysis_FreeBounds
     from OCC.Core.TopAbs import TopAbs_EDGE
     from OCC.Core.TopExp import TopExp_Explorer
     from OCC.Core.TopoDS import topods
     from OCC.Core.TopTools import TopTools_HSequenceOfShape
 
     from magnelio.geo._occ_backend import keep_operands_intact
+    from magnelio.geo._occ_compat import connect_edges_to_wires
 
     common = BRepAlgoAPI_Common(source_shape, target_shape)
     keep_operands_intact(common)
@@ -130,9 +130,7 @@ def _coincident_wires(source_shape, target_shape, *, length_tolerance=1e-7):
         explorer.Next()
     if edges.Length() == 0:
         return [], False
-    wires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(
-        edges, 1e-7, False, TopTools_HSequenceOfShape()
-    )
+    wires = connect_edges_to_wires(edges, 1e-7)
     source_properties, common_properties = GProp_GProps(), GProp_GProps()
     brepgprop.LinearProperties(source_shape, source_properties)
     brepgprop.LinearProperties(common.Shape(), common_properties)

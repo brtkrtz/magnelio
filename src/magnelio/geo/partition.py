@@ -165,10 +165,10 @@ def partition(source, cutter=None, *, normal=None, position=None):
 def section(source, cutter=None, *, normal=None, position=None, filled=False):
     """Return independent intersection curves or explicit planar profiles."""
     from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Common, BRepAlgoAPI_Section
-    from OCC.Core.ShapeAnalysis import ShapeAnalysis_FreeBounds
     from OCC.Core.TopTools import TopTools_HSequenceOfShape
 
     from magnelio.geo._occ_backend import bounding_box, keep_operands_intact
+    from magnelio.geo._occ_compat import connect_edges_to_wires
     from magnelio.geo._sheet import Profile
     from magnelio.geo.curves import Curve
     from magnelio.geo.topology import _cast, _detached_class
@@ -202,8 +202,7 @@ def section(source, cutter=None, *, normal=None, position=None, filled=False):
     edges = TopTools_HSequenceOfShape()
     for edge in _pieces(builder.Shape(), "edge"):
         edges.Append(edge)
-    wires = TopTools_HSequenceOfShape()
-    wires = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(edges, 1e-7, False, wires)
+    wires = connect_edges_to_wires(edges, 1e-7)
     from magnelio.geo.topology import _rescale_copy
 
     return tuple(
