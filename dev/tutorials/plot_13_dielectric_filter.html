@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
@@ -38,10 +37,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
     <script src="../_static/documentation_options.js?v=33440781"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -52,7 +51,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/plot_13_dielectric_filter';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -62,7 +61,7 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/tutorials/plot_13_dielectric_filter.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Profiles: shapes the primitives do not cover" href="plot_14_profile_geometry.html" />
+    <link rel="next" title="Geometry toolbox" href="plot_14_profile_geometry.html" />
     <link rel="prev" title="Parameter sweeps and optimisation" href="plot_12_sweep_optimize.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -114,7 +113,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -177,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -190,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -231,7 +237,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -262,15 +268,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -307,7 +313,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -316,7 +322,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -370,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -441,15 +454,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -484,7 +497,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -509,11 +522,9 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_10_lumped_elements.html">Lumped elements: a Wilkinson power divider</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_11_losses.html">Conductor and dielectric losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_12_sweep_optimize.html">Parameter sweeps and optimisation</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Capstone: a two-pole dielectric resonator filter</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Profiles: shapes the primitives do not cover</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Capstone: a two-pole dielectric resonator filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Geometry toolbox</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_15_dipole_farfield.html">Antenna symmetry: a half-wave dipole as a half model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 <li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_20_plane_wave_scattering.html">Plane-wave scattering: the radar cross section of a sphere</a></li>
@@ -794,19 +805,19 @@ permittivity.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.2 s)
+  mesh | materials | done (1.8 s)
   mesh | conformal cells
-  mesh | conformal cells | done (5.1 s)
+  mesh | conformal cells | done (7.4 s)
   mesh | PEC masks
-  mesh | 28 x 28 x 9 cells (6.4 s total)
+  mesh | 28 x 28 x 9 cells (9.3 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.6 s)
+  mesh | materials | done (2.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (7.1 s)
+  mesh | conformal cells | done (10.4 s)
   mesh | PEC masks
-  mesh | 35 x 35 x 12 cells (8.8 s total)
+  mesh | 35 x 35 x 12 cells (12.8 s total)
 coarse (  7056 cells):  f0 = 2.7275 GHz
 fine   ( 14700 cells):  f0 = 2.7262 GHz
 next mode is at 4.85 GHz — the band is clear
@@ -908,35 +919,35 @@ much.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (4.1 s)
+  mesh | materials | done (5.9 s)
   mesh | conformal cells
-  mesh | conformal cells | done (13.7 s)
+  mesh | conformal cells | done (19.6 s)
   mesh | PEC masks
-  mesh | 78 x 28 x 9 cells (17.8 s total)
+  mesh | 78 x 28 x 9 cells (25.6 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (4.1 s)
+  mesh | materials | done (5.9 s)
   mesh | conformal cells
-  mesh | conformal cells | done (17.5 s)
+  mesh | conformal cells | done (25.3 s)
   mesh | PEC masks
-  mesh | 78 x 44 x 9 cells (21.7 s total)
+  mesh | 78 x 44 x 9 cells (31.3 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (4.1 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (13.6 s)
+  mesh | conformal cells | done (19.7 s)
   mesh | PEC masks
-  mesh | 78 x 28 x 9 cells (17.8 s total)
+  mesh | 78 x 28 x 9 cells (25.8 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (4.1 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (16.5 s)
+  mesh | conformal cells | done (23.9 s)
   mesh | PEC masks
-  mesh | 78 x 46 x 9 cells (20.7 s total)
+  mesh | 78 x 46 x 9 cells (29.9 s total)
 window  4.0 mm -&gt;  k = 0.00801,  centre 3.0285 GHz
 window  6.0 mm -&gt;  k = 0.03102,  centre 2.9615 GHz
 window  8.0 mm -&gt;  k = 0.06525,  centre 2.8893 GHz
@@ -976,11 +987,12 @@ the pair’s frequency is a fraction of the passband.</p>
 <img src="../_images/sphx_glr_plot_13_dielectric_filter_003.png" srcset="../_images/sphx_glr_plot_13_dielectric_filter_003.png" alt="Coupling is set by the window" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (5.0 s)
+  mesh | materials | done (7.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (21.5 s)
+  mesh | conformal cells | 441 sections
+  mesh | conformal cells | done (31.1 s)
   mesh | PEC masks
-  mesh | 96 x 52 x 12 cells (26.6 s total)
+  mesh | 96 x 52 x 12 cells (38.5 s total)
 window 6.0 mm, coarse grid:  k = 0.03102, f = 2.9615 GHz
 window 6.0 mm, fine grid:    k = 0.03125, f = 2.9609 GHz
 k moves 0.7 %, f moves 0.0 %
@@ -1101,29 +1113,29 @@ either number alone.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.8 s)
+  mesh | materials | done (2.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (9.0 s)
+  mesh | conformal cells | done (12.9 s)
   mesh | PEC masks
-  mesh | 56 x 40 x 13 cells (10.8 s total)
+  mesh | 56 x 40 x 13 cells (15.6 s total)
 probe at 6.0 mm:  f0 = 3.1092 GHz,  Qe = 14.3 (group delay) / 14.0 (ring-down)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.8 s)
+  mesh | materials | done (2.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (9.0 s)
+  mesh | conformal cells | done (12.9 s)
   mesh | PEC masks
-  mesh | 57 x 40 x 13 cells (10.8 s total)
+  mesh | 57 x 40 x 13 cells (15.6 s total)
 probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.8 s)
+  mesh | materials | done (2.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (9.0 s)
+  mesh | conformal cells | done (12.9 s)
   mesh | PEC masks
-  mesh | 59 x 40 x 13 cells (10.9 s total)
+  mesh | 59 x 40 x 13 cells (15.5 s total)
 probe at 8.0 mm:  f0 = 3.0137 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
 </pre></div>
 </div>
@@ -1172,8 +1184,10 @@ out of symmetry through a typo.</p>
 </span>    <span class="n">x_puck</span> <span class="o">=</span> <span class="o">-</span><span class="n">SPACING</span> <span class="o">/</span> <span class="mi">2</span><span class="w">
 </span>    <span class="n">x_pin</span> <span class="o">=</span> <span class="n">x_puck</span> <span class="o">-</span> <span class="n">r_probe</span><span class="w">
 </span><span class="w">
-</span>    <span class="n">pucks</span> <span class="o">=</span> <span class="n">puck</span><span class="p">(</span><span class="n">x_puck</span><span class="p">)</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">x</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="w">
-</span>    <span class="n">pins</span> <span class="o">=</span> <span class="n">feed_pin</span><span class="p">(</span><span class="n">x_pin</span><span class="p">)</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">x</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="w">
+</span>    <span class="n">left_puck</span> <span class="o">=</span> <span class="n">puck</span><span class="p">(</span><span class="n">x_puck</span><span class="p">)</span><span class="w">
+</span>    <span class="n">left_pin</span> <span class="o">=</span> <span class="n">feed_pin</span><span class="p">(</span><span class="n">x_pin</span><span class="p">)</span><span class="w">
+</span>    <span class="n">pucks</span> <span class="o">=</span> <span class="p">[</span><span class="n">left_puck</span><span class="p">,</span> <span class="n">left_puck</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">x</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">]</span><span class="w">
+</span>    <span class="n">pins</span> <span class="o">=</span> <span class="p">[</span><span class="n">left_pin</span><span class="p">,</span> <span class="n">left_pin</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">x</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">]</span><span class="w">
 </span><span class="w">
 </span>    <span class="n">model</span> <span class="o">=</span> <span class="n">assemble</span><span class="p">(</span><span class="n">housing</span><span class="p">(</span><span class="n">iris_window</span><span class="p">)</span><span class="p">,</span> <span class="p">[</span><span class="o">*</span><span class="n">pucks</span><span class="p">,</span> <span class="o">*</span><span class="n">pins</span><span class="p">]</span><span class="p">)</span><span class="w">
 </span>    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">p1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">x_pin</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;</span><span class="s2">p2</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">-</span><span class="n">x_pin</span><span class="p">)</span><span class="p">)</span><span class="p">:</span><span class="w">
@@ -1232,11 +1246,11 @@ full run and add nothing.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (3.6 s)
+  mesh | materials | done (5.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (17.7 s)
+  mesh | conformal cells | done (25.5 s)
   mesh | PEC masks
-  mesh | 90 x 40 x 13 cells (21.4 s total)
+  mesh | 90 x 40 x 13 cells (30.9 s total)
 grid: 90 x 40 x 13 = 46800 cells
 </pre></div>
 </div>
@@ -1405,7 +1419,7 @@ halved the runtime and left the answer where it was.</p></li>
 <p>Extending to a higher order changes nothing structural: synthesise
 more prototype elements, extract one <span class="math notranslate nohighlight">\(k\)</span> per adjacent pair,
 and mirror one more chamber into the housing.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (7 minutes 35.371 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (7 minutes 52.632 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-13-dielectric-filter-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/95600003609aa4cead576ecb61ae602f/plot_13_dielectric_filter.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_13_dielectric_filter.ipynb</span></code></a></p>
@@ -1445,7 +1459,7 @@ and mirror one more chamber into the housing.</p>
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Profiles: shapes the primitives do not cover</p>
+        <p class="prev-next-title">Geometry toolbox</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1509,8 +1523,8 @@ and mirror one more chamber into the housing.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1531,7 +1545,6 @@ and mirror one more chamber into the housing.</p>
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -1544,7 +1557,7 @@ and mirror one more chamber into the housing.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

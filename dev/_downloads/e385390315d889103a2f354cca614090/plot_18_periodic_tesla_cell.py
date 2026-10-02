@@ -23,7 +23,6 @@ elliptical arc, a straight wall and a circular arc joined tangentially
 """
 
 # sphinx_gallery_thumbnail_number = 3
-
 # %%
 # The cell
 # --------
@@ -57,7 +56,6 @@ elliptical arc, a straight wall and a circular arc joined tangentially
 # placed, the straight wall is their common tangent.  A short root
 # search finds the point on the ellipse whose tangent line touches the
 # circle.
-
 import math
 import warnings
 
@@ -67,6 +65,7 @@ from scipy.optimize import brentq
 
 import magnelio as mio
 from magnelio import geo, plots
+from magnelio.geo import Profile
 
 R_EQ, R_IRIS, R_ARC = 103.3e-3, 35.0e-3, 42.0e-3
 A_IRIS, B_IRIS = 12.0e-3, 19.0e-3
@@ -137,7 +136,7 @@ def mirrored(zr):
     return (PERIOD - zr[0], zr[1])
 
 
-outline = (
+outline = Profile.from_wires(
     geo.Path(xz((0.0, R_IRIS)))
     .ellipse_to(
         xz(p_ell), center=xz(c_iris), semi_axes=(A_IRIS, B_IRIS), major_axis="z", normal="y"
@@ -153,10 +152,9 @@ outline = (
         major_axis="z",
         normal="y",
     )
-    .line_to(xz((PERIOD, R_IRIS - 2e-3)))
-    .line_to(xz((0.0, R_IRIS - 2e-3)))
+    .line_to(xz((PERIOD, R_IRIS - 0.002)))
+    .line_to(xz((0.0, R_IRIS - 0.002)))
     .closed()
-    .covered()
 )
 ring = outline.revolved(axis="z", material="air")
 tube = geo.Cylinder(origin=(0, 0, 0), radius=R_IRIS, height=PERIOD, axis="z", material="air")

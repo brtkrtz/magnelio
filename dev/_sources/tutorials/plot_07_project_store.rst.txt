@@ -207,7 +207,7 @@ everything went (sizes in kB):
  .. code-block:: none
 
     geometry.brep                                                    9.9
-    geometry.json                                                    0.8
+    geometry.json                                                    0.9
     mesh.h5                                                      11787.6
     project.json                                                     3.8
     runs/port3_mode0/checkpoint.h5                                1523.7
@@ -561,7 +561,7 @@ them the first antenna.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 25.177 seconds)
+   **Total running time of the script:** (0 minutes 20.846 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_07_project_store.py:

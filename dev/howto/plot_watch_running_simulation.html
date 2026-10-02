@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
@@ -38,10 +37,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
     <script src="../_static/documentation_options.js?v=33440781"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -50,7 +49,7 @@
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'howto/plot_watch_running_simulation';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -112,7 +111,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -175,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -188,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -229,7 +235,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -260,15 +266,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -305,7 +311,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -314,7 +320,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -368,6 +374,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -439,15 +452,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -482,7 +495,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -507,7 +520,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_patch_array.html">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Watching a simulation that is still running</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Watching a simulation that is still running</a></li>
 </ul>
 </div>
 </nav></div>
@@ -649,13 +662,12 @@ stop criterion watches.</p>
 </span><span class="n">job</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>running   planned
-running   step    401     0.0 dB below peak
-running   step   1101   -37.9 dB below peak
-running   step   1901   -53.2 dB below peak
-running   step   2601   -59.3 dB below peak
+running   step    601     0.0 dB below peak
+running   step   1501   -47.7 dB below peak
+running   step   2401   -57.8 dB below peak
 running   step   3301   -63.2 dB below peak
-running   step   4001   -66.2 dB below peak
-running   step   4701   -68.8 dB below peak
+running   step   4201   -67.0 dB below peak
+running   step   5101   -70.1 dB below peak
 done      step   5101   -70.1 dB below peak
 </pre></div>
 </div>
@@ -675,19 +687,19 @@ callable <code class="docutils literal notranslate"><span class="pre">draw(proje
 own axis limits.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.follow" title="magnelio.io.Project.follow"><span class="n">proj</span><span class="o">.</span><span class="n">follow</span></a><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmpwjnjqs4x/wr90
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmp67ty9m5x/wr90
   analysis   AnalysisScatteringTD
   status     done
-  last call  finished 2026-09-28 09:47:49 in 3.0 s
-  created    2026-09-28 09:47:47
+  last call  finished 2026-10-02 19:14:10 in 2.4 s
+  created    2026-10-02 19:14:08
   runs       1
 run       excited  state  steps    energy  elapsed  stop reason
 ────────  ───────  ─────  ─────  ────────  ───────  ───────────
-p1_mode0  p1:0     done    5101  -70.1 dB    1.8 s  energy
+p1_mode0  p1:0     done    5101  -70.1 dB    1.5 s  energy
 </pre></div>
 </div>
 <div class="output_subarea output_html rendered_html output_result">
-<table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmpwjnjqs4x/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-09-28 09:47:49 in 3.0 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-09-28 09:47:47</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>5101</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-70.1 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1.8 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
+<table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmp67ty9m5x/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-10-02 19:14:10 in 2.4 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-10-02 19:14:08</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>5101</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-70.1 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1.5 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
 </div>
 <br />
 <br /></section>
@@ -758,7 +770,7 @@ what the table lists and what <code class="docutils literal notranslate"><span c
 longer exists on this host is not <code class="docutils literal notranslate"><span class="pre">running</span></code>; <code class="docutils literal notranslate"><span class="pre">watch</span></code> ends on it
 the way it ends on <code class="docutils literal notranslate"><span class="pre">done</span></code>.</p></li>
 </ul>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 3.332 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 2.873 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-watch-running-simulation-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/e41c5cfe5adcfc45c6c07c2549e9e50a/plot_watch_running_simulation.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_watch_running_simulation.ipynb</span></code></a></p>
@@ -853,8 +865,8 @@ the way it ends on <code class="docutils literal notranslate"><span class="pre">
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -875,7 +887,6 @@ the way it ends on <code class="docutils literal notranslate"><span class="pre">
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -888,7 +899,7 @@ the way it ends on <code class="docutils literal notranslate"><span class="pre">
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

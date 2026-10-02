@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
@@ -38,10 +37,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
     <script src="../_static/documentation_options.js?v=33440781"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -50,7 +49,7 @@
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/io';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -112,7 +111,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -175,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -188,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -229,7 +235,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -260,15 +266,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -305,7 +311,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -314,7 +320,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -368,6 +374,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -439,15 +452,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -482,7 +495,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -512,7 +525,7 @@
 <li class="toctree-l1"><a class="reference internal" href="analysis.html"><code class="docutils literal notranslate"><span class="pre">magnelio.analysis</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="post.html"><code class="docutils literal notranslate"><span class="pre">magnelio.post</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="plots.html"><code class="docutils literal notranslate"><span class="pre">magnelio.plots</span></code></a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.io</span></code></a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.io</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="constants.html"><code class="docutils literal notranslate"><span class="pre">magnelio.constants</span></code></a></li>
 </ul>
 </div>
@@ -584,13 +597,14 @@ exactly as on the in-RAM result.  Its <code class="docutils literal notranslate"
 monitors — and <code class="docutils literal notranslate"><span class="pre">checkpoint_state</span></code> reads a resume checkpoint back as a
 <code class="docutils literal notranslate"><span class="pre">CheckpointState</span></code> mapping; see <em>Projects and runs</em> in the technical
 description for the vocabulary.</p>
-<p id="module-magnelio.io">Project store and CAD file import.</p>
+<p id="module-magnelio.io">Project store and CAD file exchange.</p>
 <p><code class="docutils literal notranslate"><span class="pre">open_project</span></code> lives in the core <code class="docutils literal notranslate"><span class="pre">magnelio</span></code> namespace; this
 component holds the reader/writer classes and geometry file I/O.
 The one-shot save_project/load_project (io/hdf5.py) was removed;
 the store supersedes it.</p>
 <p><code class="docutils literal notranslate"><span class="pre">import_step</span></code> / <code class="docutils literal notranslate"><span class="pre">import_brep</span></code> read geometry drawn in a CAD
-system into the geometry API; <code class="docutils literal notranslate"><span class="pre">import_pcb</span></code> reads a printed circuit
+system into the geometry API; <code class="docutils literal notranslate"><span class="pre">export_step</span></code> / <code class="docutils literal notranslate"><span class="pre">export_brep</span></code> write
+selected geometry. <code class="docutils literal notranslate"><span class="pre">import_pcb</span></code> reads a printed circuit
 board from the fabrication data its layout tool writes.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.io.CheckpointState">
@@ -1409,7 +1423,9 @@ itself with it.</p>
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">geometry</span></span><a class="headerlink" href="#magnelio.io.Project.geometry" title="Link to this definition">#</a></dt>
 <dd><p>The reconstructed geometry (<a class="reference internal" href="#magnelio.io.LoadedGeometry" title="magnelio.io.LoadedGeometry"><code class="xref py py-class docutils literal notranslate"><span class="pre">LoadedGeometry</span></code></a>) or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <p>Requires OCC.  Returns <code class="docutils literal notranslate"><span class="pre">None</span></code> if the project carries no
-geometry (<code class="docutils literal notranslate"><span class="pre">geometry.brep</span></code> absent).</p>
+geometry (<code class="docutils literal notranslate"><span class="pre">geometry.brep</span></code> absent). Named topology is rebuilt from
+its stored semantic origins and construction histories; invalid
+successor identity raises TopologyEvolutionError.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -1557,7 +1573,9 @@ holds the directory handle they will attach to.</p>
 data) — written to <code class="docutils literal notranslate"><span class="pre">mesh.h5</span></code>.</p></li>
 <li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em> or </em><em>list</em><em>, </em><em>optional</em>) – Source geometry.  When given, an exact <code class="docutils literal notranslate"><span class="pre">geometry.brep</span></code> is
 written, plus a <code class="docutils literal notranslate"><span class="pre">geometry.json</span></code> carrying per-shape names
-and materials in compound order.  The tessellated
+and materials in compound order. Named topology also stores
+semantic origins and construction histories for validated replay.
+The tessellated
 <code class="docutils literal notranslate"><span class="pre">geometry.vtm</span></code> for ParaView is written by
 <a class="reference internal" href="#magnelio.io.Project.export_paraview" title="magnelio.io.Project.export_paraview"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Project.export_paraview()</span></code></a>.</p></li>
 <li><p><strong>setup</strong> (<em>dict</em><em>, </em><em>optional</em>) – JSON-serialisable analysis metadata (dt, frequency plan,
@@ -1921,9 +1939,58 @@ Resume the run, or run the analysis again.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="magnelio.io.export_brep">
+<span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">export_brep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.export_brep" title="Link to this definition">#</a></dt>
+<dd><p>Write selected solids and sheets to a BREP file.</p>
+<p>BREP contains exact geometry only. Record the chosen <em>unit</em> externally:
+<a class="reference internal" href="#magnelio.io.import_brep" title="magnelio.io.import_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_brep()</span></code></a> requires it when reading the file back.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – Destination <code class="docutils literal notranslate"><span class="pre">.brep</span></code> file.</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Solid" title="magnelio.geo.Solid"><em>Solid</em></a><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Sheet" title="magnelio.geo.Sheet"><em>Sheet</em></a><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group"><em>Group</em></a><em> or </em><em>iterable</em>) – Bodies to write.</p></li>
+<li><p><strong>unit</strong> (<em>str</em><em> or </em><em>float</em>) – Written length unit, or meters per unit as a positive number.</p></li>
+<li><p><strong>overwrite</strong> (<em>bool</em><em>, </em><em>optional</em>) – Replace an existing file when True; otherwise raise FileExistsError.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Destination file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path">Path</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="magnelio.io.export_step">
+<span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">export_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.export_step" title="Link to this definition">#</a></dt>
+<dd><p>Write selected solids and sheets to a STEP file.</p>
+<p>STEP records geometry, length unit, part names and display colours.
+It does not encode Magnelio materials, named topology or construction
+history. A Group is flattened; each leaf is exported in world placement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – Destination <code class="docutils literal notranslate"><span class="pre">.step</span></code> or <code class="docutils literal notranslate"><span class="pre">.stp</span></code> file.</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Solid" title="magnelio.geo.Solid"><em>Solid</em></a><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Sheet" title="magnelio.geo.Sheet"><em>Sheet</em></a><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group"><em>Group</em></a><em> or </em><em>iterable</em>) – Bodies to write. Free curves cannot be exported by this function.</p></li>
+<li><p><strong>unit</strong> (<em>{'m'</em><em>, </em><em>'cm'</em><em>, </em><em>'mm'</em><em>, </em><em>'in'}</em><em>, </em><em>optional</em>) – Length unit written into the file. Defaults to millimetres.</p></li>
+<li><p><strong>overwrite</strong> (<em>bool</em><em>, </em><em>optional</em>) – Replace an existing file when True; otherwise raise FileExistsError.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Destination file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path">Path</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="magnelio.io.import_brep">
 <span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">import_brep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.import_brep" title="Link to this definition">#</a></dt>
-<dd><p>Import the solids of a BREP file.</p>
+<dd><p>Import solids and free sheets from a BREP file.</p>
 <p>BREP is the geometry kernel’s native dump: exact, but it records
 nothing but the geometry — no length unit, no names, no colours.
 The unit therefore has to be stated, and it has to be right: a file
@@ -1937,18 +2004,17 @@ big, and nothing in the file says so.  Prefer
 <li><p><strong>unit</strong> (<em>str</em><em> or </em><em>float</em>) – Length unit the file is written in: <code class="docutils literal notranslate"><span class="pre">&quot;m&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;cm&quot;</span></code>,
 <code class="docutils literal notranslate"><span class="pre">&quot;mm&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;um&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;nm&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;in&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mil&quot;</span></code> — or a number
 giving the length of one unit in meters.</p></li>
-<li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material for every solid in the file.  Omitted, the solids come
-back as construction bodies (see <a class="reference internal" href="#magnelio.io.import_step" title="magnelio.io.import_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_step()</span></code></a>).</p></li>
+<li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material for every solid or free sheet in the file. Omitted,
+bodies return as construction geometry (see <a class="reference internal" href="#magnelio.io.import_step" title="magnelio.io.import_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_step()</span></code></a>).</p></li>
 <li><p><strong>heal</strong> (<em>bool</em>) – Repair each solid on import.  Off by default: a BREP file comes
 from the same kernel and is normally already clean.</p></li>
-<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the returned Group and the base name of its solids.
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the returned Group and the base name of its bodies.
 Defaults to the file name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The imported solids as <a class="reference internal" href="geo.html#magnelio.geo.ImportedSolid" title="magnelio.geo.ImportedSolid"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSolid</span></code></a>
-members, named <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> for a single solid and <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_1</span></code>,
-<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_2</span></code>, … for several.</p>
+<dd class="field-even"><p>ImportedSolid and ImportedSheet members, named <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> for
+one body and <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_1</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_2</span></code>, … for several.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group">Group</a></p>
@@ -1956,7 +2022,7 @@ members, named <code class="docutils literal notranslate"><span class="pre">&lt;
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>FileNotFoundError</strong> – If <em>path</em> does not exist.</p></li>
-<li><p><strong>ValueError</strong> – If the file cannot be read, or contains no solid.</p></li>
+<li><p><strong>ValueError</strong> – If the file cannot be read, or contains no solid or free face.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2060,30 +2126,28 @@ larger than the metal thickness.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.io.import_step">
 <span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">import_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">heal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.import_step" title="Link to this definition">#</a></dt>
-<dd><p>Import the solids of a STEP file.</p>
+<dd><p>Import solids and free sheets from a STEP file.</p>
 <p>The file’s length unit is read from the file itself, so a model
 drawn in millimetres arrives at its true size in meters and no
 conversion is needed on the caller’s side.  Assemblies are
 flattened: every solid comes back where it sits in the assembly,
-as a member of one <a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a>.</p>
+as a member of one <a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a>. Free shell faces
+become independent sheets; faces belonging to a solid remain in that
+solid and are not duplicated.</p>
 <p>STEP carries no material physics — only names — so materials are
-assigned here, against the name each solid carries in the file.
+assigned here, against the name each body carries in the file.
 Names survive a re-export of the same CAD model, so the same call
 keeps working after the drawing changes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – The <code class="docutils literal notranslate"><span class="pre">.step</span></code> / <code class="docutils literal notranslate"><span class="pre">.stp</span></code> file to read.</p></li>
-<li><p><strong>materials</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> or </em><em>dict</em><em>, </em><em>optional</em>) – A single <a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></a> is given to every solid.
-A dict maps solid names to materials; keys may use shell
+<li><p><strong>materials</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> or </em><em>dict</em><em>, </em><em>optional</em>) – A single <a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></a> is given to every body.
+A dict maps body names to materials; keys may use shell
 wildcards (<code class="docutils literal notranslate"><span class="pre">&quot;shield_*&quot;</span></code>), a literal name beats a wildcard,
 and <code class="docutils literal notranslate"><span class="pre">&quot;*&quot;</span></code> acts as a catch-all.  Every key must match at least
-one solid, so a typo is reported instead of silently doing
-nothing.  Solids left unmatched (and every solid if <em>materials</em>
-is omitted) come back as construction bodies — usable as
-Boolean operands, rejected by
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">add()</span></code> until they are given a
-material.</p></li>
+one body, so a typo is reported. Unmatched bodies carry no
+material. Sheets require a resolved thickness before meshing.</p></li>
 <li><p><strong>heal</strong> (<em>bool</em>) – Repair each solid on import (tolerances, orientation, small
 topological defects).  Cheap and harmless on a clean file;
 turn it off only to inspect a file exactly as written.</p></li>
@@ -2095,10 +2159,9 @@ Off by default.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The imported solids, each an
-<a class="reference internal" href="geo.html#magnelio.geo.ImportedSolid" title="magnelio.geo.ImportedSolid"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSolid</span></code></a> carrying its name, colour
-and assigned material.  Add it to a model like any other
-shape — a Group is flattened into its members on insertion.</p>
+<dd class="field-even"><p>ImportedSolid and ImportedSheet members carrying names, display
+colours and assigned materials. A Group is flattened on model
+insertion; sheets still need physical thickness to be meshable.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group">Group</a></p>
@@ -2106,8 +2169,8 @@ shape — a Group is flattened into its members on insertion.</p>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>FileNotFoundError</strong> – If <em>path</em> does not exist.</p></li>
-<li><p><strong>ValueError</strong> – If the file cannot be read, contains no solid, or a <em>materials</em>
-    key matches no solid.</p></li>
+<li><p><strong>ValueError</strong> – If the file cannot be read, contains no solid or free face, or a
+    <em>materials</em> key matches no body.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2314,6 +2377,8 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Run.total_time_steps"><code class="docutils literal notranslate"><span class="pre">Run.total_time_steps</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.export_brep"><code class="docutils literal notranslate"><span class="pre">export_brep()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.export_step"><code class="docutils literal notranslate"><span class="pre">export_step()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_brep"><code class="docutils literal notranslate"><span class="pre">import_brep()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_pcb"><code class="docutils literal notranslate"><span class="pre">import_pcb()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_step"><code class="docutils literal notranslate"><span class="pre">import_step()</span></code></a></li>
@@ -2344,8 +2409,8 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2366,7 +2431,6 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -2379,7 +2443,7 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

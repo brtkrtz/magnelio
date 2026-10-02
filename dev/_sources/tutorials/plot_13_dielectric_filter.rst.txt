@@ -310,19 +310,19 @@ Always check how many modes actually came back.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.2 s)
+      mesh | materials | done (1.8 s)
       mesh | conformal cells
-      mesh | conformal cells | done (5.1 s)
+      mesh | conformal cells | done (7.4 s)
       mesh | PEC masks
-      mesh | 28 x 28 x 9 cells (6.4 s total)
+      mesh | 28 x 28 x 9 cells (9.3 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.6 s)
+      mesh | materials | done (2.3 s)
       mesh | conformal cells
-      mesh | conformal cells | done (7.1 s)
+      mesh | conformal cells | done (10.4 s)
       mesh | PEC masks
-      mesh | 35 x 35 x 12 cells (8.8 s total)
+      mesh | 35 x 35 x 12 cells (12.8 s total)
     coarse (  7056 cells):  f0 = 2.7275 GHz
     fine   ( 14700 cells):  f0 = 2.7262 GHz
     next mode is at 4.85 GHz — the band is clear
@@ -471,35 +471,35 @@ Sweeping the window
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (4.1 s)
+      mesh | materials | done (5.9 s)
       mesh | conformal cells
-      mesh | conformal cells | done (13.7 s)
+      mesh | conformal cells | done (19.6 s)
       mesh | PEC masks
-      mesh | 78 x 28 x 9 cells (17.8 s total)
+      mesh | 78 x 28 x 9 cells (25.6 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (4.1 s)
+      mesh | materials | done (5.9 s)
       mesh | conformal cells
-      mesh | conformal cells | done (17.5 s)
+      mesh | conformal cells | done (25.3 s)
       mesh | PEC masks
-      mesh | 78 x 44 x 9 cells (21.7 s total)
+      mesh | 78 x 44 x 9 cells (31.3 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (4.1 s)
+      mesh | materials | done (6.0 s)
       mesh | conformal cells
-      mesh | conformal cells | done (13.6 s)
+      mesh | conformal cells | done (19.7 s)
       mesh | PEC masks
-      mesh | 78 x 28 x 9 cells (17.8 s total)
+      mesh | 78 x 28 x 9 cells (25.8 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (4.1 s)
+      mesh | materials | done (6.0 s)
       mesh | conformal cells
-      mesh | conformal cells | done (16.5 s)
+      mesh | conformal cells | done (23.9 s)
       mesh | PEC masks
-      mesh | 78 x 46 x 9 cells (20.7 s total)
+      mesh | 78 x 46 x 9 cells (29.9 s total)
     window  4.0 mm ->  k = 0.00801,  centre 3.0285 GHz
     window  6.0 mm ->  k = 0.03102,  centre 2.9615 GHz
     window  8.0 mm ->  k = 0.06525,  centre 2.8893 GHz
@@ -562,11 +562,12 @@ the pair's frequency is a fraction of the passband.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (5.0 s)
+      mesh | materials | done (7.3 s)
       mesh | conformal cells
-      mesh | conformal cells | done (21.5 s)
+      mesh | conformal cells | 441 sections
+      mesh | conformal cells | done (31.1 s)
       mesh | PEC masks
-      mesh | 96 x 52 x 12 cells (26.6 s total)
+      mesh | 96 x 52 x 12 cells (38.5 s total)
     window 6.0 mm, coarse grid:  k = 0.03102, f = 2.9615 GHz
     window 6.0 mm, fine grid:    k = 0.03125, f = 2.9609 GHz
     k moves 0.7 %, f moves 0.0 %
@@ -726,29 +727,29 @@ either number alone.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.8 s)
+      mesh | materials | done (2.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (9.0 s)
+      mesh | conformal cells | done (12.9 s)
       mesh | PEC masks
-      mesh | 56 x 40 x 13 cells (10.8 s total)
+      mesh | 56 x 40 x 13 cells (15.6 s total)
     probe at 6.0 mm:  f0 = 3.1092 GHz,  Qe = 14.3 (group delay) / 14.0 (ring-down)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.8 s)
+      mesh | materials | done (2.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (9.0 s)
+      mesh | conformal cells | done (12.9 s)
       mesh | PEC masks
-      mesh | 57 x 40 x 13 cells (10.8 s total)
+      mesh | 57 x 40 x 13 cells (15.6 s total)
     probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.8 s)
+      mesh | materials | done (2.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (9.0 s)
+      mesh | conformal cells | done (12.9 s)
       mesh | PEC masks
-      mesh | 59 x 40 x 13 cells (10.9 s total)
+      mesh | 59 x 40 x 13 cells (15.5 s total)
     probe at 8.0 mm:  f0 = 3.0137 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
 
 
@@ -821,7 +822,7 @@ the second half from the first: the filter is symmetric about
 :math:`x = 0`, and saying so in the geometry means it cannot drift
 out of symmetry through a typo.
 
-.. GENERATED FROM PYTHON SOURCE LINES 524-543
+.. GENERATED FROM PYTHON SOURCE LINES 524-545
 
 .. code-block:: Python
 
@@ -832,8 +833,10 @@ out of symmetry through a typo.
         x_puck = -SPACING / 2
         x_pin = x_puck - r_probe
 
-        pucks = puck(x_puck).mirrored(normal="x", copy=True)
-        pins = feed_pin(x_pin).mirrored(normal="x", copy=True)
+        left_puck = puck(x_puck)
+        left_pin = feed_pin(x_pin)
+        pucks = [left_puck, left_puck.mirrored(normal="x")]
+        pins = [left_pin, left_pin.mirrored(normal="x")]
 
         model = assemble(housing(iris_window), [*pucks, *pins])
         for name, x in (("p1", x_pin), ("p2", -x_pin)):
@@ -856,7 +859,7 @@ out of symmetry through a typo.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 544-550
+.. GENERATED FROM PYTHON SOURCE LINES 546-552
 
 One excitation is enough
 ------------------------
@@ -865,7 +868,7 @@ The structure is symmetric about the iris, so :math:`S_{22} = S_{11}`
 and :math:`S_{12} = S_{21}`.  Driving the second port would cost a
 full run and add nothing.
 
-.. GENERATED FROM PYTHON SOURCE LINES 550-590
+.. GENERATED FROM PYTHON SOURCE LINES 552-592
 
 .. code-block:: Python
 
@@ -920,17 +923,17 @@ full run and add nothing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (3.6 s)
+      mesh | materials | done (5.3 s)
       mesh | conformal cells
-      mesh | conformal cells | done (17.7 s)
+      mesh | conformal cells | done (25.5 s)
       mesh | PEC masks
-      mesh | 90 x 40 x 13 cells (21.4 s total)
+      mesh | 90 x 40 x 13 cells (30.9 s total)
     grid: 90 x 40 x 13 = 46800 cells
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 591-606
+.. GENERATED FROM PYTHON SOURCE LINES 593-608
 
 The yardstick: the response the synthesis promised
 --------------------------------------------------
@@ -948,7 +951,7 @@ bandwidth.  For a Chebyshev the two differ by a fixed factor,
 which is 2.34 here.  Reading the −3 dB width as the design width
 would make this filter look more than twice too wide.
 
-.. GENERATED FROM PYTHON SOURCE LINES 606-634
+.. GENERATED FROM PYTHON SOURCE LINES 608-636
 
 .. code-block:: Python
 
@@ -996,12 +999,12 @@ would make this filter look more than twice too wide.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 635-637
+.. GENERATED FROM PYTHON SOURCE LINES 637-639
 
 The result
 ----------
 
-.. GENERATED FROM PYTHON SOURCE LINES 637-652
+.. GENERATED FROM PYTHON SOURCE LINES 639-654
 
 .. code-block:: Python
 
@@ -1032,7 +1035,7 @@ The result
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 653-706
+.. GENERATED FROM PYTHON SOURCE LINES 655-708
 
 Looking inside: how the filter passes power
 -------------------------------------------
@@ -1088,7 +1091,7 @@ monitor recorded three frequencies across the band, so that claim
 can simply be read off it: sum :math:`E_z` over each half of the
 housing and compare the phases.
 
-.. GENERATED FROM PYTHON SOURCE LINES 706-718
+.. GENERATED FROM PYTHON SOURCE LINES 708-720
 
 .. code-block:: Python
 
@@ -1120,7 +1123,7 @@ housing and compare the phases.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 719-731
+.. GENERATED FROM PYTHON SOURCE LINES 721-733
 
 A steady drift of tens of degrees, not the 0° or 180° a standing
 even/odd pair would show — and nothing in between is available to a
@@ -1135,7 +1138,7 @@ both resonators are near their peaks — at phase zero, one of them
 happens to be near a zero crossing and the render looks like a
 half-empty filter.
 
-.. GENERATED FROM PYTHON SOURCE LINES 733-767
+.. GENERATED FROM PYTHON SOURCE LINES 735-769
 
 What this shows
 ---------------
@@ -1175,7 +1178,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (7 minutes 35.371 seconds)
+   **Total running time of the script:** (7 minutes 52.632 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:

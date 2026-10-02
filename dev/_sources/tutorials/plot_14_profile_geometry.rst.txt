@@ -18,79 +18,72 @@
 .. _sphx_glr_tutorials_plot_14_profile_geometry.py:
 
 
-Profiles: shapes the primitives do not cover
-============================================
+Geometry toolbox
+================
 
-Bricks, cylinders, cones and spheres carry most models, and Boolean
-operations carry most of the rest.  Sooner or later a part resists both:
-a curved electrode that is a slice of a tube, a pad with one rounded
-end, a track that follows a route, a taper between two different
-cross-sections.  Cutting those out of primitives means inventing tool
-bodies whose only purpose is to be subtracted, and getting their
-dimensions right by hand.
+Start with a primitive when it fits. For everything else, Magnelio offers
+curves, profiles, owned faces and CAD operations. This visual tour builds
+useful shapes with short recipes. The
+:doc:`geometry methods guide <../methods/geometry>` explains their full
+contracts and limits.
 
-The way out is the one a draughtsman uses: draw the outline, then give
-it a third dimension.  This tutorial builds that path — a curve, a
-closed profile, a solid — and then the three verbs that operate on
-whole shapes rather than outlines: hollowing, tracking, and lofting.
+All dimensions are in metres. No field simulation runs on this page.
 
-Nothing here runs a simulation; it is geometry only, and takes seconds.
-
-.. GENERATED FROM PYTHON SOURCE LINES 20-28
+.. GENERATED FROM PYTHON SOURCE LINES 13-24
 
 .. code-block:: Python
 
 
     import math
+    from pathlib import Path
+    from tempfile import TemporaryDirectory
 
-    import magnelio as mio
-    from magnelio import geo, plots
+    import matplotlib.pyplot as plt
+    import numpy as np
 
-    copper = mio.Material.lossy_metal(name="copper", sigma=5.8e7)
-
-
-
-
-
+    from magnelio import GeometryModel, geo, monitors, plots, ports
+    from magnelio.io import export_step, import_step
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 29-38
 
-A worked example: a curved electrode
-------------------------------------
 
-A 20 degree slice of a tube — 24 mm across, 2 mm wall, 30 mm tall.
-Two independent ways to build it, and it is worth seeing both, because
-the choice between them comes up again for every part.
 
-The first is a primitive.  A cylinder takes a bore and an angular
-extent, so the electrode is one call:
 
-.. GENERATED FROM PYTHON SOURCE LINES 38-53
+
+.. GENERATED FROM PYTHON SOURCE LINES 25-29
+
+Draw a profile and give it depth
+--------------------------------
+A Profile is a bounded sheet. Inner wires are real holes, so a sweep
+or extrusion carries the bore without a Boolean cut.
+
+.. GENERATED FROM PYTHON SOURCE LINES 29-46
 
 .. code-block:: Python
 
 
-    R_OUT, R_IN, HEIGHT, SPAN = 12.0e-3, 10.0e-3, 30.0e-3, 20.0
-
-    electrode = geo.Cylinder(
-        radius=R_OUT,
-        inner_radius=R_IN,
-        height=HEIGHT,
-        angle_deg=(0.0, SPAN),
+    ring = geo.Profile.from_wires(
+        geo.Curve.circle((0, 0, 0), 2e-3),
+        holes=[geo.Curve.circle((0, 0, 0), 1e-3)],
         material="pec",
     )
-
-    fig, ax = plots.plot_cross_section(
-        [electrode], "z", HEIGHT / 2, title="electrode, cut across the axis"
-    )
+    tube = ring.extruded((0, 0, 6e-3))
+    spine = geo.Curve.arc((8e-3, 0, 0), (0, 8e-3, 0), (-8e-3, 0, 0))
+    elbow = ring.swept(spine)
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section([tube], "z", 3e-3, ax=axes[0], title="Extruded bore")
+    plots.plot_cross_section([elbow], "z", 0, ax=axes[1], title="Swept bore")
+    for axis, color in zip(axes, ("#3289a8", "#cf7554")):
+        for shape in axis.patches:
+            shape.set_facecolor(color)
+    fig.tight_layout()
 
 
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_001.png
-   :alt: electrode, cut across the axis
+   :alt: Extruded bore, Swept bore
    :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_001.png
    :class: sphx-glr-single-img
 
@@ -98,118 +91,42 @@ extent, so the electrode is one call:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 54-68
+.. GENERATED FROM PYTHON SOURCE LINES 47-51
 
-The same part, drawn as a profile
----------------------------------
+Sketch a custom outline or a routed track
+-----------------------------------------
+Path connects lines and arcs into a closed outline; ellipse is an exact
+curve. For a conductor centreline, traced adds width and thickness.
 
-The second way draws the cross-section and extrudes it.  A
-:class:`~magnelio.geo.Path` is a pen: it starts at a point and
-remembers where the last segment ended, so each call only names where
-the segment goes.
-
-Two of the four sides are arcs about the axis.  An arc through a
-centre has two solutions — the short way round and the long way — so
-``normal=`` names the axis the arc turns about, and the arc runs
-counter-clockwise about it.  That is the same sense as
-:meth:`~magnelio.geo.Shape.rotated`, and it settles the ambiguity even
-for a half-circle, where the two ends alone say nothing at all.
-
-.. GENERATED FROM PYTHON SOURCE LINES 68-99
+.. GENERATED FROM PYTHON SOURCE LINES 51-71
 
 .. code-block:: Python
-
-
-    CENTRE = (0.0, 0.0, 0.0)
-
-
-    def on_circle(radius, angle_deg):
-        """A point on a circle about the origin, in the z = 0 plane."""
-        angle = math.radians(angle_deg)
-        return (radius * math.cos(angle), radius * math.sin(angle), 0.0)
 
 
     outline = (
-        geo.Path(on_circle(R_IN, 0.0))
-        .line_to(on_circle(R_OUT, 0.0))
-        .arc_to(on_circle(R_OUT, SPAN), center=CENTRE, normal="z")
-        .line_to(on_circle(R_IN, SPAN))
-        .arc_to(on_circle(R_IN, 0.0), center=CENTRE, normal=(0.0, 0.0, -1.0))
+        geo.Path((0, 0, 0))
+        .line_to((4e-3, 0, 0))
+        .arc_to((4e-3, 4e-3, 0), via=(6e-3, 2e-3, 0))
+        .line_to((0, 4e-3, 0))
         .closed()
     )
-
-    drawn = outline.covered().extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
-
-    # The two routes describe the same solid, and `volume()` is the way to
-    # say so: it reports what the CAD kernel actually built, not what the
-    # parameters nominally asked for.  They are built by different kernel
-    # operations, so they agree to numerical precision rather than bit for
-    # bit -- the level of agreement to expect whenever one part can be
-    # built two ways.
-    print(f"primitive: {electrode.volume() * 1e9:.6f} mm^3")
-    print(f"drawn:     {drawn.volume() * 1e9:.6f} mm^3")
-    print(f"relative difference: {abs(drawn.volume() / electrode.volume() - 1.0):.2e}")
-
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-    primitive: 230.383461 mm^3
-    drawn:     230.383461 mm^3
-    relative difference: 1.11e-15
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 100-114
-
-.. note::
-
-   The inner arc turns about ``-z`` while the outer turns about
-   ``+z``.  The pen walks the outline as a loop, so it comes back
-   along the inside — and "counter-clockwise" is then the other way
-   round.  If a profile comes out crossing itself, this is the first
-   thing to check.
-
-Which route to prefer?  The primitive, whenever it fits: it is one
-line, it carries its dimensions as named parameters, and the mesher
-gets an exact analytic surface.  The profile route earns its keep the
-moment the outline is not a plain sector — a broken edge, a keyway, a
-flat on one side.  Adding a chamfer to the inner corner is one more
-segment in the pen stroke, and no new tool body:
-
-.. GENERATED FROM PYTHON SOURCE LINES 114-133
-
-.. code-block:: Python
-
-
-    CHAMFER = 1.0e-3
-
-    chamfered = (
-        geo.Path(on_circle(R_IN, 0.0))
-        .line_to(on_circle(R_OUT - CHAMFER, 0.0))
-        .line_to((*on_circle(R_OUT, 0.0)[:2], 0.0))
-        .arc_to(on_circle(R_OUT, SPAN), center=CENTRE, normal="z")
-        .line_to(on_circle(R_IN, SPAN))
-        .arc_to(on_circle(R_IN, 0.0), center=CENTRE, normal=(0.0, 0.0, -1.0))
-        .closed()
-        .covered()
-        .extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
+    pad = geo.Profile.from_wires(outline).thickened(35e-6, material="pec")
+    ellipse = geo.Curve.ellipse((10e-3, 2e-3, 0), (2e-3, 1e-3), major_axis="x")
+    elliptical_pad = geo.Profile.from_wires(ellipse).thickened(35e-6, material="pec")
+    centreline = geo.Path((0, 0, 0)).line_to((5e-3, 0, 0)).spline_to((8e-3, 2e-3, 0)).curve()
+    track = centreline.traced(width=0.5e-3, thickness=35e-6, caps="flat", normal="z", material="pec")
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section(
+        [pad, elliptical_pad], "z", 20e-6, ax=axes[0], title="Custom and exact ellipse pads"
     )
-
-    fig, ax = plots.plot_cross_section(
-        [chamfered], "z", HEIGHT / 2, title="the same electrode, drawn and modified"
-    )
+    plots.plot_cross_section([track], "z", 20e-6, ax=axes[1], title="Routed, flat-ended track")
+    fig.tight_layout()
 
 
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_002.png
-   :alt: the same electrode, drawn and modified
+   :alt: Custom and exact ellipse pads, Routed, flat-ended track
    :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_002.png
    :class: sphx-glr-single-img
 
@@ -217,43 +134,34 @@ segment in the pen stroke, and no new tool body:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 134-146
+.. GENERATED FROM PYTHON SOURCE LINES 72-76
 
-A profile can also be revolved or swept
----------------------------------------
+Place curves, profiles and solids together
+------------------------------------------
+Named transforms and reusable affine values act on every category.
+The rightmost transform acts first; Groups retain members and materials.
 
-The profile is the input, not the extrusion.  The same closed curve
-feeds three verbs: :meth:`~magnelio.geo.Shape.extruded` pushes it
-along a vector, :meth:`~magnelio.geo.Shape.revolved` turns it about an
-axis, and :meth:`~magnelio.geo.Shape.swept` runs it along a path.
-
-Revolving is the direct way to any rotationally symmetric part whose
-outline is not a rectangle — a rounded-nose centre conductor, a
-stepped transformer, a bead.  Here the outline is drawn in the x-z
-plane and turned about z:
-
-.. GENERATED FROM PYTHON SOURCE LINES 146-159
+.. GENERATED FROM PYTHON SOURCE LINES 76-88
 
 .. code-block:: Python
 
 
-    nose = (
-        geo.Path((0.0, 0.0, 0.0))
-        .line_to((3.0e-3, 0.0, 0.0))
-        .line_to((3.0e-3, 0.0, 8.0e-3))
-        .arc_to((0.0, 0.0, 11.0e-3), via=(2.1e-3, 0.0, 10.1e-3))
-        .closed()
-        .covered()
-        .revolved(axis="z", material="pec")
+    placement = geo.Translation((6e-3, 0, 0)) @ geo.Rotation("z", 30)
+    placed_ring, placed_tube = placement @ ring, placement @ tube
+    component = geo.Group(tube, spine, name="tube and route")
+    copies = [geo.Translation((18e-3 * i, 0, 0)) @ component for i in range(2)]
+    fig, ax = plots.plot_cross_section(
+        [placed_tube, *(next(copy.members()) for copy in copies)],
+        "z",
+        3e-3,
+        title="One component, several placements",
     )
-
-    fig, ax = plots.plot_cross_section([nose], "y", 0.0, title="revolved profile: a rounded pin")
 
 
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_003.png
-   :alt: revolved profile: a rounded pin
+   :alt: One component, several placements
    :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_003.png
    :class: sphx-glr-single-img
 
@@ -261,37 +169,45 @@ plane and turned about z:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 160-168
+.. GENERATED FROM PYTHON SOURCE LINES 89-93
 
-Hollowing a solid
------------------
+Name a face before moving its owner
+-----------------------------------
+A FaceRef belongs to its solid. Name the annular end, rotate the solid,
+then retrieve the same physical face in its new position.
 
-A housing is a block with its inside removed, and the inside of
-anything but a box is not the outside scaled down.
-:meth:`~magnelio.geo.Shape.shelled` builds it directly: walls grow
-inward, so the outer dimensions stay exactly as designed, and naming a
-face leaves it out of the shell to become an opening.
-
-.. GENERATED FROM PYTHON SOURCE LINES 168-179
+.. GENERATED FROM PYTHON SOURCE LINES 93-116
 
 .. code-block:: Python
 
 
-    WALL = 1.5e-3
-    BOX = (40.0e-3, 25.0e-3, 12.0e-3)
-
-    housing = geo.Brick(origin=(0.0, 0.0, 0.0), size=BOX, material="pec").shelled(
-        thickness=WALL,
-        opening_face_near=[(0.0, BOX[1] / 2, BOX[2] / 2), (BOX[0], BOX[1] / 2, BOX[2] / 2)],
+    shield = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3, height=6e-3, material="pec")
+    shield = shield.tag_face("port", near=(6e-3, 1.5e-3, 0), normal="x")
+    shield = shield.rotated("z", 22.5)
+    end = shield.face("port")
+    assert len(end.edges) == 2
+    route = (
+        geo.Path.from_face(end, up="z")
+        .turn_right(radius=8e-3, angle_deg=22.5)
+        .straight_to_plane(normal="x", position=20e-3)
     )
+    extension = end.swept(route.curve())
+    assert math.isclose(extension.volume(), end.area * route.curve().length, rel_tol=1e-9)
+    fig, ax = plots.plot_cross_section(
+        [shield, extension], "z", 0, title="Named face swept to a domain plane"
+    )
+    ax.axvline(20, color="0.5", linestyle="--")
 
-    fig, ax = plots.plot_cross_section([housing], "z", BOX[2] / 2, title="a housing, open at both ends")
+    # A deliberate face set can keep both successors of a split.
+    cap = geo.Brick(size=(4e-3, 4e-3, 2e-3), material="pec").tag_faces("cap", normal="z")
+    slot = geo.Brick(origin=(1.8e-3, -1e-3, -1e-3), size=(0.4e-3, 6e-3, 4e-3))
+    assert len((cap - slot).faces("cap")) == 2
 
 
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_004.png
-   :alt: a housing, open at both ends
+   :alt: Named face swept to a domain plane
    :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_004.png
    :class: sphx-glr-single-img
 
@@ -299,51 +215,36 @@ face leaves it out of the shell to become an opening.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-191
+.. GENERATED FROM PYTHON SOURCE LINES 117-121
 
-Tracks that follow a route
---------------------------
+Copy a component with its named contact
+---------------------------------------
+Each placed copy owns its own face. A reusable placement can move an
+entire mixed component without replacing the face name.
 
-A feed line is a centreline with a width and a metal thickness.
-:meth:`~magnelio.geo.Curve.traced` takes it that way, so a bend is one
-segment of the path rather than a separate body to place.
-
-``caps="flat"`` matters more than it looks: a track that ends at a
-port has to meet the port plane squarely, and the default rounded end
-would leave a sliver of air there.  Outside corners come out rounded,
-which is what a fabricated track does too.
-
-.. GENERATED FROM PYTHON SOURCE LINES 191-213
+.. GENERATED FROM PYTHON SOURCE LINES 121-135
 
 .. code-block:: Python
 
 
-    W_TRACK, T_COPPER = 0.6e-3, 35.0e-6
-
-    route = (
-        geo.Path((0.0, 0.0, 0.0))
-        .line_to((8.0e-3, 0.0, 0.0))
-        .spline_to((14.0e-3, 3.0e-3, 0.0), (20.0e-3, 3.0e-3, 0.0))
-        .curve()
-    )
-
-    track = route.traced(
-        width=W_TRACK,
-        thickness=T_COPPER,
-        caps="flat",
-        normal="z",
-        material=copper,
-    )
-
+    shell = geo.Brick(size=(2e-3, 1e-3, 1e-3), material="pec").tag_face("contact", normal="z")
+    datum = geo.Curve.line((0, 0, 0), (2e-3, 0, 0))
+    named_component = geo.Group(shell, datum)
+    placed_copies = [geo.Translation((5e-3 * i, 0, 0)) @ named_component for i in range(3)]
+    contacts = [next(copy.members()).face("contact") for copy in placed_copies]
+    assert len({id(contact.owner) for contact in contacts}) == 3
     fig, ax = plots.plot_cross_section(
-        [track], "z", T_COPPER / 2, title="a routed track, square at both ends"
+        [next(copy.members()) for copy in placed_copies],
+        "z",
+        0.5e-3,
+        title="Three copies, three owned contacts",
     )
 
 
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_005.png
-   :alt: a routed track, square at both ends
+   :alt: Three copies, three owned contacts
    :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_005.png
    :class: sphx-glr-single-img
 
@@ -351,53 +252,35 @@ which is what a fabricated track does too.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 214-234
+.. GENERATED FROM PYTHON SOURCE LINES 136-140
 
-Tapers between two cross-sections
----------------------------------
+Shape solids from existing faces
+--------------------------------
+Owned faces select shell openings and loft ends. Annular faces give a
+transition its bore automatically.
 
-The last gap the primitives leave is a transition: a horn, a matching
-section, a change from a round cross-section to a rectangular one.
-:class:`~magnelio.geo.Loft` takes the cross-sections themselves, in
-the order the solid passes through them, and interpolates.
-
-``blend="ruled"`` joins them with straight surfaces, which is what a
-machined taper is; the default ``blend="spline"`` passes one smooth
-surface through all of them, for a flared horn.
-
-Where the two ends are faces of solids that already exist, the
-:meth:`~magnelio.geo.Shape.lofted` verb takes those instead, and adds a
-third mode: ``blend="tangent"`` leaves each face along its own normal,
-so the transition meets both parts without a crease.  Between two
-faces that look at each other -- the two ends of a waveguide taper --
-the cross-section eases out of one profile and into the other, with
-zero wall slope at both flanges; between faces that point in different
-directions the profile is swept round a curved path instead.
-
-.. GENERATED FROM PYTHON SOURCE LINES 234-249
+.. GENERATED FROM PYTHON SOURCE LINES 140-153
 
 .. code-block:: Python
 
 
-
-    def square(half, z):
-        """A square outline of half-width *half*, at height *z*."""
-        return geo.Face(
-            normal="z",
-            points=[(-half, -half), (half, -half), (half, half), (-half, half)],
-            position=z,
-        )
-
-
-    taper = geo.Loft(square(4.0e-3, 0.0), square(10.0e-3, 18.0e-3), blend="ruled", material="pec")
-
-    fig, ax = plots.plot_cross_section([taper], "y", 0.0, title="a ruled taper between two squares")
+    block = geo.Brick(size=(10e-3, 8e-3, 6e-3), material="pec")
+    housing = block.shelled(0.5e-3, openings=block.face(normal="z"))
+    inlet = geo.Cylinder(radius=2e-3, inner_radius=1e-3, height=2e-3, material="pec")
+    outlet = geo.Cylinder(
+        origin=(0, 0, 8e-3), radius=3e-3, inner_radius=1.5e-3, height=2e-3, material="pec"
+    )
+    taper = inlet.face(normal="z").lofted(outlet.face(normal=(0, 0, -1)), blend="ruled")
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section([housing], "z", 3e-3, ax=axes[0], title="Open housing")
+    plots.plot_cross_section([inlet, taper, outlet], "y", 0, ax=axes[1], title="Hollow face loft")
+    fig.tight_layout()
 
 
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_006.png
-   :alt: a ruled taper between two squares
+   :alt: Open housing, Hollow face loft
    :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_006.png
    :class: sphx-glr-single-img
 
@@ -405,38 +288,535 @@ directions the profile is swept round a curved path instead.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 250-275
+.. GENERATED FROM PYTHON SOURCE LINES 154-158
 
-What to take away
------------------
+Revolve a profile or round selected edges
+------------------------------------------
+Revolution suits a rotational part with a changing outline. Fillets
+and chamfers can take edges from a selected face on an existing solid.
 
-* Reach for a primitive first — a cylinder with ``inner_radius`` and
-  ``angle_deg`` covers tubes and sectors without any drawing.
-* When the outline is the thing you actually know, draw it with
-  :class:`~magnelio.geo.Path`, close it, and cover it.  The resulting
-  sheet is a profile for ``extruded`` / ``revolved`` / ``swept`` /
-  ``thickened``.
-* An arc through a centre is ambiguous; ``normal=`` removes the
-  ambiguity, and the direction reverses when the pen comes back along
-  the far side of a loop.
-* ``ellipse_to`` draws an elliptical arc the same way — centre, the
-  two semi-axes and the direction of the first, ``normal=`` for the
-  sense — for the outlines of accelerator cells and lens profiles.
-* ``shelled`` hollows, ``traced`` follows a route, ``Loft``
-  interpolates cross-sections.  Each replaces a construction that
-  would otherwise be assembled from tool bodies by hand.
-* :meth:`~magnelio.geo.Shape.volume` checks a construction against
-  what it was supposed to be — the metal fraction of a housing, or
-  two routes to the same part agreeing.
+.. GENERATED FROM PYTHON SOURCE LINES 158-177
 
-A profile carrying no material is a *construction* profile: it is not
-a physical object and cannot be meshed on its own, which is why the
-verbs that turn it into a solid ask for the material explicitly.
+.. code-block:: Python
+
+
+    pin_outline = geo.Profile.from_wires(
+        geo.Path((0, 0, 0))
+        .line_to((3e-3, 0, 0))
+        .line_to((3e-3, 0, 8e-3))
+        .arc_to((0, 0, 11e-3), via=(2.1e-3, 0, 10.1e-3))
+        .closed()
+    )
+    pin = pin_outline.revolved(axis="z", material="pec")
+    top = block.face(normal="z")
+    rounded = block.filleted(edges=top.edges, radius=0.2e-3)
+    bevelled = block.chamfered(faces=top, distance=0.2e-3)
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section([pin], "y", 0, ax=axes[0], title="Revolved pin")
+    plots.plot_cross_section(
+        [rounded, bevelled.translated((12e-3, 0, 0))], "y", 4e-3, ax=axes[1], title="Round or bevel"
+    )
+    fig.tight_layout()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_007.png
+   :alt: Revolved pin, Round or bevel
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_007.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 178-182
+
+Choose how a section follows a bend
+-----------------------------------
+The default keeps a swept section perpendicular to the route. A fixed
+frame keeps its apertures parallel in world space instead.
+
+.. GENERATED FROM PYTHON SOURCE LINES 182-199
+
+.. code-block:: Python
+
+
+    radius, angle = 8e-3, math.pi / 4
+    aperture = geo.Profile.rectangle(
+        (radius, 0, 0), (1e-3, 0.3e-3), normal="y", x_direction="x", material="air"
+    )
+    bend_path = geo.Curve.arc(
+        (radius, 0, 0),
+        (radius * math.cos(angle / 2), radius * math.sin(angle / 2), 0),
+        (radius * math.cos(angle), radius * math.sin(angle), 0),
+    )
+    perpendicular = aperture.swept(bend_path)
+    parallel = aperture.swept(bend_path, frame="fixed")
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section([perpendicular], "z", 0, ax=axes[0], title="Perpendicular")
+    plots.plot_cross_section([parallel], "z", 0, ax=axes[1], title="Parallel apertures")
+    fig.tight_layout()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_008.png
+   :alt: Perpendicular, Parallel apertures
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_008.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 200-204
+
+Twist or draft a sweep
+----------------------
+Twist is total roll. Positive draft grows the outside of a profile
+and shrinks its holes by a normal offset.
+
+.. GENERATED FROM PYTHON SOURCE LINES 204-214
+
+.. code-block:: Python
+
+
+    straight = geo.Curve.line((0, 0, 0), (0, 0, 4e-3))
+    rectangle = geo.Profile.rectangle((0, 0, 0), (2e-3, 1e-3), material="air")
+    twisted = rectangle.swept(straight, twist_deg=90)
+    drafted = ring.swept(straight, draft_deg=1)
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section([twisted], "z", 2e-3, ax=axes[0], title="Halfway through a twist")
+    plots.plot_cross_section([drafted], "y", 0, ax=axes[1], title="Drafted annular walls")
+    fig.tight_layout()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_009.png
+   :alt: Halfway through a twist, Drafted annular walls
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_009.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 215-219
+
+Partition a body and keep its filled section
+--------------------------------------------
+Partition returns independent solids. Section returns curves;
+filled=True returns a Profile, including its hole.
+
+.. GENERATED FROM PYTHON SOURCE LINES 219-230
+
+.. code-block:: Python
+
+
+    section_body = geo.Cylinder(radius=2e-3, inner_radius=1e-3, height=6e-3, material="pec")
+    halves = section_body.partition(normal="z", position=3e-3)
+    loops = section_body.section(normal="z", position=3e-3)
+    (cut_profile,) = section_body.section(normal="z", position=3e-3, filled=True)
+    assert len(halves) == 2 and len(loops) == 2 and len(cut_profile.boundary()) == 2
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section(halves, "y", 0, ax=axes[0], title="Two independent halves")
+    plots.plot_cross_section([section_body], "z", 3e-3, ax=axes[1], title="Filled section with a hole")
+    fig.tight_layout()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_010.png
+   :alt: Two independent halves, Filled section with a hole
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_010.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 231-235
+
+Imprint a contact and insert a material
+---------------------------------------
+Imprint splits a receiver face without removing volume. Insert assigns
+overlap to the body with the higher explicit priority.
+
+.. GENERATED FROM PYTHON SOURCE LINES 235-250
+
+.. code-block:: Python
+
+
+    host = geo.Brick(size=(2e-3,) * 3, material="pec")
+    tool = geo.Brick(origin=(1.8e-3, 0.5e-3, 0.5e-3), size=(0.4e-3, 1e-3, 1e-3))
+    marked = host.imprint(tool).tag_face("contact", near=(2e-3, 1e-3, 1e-3), normal="x")
+    dielectric = geo.Brick(origin=(0.5e-3,) * 3, size=(1e-3,) * 3, material="air")
+    assembly = geo.insert(marked, dielectric, priorities=(0, 1))
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    plots.plot_cross_section(
+        [marked.face("contact").detached()], "x", 2e-3, ax=axes[0], title="Imprinted contact"
+    )
+    plots.plot_cross_section(
+        list(assembly.members()), "z", 1e-3, ax=axes[1], title="Inserted dielectric"
+    )
+    fig.tight_layout()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_011.png
+   :alt: Imprinted contact, Inserted dielectric
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_011.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 251-255
+
+Project a trace onto a curved wall
+----------------------------------
+Directional rays meet the actual bounded face. The resulting curve
+is independent and can be used in a thin-wire declaration.
+
+.. GENERATED FROM PYTHON SOURCE LINES 255-270
+
+.. code-block:: Python
+
+
+    round_host = geo.Cylinder(radius=5e-3, height=10e-3, material="pec")
+    wall = round_host.face(near=(5e-3, 0, 5e-3))
+    sketch = geo.Curve.line((8e-3, -2e-3, 5e-3), (8e-3, 2e-3, 5e-3))
+    (trace,) = sketch.projected_onto(wall, direction=(-1, 0, 0))
+    wire = geo.ThinWire(trace, radius=20e-6)
+    assert wire.curve is trace
+    y = np.linspace(-2e-3, 2e-3, 200)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(np.full_like(y, 8), y * 1e3, "--", label="sketch")
+    ax.plot(np.sqrt((5e-3) ** 2 - y**2) * 1e3, y * 1e3, label="projected trace")
+    ax.set(xlabel="x (mm)", ylabel="y (mm)", title="Trace on a cylindrical wall")
+    ax.set_aspect("equal")
+    ax.legend()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_012.png
+   :alt: Trace on a cylindrical wall
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_012.png
+   :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    <matplotlib.legend.Legend object at 0x7f114b80d910>
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 271-275
+
+Add clearance or move a curved sheet
+------------------------------------
+Profile offset expands the material region, including into the hole.
+Detach an owned face before using the independent Sheet offset.
+
+.. GENERATED FROM PYTHON SOURCE LINES 275-298
+
+.. code-block:: Python
+
+
+    (clearance,) = ring.offset(0.1e-3)
+    (outer_wall,) = wall.detached().offset(0.2e-3)
+    feed = geo.Curve.line((0, 0, 0), (3e-3, 0, 0))
+    (feed_clearance,) = feed.offset(0.1e-3, normal="z")
+    assert clearance.area > ring.area
+    assert math.isclose(feed_clearance.length, feed.length)
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    theta = np.linspace(0, 2 * math.pi, 256)
+    for axis, radii, title in (
+        (axes[0], (1, 0.9, 2, 2.1), "Profile clearance"),
+        (axes[1], (5, 5.2), "Sheet offset"),
+    ):
+        for radius_mm in radii:
+            axis.plot(
+                radius_mm * np.cos(theta),
+                radius_mm * np.sin(theta),
+                color="#cf7554" if radius_mm in (0.9, 2.1, 5.2) else "#3289a8",
+            )
+        axis.set(xlabel="x (mm)", ylabel="y (mm)", title=title)
+        axis.set_aspect("equal")
+    fig.tight_layout()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_013.png
+   :alt: Profile clearance, Sheet offset
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_013.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 299-302
+
+Bend an existing layered component
+----------------------------------
+One neutral surface bends both layers, including their straight ends.
+
+.. GENERATED FROM PYTHON SOURCE LINES 302-340
+
+.. code-block:: Python
+
+
+    bend_radius = 10e-3
+    bend_length = bend_radius * math.pi / 2
+    neutral = geo.Surface.parametric(
+        lambda u, v: (
+            bend_radius * np.sin(u / bend_radius),
+            v,
+            bend_radius * (1 - np.cos(u / bend_radius)),
+        ),
+        u=(0, bend_length),
+        v=(-1e-3, 1e-3),
+        samples=(65, 9),
+    )
+    bend = geo.Bend(
+        neutral,
+        origin=(0, 0, 0),
+        along="x",
+        across="y",
+        u=(0, bend_length),
+        v=(-1e-3, 1e-3),
+        max_strain=0.01,
+    )
+    layers = geo.Group(
+        geo.Brick(
+            origin=(-3e-3, -1e-3, -0.2e-3), size=(bend_length + 6e-3, 2e-3, 0.2e-3), material="pec"
+        ),
+        geo.Brick(origin=(-3e-3, -1e-3, 0), size=(bend_length + 6e-3, 2e-3, 0.2e-3), material="air"),
+    )
+    curved_layers = bend @ layers
+    phi = np.linspace(0, math.pi / 2, 200)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    for depth, label in ((-0.2e-3, "outer layer"), (0, "neutral surface"), (0.2e-3, "inner layer")):
+        r = bend_radius - depth
+        ax.plot(r * np.sin(phi) * 1e3, (bend_radius - r * np.cos(phi)) * 1e3, label=label)
+    ax.set(xlabel="x (mm)", ylabel="z (mm)", title="Two layers, one neutral surface")
+    ax.set_aspect("equal")
+    ax.legend()
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_014.png
+   :alt: Two layers, one neutral surface
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_014.png
+   :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    <matplotlib.legend.Legend object at 0x7f114b28f8d0>
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 341-345
+
+Wrap layers onto a curved patch
+-------------------------------
+Wrap uses one chart for substrate and conductor; max_strain bounds
+distortion on a surface that need not be developable.
+
+.. GENERATED FROM PYTHON SOURCE LINES 345-371
+
+.. code-block:: Python
+
+
+
+    def patch(u, v):
+        return (u, v, 0.25e-3 * np.sin(np.pi * u / 20e-3) * np.cos(np.pi * v / 10e-3))
+
+
+    target = geo.Surface.parametric(patch, u=(0, 20e-3), v=(-5e-3, 5e-3), samples=(41, 21))
+    wrap = geo.Wrap(
+        target,
+        origin=(0, 0, 0),
+        along="x",
+        across="y",
+        u=(0, 20e-3),
+        v=(-5e-3, 5e-3),
+        max_strain=0.05,
+        tolerance=2e-6,
+    )
+    board = geo.Brick(origin=(1e-3, -4e-3, -0.3e-3), size=(18e-3, 8e-3, 0.3e-3), material="air")
+    conductor = geo.Brick(origin=(2e-3, -0.5e-3, 0), size=(16e-3, 1e-3, 0.035e-3), material="pec")
+    wrapped = wrap @ geo.Group(board, conductor)
+    u, v = np.meshgrid(np.linspace(0, 20e-3, 40), np.linspace(-5e-3, 5e-3, 20))
+    fig = plt.figure(figsize=(7, 4))
+    ax = fig.add_subplot(projection="3d")
+    ax.plot_surface(u * 1e3, v * 1e3, patch(u, v)[2] * 1e3, alpha=0.5)
+    ax.set(xlabel="x (mm)", ylabel="y (mm)", zlabel="z (mm)")
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_015.png
+   :alt: plot 14 profile geometry
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_015.png
+   :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    [Text(-0.04405491569116248, -0.09538169037532089, 'x (mm)'), Text(0.07423207296593679, -0.07710300837914658, 'y (mm)'), Text(0.11344351648940883, 0.015198549314941825, 'z (mm)')]
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 372-376
+
+Make a tangent transition between solids
+----------------------------------------
+A face-to-face loft with blend="tangent" meets the adjacent walls
+without a sharp corner at either end.
+
+.. GENERATED FROM PYTHON SOURCE LINES 376-382
+
+.. code-block:: Python
+
+
+    small = geo.Brick(origin=(-2e-3, -1e-3, 0), size=(4e-3, 2e-3, 1e-3), material="pec")
+    large = geo.Brick(origin=(-3e-3, -1.5e-3, 5e-3), size=(6e-3, 3e-3, 1e-3), material="pec")
+    smooth = small.face(normal="z").lofted(large.face(normal=(0, 0, -1)), blend="tangent")
+    fig, ax = plots.plot_cross_section([small, smooth, large], "y", 0, title="Tangent transition")
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_016.png
+   :alt: Tangent transition
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_016.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 383-387
+
+Use a named face for a port and a recording plane
+-------------------------------------------------
+Eligible rectangular faces specify EM consumers directly. Port and
+field monitor now share the selected plane and window.
+
+.. GENERATED FROM PYTHON SOURCE LINES 387-412
+
+.. code-block:: Python
+
+
+    source = geo.Brick(size=(2e-3, 3e-3, 4e-3), material="air").tag_face("output", normal="z")
+    placed = geo.Translation((5e-3, 0, 0)) @ source
+    model = GeometryModel(background="pec").add(placed)
+    face = placed.face("output")
+    port = ports.PortWaveguide.from_face(face, model=model, name="output")
+    recording = monitors.MonitorFieldFrequency.from_face(
+        face, freqs=[10e9], fields=["Ex", "Ey"], name="output_fields"
+    )
+    assert port.corners == recording.corners
+    fig, ax = plt.subplots(figsize=(5, 4))
+    ax.fill([5, 7, 7, 5], [0, 0, 4, 4], color="#b9dce9")
+    ax.plot([5, 7], [4, 4], color="#cf7554", linewidth=4)
+    ax.text(6, 2, "air region", ha="center")
+    ax.annotate(
+        "port + monitor",
+        xy=(6, 4),
+        xytext=(6, 4.5),
+        ha="center",
+        arrowprops={"arrowstyle": "->", "color": "#cf7554"},
+    )
+    ax.set(xlabel="x (mm)", ylabel="z (mm)", title="Two consumers, one selected face")
+    ax.set_aspect("equal")
+    ax.set_ylim(-0.2, 5)
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_017.png
+   :alt: Two consumers, one selected face
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_017.png
+   :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    (-0.2, 5.0)
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 413-417
+
+Exchange solids and sheets with CAD
+-----------------------------------
+STEP keeps units and body names. Imported sheets need physical thickness
+before they become meshable material volumes.
+
+.. GENERATED FROM PYTHON SOURCE LINES 417-438
+
+.. code-block:: Python
+
+
+    cad_housing = geo.Brick(size=(20e-3, 10e-3, 3e-3), material="pec", name="housing")
+    cad_trace = geo.Profile.rectangle((10e-3, 5e-3, 3e-3), (8e-3, 1e-3), material="pec", name="trace")
+    with TemporaryDirectory() as directory:
+        path = Path(directory) / "assembly.step"
+        export_step(path, geo.Group(cad_housing, cad_trace), unit="mm")
+        imported = import_step(path, {"housing": "pec", "trace": "pec"})
+        by_name = {body.name: body for body in imported.members()}
+        copper = by_name["trace"].thickened(35e-6)
+        assert isinstance(by_name["trace"], geo.ImportedSheet)
+        export_step(
+            Path(directory) / "selected.step", (by_name["housing"], by_name["trace"]), unit="mm"
+        )
+        fig, ax = plots.plot_cross_section(
+            [by_name["housing"], copper],
+            "z",
+            3e-3,
+            title="Imported sheet given physical thickness",
+        )
+        for shape, color in zip(ax.patches, ("#b9dce9", "#cf7554")):
+            shape.set_facecolor(color)
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_14_profile_geometry_018.png
+   :alt: Imported sheet given physical thickness
+   :srcset: /tutorials/images/sphx_glr_plot_14_profile_geometry_018.png
+   :class: sphx-glr-single-img
+
+
+
+
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.474 seconds)
+   **Total running time of the script:** (0 minutes 2.720 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_14_profile_geometry.py:

@@ -528,8 +528,10 @@ def filter_model(iris_window, r_probe):
     x_puck = -SPACING / 2
     x_pin = x_puck - r_probe
 
-    pucks = puck(x_puck).mirrored(normal="x", copy=True)
-    pins = feed_pin(x_pin).mirrored(normal="x", copy=True)
+    left_puck = puck(x_puck)
+    left_pin = feed_pin(x_pin)
+    pucks = [left_puck, left_puck.mirrored(normal="x")]
+    pins = [left_pin, left_pin.mirrored(normal="x")]
 
     model = assemble(housing(iris_window), [*pucks, *pins])
     for name, x in (("p1", x_pin), ("p2", -x_pin)):

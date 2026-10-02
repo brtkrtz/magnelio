@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
@@ -38,10 +37,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
     <script src="../_static/documentation_options.js?v=33440781"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -52,7 +51,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/geometry';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -114,7 +113,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -177,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -190,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -231,7 +237,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -262,15 +268,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -307,7 +313,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -316,7 +322,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -370,6 +376,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
   </a>
 </li>
 
@@ -441,15 +454,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -484,7 +497,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -498,7 +511,7 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Geometry construction</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
@@ -578,7 +591,7 @@
   <section class="tex2jax_ignore mathjax_ignore" id="geometry-construction">
 <h1>Geometry construction<a class="headerlink" href="#geometry-construction" title="Link to this heading">#</a></h1>
 <p>Magnelio models are built from constructive solid geometry on the Open
-CASCADE kernel via <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code> (DD-003, DD-016) — primitives,
+CASCADE kernel via <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code> — primitives,
 Boolean operations, and a set of <em>verbs</em> that grow, move and modify
 shapes.  The construction layer is engineering infrastructure on top
 of a third-party kernel, not a numerical-methods contribution.  This chapter
@@ -587,33 +600,895 @@ covers the vocabulary of that construction: which objects are
 solid, and what the mesher makes of the result.  The API reference
 lists every class and verb; the tutorials on profile geometry, CAD
 import and the reflector antenna show them in use.</p>
-<section id="bodies-sheets-and-curves">
-<h2>Bodies, sheets and curves<a class="headerlink" href="#bodies-sheets-and-curves" title="Link to this heading">#</a></h2>
-<p>Three kinds of object share the geometry namespace:</p>
+<section id="shapes-have-a-dimension">
+<h2>Shapes have a dimension<a class="headerlink" href="#shapes-have-a-dimension" title="Link to this heading">#</a></h2>
+<p>Every standalone geometry value is a <code class="docutils literal notranslate"><span class="pre">Shape</span></code>, with one explicit dimensional
+category:</p>
 <ul class="simple">
-<li><p><strong>Bodies</strong> — <code class="docutils literal notranslate"><span class="pre">Brick</span></code>, <code class="docutils literal notranslate"><span class="pre">Sphere</span></code>, <code class="docutils literal notranslate"><span class="pre">Cylinder</span></code>, <code class="docutils literal notranslate"><span class="pre">Cone</span></code>, <code class="docutils literal notranslate"><span class="pre">Torus</span></code>, <code class="docutils literal notranslate"><span class="pre">Loft</span></code>,
+<li><p><strong>Solids</strong> — <code class="docutils literal notranslate"><span class="pre">Solid</span></code> values such as <code class="docutils literal notranslate"><span class="pre">Brick</span></code>, <code class="docutils literal notranslate"><span class="pre">Sphere</span></code>, <code class="docutils literal notranslate"><span class="pre">Cylinder</span></code>, <code class="docutils literal notranslate"><span class="pre">Cone</span></code>, <code class="docutils literal notranslate"><span class="pre">Torus</span></code>, <code class="docutils literal notranslate"><span class="pre">Loft</span></code>,
 imported solids, and everything a verb or a Boolean produces from
-them.  A body carries a material and is what a <code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code>
+them.  A solid may carry a material and is what a <code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code>
 meshes.</p></li>
-<li><p><strong>Sheets</strong> — zero-thickness regions: the planar <code class="docutils literal notranslate"><span class="pre">Face</span></code> (an
-axis-normal polygon), a <code class="docutils literal notranslate"><span class="pre">Curve.covered()</span></code> (any closed planar curve
-filled in), and the curved <code class="docutils literal notranslate"><span class="pre">Surface</span></code>.  A sheet without a material is
+<li><p><strong>Sheets</strong> — <code class="docutils literal notranslate"><span class="pre">Sheet</span></code> values are zero-thickness regions: the planar
+<code class="docutils literal notranslate"><span class="pre">Profile</span></code> factories bound a planar region with an outer wire and optional
+holes, while <code class="docutils literal notranslate"><span class="pre">Surface</span></code> is the curved-sheet category.  A sheet without a material is
 a <em>construction profile</em>: it exists to be grown into a body by
 <code class="docutils literal notranslate"><span class="pre">extruded()</span></code> or <code class="docutils literal notranslate"><span class="pre">thickened()</span></code> — and, for the planar ones, <code class="docutils literal notranslate"><span class="pre">revolved()</span></code>
 or <code class="docutils literal notranslate"><span class="pre">swept()</span></code>, or as a section of a <code class="docutils literal notranslate"><span class="pre">Loft</span></code>.  A sheet with a material
 would be a <em>thin sheet</em>; its physics (an infinitely thin conductor or
 dielectric film) is not wired, so such a sheet cannot be meshed on its
 own — model it as a thin body instead.</p></li>
-<li><p><strong>Curves</strong> — <code class="docutils literal notranslate"><span class="pre">Curve</span></code> (polyline, arc, spline, helix) and <code class="docutils literal notranslate"><span class="pre">Path</span></code>, which
+<li><p><strong>Curves</strong> — <code class="docutils literal notranslate"><span class="pre">Curve</span></code> values (line, circle, ellipse, polyline, arc, spline, helix) are
+one-dimensional standalone shapes.  <code class="docutils literal notranslate"><span class="pre">Path</span></code> is a builder which
 draws one segment by segment.  A closed planar curve becomes a sheet
-through <code class="docutils literal notranslate"><span class="pre">covered()</span></code>; any curve becomes a conductor track through
+through <code class="docutils literal notranslate"><span class="pre">Profile.from_wires(curve)</span></code>; any curve becomes a conductor track through
 <code class="docutils literal notranslate"><span class="pre">traced()</span></code> (widened in its plane, then given a metallisation
 thickness — the direct route from a routed centreline to the copper
 of a board); a <code class="docutils literal notranslate"><span class="pre">ThinWire</span></code> is a curve meshed as a sub-cell conductor.</p></li>
 </ul>
-<p>Moving, turning, scaling and mirroring keep these kinds: a rotated
-sheet is still a sheet and still a profile, a mirrored planar sheet is
-still planar.  Booleans are defined on bodies.</p>
+<p>Moving, turning, scaling and mirroring preserve the category, material and
+name: a rotated curve remains a curve, a rotated profile remains a profile,
+and a mirrored solid remains a solid.  <code class="docutils literal notranslate"><span class="pre">Group</span></code> is deliberately outside the
+<code class="docutils literal notranslate"><span class="pre">Shape</span></code> hierarchy.  It is a material-preserving authoring collection whose
+transforms apply member by member.  Booleans accept solids only; passing a
+curve, sheet, profile or group raises a category-specific <code class="docutils literal notranslate"><span class="pre">TypeError</span></code> before
+the CAD kernel is called.</p>
+</section>
+<section id="exact-curves-and-planar-profiles">
+<h2>Exact curves and planar profiles<a class="headerlink" href="#exact-curves-and-planar-profiles" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Curve.line(start,</span> <span class="pre">end)</span></code> builds an exact straight segment. <code class="docutils literal notranslate"><span class="pre">Curve.circle</span></code>
+and <code class="docutils literal notranslate"><span class="pre">Curve.ellipse</span></code> build closed analytic wires, retaining their exact
+conic geometry through rotations and mirrors. They do not approximate the
+boundary with a polygon. Circles take a world centre, radius and plane
+normal. Ellipses take a world centre, two semi-axis lengths, a normal and
+<code class="docutils literal notranslate"><span class="pre">major_axis</span></code>: the direction of the first semi-axis, projected into the
+plane. Either semi-axis may be larger. <code class="docutils literal notranslate"><span class="pre">curve.length</span></code> reads the CAD length.
+Arcs, elliptical arcs, splines, helices and <code class="docutils literal notranslate"><span class="pre">joined()</span></code> remain available;
+<code class="docutils literal notranslate"><span class="pre">Path</span></code> builds mixed boundaries segment by segment.</p>
+<p>A wire describes a boundary; a <code class="docutils literal notranslate"><span class="pre">Profile</span></code> describes the enclosed region.
+Use <code class="docutils literal notranslate"><span class="pre">Profile.polygon(points)</span></code> for coplanar 3-D vertices (closed automatically),
+<code class="docutils literal notranslate"><span class="pre">Profile.rectangle(center,</span> <span class="pre">size,</span> <span class="pre">normal=...,</span> <span class="pre">x_direction=...)</span></code> for an
+oriented rectangle, <code class="docutils literal notranslate"><span class="pre">Profile.circle(center,</span> <span class="pre">radius,</span> <span class="pre">normal=...)</span></code> for a disc,
+and <code class="docutils literal notranslate"><span class="pre">Profile.from_wires(outer,</span> <span class="pre">holes=...)</span></code> for any closed planar boundary.
+<code class="docutils literal notranslate"><span class="pre">size</span></code> gives rectangle width and height. <code class="docutils literal notranslate"><span class="pre">x_direction</span></code> fixes its width direction
+in the plane; height follows <code class="docutils literal notranslate"><span class="pre">normal</span> <span class="pre">x</span> <span class="pre">x_direction</span></code>. Without it, the least
+parallel world axis supplies the projected width direction. There is no
+ambient working coordinate system.</p>
+<p>For example, an annular cross-section extrudes into a tube with its bore
+already present:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">outer</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">2e-3</span><span class="p">)</span>
+<span class="n">inner</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">1e-3</span><span class="p">)</span>
+<span class="n">ring</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Profile</span><span class="o">.</span><span class="n">from_wires</span><span class="p">(</span><span class="n">outer</span><span class="p">,</span> <span class="n">holes</span><span class="o">=</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">tube</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">extruded</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The factories validate closure, planarity, self-intersection and hole placement
+before returning. Holes must lie strictly inside the outer wire, cannot touch
+or intersect each other or the outer wire, and cannot nest. Winding is corrected
+automatically. Invalid boundaries raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>; inputs from the wrong
+category raise <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>. A profile can be placed in any plane by explicit
+world points, normals and directions, or by the common affine methods.</p>
+<p><code class="docutils literal notranslate"><span class="pre">profile.area</span></code> measures the region with its holes removed. <code class="docutils literal notranslate"><span class="pre">profile.boundary()</span></code>
+returns independent <code class="docutils literal notranslate"><span class="pre">Curve</span></code> values: the outer boundary first, then holes in
+construction order. The curves have the profile’s world placement and can be
+transformed or used to construct another profile. This extraction is a
+standalone value operation.</p>
+<p>Extrusion, revolution and sweep carry all inner boundaries into the solid.
+<code class="docutils literal notranslate"><span class="pre">Loft</span></code> carries holes by matching boundaries in the supplied order, so every
+section must have the same number of holes and the same intended correspondence.
+It cannot create, close, or merge holes partway through a transition. As for
+any loft or sweep, valid sections alone cannot guarantee that the resulting
+three-dimensional body avoids crossing itself. A material supplied to an
+operation overrides the profile material; otherwise the material is inherited
+(<code class="docutils literal notranslate"><span class="pre">Loft</span></code> uses its first section). Without a material, all profile operations
+produce construction solids suitable as Boolean tools. Assign a material before
+adding the resulting body to a <code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code>.</p>
+</section>
+<section id="absolute-and-relative-routed-paths">
+<span id="geometry-routed-paths"></span><h2>Absolute and relative routed paths<a class="headerlink" href="#absolute-and-relative-routed-paths" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Path(start)</span></code> retains absolute <code class="docutils literal notranslate"><span class="pre">line_to</span></code>, <code class="docutils literal notranslate"><span class="pre">arc_to</span></code>, <code class="docutils literal notranslate"><span class="pre">ellipse_to</span></code> and
+<code class="docutils literal notranslate"><span class="pre">spline_to</span></code> construction. Each step starts at <code class="docutils literal notranslate"><span class="pre">path.current</span></code>; <code class="docutils literal notranslate"><span class="pre">curve()</span></code>
+returns the drawn Curve and <code class="docutils literal notranslate"><span class="pre">closed()</span></code> adds a straight closing edge when needed.
+Every step returns a new Path, so a common prefix can be branched.</p>
+<p>For relative routing, start with <code class="docutils literal notranslate"><span class="pre">Path.from_pose(point,</span> <span class="pre">tangent,</span> <span class="pre">up)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">Path.from_face(face_ref,</span> <span class="pre">up=...)</span></code>. The latter requires a planar FaceRef,
+starts at its area centroid and points along its outward normal, including
+after owner rotation or reflection. A centroid can lie inside an annular hole:
+it is the centreline anchor, not a point of metal. Directions accept world
+vectors or axis letters. Tangent is normalized; up is projected perpendicular
+to it and normalized. Zero directions and parallel tangent/up pairs are errors.
+Read the current unit directions through <code class="docutils literal notranslate"><span class="pre">path.tangent</span></code> and <code class="docutils literal notranslate"><span class="pre">path.up</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">forward(distance)</span></code> adds a positive straight run. <code class="docutils literal notranslate"><span class="pre">turn_left(radius=...,</span> <span class="pre">angle_deg=...)</span></code> turns towards <code class="docutils literal notranslate"><span class="pre">up</span> <span class="pre">x</span> <span class="pre">tangent</span></code>; <code class="docutils literal notranslate"><span class="pre">turn_right</span></code> turns towards
+<code class="docutils literal notranslate"><span class="pre">tangent</span> <span class="pre">x</span> <span class="pre">up</span></code>. Both build exact circular arcs with positive radius and an
+angle strictly between 0 and 360 degrees. Split a full loop into several turns.
+<code class="docutils literal notranslate"><span class="pre">turn_to(direction,</span> <span class="pre">radius=...)</span></code> takes the shortest circular bend to a target
+world tangent, carrying up through the same rigid rotation. An aligned target
+adds no edge; an opposite target leaves the bend plane undetermined and raises.
+Choose an explicit left or right 180-degree turn for a reversal.</p>
+<p><code class="docutils literal notranslate"><span class="pre">straight_to_plane(normal,</span> <span class="pre">position)</span></code> intersects the forward ray with the
+world plane <code class="docutils literal notranslate"><span class="pre">unit_normal</span> <span class="pre">·</span> <span class="pre">point</span> <span class="pre">=</span> <span class="pre">position</span></code>. Position is a signed distance
+in meters, so <code class="docutils literal notranslate"><span class="pre">normal=&quot;x&quot;,</span> <span class="pre">position=xmax</span></code> means <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">xmax</span></code>. The tangent
+stays unchanged. An already reached plane adds no edge; a parallel ray or an
+intersection behind the current point raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
+<p>For example, continue a named oblique coax end around a right-hand bend to
+the domain plane without reconstructing its annular profile:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">coax</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span> <span class="n">inner_radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                    <span class="n">height</span><span class="o">=</span><span class="mf">6e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)</span>
+<span class="n">coax</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">22.5</span><span class="p">)</span>
+<span class="n">port</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">)</span>
+<span class="n">route</span> <span class="o">=</span> <span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">from_face</span><span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="n">up</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+         <span class="o">.</span><span class="n">turn_right</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">8e-3</span><span class="p">,</span> <span class="n">angle_deg</span><span class="o">=</span><span class="mf">22.5</span><span class="p">)</span>
+         <span class="o">.</span><span class="n">straight_to_plane</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">20e-3</span><span class="p">))</span>
+<span class="n">extension</span> <span class="o">=</span> <span class="n">port</span><span class="o">.</span><span class="n">swept</span><span class="p">(</span><span class="n">route</span><span class="o">.</span><span class="n">curve</span><span class="p">())</span>
+</pre></div>
+</div>
+<section id="spatial-transport-and-roll">
+<h3>Spatial transport and roll<a class="headerlink" href="#spatial-transport-and-roll" title="Link to this heading">#</a></h3>
+<p>Relative circular bends rotate both tangent and up about their bend axis.
+Absolute segments update tangent from the actual CAD derivative. At a corner,
+up follows the shortest rotation from the previous tangent to the segment’s
+start tangent; a sharp reversal uses up as its half-turn axis. This updates
+the routing pose but does not smooth the geometric corner. Along a smooth
+curve, up follows rotation-minimizing (Bishop) transport, adding no spin about
+the tangent, including through spline inflections. A segment with zero tangent
+cannot define a pose and raises. This rule applies to spatial curves as well
+as planar arcs and ellipses; up need not stay aligned with a world axis.</p>
+<p>An unposed <code class="docutils literal notranslate"><span class="pre">Path(start)</span></code> acquires tangent after its first absolute segment,
+so <code class="docutils literal notranslate"><span class="pre">forward</span></code> and <code class="docutils literal notranslate"><span class="pre">straight_to_plane</span></code> can then be used; up remains unspecified.
+Relative turns require an explicit pose from <code class="docutils literal notranslate"><span class="pre">from_pose</span></code> or <code class="docutils literal notranslate"><span class="pre">from_face</span></code>.
+Absolute calls on a posed path retain and transport up, allowing both grammars
+to compose. The resulting Curve stores geometry, not a routing frame.
+Path’s pose determines subsequent construction; pipe sweeps continue to use
+their corrected Frenet transport and the selected section’s actual initial
+roll. A Path up direction does not impose a separate sweep frame or twist.
+Choose radius and section sizes that avoid self-intersection; the route alone
+does not certify a valid swept volume.</p>
+<p><a class="reference internal" href="../tutorials/plot_14_profile_geometry.html"><span class="std std-doc">Tutorial 14</span></a> shows the hollow
+bend and its open bore at the plane.</p>
+</section>
+</section>
+<section id="owned-topology-and-named-selections">
+<span id="geometry-owned-topology"></span><h2>Owned topology and named selections<a class="headerlink" href="#owned-topology-and-named-selections" title="Link to this heading">#</a></h2>
+<p>A body face is a <code class="docutils literal notranslate"><span class="pre">FaceRef</span></code>, an edge is an <code class="docutils literal notranslate"><span class="pre">EdgeRef</span></code>, and a vertex is a
+<code class="docutils literal notranslate"><span class="pre">VertexRef</span></code>. These are read-only views owned by one immutable <code class="docutils literal notranslate"><span class="pre">Solid</span></code>.
+They carry their owner; they are not standalone shapes and cannot be moved,
+added to a model, or combined with Boolean operators. Use <code class="docutils literal notranslate"><span class="pre">face.detached()</span></code>
+to obtain a standalone <code class="docutils literal notranslate"><span class="pre">Profile</span></code> for a planar face or <code class="docutils literal notranslate"><span class="pre">Surface</span></code> for a curved
+one, and <code class="docutils literal notranslate"><span class="pre">edge.as_curve()</span></code> for a standalone curve. Detachment keeps world
+placement, face holes and the owner’s material.</p>
+<p>Select by physical meaning rather than kernel indices. <code class="docutils literal notranslate"><span class="pre">body.face(near=p)</span></code>
+minimises distance to the complete trimmed face, including its boundaries;
+it does not compare centroids. <code class="docutils literal notranslate"><span class="pre">normal=</span></code> compares oriented outward normals,
+and <code class="docutils literal notranslate"><span class="pre">surface_type=</span></code> filters plane, cylinder, cone, sphere, torus, bspline or
+other surfaces. Without <code class="docutils literal notranslate"><span class="pre">near</span></code>, a normal constraint selects planar faces;
+with <code class="docutils literal notranslate"><span class="pre">near</span></code>, a curved face is tested at the closest point. Edges accept
+<code class="docutils literal notranslate"><span class="pre">curve_type=</span></code> (line, circle, ellipse, hyperbola, parabola, bezier, bspline,
+other); vertices accept <code class="docutils literal notranslate"><span class="pre">near=</span></code>. Filters apply before the distance comparison.</p>
+<p>A singular selection needs at least one constraint. No match raises
+<code class="docutils literal notranslate"><span class="pre">TopologySelectionError</span></code>; equally eligible candidates within the model’s
+converted CAD tolerance raise <code class="docutils literal notranslate"><span class="pre">AmbiguousTopologyError</span></code>. A point on a shared
+edge can select two faces equally well: add a normal or surface-type
+constraint. <code class="docutils literal notranslate"><span class="pre">body.faces(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">body.edges(...)</span></code> deliberately return iterable
+<code class="docutils literal notranslate"><span class="pre">FaceSetRef</span></code> and <code class="docutils literal notranslate"><span class="pre">EdgeSetRef</span></code> values. Without constraints they select all faces
+or edges; with <code class="docutils literal notranslate"><span class="pre">near</span></code> they retain all nearest ties.</p>
+<p>Register a selection before placement when it has an enduring physical role:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">coax</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span> <span class="n">inner_radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">coax</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">near</span><span class="o">=</span><span class="p">(</span><span class="mf">1.5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">coax</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">22.5</span><span class="p">)</span>
+<span class="n">port</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">)</span>
+<span class="n">extension</span> <span class="o">=</span> <span class="n">port</span><span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="mf">1e-3</span> <span class="o">*</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">port</span><span class="o">.</span><span class="n">normal</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Names are non-empty strings, unique per topology kind on their owner.
+<code class="docutils literal notranslate"><span class="pre">tag_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_edge</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_vertex</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_faces</span></code> and <code class="docutils literal notranslate"><span class="pre">tag_edges</span></code> return a new
+owner; the input stays unchanged. Named lookup cannot be combined with
+semantic constraints. Retrieve a singular tag with the singular selector
+and a set tag with the plural selector.</p>
+<p>Intrinsic measurements are read-only properties: <code class="docutils literal notranslate"><span class="pre">vertex.point</span></code>;
+<code class="docutils literal notranslate"><span class="pre">edge.length</span></code>, <code class="docutils literal notranslate"><span class="pre">start</span></code>, <code class="docutils literal notranslate"><span class="pre">end</span></code>, <code class="docutils literal notranslate"><span class="pre">vertices</span></code>; and <code class="docutils literal notranslate"><span class="pre">face.centroid</span></code>, <code class="docutils literal notranslate"><span class="pre">area</span></code>,
+<code class="docutils literal notranslate"><span class="pre">is_planar</span></code>, <code class="docutils literal notranslate"><span class="pre">edges</span></code>, <code class="docutils literal notranslate"><span class="pre">vertices</span></code>. Positions and lengths are in metres and areas
+in square metres. Edge endpoints follow the edge’s orientation on its owner;
+reflection may reverse their traversal order. Boundary connectivity includes
+inner wires and deduplicates
+shared vertices and seam edges. A planar face has a constant outward <code class="docutils literal notranslate"><span class="pre">normal</span></code>.
+Planarity is measured geometrically: a flat B-spline patch is planar even
+when its analytic <code class="docutils literal notranslate"><span class="pre">surface_type</span></code> remains <code class="docutils literal notranslate"><span class="pre">bspline</span></code>. Detachment covers its exact
+boundaries with a plane, giving a usable Profile.
+For a curved face use <code class="docutils literal notranslate"><span class="pre">normal_at(point)</span></code> with a point on the trimmed face;
+reading its <code class="docutils literal notranslate"><span class="pre">.normal</span></code> raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
+<section id="how-names-follow-construction">
+<h3>How names follow construction<a class="headerlink" href="#how-names-follow-construction" title="Link to this heading">#</a></h3>
+<p>Translation, rotation, reflection and uniform scaling preserve names exactly,
+including their new placement and outward orientation. An unnamed reference
+continues to describe its original owner; transform the tagged owner and look
+up the name there. Group placements keep each member’s names independently.</p>
+<p>Boolean and modification operations use the CAD kernel’s construction history.
+A singular name survives only with one provable successor. Deleted selections,
+unprovable successors and singular names that split raise
+<code class="docutils literal notranslate"><span class="pre">TopologyEvolutionError</span></code> during the construction call. The implementation never
+falls back to the nearest face. When a split is intentional, register a set
+before performing it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">block</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">2e-3</span><span class="p">,</span> <span class="mf">2e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">block</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">tag_faces</span><span class="p">(</span><span class="s2">"cap"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">slot</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">0.2e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">))</span>
+<span class="n">split</span> <span class="o">=</span> <span class="n">block</span> <span class="o">-</span> <span class="n">slot</span>
+<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">faces</span><span class="p">(</span><span class="s2">"cap"</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>A set can split or merge, but deleting any selected member still raises.
+Different operands carrying the same topology name must prove the same selection;
+otherwise their Boolean combination reports a name conflict. In particular,
+fusing tagged array copies can conflict; group them when each copy needs its
+own selection names. Names should be registered after fusion when they describe
+the fused body.</p>
+<p>History availability depends on the operation and kernel. A shell can map an
+outer face to both an outer and an inner face; use a deliberate set when that
+is intended. A face-to-face loft built from boundary wires may provide no
+provable face successor, so retaining that singular tag fails explicitly.
+Detaching a face creates independent geometry and intentionally leaves the
+owner’s names behind. Direct FaceRef construction also produces independent
+geometry: the selected face supplies its shape and material, while selection
+registrations stay on the original owner. Modifying the owner itself retains
+the established history rules.</p>
+<p>Projects persist the semantic origin of each name and the relevant construction
+path, with exact geometry snapshots at untagged origins. Read-back replays that
+path and validates the registered and final cardinalities before exposing names.
+It stores no subshape enumeration indices. Topology enumeration is cached per
+owner and model scale; repeated named lookup resolves from the owner’s cache.</p>
+</section>
+</section>
+<section id="uniform-profile-operations">
+<h2>Uniform profile operations<a class="headerlink" href="#uniform-profile-operations" title="Link to this heading">#</a></h2>
+<p>The same section categories feed extrusion, revolution, sweep and loft:
+<code class="docutils literal notranslate"><span class="pre">Profile</span></code>, an eligible standalone <code class="docutils literal notranslate"><span class="pre">Sheet</span></code>, or a selected <code class="docutils literal notranslate"><span class="pre">FaceRef</span></code>. Every
+operation returns an independent <code class="docutils literal notranslate"><span class="pre">Solid</span></code>; it does not fuse the new volume
+into the section’s owner. An explicit <code class="docutils literal notranslate"><span class="pre">material=</span></code> overrides inheritance;
+otherwise the section supplies its material, or a FaceRef supplies its owner’s
+material. A materialless section produces a materialless construction solid.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Operation</p></th>
+<th class="head"><p>Eligible section</p></th>
+<th class="head"><p>Placement</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">section.extruded(vector)</span></code></p></td>
+<td><p>Planar or curved sheet/face</p></td>
+<td><p>Actual world geometry plus the extrusion vector</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">section.revolved(axis,</span> <span class="pre">origin=...)</span></code></p></td>
+<td><p>Planar sheet/face</p></td>
+<td><p>Actual world geometry around the stated axis</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">section.swept(spine)</span></code></p></td>
+<td><p>Planar sheet/face</p></td>
+<td><p>Centroid at spine start, normal aligned with its start tangent</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">section.lofted(other)</span></code> / <code class="docutils literal notranslate"><span class="pre">Loft(*sections)</span></code></p></td>
+<td><p>Planar sheets/faces</p></td>
+<td><p>Actual world placement of every section</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">section.thickened(thickness)</span></code></p></td>
+<td><p>Planar or curved sheet/face</p></td>
+<td><p>Offset along its oriented normal; symmetric only for planar sections</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Loft</span></code> also accepts closed planar Curves as a convenience and converts them
+into profiles. All inner boundaries survive. Loft sections must have the same
+hole count; outer boundaries match each other and holes match in boundary
+order. Tangent lofts preserve the holes too, with the same spine and end
+normal conditions applied to every boundary. A nonplanar sweep, revolution or
+loft section raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> at the call; a category mismatch raises
+<code class="docutils literal notranslate"><span class="pre">TypeError</span></code>. Valid sections can still produce a self-intersecting or otherwise
+invalid solid for an unsuitable path or axis; the CAD operation then fails.</p>
+<p>For a sweep, the shortest rotation from the oriented section normal to the
+spine tangent transports its actual boundary. An already aligned section
+retains its in-plane roll exactly. If the normal is opposite to the tangent,
+the half-turn uses the section plane’s X direction. The pipe then uses the
+kernel’s corrected Frenet transport by default. Explicit frame modes are
+described below. Flat spline sheets are re-covered with their exact boundaries as
+planar sections. The following annular face continues around an exact bend:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">shield</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">8e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span>
+                      <span class="n">inner_radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=-</span><span class="mf">3e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">port</span> <span class="o">=</span> <span class="n">shield</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">)</span>
+<span class="n">spine</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">arc</span><span class="p">((</span><span class="mf">8e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">8e-3</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">8e-3</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                     <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">8e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">extension</span> <span class="o">=</span> <span class="n">port</span><span class="o">.</span><span class="n">swept</span><span class="p">(</span><span class="n">spine</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Detach only when the section needs its own placement. <code class="docutils literal notranslate"><span class="pre">port.swept(spine)</span></code>
+consumes the selected shape directly and leaves the owner’s names on that
+owner. <code class="docutils literal notranslate"><span class="pre">body.swept(spine,</span> <span class="pre">face_near=p)</span></code> and the existing Solid extrusion and
+loft point forms remain conveniences that select a temporary FaceRef.
+They use the same ambiguity checks as <code class="docutils literal notranslate"><span class="pre">body.face(near=p)</span></code>.</p>
+<section id="referenced-edges-and-openings">
+<h3>Referenced edges and openings<a class="headerlink" href="#referenced-edges-and-openings" title="Link to this heading">#</a></h3>
+<p>Fillet and chamfer modify a Solid with <code class="docutils literal notranslate"><span class="pre">edges=</span></code> taking an EdgeRef, EdgeSetRef,
+or sequence of them, or <code class="docutils literal notranslate"><span class="pre">faces=</span></code> taking a FaceRef, FaceSetRef, or sequence of
+them to select their boundary edges. Shell openings use the same face forms
+through <code class="docutils literal notranslate"><span class="pre">openings=</span></code>. References must belong to the exact receiver; references
+from an identical copy or a previous owner are rejected. Re-select on a new
+owner after every placement or construction. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">block</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">10e-3</span><span class="p">,</span> <span class="mf">8e-3</span><span class="p">,</span> <span class="mf">6e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">housing</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">shelled</span><span class="p">(</span><span class="mf">0.5e-3</span><span class="p">,</span> <span class="n">openings</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">))</span>
+<span class="n">rim</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span><span class="o">.</span><span class="n">edges</span>
+<span class="n">rounded</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">filleted</span><span class="p">(</span><span class="n">edges</span><span class="o">=</span><span class="n">rim</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.2e-3</span><span class="p">)</span>
+<span class="n">bevelled</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">chamfered</span><span class="p">(</span><span class="n">faces</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">),</span> <span class="n">distance</span><span class="o">=</span><span class="mf">0.2e-3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Select exactly one mode: <code class="docutils literal notranslate"><span class="pre">edges</span></code>, <code class="docutils literal notranslate"><span class="pre">faces</span></code>, <code class="docutils literal notranslate"><span class="pre">near</span></code> or <code class="docutils literal notranslate"><span class="pre">face_near</span></code> for fillet and
+chamfer; <code class="docutils literal notranslate"><span class="pre">openings</span></code> or <code class="docutils literal notranslate"><span class="pre">opening_face_near</span></code> for shell. Omit shell openings for
+a closed void. The retained point forms now select semantically and refuse
+tied picks; <code class="docutils literal notranslate"><span class="pre">edges=&quot;all&quot;</span></code> explicitly selects all edges. Empty reference sets,
+wrong topology kinds, stale owners and conflicting modes fail at the call.
+Selected operations retain exact identity when the surrounding model changes
+its numerical build scale. Projects replay reference origins on their original
+immutable owners, with exact snapshot checks for individual connected edges;
+no persistent kernel indices or nearest retargeting are used.</p>
+</section>
+</section>
+<section id="sweep-orientation-modes">
+<h2>Sweep orientation modes<a class="headerlink" href="#sweep-orientation-modes" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">swept(spine,</span> <span class="pre">frame=...)</span></code> chooses how the initially aligned section travels
+along a Curve. The same options apply to Profile, eligible planar Sheet and
+FaceRef inputs. Initial placement always retains the real boundary and roll.
+An explicit direction is a world vector, independent of Path’s routing up.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Frame</p></th>
+<th class="head"><p>Section transport</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;corrected_frenet&quot;</span></code> (default)</p></td>
+<td><p>Kernel corrected Frenet transport; the established sweep behaviour</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;frenet&quot;</span></code></p></td>
+<td><p>Normal to the path tangent, with the curvature/torsion frame</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;fixed&quot;</span></code></p></td>
+<td><p>All sections remain parallel to the initially aligned section in world space</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;fixed_binormal&quot;</span></code></p></td>
+<td><p>Angular relations between the section and the supplied world <code class="docutils literal notranslate"><span class="pre">binormal</span></code> remain constant</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Frenet orientation can change sharply where curvature vanishes or changes
+sign. Fixed orientation is useful for a displaced transition whose end
+apertures must remain parallel. It requires a path that advances through those
+section planes; a folded path can produce an invalid volume. Fixed binormal
+requires a nonzero <code class="docutils literal notranslate"><span class="pre">binormal=</span></code> and rejects a direction parallel to the initial
+tangent. On a planar bend use its plane normal to keep the section’s relation
+to that bend plane constant. On a spatial path its sections can be oblique to
+the tangent: this mode preserves the specified angular relation, rather than
+replacing the direction with a tangent-dependent projection. <code class="docutils literal notranslate"><span class="pre">binormal=</span></code> is
+invalid for the other modes.</p>
+<p>The area-times-path-length rule applies to perpendicular, constant-area
+sections. For fixed parallel sections that advance monotonically along their
+normal, volume is area times the displacement projected onto that normal.
+For example, the following 45-degree bend keeps both rectangular apertures
+parallel to the x-z plane:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">bend_radius</span> <span class="o">=</span> <span class="mf">8e-3</span>
+<span class="n">angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span>
+<span class="n">aperture</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Profile</span><span class="o">.</span><span class="n">rectangle</span><span class="p">((</span><span class="n">bend_radius</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">0.3e-3</span><span class="p">),</span>
+                                 <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">x_direction</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
+<span class="n">spine</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">arc</span><span class="p">((</span><span class="n">bend_radius</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                      <span class="p">(</span><span class="n">bend_radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">bend_radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">0</span><span class="p">),</span>
+                      <span class="p">(</span><span class="n">bend_radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">bend_radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">kept_parallel</span> <span class="o">=</span> <span class="n">aperture</span><span class="o">.</span><span class="n">swept</span><span class="p">(</span><span class="n">spine</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">"fixed"</span><span class="p">)</span>
+<span class="n">expected_volume</span> <span class="o">=</span> <span class="n">aperture</span><span class="o">.</span><span class="n">area</span> <span class="o">*</span> <span class="n">bend_radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Holes share the same station and frame as the complete section, including
+offset holes. Material inheritance and owner-selection rules remain the same
+as for a default sweep. These options control transport; they do not add twist,
+draft, corner smoothing or a guarantee against self-intersection. Choose
+sections and paths that form a valid solid; kernel failures raise RuntimeError.
+<a class="reference internal" href="../tutorials/plot_14_profile_geometry.html"><span class="std std-doc">Tutorial 14</span></a> compares perpendicular
+and parallel transport, checks both volumes and displays their end apertures.</p>
+</section>
+<section id="sweep-twist-and-draft">
+<h2>Sweep twist and draft<a class="headerlink" href="#sweep-twist-and-draft" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">swept(twist_deg=...,</span> <span class="pre">draft_deg=...)</span></code> adds two constant construction laws to
+any planar section. Both default to zero. <code class="docutils literal notranslate"><span class="pre">twist_deg</span></code> is the <strong>total additional
+roll</strong>, in degrees, rather than degrees per metre. At travelled spine arc length
+<code class="docutils literal notranslate"><span class="pre">s</span></code> on a route of total length <code class="docutils literal notranslate"><span class="pre">L</span></code>, the roll is <code class="docutils literal notranslate"><span class="pre">twist_deg</span> <span class="pre">*</span> <span class="pre">s</span> <span class="pre">/</span> <span class="pre">L</span></code>. Positive
+roll follows the right-hand rule about the transported section normal, starting
+at zero. It rotates the actual outline and every hole together. For sections
+perpendicular to the route this axis is the local tangent. Fixed and fixed-binormal
+modes retain their section planes; twist rotates within those planes.</p>
+<p><code class="docutils literal notranslate"><span class="pre">draft_deg</span></code> is a <strong>constant section-offset angle</strong>, strictly between -90 and
+90 degrees. The signed offset in the section plane is
+<code class="docutils literal notranslate"><span class="pre">d(s)</span> <span class="pre">=</span> <span class="pre">s</span> <span class="pre">*</span> <span class="pre">tan(draft_deg)</span></code>: positive draft expands the material region, growing
+the exterior and shrinking holes; negative draft reverses both changes. On a
+straight perpendicular route this is the wall angle to the sweep direction.
+On a curved or oblique route the definition remains the offset per travelled
+arc length; the resulting spatial wall angle also depends on transport and
+curvature. Polygon corners use intersecting offset lines (mitred joins).
+Draft is a normal offset, so a rectangle’s two dimensions grow by the same
+distance and a bore shrinks. Scaling the whole section would have different
+effects.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">length</span> <span class="o">=</span> <span class="mf">4e-3</span>
+<span class="n">route</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">line</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">length</span><span class="p">))</span>
+<span class="n">aperture</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Profile</span><span class="o">.</span><span class="n">rectangle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
+<span class="n">twisted</span> <span class="o">=</span> <span class="n">aperture</span><span class="o">.</span><span class="n">swept</span><span class="p">(</span><span class="n">route</span><span class="p">,</span> <span class="n">twist_deg</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+
+<span class="n">annulus</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Profile</span><span class="o">.</span><span class="n">from_wires</span><span class="p">(</span>
+    <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">2e-3</span><span class="p">),</span>
+    <span class="p">[</span><span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">0.3e-3</span><span class="p">)],</span>
+    <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">drafted</span> <span class="o">=</span> <span class="n">annulus</span><span class="o">.</span><span class="n">swept</span><span class="p">(</span><span class="n">route</span><span class="p">,</span> <span class="n">draft_deg</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">delta</span> <span class="o">=</span> <span class="n">length</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">outlet_area</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">((</span><span class="mf">2e-3</span> <span class="o">+</span> <span class="n">delta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="mf">0.3e-3</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">drafted</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span><span class="o">.</span><span class="n">area</span><span class="p">,</span> <span class="n">outlet_area</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="mf">2e-7</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Nonzero laws construct fitted B-spline side surfaces through sections ordered
+by arc length. <code class="docutils literal notranslate"><span class="pre">tolerance=</span></code> is an absolute length in metres; its default is
+one millionth of the initial profile’s bounding-box diagonal. Adaptive refinement
+checks quarter, middle and three-quarter stations between constraints, sampling
+nine points per edge in both distance directions. This controls a sampled
+section fit; it is not a certified maximum surface error. An unattainable fit
+raises <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>. Zero laws retain the established pipe construction.</p>
+<p>Section boundaries must retain their topology. A closing hole, disappearing
+outline or split offset raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> rather than deleting that boundary.
+Use smooth routes or tangent-connected edges; sharp route corners do not acquire
+an implicit rounding or joint rule. A closed route requires matching initial
+and final sections, including transported roll; nonzero draft cannot meet that
+condition. A compatible periodic twist is sewn at the seam.
+Material inheritance, direct <code class="docutils literal notranslate"><span class="pre">FaceRef</span></code> construction and independent ownership
+follow the ordinary sweep rules. The construction does not certify absence of
+self-intersection. <a class="reference internal" href="../tutorials/plot_14_profile_geometry.html"><span class="std std-doc">Tutorial 14</span></a>
+shows the twisted rectangle and the drafted annulus with independent volume
+and outlet checks.</p>
+</section>
+<section id="partition-and-section">
+<h2>Partition and section<a class="headerlink" href="#partition-and-section" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">shape.partition(cutter)</span></code> splits a Solid or Sheet at another Solid or Sheet.
+For a world plane, use <code class="docutils literal notranslate"><span class="pre">shape.partition(normal=...,</span> <span class="pre">position=...)</span></code>, with
+<code class="docutils literal notranslate"><span class="pre">normal</span> <span class="pre">dot</span> <span class="pre">point</span> <span class="pre">=</span> <span class="pre">position</span></code> and <code class="docutils literal notranslate"><span class="pre">position</span></code> in metres. The result is a tuple
+of independently owned connected regions of the source’s dimension. Each
+region inherits the source material; the cutter supplies geometry, not
+material. A plane, sheet or body can cut at an oblique angle. A cut that does
+not separate a connected region, including a tangent contact or a coincident
+boundary, returns one independent region. An already disconnected source can
+return several regions even without a new cut. The source remains unchanged.</p>
+<p><code class="docutils literal notranslate"><span class="pre">shape.section(...)</span></code> uses the same cutter grammar and returns exact standalone
+Curves at the intersection. It returns an empty tuple when there is no curve.
+For a Solid and an explicit world plane, <code class="docutils literal notranslate"><span class="pre">filled=True</span></code> returns bounded planar
+Profiles instead. A profile retains intrinsic holes, and disconnected islands
+are separate profiles. A face coincident with the cutter has a two-dimensional
+overlap, so <code class="docutils literal notranslate"><span class="pre">section</span></code> raises rather than treating its arbitrary boundary as a
+one-dimensional intersection. A tangency with only a point has no curve.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">tube</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">radius</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span> <span class="n">inner_radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                    <span class="n">height</span><span class="o">=</span><span class="mf">6e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">parts</span> <span class="o">=</span> <span class="n">tube</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">3e-3</span><span class="p">)</span>
+<span class="n">loops</span> <span class="o">=</span> <span class="n">tube</span><span class="o">.</span><span class="n">section</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">3e-3</span><span class="p">)</span>
+<span class="p">(</span><span class="n">ring</span><span class="p">,)</span> <span class="o">=</span> <span class="n">tube</span><span class="o">.</span><span class="n">section</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">3e-3</span><span class="p">,</span> <span class="n">filled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">loops</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="k">assert</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">),</span> <span class="n">tube</span><span class="o">.</span><span class="n">volume</span><span class="p">())</span>
+<span class="k">assert</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">area</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">((</span><span class="mf">2e-3</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1e-3</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Result order is one kernel evaluation’s order, not a persistent identifier.
+Do not assign physical meaning to tuple positions after changing the CAD
+model. Named topology follows provable kernel history: a singular name that
+splits reports an error, while a deliberately named set can retain its
+successors. A result region owns its selections independently and project
+read-back reconstructs the selected region without storing a numeric face
+index. New cut faces do not inherit names from unrelated source faces.
+<a class="reference internal" href="../tutorials/plot_14_profile_geometry.html"><span class="std std-doc">Tutorial 14</span></a> shows the hollow
+component, filled annulus and an oblique sheet cutter.</p>
+</section>
+<section id="imprint-and-insert">
+<h2>Imprint and insert<a class="headerlink" href="#imprint-and-insert" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">receiver.imprint(cutter)</span></code> splits only the receiver Solid’s boundary faces at
+their intersections with a Solid or Sheet cutter. The returned Solid keeps the
+receiver’s volume, material and placement; the cutter is untouched. This is a
+directed operation: call it on the body whose faces you need to select. An
+interior cutter that never reaches the receiver’s boundary leaves its faces
+unchanged. A contact patch may split a face even when there is no volume
+overlap. Imprint alone does not resolve material overlap in a model.</p>
+<p><code class="docutils literal notranslate"><span class="pre">geo.insert(*bodies,</span> <span class="pre">priorities=...,</span> <span class="pre">voids=...)</span></code> resolves material overlap
+geometrically. Every body needs a material and one integer priority. A larger
+priority wins shared volume; the lower-priority body is trimmed, and each
+retained body keeps its own material. Equal-priority bodies may be separate,
+but an overlap at equal priority raises an error. The rule is fixed by the
+declared priorities, independent of <code class="docutils literal notranslate"><span class="pre">GeometryModel.add</span></code> order. Results are a
+<code class="docutils literal notranslate"><span class="pre">Group</span></code>, which the model flattens into material bodies. Bodies that only touch
+remain separate; same-material overlap is still trimmed. Every positive
+volume intersection representable by the CAD kernel participates in the
+precedence rule, including a small corner overlap. A completely removed
+unnamed body is omitted.</p>
+<p><code class="docutils literal notranslate"><span class="pre">voids</span></code> are separate, material-less construction Solids. Each void subtracts
+from every physical body it reaches and is not returned as a material region.
+Use a physical body with <code class="docutils literal notranslate"><span class="pre">material=&quot;air&quot;</span></code> when air is part of the model; a
+material-less void represents removed geometry. Inputs stay unchanged.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">housing</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">window</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">1.8e-3</span><span class="p">,</span> <span class="mf">0.5e-3</span><span class="p">,</span> <span class="mf">0.5e-3</span><span class="p">),</span>
+                   <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">))</span>
+<span class="n">housing</span> <span class="o">=</span> <span class="n">housing</span><span class="o">.</span><span class="n">imprint</span><span class="p">(</span><span class="n">window</span><span class="p">)</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span>
+    <span class="s2">"contact"</span><span class="p">,</span> <span class="n">near</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)</span>
+<span class="n">dielectric</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5e-3</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span>
+                       <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
+<span class="n">assembly</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">housing</span><span class="p">,</span> <span class="n">dielectric</span><span class="p">,</span> <span class="n">priorities</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="k">assert</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">part</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">assembly</span><span class="o">.</span><span class="n">members</span><span class="p">()),</span> <span class="mf">8e-9</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">next</span><span class="p">(</span><span class="n">assembly</span><span class="o">.</span><span class="n">members</span><span class="p">())</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"contact"</span><span class="p">)</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>For several overlapping bodies, assign all priorities in one call. A body is
+trimmed by every higher-priority body that overlaps it, so each point belongs
+to at most one output material. A void wins over every body. Named selections
+on a trimmed or imprinted receiver follow its own kernel history; cutter names
+do not become receiver names. A singular face that splits or disappears raises
+<code class="docutils literal notranslate"><span class="pre">TopologyEvolutionError</span></code>; register a deliberate set when all split faces must
+remain named. Named output bodies replay from the construction in a project,
+without persistent kernel face numbers.
+<a class="reference internal" href="../tutorials/plot_14_profile_geometry.html"><span class="std std-doc">Tutorial 14</span></a> shows both operations
+on a housing and an inserted material body.</p>
+</section>
+<section id="project-curves-onto-bounded-faces">
+<h2>Project curves onto bounded faces<a class="headerlink" href="#project-curves-onto-bounded-faces" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">curve.projected_onto(target,</span> <span class="pre">...)</span></code> maps a standalone Curve to a bounded
+<code class="docutils literal notranslate"><span class="pre">Sheet</span></code> or an owned <code class="docutils literal notranslate"><span class="pre">FaceRef</span></code>. The selected face’s actual rim and holes apply;
+the operation never substitutes an untrimmed underlying surface. Its result is
+a tuple of independent Curves, because clipping can split one source path into
+several pieces. The target and source remain unchanged, and a <code class="docutils literal notranslate"><span class="pre">FaceRef</span></code> stays
+bound to its owner.</p>
+<p>Choose exactly one policy:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Policy</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">direction=(dx,</span> <span class="pre">dy,</span> <span class="pre">dz)</span></code></p></td>
+<td><p>Parallel rays from the source curve in an explicit world direction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">perspective_source=(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code></p></td>
+<td><p>Rays from a world point through the source curve.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">closest=True</span></code></p></td>
+<td><p>Nearest points on the bounded target, including its rim.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The ray policies use forward rays. By default, the first target hit along each
+ray is used; <code class="docutils literal notranslate"><span class="pre">all_hits=True</span></code> retains every forward branch, such as both walls
+of a cylinder. Hits behind the source curve are excluded. If the source crosses
+the near wall, the first-hit trace switches to the next forward wall and the
+two resulting curves remain separate. A ray lying in a target face has a
+zero-distance first hit; requesting all its infinitely many hits raises. The
+closest-point policy follows the actual trimmed region and adaptively fits an
+on-surface curve to <code class="docutils literal notranslate"><span class="pre">tolerance</span></code> (metres). Its default is one millionth of the
+source extent, subject to CAD kernel precision. Boundary segments such as a
+circular hole rim retain their exact edge geometry. A discontinuous nearest
+assignment or a singular target parameterisation raises rather than joining
+unrelated branches.</p>
+<p>If any part of a ray-projected source curve misses the target, the ordinary
+call raises. Add <code class="docutils literal notranslate"><span class="pre">clip=True</span></code> to retain only covered curve pieces, including
+pieces separated by a hole. A complete miss raises without clipping and
+returns an empty tuple with <code class="docutils literal notranslate"><span class="pre">clip=True</span></code>. Tangential contact that forms a
+curve is kept; a point-only contact does not create a Curve. <code class="docutils literal notranslate"><span class="pre">clip</span></code> and
+<code class="docutils literal notranslate"><span class="pre">all_hits</span></code> apply only to ray projection; nearest-point projection already
+uses the bounded face.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">housing</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">)</span>
+<span class="n">wall</span> <span class="o">=</span> <span class="n">housing</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="n">near</span><span class="o">=</span><span class="p">(</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">))</span>
+<span class="n">sketch</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">line</span><span class="p">((</span><span class="mf">8e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="p">(</span><span class="mf">8e-3</span><span class="p">,</span> <span class="mf">2e-3</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">))</span>
+<span class="p">(</span><span class="n">trace</span><span class="p">,)</span> <span class="o">=</span> <span class="n">sketch</span><span class="o">.</span><span class="n">projected_onto</span><span class="p">(</span><span class="n">wall</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">wire</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">ThinWire</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">trace</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;</span> <span class="n">sketch</span><span class="o">.</span><span class="n">length</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">trace</span></code> is a geometric centreline, without material. The <code class="docutils literal notranslate"><span class="pre">ThinWire</span></code> declaration
+supplies a PEC sub-cell conductor when added to a suitable model; a resolved
+conductor can instead be built from the projected path. The cylinder example
+uses the near wall automatically. <a class="reference internal" href="../tutorials/plot_14_profile_geometry.html"><span class="std std-doc">Tutorial 14</span></a>
+shows the housing patch, the far-wall option and explicit clipping.</p>
+</section>
+<section id="offset-curves-and-sheets">
+<h2>Offset curves and sheets<a class="headerlink" href="#offset-curves-and-sheets" title="Link to this heading">#</a></h2>
+<p>An offset has a physical distance in metres. For a directed planar <code class="docutils literal notranslate"><span class="pre">Curve</span></code>,
+<code class="docutils literal notranslate"><span class="pre">curve.offset(distance,</span> <span class="pre">normal=...)</span></code> moves to the left of traversal for a
+positive distance when viewed along the stated plane normal. A negative
+distance moves right. The normal is required even for a line, since a line
+lies in infinitely many planes. At an outer corner the parallel segments are
+joined by a circular arc; at an inner corner they meet sharply. Open curves
+remain open with their ends at the corresponding normal offsets. A curve may
+collapse or split, so the result is always a tuple of independent Curves.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Profile.offset(distance)</span></code> acts on the <em>material region</em>, independent of
+boundary traversal. Positive distance adds material around the outside and
+shrinks holes; negative distance erodes the outside and enlarges holes.
+Rounded outer corners make this a geometric clearance operation rather than
+an affine scale or a mitered polygon. Every surviving disconnected region is
+returned as a Profile. A vanished hole disappears; a completely eroded
+profile returns an empty tuple. At the exact distance where boundaries pinch
+into a zero-width contact, construction can report an invalid boundary.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">outline</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">2e-3</span><span class="p">)</span>
+<span class="n">bore</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">circle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mf">1e-3</span><span class="p">)</span>
+<span class="n">washer</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Profile</span><span class="o">.</span><span class="n">from_wires</span><span class="p">(</span><span class="n">outline</span><span class="p">,</span> <span class="n">holes</span><span class="o">=</span><span class="p">[</span><span class="n">bore</span><span class="p">],</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">clearance</span> <span class="o">=</span> <span class="n">washer</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="mf">0.1e-3</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">clearance</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="k">assert</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span>
+    <span class="n">clearance</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">area</span><span class="p">,</span>
+    <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">((</span><span class="mf">2.1e-3</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="mf">0.9e-3</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">trace</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">line</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="p">(</span><span class="n">left_trace</span><span class="p">,)</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="mf">0.1e-3</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">left_trace</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="n">trace</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A curved <code class="docutils literal notranslate"><span class="pre">Sheet.offset(distance,</span> <span class="pre">tolerance=...)</span></code> follows the sheet’s oriented
+normal. Positive and negative distances choose opposite sides. The bounded
+rim moves with the surface; a selected face can first be detached with
+<code class="docutils literal notranslate"><span class="pre">face.detached().offset(...)</span></code>. The result remains a zero-thickness Sheet, not
+a thickened solid. The optional tolerance is an absolute sampled geometric
+deviation in metres; by default it is one millionth of the sheet extent,
+subject to CAD resolution. The builder rejects an invalid sheet, a sampled
+fold or singular normal, or a deviation beyond this budget. It does not
+promise a global error certificate between sample stations. A constant
+normal offset can fail on tightly curved geometry even when the distance is
+finite.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">housing</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">10e-3</span><span class="p">)</span>
+<span class="n">wall</span> <span class="o">=</span> <span class="n">housing</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="n">near</span><span class="o">=</span><span class="p">(</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">))</span><span class="o">.</span><span class="n">detached</span><span class="p">()</span>
+<span class="p">(</span><span class="n">construction_sheet</span><span class="p">,)</span> <span class="o">=</span> <span class="n">wall</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="mf">0.2e-3</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">construction_sheet</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">5.2e-3</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">2e-6</span>
+</pre></div>
+</div>
+<p>These operations preserve the source values. Offset Profiles inherit the
+source material; the resulting Sheets and Curves have independent ownership.
+To create physical thickness, extrude or thicken the result explicitly.
+Tutorial 14 combines a conductor clearance with a curved construction sheet.</p>
+</section>
+<section id="bend-existing-bodies-and-sheets">
+<h2>Bend existing bodies and sheets<a class="headerlink" href="#bend-existing-bodies-and-sheets" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">geo.Bend</span></code> deforms existing <code class="docutils literal notranslate"><span class="pre">Solid</span></code> and <code class="docutils literal notranslate"><span class="pre">Sheet</span></code> values. Its neutral <code class="docutils literal notranslate"><span class="pre">target</span></code>
+is a single, continuously parameterized sheet. The explicit world frame
+<code class="docutils literal notranslate"><span class="pre">origin</span></code>, <code class="docutils literal notranslate"><span class="pre">along</span></code>, and <code class="docutils literal notranslate"><span class="pre">across</span></code> assigns each source point three coordinates:
+<code class="docutils literal notranslate"><span class="pre">u</span></code> along the original part, <code class="docutils literal notranslate"><span class="pre">v</span></code> across it, and signed distance <code class="docutils literal notranslate"><span class="pre">w</span></code> from its
+neutral plane. The target’s increasing surface parameters correspond to the
+declared <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> intervals. Inside the bend, one common mapping places
+the neutral point on the target and carries every layer by <code class="docutils literal notranslate"><span class="pre">w</span></code> along the
+target normal. Apply the <strong>same</strong> <code class="docutils literal notranslate"><span class="pre">Bend</span></code> to a <code class="docutils literal notranslate"><span class="pre">Group</span></code> to keep a multilayer
+component aligned. Source values, materials and member identities remain
+independent.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">radius</span> <span class="o">=</span> <span class="mf">10e-3</span>
+<span class="n">length</span> <span class="o">=</span> <span class="n">radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">neutral</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Surface</span><span class="o">.</span><span class="n">parametric</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="p">(</span><span class="n">radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span> <span class="o">/</span> <span class="n">radius</span><span class="p">),</span> <span class="n">v</span><span class="p">,</span>
+                  <span class="n">radius</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">u</span> <span class="o">/</span> <span class="n">radius</span><span class="p">))),</span>
+    <span class="n">u</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">length</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">samples</span><span class="o">=</span><span class="p">(</span><span class="mi">65</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">bend</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Bend</span><span class="p">(</span>
+    <span class="n">neutral</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">along</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">across</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span>
+    <span class="n">u</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">length</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">max_strain</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">layer</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+    <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2e-3</span><span class="p">),</span>
+    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="mf">2e-3</span><span class="p">,</span> <span class="mf">0.2e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">curved_layer</span> <span class="o">=</span> <span class="n">bend</span> <span class="o">@</span> <span class="n">layer</span>
+<span class="k">assert</span> <span class="n">curved_layer</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">layer</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The interval <code class="docutils literal notranslate"><span class="pre">u</span></code> is finite. Source material before its start remains in its
+original position. Material after its end follows a rigid frame tangent to
+the target’s end. The target must meet the source’s start plane in position
+and orientation; both transverse boundary curves must admit those rigid
+continuations. An incompatible boundary raises instead of adding a hidden
+transition. The target chart must cover the full transverse extent and have
+no missing patch. A nondevelopable neutral surface generally stretches and
+shears: <code class="docutils literal notranslate"><span class="pre">max_strain</span></code> is a <strong>required, dimensionless sampled limit</strong> on the two
+principal in-plane stretches relative to the flat source. The layer extension
+must retain a positive sampled volume Jacobian. Bending does not conserve
+volume in general: material on the outside of a circular bend lengthens and
+material on the inside shortens.</p>
+<p>The result uses smooth trimmed CAD surfaces. The builder splits source faces
+at the interval ends where needed, interpolates deformed faces, rebuilds
+their shared edges, and checks CAD validity and self-interference. A selected
+source face that splits has no singular named successor: register a deliberate
+face set when that is the intended selection. <code class="docutils literal notranslate"><span class="pre">tolerance</span></code> is an absolute
+sampled surface-fit budget in metres; its default is one millionth of the
+source/target extent, subject to CAD resolution. A difficult face can fail
+this budget, in which case choose a larger tolerance that the engineering
+model permits. The sampled strain, Jacobian and fit gates do not constitute
+global mathematical certificates between sample stations. A target made of
+several faces, a singular parameter chart or an unreconstructable source
+face reports an error. The output Sheet has no physical thickness. If the
+sheet crosses an interval boundary, its CAD representation has multiple
+faces: construct a layer with <code class="docutils literal notranslate"><span class="pre">source_sheet.thickened(...)</span></code> <strong>before</strong> applying
+the Bend to that Solid. Tutorial 14 bends two material layers through one
+shared map and checks their expected volumes.</p>
+</section>
+<section id="wrap-a-flat-component-onto-a-curved-patch">
+<h2>Wrap a flat component onto a curved patch<a class="headerlink" href="#wrap-a-flat-component-onto-a-curved-patch" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">geo.Wrap</span></code> uses the same explicit source frame and normal-layer map as
+<code class="docutils literal notranslate"><span class="pre">geo.Bend</span></code>, but maps the <strong>whole</strong> source rather than a finite interval with
+straight continuations. This is useful for a trace and its substrate on a
+curved housing. Define one single-face target patch, assign its parameter
+directions to source <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> distances, and apply one <code class="docutils literal notranslate"><span class="pre">Wrap</span></code> to the
+material-preserving <code class="docutils literal notranslate"><span class="pre">Group</span></code>. Every source point must lie within the declared
+chart. No nearest-surface or shortest-path correspondence is inferred.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Surface</span><span class="o">.</span><span class="n">parametric</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="mf">2e-4</span> <span class="o">*</span> <span class="p">(</span><span class="n">u</span> <span class="o">/</span> <span class="mf">20e-3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">u</span> <span class="o">/</span> <span class="mf">20e-3</span><span class="p">)),</span>
+    <span class="n">u</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">20e-3</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">samples</span><span class="o">=</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">wrap</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Wrap</span><span class="p">(</span>
+    <span class="n">target</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">along</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">across</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span>
+    <span class="n">u</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">20e-3</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">max_strain</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">board</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+    <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">4e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3e-3</span><span class="p">),</span>
+    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">18e-3</span><span class="p">,</span> <span class="mf">8e-3</span><span class="p">,</span> <span class="mf">0.3e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">trace</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+    <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">16e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">0.035e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">wrapped</span> <span class="o">=</span> <span class="n">wrap</span> <span class="o">@</span> <span class="n">geo</span><span class="o">.</span><span class="n">Group</span><span class="p">(</span><span class="n">board</span><span class="p">,</span> <span class="n">trace</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The target may curve in both directions. Its in-plane strain must remain
+within the required <code class="docutils literal notranslate"><span class="pre">max_strain</span></code> budget; extension through the occupied
+thickness must not fold. Neither trace length nor material volume is
+promised to remain unchanged. A periodic surface needs an explicitly cut
+chart: the operation does not choose or cross a seam. The target must be one
+regular, hole-free face, though the source may have openings. The result is
+smooth trimmed CAD geometry; <code class="docutils literal notranslate"><span class="pre">tolerance</span></code> controls sampled fit error as for
+<code class="docutils literal notranslate"><span class="pre">Bend</span></code>, and invalid or self-intersecting results raise. These checks sample
+the map and CAD result rather than proving global distortion bounds. The
+source and material ownership remain unchanged; named geometry can be
+reconstructed on project replay. A wrapped Sheet remains a zero-thickness
+Sheet. Tutorial 14 shows a conformal layered trace.</p>
+</section>
+<section id="placement-and-transform-composition">
+<h2>Placement and transform composition<a class="headerlink" href="#placement-and-transform-composition" title="Link to this heading">#</a></h2>
+<p>The named methods are the normal spelling for one-off placement:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">feed</span> <span class="o">=</span> <span class="n">feed</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">)</span><span class="o">.</span><span class="n">translated</span><span class="p">((</span><span class="mf">12e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<span class="n">route</span> <span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="s2">"y"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Without additional options each call returns one new value of the same
+dimensional category. For regular arrays, <code class="docutils literal notranslate"><span class="pre">translated()</span></code> and <code class="docutils literal notranslate"><span class="pre">rotated()</span></code>
+accept <code class="docutils literal notranslate"><span class="pre">repeat</span></code>, <code class="docutils literal notranslate"><span class="pre">copy</span></code>, <code class="docutils literal notranslate"><span class="pre">unite</span></code>, and <code class="docutils literal notranslate"><span class="pre">group</span></code>. <code class="docutils literal notranslate"><span class="pre">repeat</span></code> counts transformed
+copies, starting at one displacement or angle increment; <code class="docutils literal notranslate"><span class="pre">copy=True</span></code> adds
+the untransformed original first. Thus seven copies plus the original make
+an eight-element circular array:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">post</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">0.5e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">6e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">posts</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">via</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">0.2e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+<span class="n">fence</span> <span class="o">=</span> <span class="n">via</span><span class="o">.</span><span class="n">translated</span><span class="p">((</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">pair</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Translation copy <em>i</em> is displaced by <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">*</span> <span class="pre">vector</span></code>; rotation copy <em>i</em> turns
+through <code class="docutils literal notranslate"><span class="pre">i</span> <span class="pre">*</span> <span class="pre">angle_deg</span></code> about the same axis and origin. Each placement acts
+on the original geometry, preserving the source and its existing placement.
+<code class="docutils literal notranslate"><span class="pre">repeat</span></code> must be a positive whole number. <code class="docutils literal notranslate"><span class="pre">mirrored()</span></code> accepts <code class="docutils literal notranslate"><span class="pre">copy</span></code>, <code class="docutils literal notranslate"><span class="pre">unite</span></code>
+and <code class="docutils literal notranslate"><span class="pre">group</span></code>, but has no repetition count: two reflections in the same plane
+would return to the original. Mirrored aggregation requires <code class="docutils literal notranslate"><span class="pre">copy=True</span></code>.
+<code class="docutils literal notranslate"><span class="pre">scaled()</span></code> retains its single-placement signature.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Options</p></th>
+<th class="head"><p>Result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Default <code class="docutils literal notranslate"><span class="pre">repeat=1,</span> <span class="pre">copy=False</span></code></p></td>
+<td><p>One placed geometry value</p></td>
+</tr>
+<tr class="row-odd"><td><p>Multiple copies or <code class="docutils literal notranslate"><span class="pre">copy=True</span></code>, without aggregation</p></td>
+<td><p>A list in placement order, original first when included</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">group=True</span></code></p></td>
+<td><p>A <code class="docutils literal notranslate"><span class="pre">Group</span></code>, preserving member materials and dimensional categories</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">unite=True</span></code></p></td>
+<td><p>A <code class="docutils literal notranslate"><span class="pre">Union</span></code>, carrying one material inherited from the source solid</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">group</span></code> and <code class="docutils literal notranslate"><span class="pre">unite</span></code> are mutually exclusive. An explicitly requested Group or
+Union is returned even for a single translated or rotated copy. Fusion is
+valid only for <code class="docutils literal notranslate"><span class="pre">Solid</span></code>: curves, profiles and curved sheets may be repeated
+and grouped, but cannot become Solid Boolean operands.</p>
+<p>The same convenience options apply to a <code class="docutils literal notranslate"><span class="pre">Group</span></code> assembly. Each copy retains
+its nested members and materials; <code class="docutils literal notranslate"><span class="pre">group=True</span></code> bundles these assemblies into
+an enclosing Group. <code class="docutils literal notranslate"><span class="pre">unite=True</span></code> rejects a Group rather than collapsing its
+potentially different materials. Lists, explicit <code class="docutils literal notranslate"><span class="pre">Group</span></code>/<code class="docutils literal notranslate"><span class="pre">Union</span></code> constructors
+and Python comprehensions remain available for irregular placement patterns.</p>
+<p>For a placement that is reused, build an immutable affine value.  <code class="docutils literal notranslate"><span class="pre">&#64;</span></code> acts on
+column-vector points, so the rightmost operation happens first:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">placement</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Translation</span><span class="p">((</span><span class="mf">12e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span> <span class="o">@</span> <span class="n">geo</span><span class="o">.</span><span class="n">Rotation</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">)</span>
+<span class="n">placed_curve</span> <span class="o">=</span> <span class="n">placement</span> <span class="o">@</span> <span class="n">route</span>
+<span class="n">placed_profile</span> <span class="o">=</span> <span class="n">placement</span> <span class="o">@</span> <span class="n">cross_section</span>
+<span class="n">placed_solid</span> <span class="o">=</span> <span class="n">placement</span> <span class="o">@</span> <span class="n">housing</span>
+</pre></div>
+</div>
+<p>This is equivalent to rotating each value and then translating it.  <code class="docutils literal notranslate"><span class="pre">Mirror</span></code>
+reflects across <code class="docutils literal notranslate"><span class="pre">point</span> <span class="pre">·</span> <span class="pre">normal</span> <span class="pre">==</span> <span class="pre">position</span></code>; <code class="docutils literal notranslate"><span class="pre">Scale</span></code> is uniform about its
+centre. <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">&#64;</span> <span class="pre">geometry</span></code> always produces one placement and has no
+array or aggregation options. Geometry does not right-apply a transform, and <code class="docutils literal notranslate"><span class="pre">+</span> <span class="pre">vector</span></code> is not a
+translation: <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code> and <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> remain solid Boolean operators.</p>
+<section id="place-a-reusable-component">
+<h3>Place a reusable component<a class="headerlink" href="#place-a-reusable-component" title="Link to this heading">#</a></h3>
+<p>Build and name a component once, then apply a different <code class="docutils literal notranslate"><span class="pre">Transform</span></code> to each
+copy. A <code class="docutils literal notranslate"><span class="pre">Group</span></code> may contain nested groups and different geometry categories;
+each placement distributes to its leaves and keeps the nesting, names and
+materials. For example, a metal shell and a dielectric insert can share a
+datum curve in one authoring component:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">shell</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"shell"</span><span class="p">)</span>
+<span class="n">shell</span> <span class="o">=</span> <span class="n">shell</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"contact"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">insert</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5e-3</span><span class="p">,</span> <span class="mf">0.25e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                   <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">0.5e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"insert"</span><span class="p">)</span>
+<span class="n">datum</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">line</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">"datum"</span><span class="p">)</span>
+<span class="n">component</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Group</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Group</span><span class="p">(</span><span class="n">shell</span><span class="p">,</span> <span class="n">insert</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"layers"</span><span class="p">),</span> <span class="n">datum</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"component"</span><span class="p">)</span>
+<span class="n">poses</span> <span class="o">=</span> <span class="p">[</span><span class="n">geo</span><span class="o">.</span><span class="n">Translation</span><span class="p">((</span><span class="mf">5e-3</span> <span class="o">*</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">@</span> <span class="n">geo</span><span class="o">.</span><span class="n">Rotation</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+<span class="n">copies</span> <span class="o">=</span> <span class="p">[</span><span class="n">pose</span> <span class="o">@</span> <span class="n">component</span> <span class="k">for</span> <span class="n">pose</span> <span class="ow">in</span> <span class="n">poses</span><span class="p">]</span>
+<span class="n">contacts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">members</span><span class="p">())</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"contact"</span><span class="p">)</span> <span class="k">for</span> <span class="n">copy</span> <span class="ow">in</span> <span class="n">copies</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Each contact belongs to its own placed shell. The source component and other
+copies remain independent values; look up a named face through the placed
+member, rather than moving a <code class="docutils literal notranslate"><span class="pre">FaceRef</span></code> separately. <code class="docutils literal notranslate"><span class="pre">members()</span></code> yields leaves
+in construction order. It does not identify a member by name, so keep a
+handle or choose it deliberately when component layouts change. A <code class="docutils literal notranslate"><span class="pre">Group</span></code>
+is an authoring collection, with no mutable instance state or shared CAD
+storage promise. Adding a Group to <code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code> flattens it; every added
+leaf must meet the model’s material and geometry requirements. In this example
+the datum curve is a construction guide, so add the placed physical solids
+instead of the whole Group to a simulation model.</p>
+<p>Rotation and reflection preserve measures; uniform scale by <code class="docutils literal notranslate"><span class="pre">s</span></code> changes
+length, area and volume by <code class="docutils literal notranslate"><span class="pre">abs(s)</span></code>, <code class="docutils literal notranslate"><span class="pre">s²</span></code> and <code class="docutils literal notranslate"><span class="pre">abs(s)³</span></code>. Reflection can reverse
+edge traversal, while a named face follows the reflected owner and its outward
+normal. A general <code class="docutils literal notranslate"><span class="pre">Transform</span></code> matrix rejects nonuniform scale and shear, since
+these can change analytic geometry categories. See Tutorial 14 for the
+complete multiple-placement recipe.</p>
 <p>A union of bodies that are prisms along one axis over the same
 interval — the strips of a feed network, the pads of a layer, a row of
 posts — is fused in their common plane and raised once, so the result
@@ -625,13 +1500,15 @@ strips costs seconds rather than the minutes a single fuse of all of
 them takes.  The point set is the same either way; the face count is
 what the mesher sees.</p>
 </section>
+</section>
 <section id="lofts-between-profiles-and-between-faces">
 <h2>Lofts: between profiles, and between faces<a class="headerlink" href="#lofts-between-profiles-and-between-faces" title="Link to this heading">#</a></h2>
 <p>Two constructors build a body that changes cross-section along its
 length.  <code class="docutils literal notranslate"><span class="pre">Loft(*sections)</span></code> takes the profiles themselves — planar
 sheets or closed curves, as many as the shape needs, in the order the
 body passes through them — and is the way to draw a horn or a
-multi-step matching section from sketches.  <code class="docutils literal notranslate"><span class="pre">a.lofted(near_a,</span> <span class="pre">b,</span> <span class="pre">near_b)</span></code> takes one face of an existing body and one face of another,
+multi-step matching section from sketches. <code class="docutils literal notranslate"><span class="pre">face_a.lofted(face_b)</span></code> takes
+one selected face of an existing body and one face of another,
 and bridges them; the profiles are read off the two faces, so the
 transition fits both parts exactly and follows them when a dimension
 changes.</p>
@@ -645,6 +1522,14 @@ of a waveguide taper.</p>
 along its outward normal, so the wall slope at both joints is zero and
 the transition meets both parts without a crease.  It has two regimes,
 chosen from the two normals:</p>
+<p>This is the G1 transition choice: it matches the adjoining wall normal
+when that wall follows the selected planar face’s outward extrusion
+direction. It does not impose G2 curvature matching, and an adjoining
+wall with another tangent direction needs its own explicitly designed
+transition. Source and end outlines must have corresponding outer edges
+and holes; incompatible counts or a construction that cannot close raise.
+The asymmetric prismatic transition in Tutorial 14 shows matching wall
+normals at both joints.</p>
 <ul class="simple">
 <li><p><strong>Faces that look at each other</strong> (antiparallel normals: the two ends
 of a taper, coaxial or laterally offset) get a loft whose
@@ -700,6 +1585,43 @@ Magnelio checks the result (topology and volume against
 area × thickness) and refuses with a pointer to <code class="docutils literal notranslate"><span class="pre">extruded()</span></code> instead
 of returning a body of the wrong shape.</p></li>
 </ul>
+</section>
+<section id="selected-faces-for-ports-and-field-recordings">
+<h2>Selected faces for ports and field recordings<a class="headerlink" href="#selected-faces-for-ports-and-field-recordings" title="Link to this heading">#</a></h2>
+<p>A named face can supply the plane and bounds of a waveguide port or a
+frequency-domain field recording. The selected face must be planar,
+perpendicular to a world axis, and an exact rectangle without holes. A round
+or trimmed CAD face cannot stand in for its bounding rectangle: that would
+excite or record fields outside the selected area. Both adapters produce the
+same declarations as giving the world-coordinate rectangle explicitly.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">ports</span>
+
+<span class="n">guide</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">3e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">guide</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"output"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+<span class="n">end</span> <span class="o">=</span> <span class="n">guide</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"output"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="o">.</span><span class="n">from_face</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"output"</span><span class="p">))</span>
+<span class="n">probe</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span><span class="o">.</span><span class="n">from_face</span><span class="p">(</span>
+    <span class="n">end</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">10e9</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"Ex"</span><span class="p">,</span> <span class="s2">"Ey"</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"output_fields"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">PortWaveguide.from_face</span></code> requires the face’s own Solid to be in the model.
+The selected plane must be an actual PEC domain face. An interior face cannot
+become a boundary port; an absorber, PMC wall or symmetry declaration changes
+the physical port plane and is rejected. The existing mode solver still checks
+the selected window and conductor enclosure. <code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.from_face</span></code>
+can use an interior rectangle and retains the monitor’s usual grid snapping.
+Both declarations capture coordinates at construction: after placing or
+rebuilding a component, retrieve its named face from the new Solid before
+making the declaration. The model and project store keep the resolved
+declarations; named selection recipes remain with the geometry.</p>
+<p>Other EM consumers have different sampling regions. Domain boundary
+conditions apply to an entire outer face. <code class="docutils literal notranslate"><span class="pre">MonitorFluxTime</span></code> integrates the
+whole domain cross-section with a positive axis normal. <code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface</span></code>
+and <code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code> require closed Huygens boxes. A single CAD face
+does not define any of those regions. See <a class="reference internal" href="../tutorials/plot_14_profile_geometry.html"><span class="std std-doc">Tutorial 14</span></a>
+for a placed end-face workflow.</p>
 </section>
 <section id="what-the-mesher-sees">
 <h2>What the mesher sees<a class="headerlink" href="#what-the-mesher-sees" title="Link to this heading">#</a></h2>
@@ -770,9 +1692,35 @@ more so that the conformal classifier resolves the metal on both faces
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bodies-sheets-and-curves">Bodies, sheets and curves</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shapes-have-a-dimension">Shapes have a dimension</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exact-curves-and-planar-profiles">Exact curves and planar profiles</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#absolute-and-relative-routed-paths">Absolute and relative routed paths</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#spatial-transport-and-roll">Spatial transport and roll</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#owned-topology-and-named-selections">Owned topology and named selections</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#how-names-follow-construction">How names follow construction</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#uniform-profile-operations">Uniform profile operations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#referenced-edges-and-openings">Referenced edges and openings</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sweep-orientation-modes">Sweep orientation modes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sweep-twist-and-draft">Sweep twist and draft</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#partition-and-section">Partition and section</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#imprint-and-insert">Imprint and insert</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#project-curves-onto-bounded-faces">Project curves onto bounded faces</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#offset-curves-and-sheets">Offset curves and sheets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bend-existing-bodies-and-sheets">Bend existing bodies and sheets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#wrap-a-flat-component-onto-a-curved-patch">Wrap a flat component onto a curved patch</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#placement-and-transform-composition">Placement and transform composition</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#place-a-reusable-component">Place a reusable component</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lofts-between-profiles-and-between-faces">Lofts: between profiles, and between faces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-a-map-to-a-reflector-parametric-surfaces">From a map to a reflector: parametric surfaces</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#selected-faces-for-ports-and-field-recordings">Selected faces for ports and field recordings</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-mesher-sees">What the mesher sees</a></li>
 </ul>
   </nav></div>
@@ -799,8 +1747,8 @@ more so that the conformal classifier resolves the metal on both faces
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -821,7 +1769,6 @@ more so that the conformal classifier resolves the metal on both faces
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -834,7 +1781,7 @@ more so that the conformal classifier resolves the metal on both faces
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>
