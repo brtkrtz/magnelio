@@ -1102,7 +1102,7 @@ requires the unit supplied to its reader later. Neither CAD format contains
 material physics, named-selection replay or construction history. Project
 storage remains the path for those. Both CAD exporters use temporary output
 files and require `overwrite=True` to replace an existing target. Gate:
-`tests/unit/test_import_cad.py` and the executed Tutorial 32.
+`tests/unit/test_import_cad.py` and the executed Tutorial 14.
 
 Intrinsic reference measurements are read-only properties:
 `VertexRef.point`; `EdgeRef.length`, `start`, `end`, `vertices`;

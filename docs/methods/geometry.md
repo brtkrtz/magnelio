@@ -174,8 +174,8 @@ roll. A Path up direction does not impose a separate sweep frame or twist.
 Choose radius and section sizes that avoid self-intersection; the route alone
 does not certify a valid swept volume.
 
-[Tutorial 21](../tutorials/plot_21_topology_selection.rst) checks the hollow
-bend's volume against area times length and shows the open bore at the plane.
+[Tutorial 14](../tutorials/plot_14_profile_geometry.rst) shows the hollow
+bend and its open bore at the plane.
 
 (geometry-owned-topology)=
 ## Owned topology and named selections
@@ -410,7 +410,7 @@ offset holes. Material inheritance and owner-selection rules remain the same
 as for a default sweep. These options control transport; they do not add twist,
 draft, corner smoothing or a guarantee against self-intersection. Choose
 sections and paths that form a valid solid; kernel failures raise RuntimeError.
-[Tutorial 22](../tutorials/plot_22_sweep_orientation.rst) compares perpendicular
+[Tutorial 14](../tutorials/plot_14_profile_geometry.rst) compares perpendicular
 and parallel transport, checks both volumes and displays their end apertures.
 
 ## Sweep twist and draft
@@ -472,7 +472,7 @@ and final sections, including transported roll; nonzero draft cannot meet that
 condition. A compatible periodic twist is sewn at the seam.
 Material inheritance, direct `FaceRef` construction and independent ownership
 follow the ordinary sweep rules. The construction does not certify absence of
-self-intersection. [Tutorial 23](../tutorials/plot_23_sweep_twist_draft.rst)
+self-intersection. [Tutorial 14](../tutorials/plot_14_profile_geometry.rst)
 shows the twisted rectangle and the drafted annulus with independent volume
 and outlet checks.
 
@@ -517,7 +517,7 @@ splits reports an error, while a deliberately named set can retain its
 successors. A result region owns its selections independently and project
 read-back reconstructs the selected region without storing a numeric face
 index. New cut faces do not inherit names from unrelated source faces.
-[Tutorial 24](../tutorials/plot_24_partition_section.rst) shows the hollow
+[Tutorial 14](../tutorials/plot_14_profile_geometry.rst) shows the hollow
 component, filled annulus and an oblique sheet cutter.
 
 ## Imprint and insert
@@ -571,7 +571,7 @@ do not become receiver names. A singular face that splits or disappears raises
 `TopologyEvolutionError`; register a deliberate set when all split faces must
 remain named. Named output bodies replay from the construction in a project,
 without persistent kernel face numbers.
-[Tutorial 25](../tutorials/plot_25_imprint_insert.rst) shows both operations
+[Tutorial 14](../tutorials/plot_14_profile_geometry.rst) shows both operations
 on a housing and an inserted material body.
 
 ## Project curves onto bounded faces
@@ -626,7 +626,7 @@ assert trace.length > sketch.length
 `trace` is a geometric centreline, without material. The `ThinWire` declaration
 supplies a PEC sub-cell conductor when added to a suitable model; a resolved
 conductor can instead be built from the projected path. The cylinder example
-uses the near wall automatically. [Tutorial 26](../tutorials/plot_26_project_curve.rst)
+uses the near wall automatically. [Tutorial 14](../tutorials/plot_14_profile_geometry.rst)
 shows the housing patch, the far-wall option and explicit clipping.
 
 ## Offset curves and sheets
@@ -692,7 +692,7 @@ assert abs(construction_sheet.bounding_box()[1][0] - 5.2e-3) < 2e-6
 These operations preserve the source values. Offset Profiles inherit the
 source material; the resulting Sheets and Curves have independent ownership.
 To create physical thickness, extrude or thicken the result explicitly.
-Tutorial 27 combines a conductor clearance with a curved construction sheet.
+Tutorial 14 combines a conductor clearance with a curved construction sheet.
 
 ## Bend existing bodies and sheets
 
@@ -758,7 +758,7 @@ several faces, a singular parameter chart or an unreconstructable source
 face reports an error. The output Sheet has no physical thickness. If the
 sheet crosses an interval boundary, its CAD representation has multiple
 faces: construct a layer with `source_sheet.thickened(...)` **before** applying
-the Bend to that Solid. Tutorial 28 bends two material layers through one
+the Bend to that Solid. Tutorial 14 bends two material layers through one
 shared map and checks their expected volumes.
 
 ## Wrap a flat component onto a curved patch
@@ -804,7 +804,7 @@ smooth trimmed CAD geometry; `tolerance` controls sampled fit error as for
 the map and CAD result rather than proving global distortion bounds. The
 source and material ownership remain unchanged; named geometry can be
 reconstructed on project replay. A wrapped Sheet remains a zero-thickness
-Sheet. Tutorial 29 shows a conformal layered trace.
+Sheet. Tutorial 14 shows a conformal layered trace.
 
 ## Placement and transform composition
 
@@ -908,7 +908,7 @@ Rotation and reflection preserve measures; uniform scale by `s` changes
 length, area and volume by `abs(s)`, `s²` and `abs(s)³`. Reflection can reverse
 edge traversal, while a named face follows the reflected owner and its outward
 normal. A general `Transform` matrix rejects nonuniform scale and shear, since
-these can change analytic geometry categories. See Tutorial 30 for the
+these can change analytic geometry categories. See Tutorial 14 for the
 complete multiple-placement recipe.
 
 A union of bodies that are prisms along one axis over the same
@@ -952,7 +952,7 @@ direction. It does not impose G2 curvature matching, and an adjoining
 wall with another tangent direction needs its own explicitly designed
 transition. Source and end outlines must have corresponding outer edges
 and holes; incompatible counts or a construction that cannot close raise.
-The asymmetric prismatic transition in Tutorial 29 measures matching wall
+The asymmetric prismatic transition in Tutorial 14 shows matching wall
 normals at both joints.
 
 - **Faces that look at each other** (antiparallel normals: the two ends
@@ -1049,7 +1049,7 @@ Other EM consumers have different sampling regions. Domain boundary
 conditions apply to an entire outer face. `MonitorFluxTime` integrates the
 whole domain cross-section with a positive axis normal. `MonitorFieldSurface`
 and `MonitorFarFieldFrequency` require closed Huygens boxes. A single CAD face
-does not define any of those regions. See [Tutorial 31](../tutorials/plot_31_em_face_adapters.rst)
+does not define any of those regions. See [Tutorial 14](../tutorials/plot_14_profile_geometry.rst)
 for a placed end-face workflow.
 
 ## What the mesher sees

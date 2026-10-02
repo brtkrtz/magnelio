@@ -14,48 +14,48 @@ major version is 0, minor releases may change the public API.
 - Named rectangular CAD faces can define waveguide-port windows and
   frequency-field recording planes through `from_face` factories, with
   explicit domain and geometry eligibility checks. The geometry guide and
-  Tutorial 31 show the workflow.
+  Tutorial 14 show the workflow.
 
 - Freeform neutral-surface bending of existing solids, sheets and layered
   groups, with explicit strain and geometry-tolerance limits. Straight
   continuations remain attached and named topology follows valid face
-  histories. The geometry guide and Tutorial 28 show a multilayer bend.
+  histories. The geometry guide and Tutorial 14 show a multilayer bend.
 
 - Directed planar curve offsets with round outer joins and uncapped open
   ends; material-region offsets for planar profiles that retain holes or
   every separated surviving region; and bounded curved-sheet normal
   offsets with a default geometric tolerance. The geometry guide and
-  Tutorial 27 show clearance and curved construction-sheet workflows.
+  Tutorial 14 show clearance and curved construction-sheet workflows.
 
 - Directed solid-boundary imprinting and explicit-priority material insertion.
   Inserts preserve separate material bodies, while material-less void tools
-  remove volume from all bodies. The geometry guide and Tutorial 25 show a
+  remove volume from all bodies. The geometry guide and Tutorial 14 show a
   selectable imprinted contact and a dielectric in a housing.
 
 - CAD partitioning of solids and sheets by a plane or geometry cutter, with
   independent material-preserving regions. Exact intersection curves and
   explicitly filled planar sections retain disconnected regions and holes.
-  The geometry guide and Tutorial 24 show both workflows.
+  The geometry guide and Tutorial 14 show both workflows.
 
 - Constant sweep twist and draft: total roll distributed over path arc length,
   signed normal-offset draft preserving bores, and an optional fitting tolerance.
-  The geometry guide and Tutorial 23 explain both construction laws.
+  The geometry guide and Tutorial 14 explain both construction laws.
 
 - Explicit sweep orientation modes: Frenet, parallel world sections and fixed
   binormal transport, alongside the unchanged corrected Frenet default. The
-  geometry guide and parallel-aperture tutorial explain section orientation,
+  geometry guide and Tutorial 14 explain section orientation,
   retained holes and the different volume rules.
 - Immutable relative Path poses from a world point or planar owned face,
   with forward runs, exact left/right circular bends, spatial target-tangent
   turns and straight continuation to a world plane. Absolute steps update
   the pose and transport up without added tangent twist. The geometry guide
-  and topology tutorial route an oblique hollow coax to the domain boundary.
+  and Tutorial 14 route an oblique hollow coax to the domain boundary.
 - Owner-bound face, edge and vertex references with semantic selection,
   read-only CAD measurements, connectivity and explicit detachment. Named
   selections follow affine placements and provable construction histories;
   ambiguous picks, deleted names and singular splits report explicit errors.
   Projects retain semantic origins and replay named selection histories.
-  The geometry guide and topology-selection tutorial explain the workflow.
+  The geometry guide and Tutorial 14 explain the workflow.
 - Exact `Curve.line`, `Curve.circle` and `Curve.ellipse` construction,
   CAD curve lengths, and planar `Profile` factories for polygons,
   oriented rectangles, discs, and closed boundaries with holes.
@@ -64,6 +64,10 @@ major version is 0, minor releases may change the public API.
   intrinsic holes.
 
 ### Changed
+
+- The geometry tutorials are now one illustrated "Geometry toolbox" page,
+  with short recipes for profiles, owned faces, CAD exchange, mechanical
+  STEP import and PCB fabrication-data import.
 
 - Profile operations accept suitable owned face references directly; lofts can
   mix planar sheets and faces, retaining holes through tangent transitions too.
@@ -85,11 +89,16 @@ major version is 0, minor releases may change the public API.
 - Geometry volume queries use adaptive integration with spline spans, avoiding
   inaccurate fixed-quadrature measurements of rational tangent transitions.
 
+### Fixed
+
+- Partitioning a solid extruded from a profile no longer fails when the
+  source has no name.
+
 ### Removed
 
 - The standalone `Face` constructor and `Curve.covered()`; use the
   `Profile` factories with three-dimensional world points instead.
-  The geometry upgrade guide and migrated profile tutorial show the replacements.
+  The geometry upgrade guide and Tutorial 14 show the replacements.
 
 ## [0.8.2] - 2026-09-09
 

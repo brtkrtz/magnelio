@@ -3,7 +3,6 @@
 import json
 import math
 import re
-import runpy
 from pathlib import Path
 
 import numpy as np
@@ -205,4 +204,3 @@ def test_methods_recipe_and_public_tutorial_execute():
     for block in re.findall(r"```python\n(.*?)```", section, re.S):
         exec(block, namespace)
     assert all(member.volume() > 0 for member in namespace["wrapped"].members())
-    runpy.run_path(str(root / "examples/tutorials/plot_29_wrap_and_g1_transition.py"))

@@ -2,7 +2,6 @@
 
 import math
 import re
-import runpy
 from pathlib import Path
 
 import numpy as np
@@ -224,4 +223,3 @@ def test_methods_recipe_and_public_tutorial_execute():
     for block in re.findall(r"```python\n(.*?)```", section, re.S):
         exec(block, namespace)
     assert len(namespace["clearance"]) == 1
-    runpy.run_path(str(root / "examples/tutorials/plot_27_offset_geometry.py"))

@@ -57,7 +57,7 @@ class _PartitionSolid(Solid):
         self._cutter = cutter
         self._plane = plane
         self.material = source.material
-        self.name = source.name
+        self.name = getattr(source, "name", None)
         self.color = getattr(source, "color", None)
         self._occ_shape_cache = {scale: shape}
         if selections:

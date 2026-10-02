@@ -21,7 +21,7 @@ copy and aggregation options without `repeat`. Default calls and
 defines counts, return types and material preservation.
 For reusable components, nested Groups retain their member structure under
 placement; each placed Solid owns its own named faces and sets. The guide and
-Tutorial 30 show retrieval from several copies. Only uniform scaling is
+Tutorial 14 show retrieval from several copies. Only uniform scaling is
 supported by `Scale` and `Transform`; nonuniform matrices and shear are
 rejected.
 
@@ -38,7 +38,7 @@ erodes the material region, retaining all connected results. A curved
 `Sheet.offset(distance, tolerance=...)` moves along its oriented normal and
 retains the bounded rim. All three return independent results in tuples.
 The [offset guide](../methods/geometry.md) defines signs, hole behavior,
-collapse and the default sampled geometry tolerance; Tutorial 27 gives the
+collapse and the default sampled geometry tolerance; Tutorial 14 gives the
 construction recipe.
 
 `Bend(target, origin=..., along=..., across=..., u=..., v=...,
@@ -47,14 +47,14 @@ Apply it with `bend @ solid`, `bend @ sheet` or `bend @ group`; the last form
 deforms each member with the same chart and retains separate materials.
 The [bend guide](../methods/geometry.md) explains source coordinates,
 nondevelopable strain, rigid interval continuations, sampled error limits and
-named-face splits. Tutorial 28 shows a layered component.
+named-face splits. Tutorial 14 shows a layered component.
 
 `Wrap` takes the same target chart, source frame, strain limit and sampled
 fit tolerance, then maps the whole source to the target without rigid end
 continuations. It accepts Solid, Sheet and Group operands. The
 [wrapping guide](../methods/geometry.md) specifies chart coverage,
-nondevelopable distortion, seams, openings and layer placement. Tutorial 29
-wraps a trace and its substrate onto a doubly curved patch.
+nondevelopable distortion, seams, openings and layer placement. Tutorial 14
+wraps a trace and its substrate around a cylindrical patch.
 
 Owned topology is separate from standalone geometry: `TopologyRef`,
 `VertexRef`, `EdgeRef`, `FaceRef`, `EdgeSetRef` and `FaceSetRef` hold one
@@ -88,7 +88,7 @@ Path's up direction guides routing; it does not select a sweep frame.
 `swept(frame=...)` selects corrected Frenet, Frenet, fixed world orientation
 or fixed binormal transport. Fixed binormal requires `binormal=`; other modes
 reject that argument. See the [sweep orientation guide](../methods/geometry.md)
-for oblique sections, volume rules and curvature degeneracies, and Tutorial 22
+for oblique sections, volume rules and curvature degeneracies, and Tutorial 14
 for parallel-aperture transitions.
 
 `swept(twist_deg=..., draft_deg=..., tolerance=...)` adds uniform total roll
@@ -96,14 +96,14 @@ and a constant signed section-offset angle. Positive draft grows the exterior
 and shrinks holes. Twist acts about the transported section normal and preserves
 the selected frame's section planes. See the
 [twist and draft guide](../methods/geometry.md) for arc-length laws, fitting
-accuracy, boundary closure and periodic routes, and Tutorial 23 for worked use.
+accuracy, boundary closure and periodic routes, and Tutorial 14 for worked use.
 
 `partition(cutter)` or `partition(normal=..., position=...)` returns independent
 connected Solid or Sheet regions, inheriting the source material. `section`
 with the same cutter grammar returns intersection Curves; an explicit planar
 `filled=True` section of a Solid returns Profiles with holes. Empty cuts,
 tangencies, coincident faces and named-topology splits have explicit rules in
-the [partition and section guide](../methods/geometry.md). Tutorial 24 shows
+the [partition and section guide](../methods/geometry.md). Tutorial 14 shows
 a hollow component and an oblique cutter.
 
 `Solid.imprint(cutter)` returns a receiver with faces split at the cutter's
@@ -111,7 +111,7 @@ intersection curves while preserving its volume and material. `insert` takes
 physical Solids with explicit integer priorities and optional material-less
 void tools, trims losing volumes and returns a material-preserving `Group`.
 The [imprint and insert guide](../methods/geometry.md) explains directed face
-selection, equal-priority conflicts and named topology. Tutorial 25 constructs
+selection, equal-priority conflicts and named topology. Tutorial 14 constructs
 a housing with a selectable imprinted contact and a dielectric insert.
 
 ```{eval-rst}

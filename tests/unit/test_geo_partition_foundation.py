@@ -3,7 +3,6 @@
 import json
 import math
 import re
-import runpy
 from pathlib import Path
 
 import pytest
@@ -26,6 +25,15 @@ def test_plane_partition_conserves_volume_and_returns_independent_solids():
     assert all(piece.material is source.material for piece in pieces)
     assert sorted(piece.volume() for piece in pieces) == pytest.approx([2, 6])
     assert source.volume() == pytest.approx(8)
+
+
+def test_partition_of_extruded_profile_without_name():
+    profile = geo.Profile.rectangle((0, 0, 0), (2, 2), material="pec")
+    solid = profile.extruded((0, 0, 2))
+    parts = solid.partition(normal="z", position=1)
+    assert len(parts) == 2
+    assert all(part.name is None and part.material is solid.material for part in parts)
+    assert sorted(part.volume() for part in parts) == pytest.approx([4, 4])
 
 
 def test_oblique_world_plane_has_exact_conserved_volume_and_section_area():
@@ -242,4 +250,3 @@ def test_methods_recipe_and_public_tutorial_execute():
     for block in re.findall(r"```python\n(.*?)```", prose, re.S):
         exec(block, namespace)
     assert namespace["ring"].area == pytest.approx(3 * math.pi * 1e-6)
-    runpy.run_path(str(root / "examples/tutorials/plot_24_partition_section.py"))

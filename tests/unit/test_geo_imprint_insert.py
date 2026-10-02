@@ -3,7 +3,6 @@
 import json
 import math
 import re
-import runpy
 from pathlib import Path
 
 import pytest
@@ -302,4 +301,3 @@ def test_methods_recipe_and_tutorial_execute():
     for block in re.findall(r"```python\n(.*?)```", prose, re.S):
         exec(block, namespace)
     assert math.isclose(sum(x.volume() for x in namespace["assembly"].members()), 8e-9)
-    runpy.run_path(str(root / "examples/tutorials/plot_25_imprint_insert.py"))

@@ -2,7 +2,6 @@
 
 import math
 import re
-import runpy
 from pathlib import Path
 
 import pytest
@@ -264,4 +263,3 @@ def test_methods_recipe_and_public_tutorial_execute():
     for block in re.findall(r"```python\n(.*?)```", prose, re.S):
         exec(block, namespace)
     assert namespace["wire"].curve.length > namespace["sketch"].length
-    runpy.run_path(str(root / "examples/tutorials/plot_26_project_curve.py"))

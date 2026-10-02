@@ -12062,7 +12062,7 @@ the original import decision and its 2026-08-20 implementation state.
 `tests/unit/test_import_cad.py`,
 `tests/integration/test_import_step_pipeline.py`,
 `docs/methods/cad-import.md`,
-`examples/tutorials/plot_16_cad_import.py`.
+`examples/tutorials/plot_14_profile_geometry.py` (former Tutorial 16).
 
 ## DD-179 — Board import: the fabrication set is the contract, and no Boolean is 3-D
 
@@ -12210,7 +12210,7 @@ and discarded today); a sheet-preserving public `Union` of coplanar
 `tests/unit/test_import_pcb.py`,
 `tests/integration/test_import_pcb_pipeline.py`,
 `benchmarks/bench_pcb_import.py`, `docs/methods/pcb-import.md`,
-`examples/tutorials/plot_17_pcb_import.py`.
+`examples/tutorials/plot_14_profile_geometry.py` (former Tutorial 17).
 
 ## DD-180 — Backend portability: describe capabilities, not compare modules
 
@@ -22491,9 +22491,9 @@ or server is started for them.
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
 **Date:** 2026-09-28.
-**Status:** Accepted as the geometry-foundation contract; WP0 through WP5 and
-WP6.1/WP6.3-WP6.12 are implemented on `feat/geo-api-foundation`. WP6.2 was
-cancelled; the WP6 acceptance audit remains open.
+**Status:** Accepted and implemented on `feat/geo-api-foundation`; WP0-WP5 and
+WP6.1/WP6.3-WP6.12 passed the foundation acceptance audit on 2026-10-02.
+WP6.2 was cancelled by developer decision.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -23343,6 +23343,7 @@ an explicit output unit with process-global OCCT settings restored after
 writing; BREP scales coordinates to the caller's stated unit. Neither format
 promises material physics, parametric history, persistent named selections
 or face enumeration. The Magnelio project store remains the replay format.
-Methods/API prose, Tutorial 32 and `tests/unit/test_import_cad.py` cover the
-contract. WP6 overall remains open for its acceptance audit; WP6.2 remains
-cancelled.
+Methods/API prose, Tutorial 14 and `tests/unit/test_import_cad.py` cover the
+contract. The final acceptance audit is recorded in
+`investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record);
+WP6.2 remains cancelled.

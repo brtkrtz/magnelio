@@ -84,7 +84,7 @@ construction that loses or splits a singular name raises
 geometry now retains names by replaying their semantic origins and construction
 histories; older projects without this metadata continue to load.
 
-[Tutorial 21](tutorials/plot_21_topology_selection.rst) names a coax end face,
+[Tutorial 14](tutorials/plot_14_profile_geometry.rst) names a coax end face,
 rotates its owner and sweeps the placed annulus directly for a continuation.
 
 ## Uniform operations and referenced modifications
@@ -151,4 +151,4 @@ turns require a posed start; an absolute-only path acquires tangent but no
 implicit up direction. `turn_to` rejects an opposite direction because it
 does not determine a bend plane. The [routing guide](methods/geometry.md)
 defines spatial transport and the distinction between routing pose and pipe
-orientation. Tutorial 21 executes the oblique coax bend to the domain plane.
+orientation. Tutorial 14 executes the oblique coax bend to the domain plane.
