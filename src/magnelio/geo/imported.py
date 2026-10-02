@@ -12,13 +12,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from magnelio.geo.shape import Shape
+from magnelio.geo._sheet import Sheet
+from magnelio.geo.shape import Solid
 
 if TYPE_CHECKING:
     from magnelio.materials.material import Material
 
 
-class ImportedSolid(Shape):
+class ImportedSolid(Solid):
     """A solid whose geometry came from a CAD file or a project store.
 
     Instances are produced by :func:`~magnelio.io.import_step`,
@@ -97,3 +98,56 @@ class ImportedSolid(Shape):
     def __repr__(self) -> str:
         mat = getattr(self.material, "name", None)
         return f"ImportedSolid(name={self.name!r}, material={mat!r})"
+
+
+class ImportedSheet(Sheet):
+    """A free CAD face imported as zero-thickness geometry.
+
+    The exact trimmed boundary is retained. Assigning a material does not
+    make the sheet meshable; give it physical thickness with
+    :meth:`~magnelio.geo.Shape.thickened` before adding it to a model.
+
+    Parameters
+    ----------
+    shape : TopoDS_Shape
+        A free face in meter coordinates. Shell faces are separate sheets.
+    material : Material or str, optional
+        Material inherited by a subsequently thickened solid.
+    name : str, optional
+        Imported part name.
+    color : tuple of float, optional
+        STEP display RGB in the range 0–1.
+    """
+
+    def __init__(self, shape, material=None, name=None, color=None):
+        from magnelio.materials.material import resolve_material  # noqa: PLC0415
+
+        self._shape = shape
+        self.material = resolve_material(material, "ImportedSheet.material")
+        self.name = name
+        self.color = color
+        self._scaled: dict[float, object] = {}
+
+    def _occ_shape(self, scale: float = 1.0):
+        if scale == 1.0:
+            return self._shape
+        cached = self._scaled.get(scale)
+        if cached is None:
+            from magnelio.geo._occ_backend import occ_scale  # noqa: PLC0415
+
+            cached = occ_scale(self._shape, float(scale), (0.0, 0.0, 0.0))
+            self._scaled[scale] = cached
+        return cached
+
+    def _analytic_bbox(self):
+        from magnelio.geo._occ_backend import bounding_box  # noqa: PLC0415
+
+        return bounding_box(self._shape)
+
+    def bounding_box(self, scale: float | None = None):
+        """Axis-aligned bounding box ``(min_corner, max_corner)`` [meters]."""
+        return self._analytic_bbox()
+
+    def __repr__(self) -> str:
+        mat = getattr(self.material, "name", None)
+        return f"ImportedSheet(name={self.name!r}, material={mat!r})"

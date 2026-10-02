@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-23.*  **Released v0.8.2** (2026-09-09): **DD-270**
+*Last updated: 2026-10-02.*  **Released v0.8.2** (2026-09-09): **DD-270**
 the Poynting vector as a derived view of any recorded field (`poynting()`,
 `"S"` in the component vocabulary), **DD-271** three more readings of an
 S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
@@ -33,16 +33,16 @@ Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
+The foundation was merged to local `main` on 2026-10-02. WP0-WP5 and WP6.1/WP6.3-WP6.12 are implemented.
+WP6.12 imports free CAD faces as Sheets without duplicating solid boundaries and exports selected solids/sheets through STEP/BREP with explicit unit rules. The 1-nm solid exchange gate stays valid. Tutorial 14, "Geometry toolbox", also absorbs the former CAD/PCB import tutorials; fresh offline Sphinx passes.
+The feature branch is backed up to `private` through `926c1d91`; the local merge is not pushed to `origin`. WP6.2 is cancelled. The foundation acceptance audit is recorded in `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record).
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
-This file states what *is*.  Chronology: `git log --first-parent main`;
-reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured
-floors regenerate from the `validation/` certificates their DDs name.
+This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
 
 ## Recent decisions
-
 Newest first, one line each; the full record is the DD entry.
-
+* **DD-275** (2026-09-28, merged to local `main` 2026-10-02, WP0-WP5 and WP6.1/WP6.3-WP6.12) — dimensional geometry, affine values, exact curves/Profile holes, owned topology and named histories are implemented. Path carries world poses and relative bends. Sweeps retain frame/twist/draft laws. Partition returns independent Solid/Sheet regions; Section returns exact curves or filled profiles. Directed Imprint splits receiver faces without volume change. Insert assigns material overlap by explicit priority and removes void tools. Bounded Curve projection supports parallel, perspective and closest-point policies. Offsets provide signed planar Curve placement, material-region Profile clearance/erosion and bounded Sheet normal placement. Bend maps existing geometry onto a freeform neutral surface with sampled strain/validity gates and smooth CAD faces. Wrap maps entire layered geometry onto a declared patch with bounded strain; planar tangent lofts supply G1 ends for matching extruded walls. Reusable placements preserve nested component members, materials and owned names; nonuniform scale/shear are rejected. Exact rectangular owned faces define eligible waveguide-port windows and field-frequency planes. CAD exchange preserves solid/sheet categories with explicit STEP/BREP units and documented metadata limits. Methods/API prose and Tutorial 14 cover these contracts. The foundation acceptance audit is complete; WP6.2 is cancelled. Record: `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record).
 * **DD-274** (2026-09-23) — viewer destination is independent of its rendering backend.  A plain script now serves the complete Magnelio toolbar through trame and opens it in the system browser; `target="native"` retains the PyVista/VTK window.  `target="inline"` keeps the Jupyter widget.  Zed's `kernel-zed-*.json` identity selects the browser automatically despite its ipykernel; `plots.configure_viewer(target="browser")` is the once-per-kernel switch for other editor REPLs that do not render the asynchronously filled `VBox`.  The browser server binds loopback on a daemon thread and is reused; missing trame warns and falls back to native.  `mode` remains `client`/`server`/`trame`/`static`/`none`, with `none` still returning the plotter.
   CI compatibility: PyVista 0.49 stores viewers in `trame_pyvista.ui`; OCC 8 requires an explicit trace-clearance check beyond offset contour counting (DD-135).
 * **DD-273** (2026-09-09, branch `feat/surface-current`) — the surface current is the wall-loss booking, read as a vector.  `surface_current(mesh)` on any recording, spectrum or `FieldState` gives `J_s = n × H` per wall patch; `enumerate_wall_patches` reads the [[DD-087]] enumeration the other way round (per patch: conformal area, outward normal `−w/‖w‖`, and *which* sample contributions it booked).  Magnitude from the loss booking (`|J_s|²A = Σw|H|²`, so `power_loss` **is** `MonitorWallLoss` — measured 0.9998 on a real run), direction from `n × H` with the weight-averaged samples.  Accuracy is inherited and does not refine away: coax inner conductor 1.3 %, shield 5.0 % against `√(P/Z₀)`, because the DD-098 pullback is calibrated on the quadratic loss while the current is linear in H; shipped deliberately, since the distribution is what a current picture is read for.  Four traps, all measured: grid quantities vs. physical fields ([[DD-085]], factor 1500), wall cells of a curved conductor are PEC-classified (dropping them loses 83 % of a mantle), a port plane holds the feed's *cross-section* and not a wall (+9.5 %, hence `exclude_faces=`), and a viewer display group must be registered in `_GROUPS` or its actor is built, filled and never shown.  `PECSurfaceData` removed: built for every conformal mesh, stored in every project, read by nothing, and it booked the *normal* H component.  Record `investigations/surface-current/` (internal dossier).
@@ -99,8 +99,8 @@ Newest first, one line each; the full record is the DD entry.
 ## Script directories
 
 `examples/` is the public-API surface — `examples/tutorials/` holds the
-20 gallery tutorials, no internal imports, all running to completion on
-the GPU box on pure defaults (the DD-096 port-signal criterion is on by
+17 gallery tutorials, with no internal imports.
+Released tutorials run on the GPU box on pure defaults (the DD-096 criterion is on by
 default, DD-114: the energy criterion alone never fires on a shielded
 lossless structure's TM-cut-off plateau).  `validation/` holds the
 scripts that legitimately use internals — the certificates regenerating
@@ -283,7 +283,7 @@ of the run, in double it is flat (−149.12 → −149.13 dB).
 (`pip install -e .[docs]`, `sphinx-build -b html docs
 docs/_build/html`; warning-free — verified with `sphinx -E`, a cached
 rebuild proves nothing).  Pillars: Tutorials (from
-`examples/tutorials/*.py`, 01–20 shipped; full gallery ~8:40, of which
+`examples/tutorials/*.py`, 01–18 and 20 released, 21–27 on the foundation branch; of which
 tutorial 13, the DR-filter capstone, is ~5.5 min), API reference,
 Numerical methods (thirteen chapters, every method cited, in-house
 derivations marked in prose), Bibliography.  `docs/references.bib`
@@ -316,7 +316,6 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **3D viewer, browser review (DD-261…DD-267)** — closed: toolbar, volume representations, mirrored frames and phase play were driven in Chrome, and the developer confirmed the viewer after the DD-268 convention change (2026-09-08).  Left: the mouse bindings in the help dialog are read from the vtk.js bundle, not clicked through.
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a
@@ -379,9 +378,6 @@ flickers to ``"done"`` between sequential runs; the reader skips
 * **Mesh build** — speed campaign closed 2026-08-29 (DD-201…DD-223;
   deferred work, A/B switches and traps in DD-223).  Open against it:
   KB-043.
-
-Closed construction sites are tombstoned where they were decided and
-are not repeated here.
 
 ## Deferred / nice-to-have
 

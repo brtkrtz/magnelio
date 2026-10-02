@@ -7,6 +7,99 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- Named rectangular CAD faces can define waveguide-port windows and
+  frequency-field recording planes through `from_face` factories, with
+  explicit domain and geometry eligibility checks. The geometry guide and
+  Tutorial 14 show the workflow.
+
+- Freeform neutral-surface bending of existing solids, sheets and layered
+  groups, with explicit strain and geometry-tolerance limits. Straight
+  continuations remain attached and named topology follows valid face
+  histories. The geometry guide and Tutorial 14 show a multilayer bend.
+
+- Directed planar curve offsets with round outer joins and uncapped open
+  ends; material-region offsets for planar profiles that retain holes or
+  every separated surviving region; and bounded curved-sheet normal
+  offsets with a default geometric tolerance. The geometry guide and
+  Tutorial 14 show clearance and curved construction-sheet workflows.
+
+- Directed solid-boundary imprinting and explicit-priority material insertion.
+  Inserts preserve separate material bodies, while material-less void tools
+  remove volume from all bodies. The geometry guide and Tutorial 14 show a
+  selectable imprinted contact and a dielectric in a housing.
+
+- CAD partitioning of solids and sheets by a plane or geometry cutter, with
+  independent material-preserving regions. Exact intersection curves and
+  explicitly filled planar sections retain disconnected regions and holes.
+  The geometry guide and Tutorial 14 show both workflows.
+
+- Constant sweep twist and draft: total roll distributed over path arc length,
+  signed normal-offset draft preserving bores, and an optional fitting tolerance.
+  The geometry guide and Tutorial 14 explain both construction laws.
+
+- Explicit sweep orientation modes: Frenet, parallel world sections and fixed
+  binormal transport, alongside the unchanged corrected Frenet default. The
+  geometry guide and Tutorial 14 explain section orientation,
+  retained holes and the different volume rules.
+- Immutable relative Path poses from a world point or planar owned face,
+  with forward runs, exact left/right circular bends, spatial target-tangent
+  turns and straight continuation to a world plane. Absolute steps update
+  the pose and transport up without added tangent twist. The geometry guide
+  and Tutorial 14 route an oblique hollow coax to the domain boundary.
+- Owner-bound face, edge and vertex references with semantic selection,
+  read-only CAD measurements, connectivity and explicit detachment. Named
+  selections follow affine placements and provable construction histories;
+  ambiguous picks, deleted names and singular splits report explicit errors.
+  Projects retain semantic origins and replay named selection histories.
+  The geometry guide and Tutorial 14 explain the workflow.
+- Exact `Curve.line`, `Curve.circle` and `Curve.ellipse` construction,
+  CAD curve lengths, and planar `Profile` factories for polygons,
+  oriented rectangles, discs, and closed boundaries with holes.
+  Profile areas exclude holes; `boundary()` extracts independently
+  transformable curves. Extrusion, revolution, sweep and loft preserve
+  intrinsic holes.
+
+### Changed
+
+- The geometry tutorials are now one illustrated "Geometry toolbox" page,
+  with short recipes for profiles, owned faces, CAD exchange, mechanical
+  STEP import and PCB fabrication-data import.
+
+- Profile operations accept suitable owned face references directly; lofts can
+  mix planar sheets and faces, retaining holes through tangent transitions too.
+  Fillet, chamfer and shell accept owned edge/face selections and reject stale
+  owners. Point conveniences now report ambiguity at the operation call.
+- Sweeps retain a placed section's in-plane roll through shortest-rotation
+  alignment. Forward thickening follows its oriented normal. Materialless
+  sections consistently produce construction solids for Boolean use.
+
+- Named translations and rotations retain `repeat`, `copy`, `unite` and
+  `group`; mirroring retains copy and aggregation options. Explicit Group or
+  Union aggregation is honoured even for one translated or rotated copy.
+  Fusion requires Solid input; grouped assemblies preserve member materials.
+- `Loft` inherits its first profile's material when no override is given
+  and matches inner boundaries in construction order; all sections must
+  have the same number of holes. Profile factories validate closure,
+  coplanarity, intersections and nesting at construction.
+
+- Geometry volume queries use adaptive integration with spline spans, avoiding
+  inaccurate fixed-quadrature measurements of rational tangent transitions.
+
+### Fixed
+
+- Partitioning a solid extruded from a profile no longer fails when the
+  source has no name.
+
+### Removed
+
+- The standalone `Face` constructor and `Curve.covered()`; use the
+  `Profile` factories with three-dimensional world points instead.
+  The geometry upgrade guide and Tutorial 14 show the replacements.
+
 ## [0.8.2] - 2026-09-09
 
 ### Added

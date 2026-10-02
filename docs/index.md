@@ -68,6 +68,7 @@ methods/index
 :maxdepth: 1
 :caption: Upgrading
 
+migration-geometry
 migration-0.8
 migration-0.7
 migration-0.6

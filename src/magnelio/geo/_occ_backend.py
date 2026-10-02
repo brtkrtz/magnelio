@@ -34,6 +34,7 @@ from magnelio.geo._line_kernels import (
     planar_point_state,
     segment_fractions,
 )
+from magnelio.geo._topology_history import result as _history_result
 
 
 def _require_occ():
@@ -304,7 +305,7 @@ def _run_bop(op_cls, arguments: list, tools: list):
             f"OCC Boolean operation {op_cls.__name__} failed "
             f"({len(arguments)} argument(s), {len(tools)} tool(s))."
         )
-    return op.Shape()
+    return _history_result(op)
 
 
 def boolean_union(shapes: list):
@@ -324,6 +325,10 @@ def boolean_union(shapes: list):
     occ = _require_occ()
     if len(shapes) == 1:
         return shapes[0]
+    from magnelio.geo._topology_history import recording  # noqa: PLC0415
+
+    if recording():
+        return _run_bop(occ["Fuse"], shapes[:1], shapes[1:])
     from magnelio.geo._prism_fuse import fuse_shapes  # noqa: PLC0415
 
     def fuse(parts):
@@ -1056,7 +1061,7 @@ def occ_translate(shape, vector: tuple, scale: float = 1.0):
     occ = _require_occ()
     trsf = occ["gp_Trsf"]()
     trsf.SetTranslation(occ["gp_Vec"](*_scale3(vector, scale)))
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 def occ_rotate(shape, axis: tuple, angle_deg: float, origin: tuple, scale: float = 1.0):
@@ -1067,7 +1072,7 @@ def occ_rotate(shape, axis: tuple, angle_deg: float, origin: tuple, scale: float
     ax1 = occ["gp_Ax1"](occ["gp_Pnt"](*_scale3(origin, scale)), occ["gp_Dir"](*axis))
     trsf = occ["gp_Trsf"]()
     trsf.SetRotation(ax1, math.radians(angle_deg))
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 def occ_scale(shape, factor: float, center: tuple, scale: float = 1.0):
@@ -1075,7 +1080,7 @@ def occ_scale(shape, factor: float, center: tuple, scale: float = 1.0):
     occ = _require_occ()
     trsf = occ["gp_Trsf"]()
     trsf.SetScale(occ["gp_Pnt"](*_scale3(center, scale)), factor)
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 def occ_mirror(shape, normal: tuple, position: float, scale: float = 1.0):
@@ -1092,7 +1097,32 @@ def occ_mirror(shape, normal: tuple, position: float, scale: float = 1.0):
     ax2 = occ["gp_Ax2"](occ["gp_Pnt"](*_scale3(point, scale)), occ["gp_Dir"](*normal))
     trsf = occ["gp_Trsf"]()
     trsf.SetMirror(ax2)
-    return occ["Transform"](shape, trsf, True).Shape()
+    return _history_result(occ["Transform"](shape, trsf, True))
+
+
+def occ_transform(shape, matrix: tuple, scale: float = 1.0):
+    """Apply a homogeneous rigid/reflection/uniform-scale transform.
+
+    The matrix is expressed in meters; only its translation column must be
+    converted to the scaled coordinates used by the kernel.
+    """
+    occ = _require_occ()
+    trsf = occ["gp_Trsf"]()
+    trsf.SetValues(
+        matrix[0][0],
+        matrix[0][1],
+        matrix[0][2],
+        matrix[0][3] * scale,
+        matrix[1][0],
+        matrix[1][1],
+        matrix[1][2],
+        matrix[1][3] * scale,
+        matrix[2][0],
+        matrix[2][1],
+        matrix[2][2],
+        matrix[2][3] * scale,
+    )
+    return _history_result(occ["Transform"](shape, trsf, True))
 
 
 # ---------------------------------------------------------------------------
@@ -1144,10 +1174,15 @@ def _boolean_operands(shape) -> tuple[str | None, tuple]:
     meaning, and the rules stand on the construction ``Difference``,
     ``Union`` and ``Intersection`` state.
     """
-    from magnelio.geo.operations import Difference, Intersection, Union  # noqa: PLC0415
+    from magnelio.geo.operations import (  # noqa: PLC0415
+        Difference,
+        Intersection,
+        Union,
+        _InsertRegion,
+    )
 
     kind = type(shape)
-    if kind is Difference:
+    if kind in (Difference, _InsertRegion):
         return "difference", (shape.base, *shape.tools)
     if kind is Union:
         return "union", tuple(shape.shapes)
@@ -7839,7 +7874,7 @@ def make_thick_solid(shape, opening_faces, thickness: float, scale: float = 1.0)
             raise RuntimeError(failure) from exc
         if built is None or built.IsNull():
             raise RuntimeError(failure)
-        return built
+        return _history_result(maker)
 
     opening_faces = list(opening_faces)
     if not opening_faces:
@@ -7875,7 +7910,12 @@ def occ_volume(shape) -> float:
     from OCC.Core.GProp import GProp_GProps  # noqa: PLC0415
 
     props = GProp_GProps()
-    brepgprop.VolumeProperties(shape, props)
+    # DD-275: the default fixed mass quadrature over-read rebuilt rational
+    # tangent surfaces by 0.84%. Span-aware adaptive Gauss-Kronrod integration
+    # also retains analytic precision for conics and trimmed curved sheets.
+    error = brepgprop.VolumePropertiesGK(shape, props, 1e-9, False, True)
+    if error < 0:
+        raise RuntimeError("Geometry volume integration failed.")
     return props.Mass()
 
 
@@ -8042,7 +8082,7 @@ def make_chamfer(shape, edges, dist, scale: float = 1.0):
     chamfer_maker.Build()
     if not chamfer_maker.IsDone():
         raise RuntimeError("OCC chamfer operation failed.")
-    return chamfer_maker.Shape()
+    return _history_result(chamfer_maker)
 
 
 def make_fillet(shape, edges, radius, scale: float = 1.0):
@@ -8077,7 +8117,7 @@ def make_fillet(shape, edges, radius, scale: float = 1.0):
     fillet_maker.Build()
     if not fillet_maker.IsDone():
         raise RuntimeError("OCC fillet operation failed.")
-    return fillet_maker.Shape()
+    return _history_result(fillet_maker)
 
 
 # ---------------------------------------------------------------------------
@@ -8110,80 +8150,6 @@ def extract_face_wire(face):
     if wire.IsNull():
         raise ValueError("Could not extract outer wire from face.")
     return wire
-
-
-# Plane normal → (axis index, u index, v index).  Must match the (u, v)
-# convention of ``cross_section_polygons`` so a Face and the cross-section
-# of its extrusion share one coordinate frame.
-_FACE_UV = {
-    "x": (0, 1, 2),  # normal x: u=y, v=z
-    "y": (1, 0, 2),  # normal y: u=x, v=z
-    "z": (2, 0, 1),  # normal z: u=x, v=y
-}
-
-
-def make_face(normal: str, offset: float, points, scale: float = 1.0):
-    """Build a planar OCC face from a polygon of ``(u, v)`` points.
-
-    The polygon lies in the axis-normal plane at ``offset`` along *normal*;
-    ``(u, v)`` map to the two in-plane axes following the same convention
-    as :func:`cross_section_polygons` (normal ``x`` → u=y, v=z; ``y`` →
-    u=x, v=z; ``z`` → u=x, v=y).  The polygon is closed automatically.
-
-    Parameters
-    ----------
-    normal : str
-        Plane normal axis: ``'x'``, ``'y'``, or ``'z'``.
-    offset : float
-        Position of the plane along the normal axis [m].
-    points : sequence of (float, float)
-        In-plane ``(u, v)`` vertices [m], at least 3, non-self-intersecting.
-
-    Returns
-    -------
-    TopoDS_Face
-        The planar face.
-    """
-    occ = _require_occ()
-    try:
-        from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
-            BRepBuilderAPI_MakeFace,
-            BRepBuilderAPI_MakePolygon,
-        )
-    except ImportError as exc:
-        raise ImportError(
-            "pythonocc-core is required for face construction. "
-            "Install via: conda install -c conda-forge pythonocc-core"
-        ) from exc
-
-    if normal not in _FACE_UV:
-        raise ValueError(f"normal must be 'x', 'y', or 'z'; got {normal!r}")
-    pts = list(points)
-    if len(pts) < 3:
-        raise ValueError(f"A Face needs at least 3 points; got {len(pts)}.")
-
-    axis_idx, u_idx, v_idx = _FACE_UV[normal]
-    poly = BRepBuilderAPI_MakePolygon()
-    for uv in pts:
-        coord = [0.0, 0.0, 0.0]
-        coord[axis_idx] = offset * scale
-        coord[u_idx] = uv[0] * scale
-        coord[v_idx] = uv[1] * scale
-        poly.Add(occ["gp_Pnt"](*coord))
-    poly.Close()
-    if not poly.IsDone():
-        raise ValueError(
-            "OCC could not build a closed polygon from the given Face "
-            "points (degenerate or duplicate vertices?)."
-        )
-
-    mkface = BRepBuilderAPI_MakeFace(poly.Wire(), True)  # True = planar only
-    if not mkface.IsDone():
-        raise ValueError(
-            "OCC could not build a planar face from the Face polygon — "
-            "the points must be coplanar and non-self-intersecting."
-        )
-    return mkface.Face()
 
 
 def make_bspline_surface(points, scale: float = 1.0):
@@ -8392,7 +8358,7 @@ def make_extrude(face, vector, scale: float = 1.0):
     prism.Build()
     if not prism.IsDone():
         raise RuntimeError("OCC extrude (prism) operation failed.")
-    return prism.Shape()
+    return _history_result(prism)
 
 
 #: Two outward face normals whose sum is shorter than this count as
@@ -8442,7 +8408,7 @@ def make_loft(wires, is_solid=True, is_ruled=False):
     thru.Build()
     if not thru.IsDone():
         raise RuntimeError("OCC loft (ThruSections) operation failed.")
-    return thru.Shape()
+    return _history_result(thru)
 
 
 def face_outward_normal(face):
@@ -8483,7 +8449,10 @@ def face_outward_normal(face):
     surf = BRepAdaptor_Surface(face)
     if surf.GetType() == GeomAbs_Plane:
         direction = surf.Plane().Axis().Direction()
-        normal = [direction.X(), direction.Y(), direction.Z()]
+        # A reflection makes the plane frame indirect; its axis alone is
+        # then opposite to the derivative-based surface normal (DD-275).
+        sign = 1 if surf.Plane().Position().Direct() else -1
+        normal = [sign * direction.X(), sign * direction.Y(), sign * direction.Z()]
     else:
         u_min, u_max, v_min, v_max = breptools.UVBounds(face)
         props = GeomLProp_SLProps(
@@ -8505,6 +8474,42 @@ def face_outward_normal(face):
 
 
 def make_tangent_blend(face_a, face_b, tension):
+    """Build tangent transitions for corresponding outer and inner wires."""
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+    from OCC.Core.BRepGProp import brepgprop
+    from OCC.Core.GProp import GProp_GProps
+
+    from magnelio.geo.topology import _normal
+
+    def wires(face):
+        outer = extract_face_wire(face)
+        return [outer] + [w for w in _shape_wires(face) if not w.IsSame(outer)]
+
+    boundaries_a, boundaries_b = wires(face_a), wires(face_b)
+    if len(boundaries_a) != len(boundaries_b):
+        raise ValueError("lofted() profiles must have the same number of holes.")
+    props_a, props_b = GProp_GProps(), GProp_GProps()
+    brepgprop.SurfaceProperties(face_a, props_a)
+    brepgprop.SurfaceProperties(face_b, props_b)
+    poses = (
+        props_a.CentreOfMass().Coord(),
+        props_b.CentreOfMass().Coord(),
+        _normal(face_a),
+        _normal(face_b),
+    )
+    solid = _make_tangent_blend_outer(face_a, face_b, tension, poses=poses)
+    for a, b in zip(boundaries_a[1:], boundaries_b[1:]):
+        caps = []
+        for wire, normal in ((a, poses[2]), (b, poses[3])):
+            cap = BRepBuilderAPI_MakeFace(wire, True).Face()
+            if sum(x * y for x, y in zip(_normal(cap), normal)) < 0:
+                cap.Reverse()
+            caps.append(cap)
+        solid = boolean_difference(solid, _make_tangent_blend_outer(*caps, tension, poses=poses))
+    return solid
+
+
+def _make_tangent_blend_outer(face_a, face_b, tension, *, poses=None):
     """Blend two faces so the solid meets each of them at a right angle.
 
     Two constructions, chosen by how the faces are posed (DD-144, DD-250):
@@ -8578,6 +8583,8 @@ def make_tangent_blend(face_a, face_b, tension):
     point_a, point_b = centroid(face_a), centroid(face_b)
     normal_a = face_outward_normal(face_a)
     normal_b = face_outward_normal(face_b)
+    if poses is not None:
+        point_a, point_b, normal_a, normal_b = poses
     span = math.sqrt(sum((b - a) ** 2 for a, b in zip(point_a, point_b)))
     if span <= 0.0:
         raise ValueError(
@@ -8623,7 +8630,7 @@ def make_tangent_blend(face_a, face_b, tension):
         raise RuntimeError("OCC tangent blend (MakePipeShell) operation failed.")
     if not pipe.MakeSolid():
         raise RuntimeError("OCC tangent blend did not close into a solid.")
-    return pipe.Shape()
+    return _history_result(pipe)
 
 
 def _make_tangent_loft(face_a, face_b, point_a, point_b, normal_a, normal_b, tension):
@@ -9132,9 +9139,8 @@ def make_joined_wire(wires, tol: float):
 def make_wire_face(wire):
     """Build the planar face bounded by a closed OCC wire.
 
-    The free-boundary counterpart of :func:`make_face`, which is limited
-    to axis-normal polygons: any closed planar wire — arcs, splines and
-    straight segments mixed — becomes a face here.
+    Any closed planar wire, including mixed analytic arcs, splines and
+    straight segments, becomes a face here.
 
     Parameters
     ----------
@@ -9156,7 +9162,7 @@ def make_wire_face(wire):
 
     if not wire.Closed():
         raise ValueError(
-            "covered() needs a closed curve; this one has two loose ends. "
+            "Profile.from_wires needs a closed curve; this one has two loose ends. "
             "Chain the segments with joined() so the last end meets the "
             "first start, or build the profile with Path(...).closed()."
         )
@@ -9164,7 +9170,7 @@ def make_wire_face(wire):
     if not mkface.IsDone():
         if mkface.Error() == BRepBuilderAPI_NotPlanar:
             raise ValueError(
-                "covered() needs a planar curve — these segments do not lie in one plane."
+                "Profile.from_wires needs a planar curve — these segments do not lie in one plane."
             )
         raise ValueError(
             "OCC could not build a face from this curve — is the boundary self-intersecting?"
@@ -9492,7 +9498,7 @@ def make_revolve(profile_face, axis_point, axis_dir, angle_rad, scale: float = 1
     rev.Build()
     if not rev.IsDone():
         raise RuntimeError("OCC revolve (MakeRevol) operation failed.")
-    return rev.Shape()
+    return _history_result(rev)
 
 
 def _perp_dir(d):
@@ -9511,15 +9517,24 @@ def _perp_dir(d):
     return gp_Dir(v)
 
 
-def make_sweep(profile_face, spine_wire):
+def make_sweep(
+    profile_face,
+    spine_wire,
+    *,
+    frame="corrected_frenet",
+    binormal=None,
+    twist_deg=0.0,
+    draft_deg=0.0,
+    tolerance=None,
+):
     """Sweep a planar profile face along a spine wire to produce a solid.
 
     ``BRepOffsetAPI_MakePipe`` uses the profile at the position it already
     occupies, so the profile is first rigidly moved so its centroid lands
     on the spine's start point and its plane normal aligns with the spine's
-    start tangent (its in-plane roll fixed deterministically).  The result
-    is a tube centred on the spine, oriented by the pipe's own trihedron
-    along the path.
+    start tangent, retaining its actual in-plane roll. The selected transport
+    carries that initial orientation along the path; corrected Frenet is the
+    unchanged default.
 
     Parameters
     ----------
@@ -9543,7 +9558,7 @@ def make_sweep(profile_face, spine_wire):
         from OCC.Core.BRepGProp import brepgprop  # noqa: PLC0415
         from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe  # noqa: PLC0415
         from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
-        from OCC.Core.gp import gp_Ax3, gp_Dir, gp_Trsf, gp_Vec  # noqa: PLC0415
+        from OCC.Core.gp import gp_Dir, gp_Trsf, gp_Vec  # noqa: PLC0415
         from OCC.Core.GProp import GProp_GProps  # noqa: PLC0415
     except ImportError as exc:
         raise ImportError("pythonocc-core is required for sweep.") from exc
@@ -9566,18 +9581,100 @@ def make_sweep(profile_face, spine_wire):
         raise ValueError("degenerate spine — zero start tangent.")
     tangent = gp_Dir(tangent_vec)
 
-    # Rigidly move the profile from its own frame to the spine-start frame.
-    frame_from = gp_Ax3(centroid, normal, _perp_dir(normal))
-    frame_to = gp_Ax3(start_pnt, tangent, _perp_dir(tangent))
+    # DD-275: shortest normal-to-tangent rotation transports the real
+    # boundary geometry without reconstructing canonical in-plane frames.
+    # The antiparallel case needs an explicit roll convention: use the plane's
+    # actual X axis as the half-turn axis, preserving its width direction.
+    from magnelio.geo.topology import _normal
+
+    normal = gp_Dir(*_normal(profile_face))
+    cross = gp_Vec(normal).Crossed(gp_Vec(tangent))
+    dot = gp_Vec(normal).Dot(gp_Vec(tangent))
     trsf = gp_Trsf()
-    trsf.SetDisplacement(frame_from, frame_to)
-    moved = BRepBuilderAPI_Transform(profile_face, trsf, True).Shape()
+    if cross.Magnitude() > 1e-12:
+        from OCC.Core.gp import gp_Ax1
+
+        trsf.SetRotation(gp_Ax1(centroid, gp_Dir(cross)), math.atan2(cross.Magnitude(), dot))
+    elif dot < 0:
+        from OCC.Core.gp import gp_Ax1
+
+        trsf.SetRotation(gp_Ax1(centroid, surf.Plane().XAxis().Direction()), math.pi)
+    shift = gp_Trsf()
+    shift.SetTranslation(gp_Vec(centroid, start_pnt))
+    trsf = shift.Multiplied(trsf)
+    moved = _history_result(BRepBuilderAPI_Transform(profile_face, trsf, True))
+
+    if twist_deg or draft_deg:
+        from OCC.Core.TopoDS import topods
+
+        from magnelio.geo._sweep_laws import _transform, make_law_sweep
+
+        diagonal = _occ_bbox_diagonal(moved)
+        tolerance = diagonal * 1e-6 if tolerance is None else tolerance
+        factor = 2.0 ** round(math.log2(128 / diagonal))
+        anchor = np.array(start_pnt.XYZ().Coord())
+        rotation = np.eye(3) * factor
+        local_profile = topods.Face(_transform(moved, rotation, -factor * anchor))
+        local_spine = topods.Wire(_transform(spine_wire, rotation, -factor * anchor))
+        result = make_law_sweep(
+            local_profile,
+            local_spine,
+            frame,
+            binormal,
+            tangent,
+            twist_deg,
+            draft_deg,
+            tolerance * factor,
+        )
+        return _transform(result, np.eye(3) / factor, anchor)
+
+    if frame != "corrected_frenet":
+        return _oriented_sweep(moved, spine_wire, frame, binormal, tangent)
 
     pipe = BRepOffsetAPI_MakePipe(spine_wire, moved)
     pipe.Build()
     if not pipe.IsDone():
         raise RuntimeError("OCC sweep (MakePipe) operation failed.")
-    return pipe.Shape()
+    return _history_result(pipe)
+
+
+def _oriented_sweep(profile_face, spine_wire, frame, binormal, tangent):
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+    from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipeShell
+    from OCC.Core.BRepTools import BRepTools_WireExplorer
+    from OCC.Core.gp import gp_Ax2, gp_Dir, gp_Vec
+
+    # Pin every boundary to the same start vertex. Automatic placement of an
+    # offset hole could select another station and destroy hole correspondence.
+    walker = BRepTools_WireExplorer(spine_wire)
+    start = walker.CurrentVertex()
+    plane = BRepAdaptor_Surface(profile_face).Plane()
+    fixed = gp_Ax2(plane.Location(), tangent, plane.XAxis().Direction())
+    if (
+        frame == "fixed_binormal"
+        and gp_Vec(*binormal).Crossed(gp_Vec(tangent)).Magnitude() <= 1e-12
+    ):
+        raise ValueError("swept(binormal=...) must not be parallel to the spine tangent.")
+    outer = extract_face_wire(profile_face)
+    wires = [outer] + [wire for wire in _shape_wires(profile_face) if not wire.IsSame(outer)]
+    solids = []
+    for wire in wires:
+        pipe = BRepOffsetAPI_MakePipeShell(spine_wire)
+        if frame == "frenet":
+            pipe.SetMode(True)
+        elif frame == "fixed":
+            pipe.SetMode(fixed)
+        else:
+            pipe.SetMode(gp_Dir(*binormal))
+        pipe.Add(wire, start, False, False)
+        pipe.Build()
+        if not pipe.IsDone() or not pipe.MakeSolid():
+            raise RuntimeError(f"swept(frame={frame!r}): OCC pipe failed ({pipe.GetStatus()}).")
+        solids.append(_history_result(pipe))
+    solid = solids[0]
+    for hole in solids[1:]:
+        solid = boolean_difference(solid, hole)
+    return solid
 
 
 # ---------------------------------------------------------------------------
@@ -9591,6 +9688,7 @@ def check_pairwise_overlaps(
     materials: list | None = None,
     scale: float = 1.0,
     disjoint: set[tuple[int, int]] | None = None,
+    strict: bool = False,
 ) -> list[tuple[int, int, float]]:
     """Check all shape pairs for volumetric overlap.
 
@@ -9632,6 +9730,10 @@ def check_pairwise_overlaps(
         by every metal piece in it, and its one batch Common against
         all of them (2 118 faces against 320 tools, 3 s on a row of 16
         couplers) proved what the construction already says.
+    strict : bool
+        Raise if a pairwise intersection cannot be constructed, rather than
+        treating that pair as inconclusive. Construction operations need this
+        guarantee before assigning material precedence.
 
     Returns
     -------
@@ -9706,6 +9808,10 @@ def check_pairwise_overlaps(
         if len(js) == 1:
             a, b = min(i, js[0]), max(i, js[0])
             volume = common_volume(a, [b])
+            if volume is None and strict:
+                raise RuntimeError(
+                    f"The CAD kernel could not check overlap between bodies {a} and {b}."
+                )
             if volume is not None and volume > pair_tolerance(a, b):
                 overlaps.append((a, b, volume))
             return
@@ -9814,3 +9920,89 @@ def wire_vertex_points(wire, scale: float = 1.0) -> np.ndarray:
         pts.append((p.X(), p.Y(), p.Z()))
         ex.Next()
     return np.asarray(pts, dtype=float).reshape(-1, 3) / scale
+
+
+def make_closed_ellipse(center, u, v, a, b, scale=1.0):
+    """One exact closed analytic edge, including the circular special case."""
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+    from OCC.Core.gp import gp_Ax2, gp_Circ, gp_Dir, gp_Elips, gp_Pnt
+
+    n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+    if a < b:
+        u, a, b = v, b, a
+    frame = gp_Ax2(gp_Pnt(*_scale3(center, scale)), gp_Dir(*n), gp_Dir(*u))
+    conic = gp_Circ(frame, a * scale) if a == b else gp_Elips(frame, a * scale, b * scale)
+    edge = BRepBuilderAPI_MakeEdge(conic)
+    if not edge.IsDone():
+        raise RuntimeError("Curve.circle/ellipse: OCC edge construction failed.")
+    wire = BRepBuilderAPI_MakeWire(edge.Edge())
+    if not wire.IsDone():
+        raise RuntimeError("Curve.circle/ellipse: OCC wire construction failed.")
+    return wire.Wire()
+
+
+def make_profile_face(outer, holes):
+    """Validate intrinsic profile topology before constructing the region."""
+    from OCC.Core.BRep import BRep_Tool
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+    from OCC.Core.BRepCheck import BRepCheck_Analyzer
+    from OCC.Core.BRepClass import BRepClass_FaceClassifier
+    from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
+    from OCC.Core.Precision import precision
+    from OCC.Core.TopAbs import TopAbs_IN, TopAbs_VERTEX
+    from OCC.Core.TopExp import TopExp_Explorer
+    from OCC.Core.TopoDS import topods
+
+    tol = precision.Confusion()
+    wires = [outer, *holes]
+    faces = []
+    for wire in wires:
+        face = make_wire_face(wire)
+        if not BRepCheck_Analyzer(face).IsValid():
+            raise ValueError("Profile.from_wires: boundary is self-intersecting or degenerate.")
+        faces.append(face)
+    plane = BRepAdaptor_Surface(faces[0]).Plane()
+    for face in faces[1:]:
+        other = BRepAdaptor_Surface(face).Plane()
+        if (
+            not plane.Axis().Direction().IsParallel(other.Axis().Direction(), 1e-9)
+            or plane.Distance(other.Location()) > tol
+        ):
+            raise ValueError("Profile.from_wires: all boundaries must be coplanar.")
+
+    def inside(wire, face):
+        vertex = TopExp_Explorer(wire, TopAbs_VERTEX).Current()
+        point = BRep_Tool.Pnt(topods.Vertex(vertex))
+        return BRepClass_FaceClassifier(face, point, tol).State() == TopAbs_IN
+
+    for i, hole in enumerate(holes, 1):
+        distance = BRepExtrema_DistShapeShape(outer, hole)
+        if not distance.IsDone():
+            raise RuntimeError("Profile.from_wires: OCC boundary distance failed.")
+        if distance.Value() <= tol or not inside(hole, faces[0]):
+            raise ValueError(
+                "Profile.from_wires: holes must lie strictly inside the outer boundary "
+                "without intersection."
+            )
+        for j in range(1, i):
+            distance = BRepExtrema_DistShapeShape(wires[j], hole)
+            if not distance.IsDone():
+                raise RuntimeError("Profile.from_wires: OCC boundary distance failed.")
+            if distance.Value() <= tol or inside(hole, faces[j]) or inside(wires[j], faces[i]):
+                raise ValueError("Profile.from_wires: holes must not touch, intersect, or nest.")
+    face = make_face_with_holes(outer, holes)
+    if not BRepCheck_Analyzer(face).IsValid():
+        raise ValueError("Profile.from_wires: invalid planar region or intersecting boundaries.")
+    return face
+
+
+def make_profile_loft(sections, is_ruled=False):
+    """Loft corresponding boundaries and subtract the hole volumes."""
+    counts = {len(wires) for wires in sections}
+    if len(counts) != 1:
+        raise ValueError("Loft profiles must have the same number of holes.")
+    solid = make_loft([w[0] for w in sections], is_solid=True, is_ruled=is_ruled)
+    for i in range(1, len(sections[0])):
+        tool = make_loft([w[i] for w in sections], is_solid=True, is_ruled=is_ruled)
+        solid = boolean_difference(solid, tool)
+    return solid

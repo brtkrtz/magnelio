@@ -102,14 +102,16 @@ def build_coupler(h):
         radius=B, origin=(0, 0, -L_PIPE), axis="z", height=L + 2 * L_PIPE, material="air"
     )
     pit = (
-        geo.Face(
-            normal="x",
-            points=((0, -G_PIT), (0, L + G_PIT), (r_pit, L + G_PIT), (r_pit, -G_PIT)),
+        geo.Profile.polygon(
+            [
+                (0.0, u, v)
+                for u, v in ((0, -G_PIT), (0, L + G_PIT), (r_pit, L + G_PIT), (r_pit, -G_PIT))
+            ],
             material="pec",
         )
         .revolved(axis="z", angle_deg=pit_deg)
         .rotated(axis="z", angle_deg=-pit_deg / 2)
-        .filleted(edges="all", radius=1e-3)
+        .filleted(edges="all", radius=0.001)
     )
     coax = geo.Cylinder(
         origin=(0, 0, -G_FEED), axis="y", height=y_top, radius=R_OUT, material="air"
@@ -118,7 +120,9 @@ def build_coupler(h):
         origin=(0, r_pit, -G_FEED), axis="y", height=L_COAX, radius=R_IN, material="pec"
     )
     strip = (
-        geo.Face(normal="x", points=((B, 0), (B, L), (B + T, L), (B + T, 0)), material="pec")
+        geo.Profile.polygon(
+            [(0.0, u, v) for u, v in ((B, 0), (B, L), (B + T, L), (B + T, 0))], material="pec"
+        )
         .revolved(axis="z", angle_deg=PHI_DEG)
         .rotated(axis="z", angle_deg=-PHI_DEG / 2)
     )

@@ -37,10 +37,11 @@ def dish_solid():
 @pytest.fixture(scope="module")
 def horn():
     def rect(x, a, b):
-        return geo.Face(
-            normal="x",
-            points=((-a / 2, -b / 2), (a / 2, -b / 2), (a / 2, b / 2), (-a / 2, b / 2)),
-            position=x,
+        return geo.Profile.polygon(
+            [
+                (x, u, v)
+                for u, v in ((-a / 2, -b / 2), (a / 2, -b / 2), (a / 2, b / 2), (-a / 2, b / 2))
+            ]
         )
 
     return geo.Loft(rect(0.0, 0.02, 0.01), rect(0.06, 0.06, 0.045), blend="ruled", material="pec")
@@ -280,15 +281,16 @@ BORE_HI = 20e-3
 
 def _cap(y: float, side: float, x0: float = 0.0):
     half = 0.5 * side
-    return geo.Face(
-        normal="y",
-        points=(
-            (x0 - half, -half),
-            (x0 + half, -half),
-            (x0 + half, half),
-            (x0 - half, half),
-        ),
-        position=y,
+    return geo.Profile.polygon(
+        [
+            (u, y, v)
+            for u, v in (
+                (x0 - half, -half),
+                (x0 + half, -half),
+                (x0 + half, half),
+                (x0 - half, half),
+            )
+        ]
     )
 
 
@@ -707,10 +709,8 @@ class TestConicRunSurvivesAnUnbuildableArc:
     def shape(self):
         def square(z, side):
             half = 0.5 * side
-            return geo.Face(
-                normal="z",
-                points=((-half, -half), (half, -half), (half, half), (-half, half)),
-                position=z,
+            return geo.Profile.polygon(
+                [(u, v, z) for u, v in ((-half, -half), (half, -half), (half, half), (-half, half))]
             )
 
         blend = geo.Loft(
@@ -794,10 +794,8 @@ def _cross_drilled(offset: float, bore_axis: str):
 
     def square(z, side):
         half = 0.5 * side
-        return geo.Face(
-            normal="z",
-            points=((-half, -half), (half, -half), (half, half), (-half, half)),
-            position=z,
+        return geo.Profile.polygon(
+            [(u, v, z) for u, v in ((-half, -half), (half, -half), (half, half), (-half, half))]
         )
 
     blend = geo.Loft(

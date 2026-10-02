@@ -14,11 +14,11 @@ from magnelio.geo import (
     Curve,
     Cylinder,
     Difference,
-    Face,
     GeometryModel,
     Group,
     Intersection,
     Path,
+    Profile,
     Sphere,
     ThinWire,
     Torus,
@@ -85,11 +85,11 @@ class TestPointArguments:
         assert all(isinstance(c, float) for c in s.center)
 
     def test_translation_vector_is_checked_at_the_call(self):
-        with pytest.raises(TypeError, match=r"translated\(vector\)"):
+        with pytest.raises(TypeError, match=r"Translation\(vector\)"):
             _brick().translated(1e-3)
 
     def test_rotation_origin_is_checked_at_the_call(self):
-        with pytest.raises(ValueError, match=r"rotated\(origin\)"):
+        with pytest.raises(ValueError, match=r"Rotation\(origin\)"):
             _brick().rotated("z", 90.0, origin=(0, 0))
 
 
@@ -133,16 +133,12 @@ class TestExtentArguments:
             Torus(major_radius=1e-3, minor_radius=2e-3)
 
     def test_scaling_by_zero_is_rejected(self):
-        with pytest.raises(ValueError, match=r"scaled\(factor\) must not be zero"):
+        with pytest.raises(ValueError, match=r"Scale\(factor\) must not be zero"):
             _brick().scaled(0.0)
 
     def test_repeat_must_be_a_whole_number(self):
-        with pytest.raises(TypeError, match="repeat"):
+        with pytest.raises(TypeError, match="repeat must be a whole number"):
             _brick().translated((1e-3, 0, 0), repeat=2.5)
-
-    def test_repeat_below_one_is_rejected(self):
-        with pytest.raises(ValueError, match="repeat"):
-            _brick().translated((1e-3, 0, 0), repeat=0)
 
 
 # ── axes ─────────────────────────────────────────────────────────────────────
@@ -178,7 +174,7 @@ class TestOperandArguments:
     def test_a_list_of_shapes_is_not_an_operand(self):
         with pytest.raises(TypeError) as excinfo:
             Union([_brick(), Sphere(radius=1.0, material=PEC)])
-        assert "Union(a, b)" in str(excinfo.value)
+        assert "Solid operands" in str(excinfo.value)
 
     def test_union_of_nothing_is_rejected(self):
         with pytest.raises(ValueError, match="at least 1 operand"):
@@ -189,7 +185,7 @@ class TestOperandArguments:
             Difference(_brick())
 
     def test_intersection_rejects_a_non_shape(self):
-        with pytest.raises(TypeError, match="geometry object"):
+        with pytest.raises(TypeError, match="Solid operands"):
             Intersection(_brick(), None)
 
     def test_group_member_must_be_geometry(self):
@@ -211,13 +207,13 @@ class TestOperandArguments:
 class TestProfileArguments:
     """Point sequences for faces, curves and paths."""
 
-    def test_face_points_must_be_in_plane_pairs(self):
-        with pytest.raises(ValueError, match="3 coordinates"):
-            Face(normal="z", points=[(0, 0, 0), (1, 0, 0), (1, 1, 0)])
+    def test_polygon_points_must_be_world_triples(self):
+        with pytest.raises(ValueError, match="2 coordinates"):
+            Profile.polygon([(0, 0), (1, 0), (1, 1)])
 
     def test_face_needs_three_points(self):
         with pytest.raises(ValueError, match="at least 3 points"):
-            Face(normal="z", points=[(0, 0), (1, 0)])
+            Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (1, 0)]])
 
     def test_flat_coordinate_list_is_named_as_such(self):
         with pytest.raises(TypeError, match="flat list of coordinates"):
@@ -270,17 +266,17 @@ class TestVerbArguments:
             _brick().chamfered(edges="every", distance=1e-4)
 
     def test_zero_extrusion_vector_is_rejected(self):
-        sheet = Face(normal="z", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         with pytest.raises(ValueError, match="zero vector"):
             sheet.extruded((0, 0, 0), material=PEC)
 
     def test_sweep_spine_must_be_a_curve(self):
-        sheet = Face(normal="z", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(u, v, 0.0) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         with pytest.raises(TypeError, match="needs a Curve as its spine"):
             sheet.swept([(0, 0, 0), (0, 0, 1e-3)], material=PEC)
 
     def test_revolve_beyond_a_full_turn_is_rejected(self):
-        sheet = Face(normal="x", points=[(0, 0), (1e-3, 0), (1e-3, 1e-3)])
+        sheet = Profile.polygon([(0.0, u, v) for u, v in [(0, 0), (0.001, 0), (0.001, 0.001)]])
         with pytest.raises(ValueError, match="at most a full turn"):
             sheet.revolved("z", 720.0, material=PEC)
 

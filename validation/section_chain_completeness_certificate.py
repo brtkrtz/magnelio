@@ -76,14 +76,16 @@ def _build():
         radius=DIA / 2, origin=(0, 0, -LEN_ADD), axis="z", height=LL + 2 * LEN_ADD, material=air
     )
     pit = (
-        geo.Face(
-            normal="x",
-            points=((0, -G), (0, LL + G), (DIA / 2 + T + H, LL + G), (DIA / 2 + T + H, -G)),
+        geo.Profile.polygon(
+            [
+                (0.0, u, v)
+                for u, v in ((0, -G), (0, LL + G), (DIA / 2 + T + H, LL + G), (DIA / 2 + T + H, -G))
+            ],
             material=pec,
         )
         .revolved(axis="z", angle_deg=BETA)
         .rotated(axis="z", angle_deg=-BETA / 2)
-        .filleted(edges="all", radius=1e-3)
+        .filleted(edges="all", radius=0.001)
     )
     coax_vac = geo.Cylinder(
         origin=(0, 0, -GC), axis="y", height=DIA / 2 + L_COAX, radius=RA, material=air
@@ -91,9 +93,11 @@ def _build():
     coax_cond = geo.Cylinder(
         origin=(0, DIA / 2 + T + H, -GC), axis="y", height=-T - H + L_COAX, radius=RI, material=pec
     )
-    electrodes = geo.Face(
-        normal="x",
-        points=((DIA / 2, 0), (DIA / 2, LL), (DIA / 2 + T, LL), (DIA / 2 + T, 0)),
+    electrodes = geo.Profile.polygon(
+        [
+            (0.0, u, v)
+            for u, v in ((DIA / 2, 0), (DIA / 2, LL), (DIA / 2 + T, LL), (DIA / 2 + T, 0))
+        ],
         material=pec,
     ).revolved(axis="z", angle_deg=ALPHA)
     electrodes = electrodes.rotated(axis="z", angle_deg=-ALPHA / 2)

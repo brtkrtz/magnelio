@@ -46,7 +46,6 @@
    "Thickness": 0.8,
    "Material": "FR4",
    "DielectricConstant": "4.3",
-   "LossTangent": "0.02",
    "Name": "F.Cu/B.Cu"
   },
   {

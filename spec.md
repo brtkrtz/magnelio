@@ -5,7 +5,7 @@
 > This is the internal design reference; the user-facing API reference
 > is the Sphinx documentation (`docs/api`).
 >
-> Last updated: 2026-08-14
+> Last updated: 2026-09-29
 
 ## Table of Contents
 
@@ -683,56 +683,454 @@ analysis = AnalysisScatteringTD(mesh=mesh, f_max=f_max, ports=[spec])
 The builders, runtime operators and the V/I recorder behind the specs
 are internal since DD-117 (importable, no stability guarantee).
 
-### 8.3 Geometry primitives
+### 8.3 Geometry ontology and construction contract
 
-| Class      | Constructor arguments |
-|------------|-----------------------|
-| `Brick`    | `origin, size, material=None, name=None` (also `Brick.from_corners(p1, p2, material=None)` and `Brick.from_ranges(x1=, x2=/dx=, …, material=None)`) |
-| `Sphere`   | `center, radius, material=None, name=None` |
-| `Cylinder` | `origin, radius, height, material=None, axis="z", inner_radius=0.0, angle_deg=None, name=None` (hollow tube / angular segment, DD-132) |
-| `Cone`     | `origin, bottom_radius, top_radius, height, material=None, axis="z", name=None` |
-| `Torus`    | `center, major_radius, minor_radius, material=None, axis="z", name=None` |
+DD-275 fixes the geometry-foundation contract.  It is an accepted staged
+contract: WP1 implements the dimensional hierarchy, affine values,
+member-wise Group placement, and Solid-only CSG; WP2 implements exact curves
+and validated planar Profile factories, including intrinsic holes. The
+migration boundary is characterized in `tests/unit/test_geo_api_baseline.py`;
+WP3 implements owned topology, semantic/named selection, history and project
+replay. WP4 implements the uniform operations below; WP5 implements relative
+routes and transported poses. A name listed here must not be
+documented as shipped until its work package lands.
 
-Every `axis=` accepts an axis letter (`"x"`/`"y"`/`"z"`) **or** any
-3-vector (length ignored).  A negative `height` extrudes along
-`-axis` from the origin.
+Standalone geometry is dimensional:
 
-### 8.4 CSG operations and shape verbs
+```text
+Shape
+|-- Curve
+|-- Sheet
+|   |-- Profile       planar bounded sheet, outer wire plus holes
+|   `-- Surface       curved sheet
+`-- Solid             closed 3-D body
+```
+
+The existing volume primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
+`Torus`, `ImportedSolid`) and Boolean results are `Solid` values. `ImportedSheet`
+wraps an exact free CAD face without making it directly meshable. `Curve`,
+`Sheet`, `Profile`, `Surface`, and `Solid` are public categories. The
+axis-normal polygon `Face` and `Curve.covered()` have been removed in favour
+of the fixed `Profile` factories.  `FaceRef` names owned topology.  `Group` is a transformable,
+material-preserving aggregate but not a `Shape` or CSG operand.  `ThinWire`
+is an EM mesh declaration around a `Curve`, not a standalone CAD category.
+
+Solid primitive signatures remain as follows unless a later, explicit DD
+amends one:
+
+| Class | Constructor arguments |
+| --- | --- |
+| `Brick` | `origin, size, material=None, name=None`; also `from_corners` and `from_ranges` |
+| `Sphere` | `center, radius, material=None, name=None` |
+| `Cylinder` | `origin, radius, height, material=None, axis="z", inner_radius=0.0, angle_deg=None, name=None` |
+| `Cone` | `origin, bottom_radius, top_radius, height, material=None, axis="z", name=None` |
+| `Torus` | `center, major_radius, minor_radius, material=None, axis="z", name=None` |
+
+Every axis or normal accepts `"x"`, `"y"`, `"z"`, or a non-zero
+three-vector.  Geometry is always expressed in world coordinates; there is
+no ambient local coordinate-system state.
+
+Curve construction is `line`, `circle`, `ellipse`, `polyline`, `arc`,
+`ellipse_arc`, `spline`, `helix`, and `joined`.  Planar construction is:
+
+```python
+Profile.polygon(points, *, material=None, name=None)
+Profile.rectangle(center, size, *, normal="z", x_direction=None,
+                  material=None, name=None)
+Profile.circle(center, radius, *, normal="z", material=None, name=None)
+Profile.from_wires(outer, holes=(), *, material=None, name=None)
+```
+
+Profile polygon points are 3-D and coplanar.  `from_wires` validates closed,
+coplanar, nested, non-intersecting wires; holes are profile topology and do
+not require solid Boolean scaffolding.  `Curve.covered()` is not part of the
+new contract. `Curve.length` and `Profile.area` are read-only CAD measurements.
+`Profile.boundary()` returns detached Curve values in world placement: the
+outer wire followed by holes in input order, preserved by affine transforms.
+All four profile-to-solid operations retain holes. Loft sections require equal
+hole counts, match inner boundaries by input order, and inherit an omitted
+material from the first Profile. Topology-changing holes are not supported.
+
+### 8.4 Transform algebra and category-specific operations
+
+Every standalone `Shape` provides exactly the common affine verbs
+`translated`, `rotated`, `mirrored`, and `scaled`, plus `bounding_box()`.
+By default the verbs return one value of the same dimensional category and
+preserve material, name, and named topology. `translated` and `rotated` also
+provide `repeat=1`, `copy=False`, `unite=False`, and `group=False`; `mirrored`
+provides the last three options without repetition. `repeat` counts transformed
+copies at successive displacement/angle increments, and `copy=True` includes
+the original first. Without aggregation a multi-value result is a list;
+`group=True` always returns a material-preserving Group, and `unite=True`
+always returns a Union, restricted to Solid input. Group and union modes are
+mutually exclusive, and mirrored aggregation requires `copy=True`. Repeated
+Group assemblies retain their nested members and reject fusion. `scaled`
+has no array options. Every copy is a direct affine placement of the source.
+
+Reusable placement uses immutable values:
+
+```python
+Translation(vector)
+Rotation(axis, angle_deg, origin=(0, 0, 0))
+Mirror(normal, position=0)
+Scale(factor, center=(0, 0, 0))
+Transform.identity()
+```
+
+For column-vector points, `A @ B @ shape` applies `B` first and `A` second.
+`A @ B` composes to `Transform`; a transform acts on a `Shape` or `Group`.
+The reverse `shape @ transform` is undefined.  Scale is uniform.  Named
+methods delegate to the same algebra.  `+` and `-` are never vector
+placement.
+
+CSG operators are `Solid`-only:
 
 | Spelling | Meaning |
-|----------|---------|
-| `a + b` / `Union(*shapes, material=None, name=None)` | Boolean union |
-| `a & b` / `Intersection(shape_a, shape_b, …)` | Boolean intersection |
-| `a - b` / `Difference(base, *tools, …)` | Boolean difference |
-| `Group(*shapes, name=None)` | Material-preserving bundle (transforms distribute; Boolean operands reject it) |
+| --- | --- |
+| `a + b` / `Union(*solids, ...)` | Boolean union |
+| `a & b` / `Intersection(a, b, ...)` | Boolean intersection |
+| `a - b` / `Difference(base, *tools, ...)` | Boolean difference |
+| `Group(*geometry, name=None)` | Non-CSG aggregate; transforms distribute |
 
-Transforms and modifications are chainable methods on every shape:
-`.translated(v)`, `.rotated(axis, angle_deg)`, `.scaled(f)`,
-`.mirrored(normal, position=0.0)`, `.chamfered(…)`, `.filleted(…)`,
-`.extruded(…)`, `.revolved(…)`, `.swept(…)`, `.lofted(…)` — e.g.
-`brick.translated((0, 0, 5e-3)).rotated("z", 45.0) - hole`.
+Profile-consuming operations accept standalone Profile, eligible Sheet or
+FaceRef inputs and return independent Solid geometry. Extrusion and thickening
+also accept curved sections; revolution, sweep and loft require planarity.
+Geometrically flat spline sheets are re-covered from exact boundaries. All
+operations preserve holes; Loft accepts mixed planar sections and closed Curve
+conveniences. Direct FaceRef construction keeps owner registrations on that
+original owner. Two-section tangent lofts construct corresponding hole tools
+under the same full-section centroid/normal conditions. Geometry volume measurement uses span-aware adaptive
+Gauss-Kronrod integration with spline spans, including composed/placed results
+and project read-back of rebuilt rational tangent surfaces.
 
-Both the operators and the verbs live on `geo.Shape`, the public base
-class every primitive and every Boolean result inherits from, and that
-class is their documented home (DD-128) — the implementations in
-`geo/transforms.py` and `geo/modifications.py` are internal.  `Curve`
-and `ThinWire` are outside the hierarchy: they are 1D objects, and
-neither the operators nor the verbs apply.
+Chamfer and fillet accept EdgeRef/EdgeSetRef inputs through `edges=` or
+FaceRef/FaceSetRef boundaries through `faces=`. Shell accepts face refs through
+`openings=`. Each also accepts sequences, deduplicated; refs must belong to the
+exact receiver. Point conveniences remain, selecting semantic refs immediately
+and rejecting ties. Conflicting modes, wrong kinds and empty selections fail at
+the public call. Selected modifications build at the refs' resolved scale and
+rescale the result/names exactly, preserving membership at other model scales.
+Replay retains immutable reference origins; connected set members validate
+unique exact BREP snapshot equality, never persistent topology indices or nearest
+retargeting.
 
-`.mirrored()` reflects across the plane `p · n̂ == position` (DD-126;
-the normal is the positional core argument per DD-153).
-It has no `repeat` — mirroring twice is the identity — but
-`copy=True, unite=True` turns a modelled half into the symmetric
-whole: `half.mirrored("x", copy=True, unite=True)`.
+Sweep alignment transports the real section boundary by the shortest oriented
+normal-to-start-tangent rotation, preserving in-plane roll for aligned sections.
+Antiparallel normals use the plane X direction as a half-turn axis; subsequent
+transport defaults to corrected Frenet. `swept(frame=...)` also accepts `frenet`,
+`fixed` and `fixed_binormal`. Fixed world sections remain parallel to their
+initial alignment; fixed binormal retains their angular relation to the supplied
+world `binormal`, and may yield oblique sections on spatial paths. That direction
+is required only for fixed binormal and cannot be parallel to the initial
+tangent. Non-default frames use MakePipeShell with every outer/inner boundary
+pinned to the same spine start vertex; hole solids are subtracted. The default
+MakePipe route is retained. Planar thickening forward follows the
+oriented sheet/face normal. Path routing poses are independent of this pipe
+orientation. Nonzero `twist_deg` adds right-hand roll about the transported
+section normal, uniformly over true arc length; `draft_deg` defines signed
+planar offset `s*tan(angle)`, growing the exterior and shrinking holes for
+positive angles. Polygon offsets use intersection joins. Roll preserves fixed
+and oblique section planes; the draft angle is a spatial wall angle only on a
+straight perpendicular route. Sections retain their boundary topology.
+Law sweeps normalize CAD units, transport native compatible frames, integrate
+and invert arc length with controlled accuracy, and fit isoparametric spline
+sections separately over tangent-connected edge spans. Explicit correspondence
+retains roll. Elliptic normal offsets preserve their native curve parameters
+through a bounded spline representation. Quarter/middle/three-quarter stations and nine points per edge
+in both distance directions govern adaptive refinement; `tolerance` is an
+absolute sampled-fit target, default profile diagonal times 1e-6, not a global
+surface-error certificate. Unattainable fits raise. Compatible closed sections
+are sewn at the seam; nonperiodic laws and sharp route joints are rejected.
+Boundary solids are fused over edge spans and holes subtracted. Zero laws keep
+the previous pipe route. Extra sweep validity/self-intersection diagnostics
+were explicitly excluded. The advanced-CAD programme remains open. An explicit
+`material=` wins; otherwise a Profile supplies its material and a `FaceRef`
+supplies its owner Solid's material.  Construction solids without material
+remain valid Boolean tools but cannot enter `GeometryModel` directly.
 
-`material` is optional on every primitive (DD-127).  A shape carrying
-one is a physical object; a shape without one is a **construction
-body** — a Boolean tool or extrusion profile, which
-`GeometryModel.add()` refuses.  Boolean results take their material
-from the base (`Difference`) resp. first (`Union`, `Intersection`)
-operand, so cut tools never need one.
+WP6.4 adds `partition(cutter=None, *, normal=None, position=None)` and
+`section(cutter=None, *, normal=None, position=None, filled=False)` on Solid
+and Sheet. A cutter is a Solid or Sheet; a plane uses a unit world normal and
+signed metre offset. Partition returns an independent connected Solid or
+Sheet for each source region in one kernel evaluation, retaining source
+material and dimension. No cut, tangency and coincident boundaries return an
+independent unchanged region; pre-existing disconnected regions remain
+separate. Result order is not a persistent identifier. Ordinary section
+returns exact connected Curve wires, empty if there is no one-dimensional
+intersection. Explicit `filled=True` requires a Solid and a world plane and
+returns planar Profile regions with holes. Shared face regions raise rather
+than silently taking their boundary; point tangency gives no curve. Named
+source topology follows global Splitter history and then assigns successors
+to owned output regions. Singular splits fail, deliberate sets survive,
+unrelated new cut faces remain unnamed. Named result replay identifies the
+chosen region by exact BREP matching of reconstructed partition results,
+without numeric kernel indices. Gate: `tests/unit/test_geo_partition_foundation.py`.
 
-### 8.5 BoundaryConditions
+WP6.5 adds `Solid.imprint(cutter)` and
+`geo.insert(*bodies, priorities=..., voids=...)`. Imprint is directed: only
+the receiver's boundary faces split at intersection curves with a Solid or
+Sheet; its volume and material remain unchanged, and the cutter remains
+independent. OCC Section supplies edges, and SplitShape assigns them to the
+receiver faces. A section with no boundary edges leaves an independent
+receiver. Kernel validity and volume conservation are checked. Named receiver
+topology follows SplitShape history; cutter names do not transfer.
+
+Insert takes material-bearing Solid bodies and an explicit integer rank for
+each. Larger ranks win; an actual equal-rank overlap raises. Pairwise volume
+overlap detection uses every positive kernel volume and is strict about kernel
+failure. For each losing body, one
+N-ary Difference removes every overlapping higher-rank body and every
+overlapping material-less void tool. A void never appears in the output.
+Same-material overlap is trimmed, while mere contact remains separate.
+Completely removed untagged bodies are omitted. The returned Group preserves
+materials and can be flattened into a GeometryModel in any insertion order.
+The internal cut-result subtype retains the Difference operand route for
+meshing but evolves only the retained body's named topology. Imprinted and
+inserted named results replay through construction recipes, with an exact BREP
+check for the imprinted body. Gate: `tests/unit/test_geo_imprint_insert.py`.
+
+WP6.6 adds `Curve.projected_onto(target, *, direction=None,
+perspective_source=None, closest=False, clip=False, all_hits=False,
+tolerance=None)`. The target is a bounded Sheet or FaceRef in world placement;
+the output is a tuple of standalone Curves. Exactly one projection policy is
+required. Parallel and perspective rays use the first forward hit by default,
+or all forward branches with `all_hits=True`; a source crossing a target face
+is split before rank selection. A partial ray image raises unless `clip=True`
+requests its trimmed pieces. A whole miss under clipping gives an empty tuple.
+A coincident ray has a zero-distance first image; its continuum of all hits
+raises. Closest-point projection minimizes distance over the actual trimmed
+face, including boundaries. The trace is adaptively fitted on the surface with
+an absolute metre `tolerance` (default source-box diagonal times 1e-6, with a
+scale-aware kernel floor). Exact boundary edges are reused when the closest
+trace follows a trim; a post-fit Common checks that the result stays within
+the face and seeds local refinement at missed trim crossings. Discontinuous
+nearest assignments and surface parameter singularities raise; `clip` and
+`all_hits` are invalid in closest mode. An independent projected Curve can
+feed ordinary geometry construction, and the resulting body can be persisted.
+Gate:
+`tests/unit/test_geo_projection_foundation.py`.
+
+WP6.7 adds independent offsets in three distinct meanings. A directed planar
+`Curve.offset(distance, *, normal)` requires an explicit oriented plane and
+returns a tuple of Curves. Positive is left of traversal, negative right;
+outer corners are circular, inner corners intersect, and open ends have no
+caps. A collapsed curve gives an empty tuple; a curvature cusp or invalid
+contour raises. Model-scale normalization keeps the CAD offset stable for
+small as well as large geometry. `Profile.offset(distance)` offsets its
+material region independent of boundary winding: positive expands the
+exterior and shrinks holes, negative erodes the exterior and grows holes.
+Every disconnected surviving region is returned as an independent Profile
+with inherited material. Complete collapse gives an empty tuple; an exact
+zero-width pinch can raise for invalid topology. Round clearance joins here
+are distinct from the sweep draft's intersection joins.
+
+Curved `Sheet.offset(distance, *, tolerance=None)` moves the actual bounded
+face along its oriented normal and returns an independent zero-thickness
+Surface in a tuple. The signed distance selects side. The default absolute
+metre tolerance is the larger of one millionth of the source extent and the
+kernel-resolution distance at the model scale. The kernel result must be a
+single valid face with no reported self-intersection; sampled derivatives
+must preserve local orientation and sampled normal displacement must fit
+the budget. This gate is not a global surface-error certificate. A curved
+owned face is detached before offsetting. Offset geometry used in a stored
+body replays from its exact BREP snapshot. Gate:
+`tests/unit/test_geo_offsets_foundation.py`.
+
+WP6.8 adds the reusable `geo.Bend(target, origin=..., along=...,
+across=..., u=..., v=..., max_strain=..., tolerance=None)` value. Applying
+`bend @ Solid`, `bend @ Sheet`, or `bend @ Group` uses one explicit world
+source frame for all members. Source coordinates `(u, v, w)` map inside the
+interval to `S(u, v) + w n(u, v)`, where the one-face target's bounded CAD
+parameter chart corresponds linearly to the declared `u` and `v` intervals.
+The source before the interval remains fixed; after it a single rigid end
+frame is carried tangentially. Both target interval edges must match rigid
+transverse lines within tolerance; the first must match the unchanged source
+pose. A nondevelopable target may strain the neutral plane. The required
+`max_strain` limits sampled principal in-plane stretches, while sampled
+volume Jacobians must stay positive across the occupied normal extent.
+
+The CAD builder imprints interval seams, copies the source topology, fits
+smooth surfaces on deformed faces with an adaptive sampled error gate,
+reassigns every shared edge's pcurves (including periodic seam pairs),
+rebuilds 3-D edge curves, and checks CAD validity and self-interference.
+Fully unchanged and rigidly carried faces retain exact transformed surfaces.
+The default absolute fit budget is the larger of one millionth of the
+source/target extent and kernel resolution at the model scale. This is a
+sampled fit gate, not a global Hausdorff, strain or injectivity certificate.
+Named source topology follows split/copy histories; singular splits fail.
+Named project replay rebuilds the map and checks geometric equivalence by
+bounding boxes and symmetric Boolean differences. Physical materials stay
+with their independent members. Gate: `tests/unit/test_geo_bend_foundation.py`.
+
+WP6.9 uses the existing planar face-to-face `blend="tangent"` as the G1
+transition for adjoining walls whose tangent follows the selected face's
+outward extrusion direction. Its Hermite end rows match wall normals at
+both ends; no G2 curvature condition is claimed. The asymmetric two-end
+normal gate is in `tests/unit/test_geo_wrap_foundation.py`. Other adjoining
+wall tangent fields are not inferred from the selected caps.
+
+`geo.Wrap` accepts the same one-face target chart, explicit source frame,
+source `u`/`v` extents, required `max_strain`, and optional sampled CAD fit
+budget as Bend. It maps the entire source by `F(u,v,w)=S(u,v)+w*n(u,v)` with
+no rigid exterior segments or boundary pose conditions. The whole source
+bounding box must fit the declared chart. A single chart cannot cross an
+unselected periodic seam. Group mapping preserves individual materials;
+openings and named topology follow the deformed BREP and project replay.
+Sampled principal strain, occupied thickness Jacobian, CAD fit, topology
+and self-interference checks have the same limits as WP6.8. The source may
+change length and volume. Gate: `tests/unit/test_geo_wrap_foundation.py`.
+
+#### Relative routing poses (WP5)
+
+`Path.from_pose(point, tangent, up)` stores an immutable orthonormal pose;
+`Path.from_face(face_ref, up=...)` requires a planar FaceRef and starts at its
+area centroid along its outward normal. Up is projected perpendicular to
+tangent; zero or parallel directions fail. Read-only `current`, `tangent`
+and `up` expose world point and unit directions. Path direction parsing first
+prescales finite vectors by their largest component, avoiding norm overflow or
+underflow for dimensionless direction magnitudes. An absolute-only `Path(start)`
+has no initial tangent or up; absolute segments acquire tangent but no implicit
+roll reference. `forward`/plane intersection require tangent, all turns require up.
+
+`forward(distance)` requires positive length. Left turns rotate about up,
+right turns about -up; left is `up x tangent`. Radius is positive and angle
+is strictly between 0 and 360 degrees. `turn_to(direction, radius=...)` builds
+the shortest circular bend and rigidly transports up; aligned targets are
+no-ops and opposite targets raise for an undetermined plane. Explicit left/right
+half-turns determine a reversal. Exact Curve arcs carry the resulting route.
+
+`straight_to_plane(normal, position)` uses `unit_normal dot point = position`,
+with signed offset in meters. It continues along tangent; an already reached
+plane is a no-op within eight floating-point ULPs of the projected coordinates.
+Parallel rays and intersections behind the route fail. Absolute line, circular,
+elliptical and spline steps retain their existing geometry grammar and update
+the endpoint pose from actual CAD derivatives at the segment's model scale.
+At a corner, up follows the shortest tangent rotation; an antiparallel corner
+uses up as the half-turn axis. Along smooth segments, rotation-minimizing
+transport integrates `du/dq = -t * (u dot dt/dq)` with adaptive DOP853
+(`rtol=1e-10`, `atol=1e-12`, maximum step one-sixteenth of the parameter range),
+then re-orthonormalizes the endpoint. Circular relative turns use their exact
+rigid rotation. No torsion-derived Frenet frame or world-axis reset is used
+for routing. Zero-tangent degeneracy fails rather than inventing a pose.
+
+Final Curve values contain geometry, not a routing frame; pipe orientation
+defaults to corrected Frenet and can be selected independently with `frame=`.
+Project round trips retain
+the resulting geometry and named faces; a new Path may start from those faces
+after read-back, without a Path-specific store codec. Focused gate:
+`tests/unit/test_geo_paths_foundation.py`.
+
+### 8.5 Owned topology, selectors and persistence
+
+Owned topology is a separate public hierarchy:
+
+```text
+TopologyRef
+|-- VertexRef
+|-- EdgeRef
+|-- FaceRef
+|-- EdgeSetRef
+`-- FaceSetRef
+```
+
+A ref strongly owns its immutable `Solid` context, caches resolution at that
+owner's model scale, and cannot transform, enter a model, or act as a CSG
+operand.  `EdgeRef.as_curve()` and `FaceRef.detached()` explicitly produce
+standalone geometry; the latter returns `Profile` for planar and `Surface`
+for curved topology.
+
+Selectors have named and semantic forms: `solid.face("port")` retrieves a
+name, while `solid.face(near=..., normal=..., surface_type=...)` selects once.
+Edges and vertices use `edge` / `vertex`; `faces(...)` and `edges(...)` are
+the explicit plurals returning `FaceSetRef` and `EdgeSetRef`.  Persistent
+registration is immutable through `tag_face`, `tag_faces`, `tag_edge`,
+`tag_edges`, and `tag_vertex`.  Public numeric OCC indices are forbidden.
+
+Semantic constraints filter first; nearest distance is then measured to the
+complete subshape.  Zero candidates raises `TopologySelectionError`.  A tie
+within the owner-scale OCC tolerance raises `AmbiguousTopologyError`; kernel
+enumeration order never decides.  Surface types use `plane`, `cylinder`,
+`cone`, `sphere`, `torus`, `bspline`, and `other` (with analogous analytic
+curve types).
+
+Affine transforms preserve named refs exactly.  A topology-changing
+operation maps them only through OCC `Modified` / `Generated` / `IsDeleted`
+history.  A unique successor survives; deletion, an unprovable successor, or
+a singular one-to-many split raises `TopologyEvolutionError` during the public
+construction call. A deliberately named set may split or merge after duplicate
+removal, but deletion of any selected member still raises. Conflicting names
+from different operands raise unless they prove the same selection.  The project store persists semantic origin and
+the construction-history path, never raw topology indices, and validates the
+same cardinality when rebuilding. The additive, versioned
+`geometry.json` recipe retains a DAG of named construction branches and scaled
+BREP snapshots at untagged origins; operation inputs carry their material and
+metadata. Snapshot geometry stays at its saved kernel scale to avoid degrading
+nanometre topology on conversion to meter space. Legacy untagged projects keep
+the final-BREP reader. No operation is reconstructed through arbitrary imports.
+
+Named builds capture kernel histories in a scoped ContextVar, isolated from
+nested source evaluation; per-scale caches retain resolved names and release
+builders afterwards. Untagged geometry keeps the existing lazy/fast paths;
+tagged Union/Difference use history-producing N-ary operations rather than
+planar fusion or pre-fused tools whose source histories would be lost.
+Topology inventories, owner scale and bounding boxes are cached per owner and
+scale. A nearest query screens conservative bounds before exact distances.
+Normal constraints on curved faces require `near` and use the closest face
+point; without `near`, they filter planar faces only. Reflection normals use
+surface derivatives, including indirect analytic plane frames. Geometric planarity uses
+`GeomLib_IsPlanarSurface` at kernel tolerance, including flat spline patches;
+planar non-plane faces detach by covering their exact wires with a plane.
+
+The shipped history adapter covers affine, extrusion, revolution, sweep, loft,
+Boolean, fillet/chamfer and shell kernel steps. Only Solid owners can register
+names; WP4 implements direct FaceRef-consuming operations. A wire-based loft may
+have no provable face successor, while shell offsets may split an original face
+into outer and inner faces. Such evolution follows the failure rules, not
+geometric rematching. `tests/unit/test_geo_topology_foundation.py` is the gate.
+
+CAD exchange (WP6.12) operates on selected Solid and Sheet leaves of a Group.
+STEP import walks the placed assembly tree and classifies free faces without
+revisiting any solid's boundary faces. Open shell faces are independent sheets;
+unsupported standalone curves/points are reported. `ImportedSheet` retains
+exact trimmed BREP geometry and may supply a material to a thickened solid,
+but remains unmeshable as a zero-thickness sheet. STEP transfer and healing
+run in millimetres before complete bodies are scaled to meter coordinates;
+direct transfer to meters can destroy nanometre solids at the kernel's
+absolute sewing tolerance. STEP export records selected
+geometry in an explicit unit with names and display colours. BREP export
+requires the unit supplied to its reader later. Neither CAD format contains
+material physics, named-selection replay or construction history. Project
+storage remains the path for those. Both CAD exporters use temporary output
+files and require `overwrite=True` to replace an existing target. Gate:
+`tests/unit/test_import_cad.py` and the executed Tutorial 14.
+
+Intrinsic reference measurements are read-only properties:
+`VertexRef.point`; `EdgeRef.length`, `start`, `end`, `vertices`;
+`FaceRef.centroid`, `area`, `is_planar`, `edges`, `vertices`, and the constant
+planar `normal`.  Parameterized or value-producing queries are methods,
+including `normal_at(point)`, `detached()`, `as_curve()`, `bounding_box()`,
+and `volume()`.  Reading `.normal` on a curved face raises and names
+`normal_at`.
+
+Category mismatches raise `TypeError`; invalid or underdetermined geometry
+raises `ValueError`; selection absence and ties use the public selection
+exceptions; named-topology loss uses `TopologyEvolutionError`; a kernel
+failure after valid input raises `RuntimeError` naming the public operation.
+
+WP6.11 adapts a singular `FaceRef` to an existing waveguide port or
+frequency-field monitor only when the trimmed face is an exact, hole-free,
+axis-normal rectangle. The adapter compares the face area with its rectangle
+rather than using its bounding box as an approximation. A port additionally
+requires its owner to be in the model and its plane to be an actual PEC domain
+face without symmetry or absorber displacement. `PortWaveguide.from_face`
+returns the ordinary `plane`/`corners` declaration; `MonitorFieldFrequency.from_face`
+returns the ordinary degenerate-box declaration. They capture current world
+coordinates and use existing project serialization. Moving an owner requires
+retrieving a new named reference and making a new declaration. Flux, domain
+boundary and Huygens consumers retain their whole-cross-section or closed-box
+semantics; no single-face adapter changes their numerical region.
+
+### 8.6 BoundaryConditions
 
 A string-typed thin facade.  Each face takes one of
 ``"PEC"`` | ``"PMC"`` | ``"CPML"`` | ``"Periodic"``, or a symmetry
@@ -790,7 +1188,7 @@ BC subclasses can pass a ``dict[str, BoundaryProtocol]`` directly to
 ``FITTimeDomainSolver(boundary_conditions=…)`` (the classes live in
 ``magnelio.boundaries``).
 
-### 8.6 Ports — declarative objects, specs and operators
+### 8.7 Ports — declarative objects, specs and operators
 
 Declarative ports (top level; resolved by the analysis against the
 finished mesh):
@@ -824,7 +1222,7 @@ All operators implement the :class:`Port` protocol: ``project_V``,
 ``name``, ``n_modes``.  This is what allows the unified
 ``PortSignalRecorder`` and the single ``ports=[…]`` slot on the solver.
 
-### 8.7 Problem-class roadmap (DD-224)
+### 8.8 Problem-class roadmap (DD-224)
 
 Problem classes are `Analysis<Problem><Formulation>`: the suffix names
 the formulation the user reasons in (`TD`/`FD`, written only where a

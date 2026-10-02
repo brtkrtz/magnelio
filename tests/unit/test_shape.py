@@ -10,10 +10,11 @@ from magnelio.geo import (
     Cone,
     Cylinder,
     Difference,
-    Face,
     Group,
     Intersection,
+    Profile,
     Shape,
+    Solid,
     Sphere,
     Torus,
     Union,
@@ -64,13 +65,16 @@ class TestDocumentedSurface:
     # Curve and ThinWire are deliberately absent: they are 1D objects
     # (a sweep spine, a sub-cell wire), not solids, so the Boolean
     # operators and the verbs do not apply to them.
-    @pytest.mark.parametrize("cls", [Brick, Sphere, Cylinder, Cone, Torus, Face])
+    @pytest.mark.parametrize("cls", [Brick, Sphere, Cylinder, Cone, Torus, Profile])
     def test_every_geometry_class_is_a_shape(self, cls):
         assert issubclass(cls, Shape)
 
-    @pytest.mark.parametrize("cls", [Union, Intersection, Difference, Group])
+    @pytest.mark.parametrize("cls", [Union, Intersection, Difference])
     def test_every_boolean_result_is_a_shape(self, cls):
-        assert issubclass(cls, Shape)
+        assert issubclass(cls, Solid)
+
+    def test_group_is_not_a_shape(self):
+        assert not issubclass(Group, Shape)
 
     @pytest.mark.parametrize("verb", VERBS)
     def test_verb_carries_its_own_documentation(self, verb):
@@ -285,10 +289,6 @@ class TestMirror:
         lo, hi = whole.bounding_box()
         assert (lo[0], hi[0]) == pytest.approx((-4.0, 4.0))
 
-    def test_unite_without_copy_raises(self):
-        with pytest.raises(ValueError, match="copy=True"):
-            _chiral().mirrored(normal="x", unite=True)
-
     def test_group_distributes_and_keeps_materials(self):
         _occ()
         g = Group(_chiral(), Sphere(material=AIR, center=(2, 0, 0), radius=0.5))
@@ -313,7 +313,7 @@ class TestMirror:
         assert m.bounding_box()[0][0] == pytest.approx(6.0)
 
     def test_invalid_normal_raises(self):
-        with pytest.raises(ValueError, match=r"mirrored\(normal\)"):
+        with pytest.raises(ValueError, match=r"Mirror\(normal\)"):
             _chiral().mirrored(normal="q")
 
 

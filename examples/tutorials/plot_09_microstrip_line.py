@@ -265,7 +265,7 @@ for f_probe in (5e9, 10e9, 15e9):
 # measurably *electrically longer* at 15.
 #
 # How good is 46 Ω?  Converging the port plane
-# -------------------------------------------
+# ---------------------------------------------
 #
 # Everything so far is exact for *this grid*.  The question a designer
 # asks next is how far the grid is from the cross-section itself — and

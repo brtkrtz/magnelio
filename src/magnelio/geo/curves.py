@@ -3,15 +3,16 @@ Curve — one abstract, OCC-backed 3D locus.
 
 A :class:`Curve` is a single one-dimensional path in space (a
 ``TopoDS_Wire``).  It is *not* a physical object and carries **no material**
-— consumers decide how to use it: :func:`~magnelio.geo.sweep` turns a
-profile + a spine Curve into a solid, :func:`~magnelio.geo.revolve`
+— consumers decide how to use it: :meth:`~magnelio.geo.Shape.swept` turns a
+profile + a spine Curve into a solid, :meth:`~magnelio.geo.Shape.revolved`
 uses an axis, and :class:`~magnelio.geo.ThinWire` rasterises a Curve onto
 grid edges for the thin-wire sub-cell model.
 
-Constructors (classmethods): :meth:`Curve.polyline`, :meth:`Curve.arc`,
-:meth:`Curve.spline`, :meth:`Curve.helix`.  Several curves chain into one
+Exact factories include :meth:`Curve.line`, :meth:`Curve.circle`,
+:meth:`Curve.ellipse`, :meth:`Curve.polyline`, :meth:`Curve.arc`,
+:meth:`Curve.spline` and :meth:`Curve.helix`.  Several curves chain into one
 profile with :meth:`Curve.joined`; a closed profile becomes a planar sheet
-with :meth:`Curve.covered` and a conductor track with :meth:`Curve.traced`.
+with :meth:`~magnelio.geo.Profile.from_wires` and a conductor track with :meth:`Curve.traced`.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from dataclasses import dataclass, field
 
 from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._validate import point3, point_list, positive
+from magnelio.geo.shape import Shape
 
 # Seam tolerance of :meth:`Curve.joined`, relative to the chain's own
 # bounding-box diagonal.  Relative on purpose (DD-120): a micrometre-sized
@@ -45,7 +47,7 @@ def _ellipse_frame(p_start, p_end, center, semi_axes, major_axis, normal):
         raise ValueError(
             f"semi_axes must be a pair (a, b) of lengths in meters; got {semi_axes!r}."
         ) from None
-    if a <= 0.0 or b <= 0.0:
+    if not math.isfinite(a) or not math.isfinite(b) or a <= 0.0 or b <= 0.0:
         raise ValueError(f"Ellipse semi-axes must be positive; got a={a:.3e}, b={b:.3e}.")
     n = normalize_axis(normal, "ellipse normal")
     m = normalize_axis(major_axis, "ellipse major_axis")
@@ -88,7 +90,7 @@ def _ellipse_frame(p_start, p_end, center, semi_axes, major_axis, normal):
 
 
 @dataclass
-class Curve:
+class Curve(Shape):
     """An abstract 3D locus backed by an OCC wire (no material).
 
     Do not construct directly — use one of the classmethods
@@ -145,11 +147,98 @@ class Curve:
         diag = box_diagonal(self._analytic_bbox())
         return _JOIN_RTOL * diag if diag > 0.0 else 0.0
 
+    def offset(self, distance, *, normal):
+        """Return the planar curves a signed distance from this curve.
+
+        Positive distance lies to the left of traversal when viewed along
+        *normal*; negative distance lies to the right. Corners on the outer
+        side are joined by circular arcs. Open ends remain uncapped. The
+        explicit normal fixes the oriented plane even for a straight line.
+
+        Parameters
+        ----------
+        distance : float
+            Signed lateral distance [meters].
+        normal : str or sequence of float
+            Oriented normal of the curve plane.
+
+        Returns
+        -------
+        tuple of Curve
+            Independent offset components; empty if the curve collapses.
+
+        Raises
+        ------
+        ValueError
+            If the curve is not planar or the offset folds or crosses itself.
+        """
+        from magnelio.geo.offsets import offset_curve  # noqa: PLC0415
+
+        return offset_curve(self, distance, normal=normal)
+
+    def projected_onto(
+        self,
+        target,
+        *,
+        direction=None,
+        perspective_source=None,
+        closest=False,
+        clip=False,
+        all_hits=False,
+        tolerance=None,
+    ) -> tuple["Curve", ...]:
+        """Project this curve onto a bounded sheet or selected face.
+
+        Specify exactly one projection policy: a world ``direction`` for
+        parallel forward rays, a ``perspective_source`` point for rays through
+        this curve, or ``closest=True`` for nearest-point projection. The
+        actual boundary and holes of *target* are respected.
+
+        Parameters
+        ----------
+        target : Sheet or FaceRef
+            Bounded target in its world placement.
+        direction : str or sequence of float, optional
+            Forward world direction for parallel rays.
+        perspective_source : sequence of float, optional
+            World point from which rays pass through this curve.
+        closest : bool, optional
+            Use nearest points on the bounded target instead of rays.
+        clip : bool, optional
+            For rays, keep only the covered pieces. Without it, partial
+            coverage raises. Not used for closest-point projection.
+        all_hits : bool, optional
+            For ray projection, retain every forward branch. Otherwise the
+            first hit along each ray is selected.
+        tolerance : float, optional
+            Requested nearest-trace fitting tolerance in metres. Applies only with
+            ``closest=True``. Defaults to one millionth of the source curve's
+            bounding-box diagonal, subject to CAD kernel precision.
+
+        Returns
+        -------
+        tuple of Curve
+            Independent projected curve pieces. A wholly missed target raises
+            unless ray clipping is enabled, which returns an empty tuple.
+        """
+        from magnelio.geo.projection import project_curve
+
+        return project_curve(
+            self,
+            target,
+            direction=direction,
+            perspective_source=perspective_source,
+            closest=closest,
+            clip=clip,
+            all_hits=all_hits,
+            tolerance=tolerance,
+        )
+
     @property
     def is_closed(self) -> bool:
         """Whether this curve's end meets its start, forming a loop.
 
-        A closed curve is the input :meth:`covered` needs.  Curves whose
+        A closed curve is the input :meth:`~magnelio.geo.Profile.from_wires` needs.  Curves whose
         endpoints are not known analytically — a helix — report ``False``;
         for those the check happens in the CAD kernel instead.
         """
@@ -166,9 +255,9 @@ class Curve:
 
         Chaining is what turns the individual segment types into arbitrary
         profiles: an arc, a straight run and another arc become one
-        boundary, and a boundary that closes on itself can be
-        :meth:`covered` into a sheet and extruded or revolved into a
-        solid.
+        boundary, and a boundary that closes on itself becomes a sheet
+        through :meth:`~magnelio.geo.Profile.from_wires`. That sheet can
+        then be extruded or revolved into a solid.
 
         Segments must be given in order, each starting where the previous
         one ended.  They need not agree to the last bit — anything within
@@ -204,7 +293,7 @@ class Curve:
             back = Curve.polyline([(0, -5e-3, 0), (0, 5e-3, 0)])
             front = Curve.arc((0, 5e-3, 0), (5e-3, 0, 0), (0, -5e-3, 0))
             profile = back.joined(front)
-            rod = profile.covered().extruded(vector=(0, 0, 20e-3), material=copper)
+            rod = Profile.from_wires(profile).extruded(vector=(0, 0, 20e-3), material=copper)
         """
         from magnelio.geo._scaling import box_diagonal, union_boxes  # noqa: PLC0415
 
@@ -251,55 +340,6 @@ class Curve:
             _ends=ends,
             _segments=tuple(segments),
         )
-
-    def covered(self, *, material=None, name=None):
-        """Return the planar sheet bounded by this closed curve.
-
-        The free-form counterpart of :class:`~magnelio.geo.Face`, which is
-        limited to axis-normal polygons: any closed planar boundary —
-        arcs, splines and straight runs mixed — becomes a sheet here, and
-        that sheet is the profile for
-        :meth:`~magnelio.geo.Shape.extruded`,
-        :meth:`~magnelio.geo.Shape.revolved`,
-        :meth:`~magnelio.geo.Shape.swept` and
-        :meth:`~magnelio.geo.Shape.thickened`.
-
-        Parameters
-        ----------
-        material : Material, optional
-            Material of the thin sheet.  ``None`` (default) makes it a
-            construction profile, which is what you want when the sheet
-            only exists to be grown into a solid.
-        name : str, optional
-            Optional label.
-
-        Returns
-        -------
-        Shape
-            The planar sheet.
-
-        Raises
-        ------
-        ValueError
-            If the curve is not closed, or — when the geometry is first
-            built — not planar or self-intersecting.
-
-        Examples
-        --------
-        A pad with one rounded end, 35 um of copper::
-
-            outline = (
-                Path((0.0, 0.0, 0.0))
-                .line_to((10e-3, 0.0, 0.0))
-                .arc_to((10e-3, 4e-3, 0.0), center=(10e-3, 2e-3, 0.0))
-                .line_to((0.0, 4e-3, 0.0))
-                .closed()
-            )
-            pad = outline.covered().extruded(vector=(0, 0, 35e-6), material=copper)
-        """
-        from magnelio.geo.modifications import cover  # noqa: PLC0415
-
-        return cover(self, material=material, name=name)
 
     def traced(self, *, width, thickness, caps="round", normal=None, material=None, name=None):
         """Return the conductor track running along this curve.
@@ -372,6 +412,128 @@ class Curve:
     # ------------------------------------------------------------------
     # Constructors
     # ------------------------------------------------------------------
+
+    @classmethod
+    def line(cls, start, end, *, name=None) -> "Curve":
+        """Return an exact straight segment between two distinct world points.
+
+        Parameters
+        ----------
+        start, end : tuple of float
+            Three-dimensional endpoints [meters].
+        name : str, optional
+            Optional label.
+
+        Returns
+        -------
+        Curve
+            The open line segment.
+        """
+        start = point3(start, "Curve.line(start)")
+        end = point3(end, "Curve.line(end)")
+        if start == end:
+            raise ValueError("Curve.line needs distinct endpoints.")
+        return cls.polyline((start, end), name=name)
+
+    @classmethod
+    def circle(cls, center, radius, *, normal="z", name=None) -> "Curve":
+        """Return an exact closed circle in an explicitly oriented plane.
+
+        Parameters
+        ----------
+        center : tuple of float
+            World centre [meters].
+        radius : float
+            Positive radius [meters].
+        normal : str or sequence of float, optional
+            Non-zero plane normal; defaults to ``"z"``.
+        name : str, optional
+            Optional label.
+
+        Returns
+        -------
+        Curve
+            One closed analytic circular wire.
+        """
+        from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
+
+        radius = positive(radius, "Curve.circle(radius)")
+        n = normalize_axis(normal, "Curve.circle(normal)")
+        reference = min(range(3), key=lambda i: abs(n[i]))
+        direction = tuple(float(i == reference) for i in range(3))
+        return cls.ellipse(center, (radius, radius), major_axis=direction, normal=n, name=name)
+
+    @classmethod
+    def ellipse(cls, center, semi_axes, *, major_axis, normal="z", name=None) -> "Curve":
+        """Return an exact closed ellipse with explicit in-plane orientation.
+
+        Parameters
+        ----------
+        center : tuple of float
+            World centre [meters].
+        semi_axes : tuple of float
+            Positive ``(a, b)`` lengths [meters]; either may be larger.
+        major_axis : str or sequence of float
+            Direction of *a*, projected into the plane of *normal*.
+        normal : str or sequence of float, optional
+            Plane normal; defaults to ``"z"``.
+        name : str, optional
+            Optional label.
+
+        Returns
+        -------
+        Curve
+            One closed analytic elliptical wire.
+        """
+        from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
+
+        c = point3(center, "Curve.ellipse(center)")
+        try:
+            a, b = semi_axes
+        except (TypeError, ValueError):
+            raise ValueError("semi_axes must be a pair of positive lengths.") from None
+        a, b = positive(a, "semi_axes[0]"), positive(b, "semi_axes[1]")
+        n = normalize_axis(normal, "Curve.ellipse(normal)")
+        m = normalize_axis(major_axis, "Curve.ellipse(major_axis)")
+        dot = sum(x * y for x, y in zip(n, m))
+        u = tuple(x - dot * y for x, y in zip(m, n))
+        length = math.sqrt(sum(x * x for x in u))
+        if length <= 1e-9:
+            raise ValueError("major_axis must not be parallel to normal.")
+        u = tuple(x / length for x in u)
+        v = (n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2], n[0] * u[1] - n[1] * u[0])
+
+        def build(scale):
+            from magnelio.geo._occ_backend import make_closed_ellipse  # noqa: PLC0415
+
+            return make_closed_ellipse(c, u, v, a, b, scale=scale)
+
+        extent = tuple(math.hypot(a * x, b * y) for x, y in zip(u, v))
+        bounds = (tuple(x - d for x, d in zip(c, extent)), tuple(x + d for x, d in zip(c, extent)))
+        # OCC starts a full ellipse on its larger semi-axis (DD-275).
+        seam_axis, seam_radius = (v, b) if a < b else (u, a)
+        seam = tuple(x + seam_radius * y for x, y in zip(c, seam_axis))
+        return cls(_build=build, name=name, _bounds=bounds, _ends=(seam, seam))
+
+    @property
+    def length(self) -> float:
+        """Exact CAD wire length [meters]."""
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Curve  # noqa: PLC0415
+        from OCC.Core.GCPnts import GCPnts_AbscissaPoint  # noqa: PLC0415
+        from OCC.Core.TopAbs import TopAbs_EDGE  # noqa: PLC0415
+        from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+        from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+        from magnelio.geo._scaling import choose_scale  # noqa: PLC0415
+
+        scale = choose_scale(*self._analytic_bbox())
+        explorer = TopExp_Explorer(self._occ_shape(scale), TopAbs_EDGE)
+        length = 0.0
+        while explorer.More():
+            edge = BRepAdaptor_Curve(topods.Edge(explorer.Current()))
+            length += GCPnts_AbscissaPoint.Length(edge, 1e-10)
+            explorer.Next()
+        return length / scale
 
     @classmethod
     def polyline(cls, points, *, name=None) -> "Curve":
