@@ -35,7 +35,7 @@ four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
 The foundation was merged to local `main` on 2026-10-02. WP0-WP5 and WP6.1/WP6.3-WP6.12 are implemented.
 WP6.12 imports free CAD faces as Sheets without duplicating solid boundaries and exports selected solids/sheets through STEP/BREP with explicit unit rules. The 1-nm solid exchange gate stays valid. Tutorial 14, "Geometry toolbox", also absorbs the former CAD/PCB import tutorials; fresh offline Sphinx passes.
-The feature branch is backed up to `private` through `926c1d91`; the local merge is not pushed to `origin`. WP6.2 is cancelled. The foundation acceptance audit is recorded in `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record).
+The feature branch is backed up to `private` through `926c1d91`; the foundation merge was pushed to `origin/main` on 2026-10-02. WP6.2 is cancelled. The foundation acceptance audit is recorded in `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record).
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
