@@ -707,7 +707,8 @@ Shape
 ```
 
 The existing volume primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
-`Torus`, `ImportedSolid`) and Boolean results are `Solid` values.  `Curve`,
+`Torus`, `ImportedSolid`) and Boolean results are `Solid` values. `ImportedSheet`
+wraps an exact free CAD face without making it directly meshable. `Curve`,
 `Sheet`, `Profile`, `Surface`, and `Solid` are public categories. The
 axis-normal polygon `Face` and `Curve.covered()` have been removed in favour
 of the fixed `Profile` factories.  `FaceRef` names owned topology.  `Group` is a transformable,
@@ -1086,6 +1087,22 @@ names; WP4 implements direct FaceRef-consuming operations. A wire-based loft may
 have no provable face successor, while shell offsets may split an original face
 into outer and inner faces. Such evolution follows the failure rules, not
 geometric rematching. `tests/unit/test_geo_topology_foundation.py` is the gate.
+
+CAD exchange (WP6.12) operates on selected Solid and Sheet leaves of a Group.
+STEP import walks the placed assembly tree and classifies free faces without
+revisiting any solid's boundary faces. Open shell faces are independent sheets;
+unsupported standalone curves/points are reported. `ImportedSheet` retains
+exact trimmed BREP geometry and may supply a material to a thickened solid,
+but remains unmeshable as a zero-thickness sheet. STEP transfer and healing
+run in millimetres before complete bodies are scaled to meter coordinates;
+direct transfer to meters can destroy nanometre solids at the kernel's
+absolute sewing tolerance. STEP export records selected
+geometry in an explicit unit with names and display colours. BREP export
+requires the unit supplied to its reader later. Neither CAD format contains
+material physics, named-selection replay or construction history. Project
+storage remains the path for those. Both CAD exporters use temporary output
+files and require `overwrite=True` to replace an existing target. Gate:
+`tests/unit/test_import_cad.py` and the executed Tutorial 32.
 
 Intrinsic reference measurements are read-only properties:
 `VertexRef.point`; `EdgeRef.length`, `start`, `end`, `vertices`;

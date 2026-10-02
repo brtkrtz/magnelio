@@ -4,6 +4,9 @@ Standalone geometry is organised by dimension: `Curve`, `Sheet` (including
 planar `Profile` and curved `Surface` values), and `Solid` all derive from
 `Shape`.  The named affine methods are shared by every category; immutable
 `Transform` values provide reusable composition with `@`.
+`ImportedSheet` retains free CAD faces as exact, trimmed zero-thickness
+geometry; it needs a resolved thickness before meshing. See the
+[CAD exchange guide](../methods/cad-import.md).
 
 Boolean `+`, `-` and `&` are restricted to `Solid` values.  `Group` is a
 material-preserving authoring collection rather than a `Shape`; its affine

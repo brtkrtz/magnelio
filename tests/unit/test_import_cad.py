@@ -13,13 +13,11 @@ suite; here the kernel writes what a CAD system would.
 
 from __future__ import annotations
 
-import warnings
-
 import pytest
 
 from magnelio import GeometryModel, Material
-from magnelio.geo import Brick, ImportedSolid
-from magnelio.io import import_brep, import_step, write_brep
+from magnelio.geo import Brick, Curve, ImportedSheet, ImportedSolid, Solid
+from magnelio.io import export_brep, export_step, import_brep, import_step, write_brep
 from magnelio.io.cad import _resolve_materials, _unit_factor
 
 PEC = Material.pec()
@@ -41,7 +39,7 @@ def _box(dx, dy, dz, at=(0.0, 0.0, 0.0)):
 def _write_step(path, parts, *, unit="MM", assembly=None):
     """Write a STEP file from ``(shape, name, rgb)`` parts.
 
-    *assembly*, when given, is a list of ``(part_index, dx, name)``
+    *assembly*, when given, is a list of ``(part_index, dx, name[, rgb])``
     component placements referring to the parts, so the file carries a
     real assembly structure instead of free-standing solids.
     """
@@ -71,12 +69,19 @@ def _write_step(path, parts, *, unit="MM", assembly=None):
     if assembly:
         root = shape_tool.NewShape()
         TDataStd_Name.Set(root, "assembly")
-        for index, dx, name in assembly:
+        for placement in assembly:
+            index, dx, name, *instance_color = placement
             trsf = gp_Trsf()
             trsf.SetTranslation(gp_Vec(dx, 0.0, 0.0))
             component = shape_tool.AddComponent(root, labels[index], TopLoc_Location(trsf))
             if name is not None:
                 TDataStd_Name.Set(component, name)
+            if instance_color:
+                color_tool.SetColor(
+                    component,
+                    Quantity_Color(*instance_color[0], Quantity_TOC_RGB),
+                    XCAFDoc_ColorSurf,
+                )
         shape_tool.UpdateAssemblies()
 
     Interface_Static.SetCVal("write.step.unit", unit)
@@ -154,6 +159,11 @@ class TestUnits:
     def test_negative_unit_is_rejected(self):
         with pytest.raises(ValueError):
             _unit_factor(-1.0)
+
+    def test_non_finite_unit_is_rejected(self):
+        for unit in (float("nan"), float("inf")):
+            with pytest.raises(ValueError, match="finite and positive"):
+                _unit_factor(unit)
 
 
 # ── names, colours, assemblies ───────────────────────────────────────
@@ -401,18 +411,23 @@ class TestFailures:
             import_step(path)
         assert "STEP" in str(excinfo.value)
 
-    def test_surface_model_is_reported_not_silently_empty(self, tmp_path):
+    def test_surface_model_is_imported_as_sheet(self, tmp_path):
         from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
         from OCC.Core.gp import gp_Pln
 
         face = BRepBuilderAPI_MakeFace(gp_Pln(), -1.0, 1.0, -1.0, 1.0).Shape()
         path = _write_step(tmp_path / "sheet.step", [(face, "plate", None)])
-        with pytest.raises(ValueError) as excinfo, warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            import_step(path)
-        assert "no solid" in str(excinfo.value)
+        (sheet,) = import_step(path).members()
+        assert isinstance(sheet, ImportedSheet)
+        assert sheet.name == "plate"
+        assert sheet.bounding_box()[1][:2] == pytest.approx((1e-3, 1e-3))
+        physical_sheet = next(import_step(path, {"plate": PEC}).members())
+        from magnelio.mesh.mesher import Mesh, MeshControl
 
-    def test_skipped_surface_bodies_are_warned_about(self, tmp_path):
+        with pytest.raises(NotImplementedError, match="sheet"):
+            Mesh.from_geometry(GeometryModel().add(physical_sheet), MeshControl(), f_max=10e9)
+
+    def test_mixed_surface_and_solid_are_both_imported(self, tmp_path):
         from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
         from OCC.Core.gp import gp_Pln
 
@@ -421,6 +436,259 @@ class TestFailures:
             tmp_path / "mixed.step",
             [(_box(1.0, 1.0, 1.0), "block", None), (face, "plate", None)],
         )
-        with pytest.warns(UserWarning, match="plate"):
-            parts = list(import_step(path).members())
-        assert [s.name for s in parts] == ["block"]
+        parts = list(import_step(path).members())
+        assert [s.name for s in parts] == ["block", "plate"]
+        assert isinstance(parts[0], ImportedSolid)
+        assert isinstance(parts[1], ImportedSheet)
+
+
+class TestExchange:
+    def test_compound_keeps_free_faces_without_solid_face_duplicates(self, tmp_path):
+        from OCC.Core.BRep import BRep_Builder
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.gp import gp_Dir, gp_Pln, gp_Pnt
+        from OCC.Core.TopoDS import TopoDS_Compound
+
+        compound = TopoDS_Compound()
+        builder = BRep_Builder()
+        builder.MakeCompound(compound)
+        builder.Add(compound, _box(2.0, 3.0, 4.0))
+        builder.Add(compound, BRepBuilderAPI_MakeFace(gp_Pln(), -1.0, 1.0, -1.0, 1.0).Shape())
+        other_plane = gp_Pln(gp_Pnt(0, 0, 5), gp_Dir(0, 0, 1))
+        builder.Add(compound, BRepBuilderAPI_MakeFace(other_plane, -1.0, 1.0, -1.0, 1.0).Shape())
+        source = _write_step(tmp_path / "mixed_compound.step", [(compound, "part", None)])
+        found = list(import_step(source).members())
+        assert len(found) == 3
+        assert [type(s) for s in found] == [ImportedSolid, ImportedSheet, ImportedSheet]
+
+    def test_placed_sheet_instances_and_duplicate_names(self, tmp_path):
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.gp import gp_Pln
+
+        face = BRepBuilderAPI_MakeFace(gp_Pln(), -1.0, 1.0, -1.0, 1.0).Shape()
+        path = _write_step(
+            tmp_path / "placed.step",
+            [(face, "prototype", (0.3, 0.4, 0.5))],
+            assembly=[(0, 0.0, "panel"), (0, 10.0, "panel")],
+        )
+        found = list(import_step(path, {"panel": PEC}).members())
+        assert [s.name for s in found] == ["panel", "panel"]
+        assert [s.bounding_box()[0][0] for s in found] == pytest.approx([-1e-3, 9e-3])
+        assert [s.color for s in found] == [pytest.approx((0.3, 0.4, 0.5), abs=1e-6)] * 2
+        assert all(s.material is PEC for s in found)
+        exported = tmp_path / "placed_again.step"
+        export_step(exported, found)
+        replay = list(import_step(exported).members())
+        assert len(replay) == 2
+        assert [s.bounding_box()[0][0] for s in replay] == pytest.approx([-1e-3, 9e-3])
+
+    def test_instance_sheet_colours_override_prototype(self, tmp_path):
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.gp import gp_Pln
+
+        face = BRepBuilderAPI_MakeFace(gp_Pln(), -1.0, 1.0, -1.0, 1.0).Shape()
+        path = _write_step(
+            tmp_path / "instance_colors.step",
+            [(face, "prototype", (0.0, 1.0, 0.0))],
+            assembly=[
+                (0, 0.0, "red", (1.0, 0.0, 0.0)),
+                (0, 10.0, "blue", (0.0, 0.0, 1.0)),
+            ],
+        )
+        found = list(import_step(path).members())
+        assert [s.name for s in found] == ["red", "blue"]
+        assert found[0].color == pytest.approx((1.0, 0.0, 0.0), abs=1e-6)
+        assert found[1].color == pytest.approx((0.0, 0.0, 1.0), abs=1e-6)
+        exported = tmp_path / "instance_colors_again.step"
+        export_step(exported, found)
+        replay = list(import_step(exported).members())
+        assert [s.name for s in replay] == ["red", "blue"]
+        assert replay[0].color == pytest.approx((1.0, 0.0, 0.0), abs=1e-6)
+        assert replay[1].color == pytest.approx((0.0, 0.0, 1.0), abs=1e-6)
+
+    def test_nested_sheet_assembly_placements_accumulate(self, tmp_path):
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.gp import gp_Pln, gp_Trsf, gp_Vec
+        from OCC.Core.IFSelect import IFSelect_RetDone
+        from OCC.Core.Interface import Interface_Static
+        from OCC.Core.STEPCAFControl import STEPCAFControl_Writer
+        from OCC.Core.TDataStd import TDataStd_Name
+        from OCC.Core.TDocStd import TDocStd_Document
+        from OCC.Core.TopLoc import TopLoc_Location
+        from OCC.Core.XCAFDoc import XCAFDoc_DocumentTool
+
+        doc = TDocStd_Document("XCAF")
+        shape_tool = XCAFDoc_DocumentTool.ShapeTool(doc.Main())
+        face = BRepBuilderAPI_MakeFace(gp_Pln(), -1, 1, -1, 1).Shape()
+        leaf = shape_tool.AddShape(face, False)
+        middle = shape_tool.NewShape()
+        root = shape_tool.NewShape()
+        inner = gp_Trsf()
+        inner.SetTranslation(gp_Vec(3, 0, 0))
+        outer = gp_Trsf()
+        outer.SetTranslation(gp_Vec(7, 0, 0))
+        shape_tool.AddComponent(middle, leaf, TopLoc_Location(inner))
+        component = shape_tool.AddComponent(root, middle, TopLoc_Location(outer))
+        TDataStd_Name.Set(component, "assembly")
+        shape_tool.UpdateAssemblies()
+        Interface_Static.SetCVal("write.step.unit", "MM")
+        writer = STEPCAFControl_Writer()
+        writer.Transfer(doc)
+        path = tmp_path / "nested.step"
+        assert writer.Write(str(path)) == IFSelect_RetDone
+        (sheet,) = import_step(path).members()
+        assert sheet.bounding_box()[0][0] == pytest.approx(9e-3)
+
+    def test_curved_trimmed_face_remains_sheet(self, tmp_path):
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+        from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+        from OCC.Core.GeomAbs import GeomAbs_Cylinder
+        from OCC.Core.TopAbs import TopAbs_FACE
+        from OCC.Core.TopExp import TopExp_Explorer
+
+        cylinder = BRepPrimAPI_MakeCylinder(2.0, 5.0).Shape()
+        explorer = TopExp_Explorer(cylinder, TopAbs_FACE)
+        curved = None
+        while explorer.More():
+            candidate = explorer.Current()
+            if BRepAdaptor_Surface(candidate).GetType() == GeomAbs_Cylinder:
+                curved = candidate
+                break
+            explorer.Next()
+        assert curved is not None
+        source = _write_step(tmp_path / "curved.step", [(curved, "wall", None)])
+        sheet = next(import_step(source).members())
+        assert isinstance(sheet, ImportedSheet)
+        assert sheet.bounding_box()[1][2] == pytest.approx(5e-3)
+        target = tmp_path / "curved.brep"
+        export_brep(target, sheet, unit="mm")
+        assert isinstance(next(import_brep(target, unit="mm").members()), ImportedSheet)
+
+    def test_free_curve_is_reported_and_cannot_be_exported(self, tmp_path):
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+        from OCC.Core.gp import gp_Pnt
+
+        edge = BRepBuilderAPI_MakeEdge(gp_Pnt(0, 0, 0), gp_Pnt(1, 0, 0)).Shape()
+        source = _write_step(tmp_path / "curve.step", [(edge, "line", None)])
+        with pytest.warns(UserWarning, match="line"):
+            with pytest.raises(ValueError, match="no solid or free face"):
+                import_step(source)
+        brep = tmp_path / "curve.brep"
+        write_brep([edge], brep)
+        with pytest.warns(UserWarning, match="unsupported free curves"):
+            with pytest.raises(ValueError, match="no solid or free face"):
+                import_brep(brep, unit="mm")
+        with pytest.raises(TypeError, match="Solid and Sheet"):
+            export_step(tmp_path / "curve_out.step", Curve.line((0, 0, 0), (1, 0, 0)))
+
+    def test_imported_sheet_can_be_given_resolved_thickness(self, tmp_path):
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.gp import gp_Pln
+
+        face = BRepBuilderAPI_MakeFace(gp_Pln(), -1.0, 1.0, -1.0, 1.0).Shape()
+        path = _write_step(tmp_path / "sheet.step", [(face, "plate", None)])
+        sheet = next(import_step(path, {"plate": PEC}).members())
+        slab = sheet.thickened(0.2e-3)
+        assert isinstance(slab, Solid)
+        assert slab.material is PEC
+        assert slab.volume() == pytest.approx(0.8e-9, rel=1e-3)
+
+        import numpy as np
+
+        from magnelio import Mesh, open_project
+        from magnelio.io.project import ProjectStore
+        from magnelio.mesh import GridLines
+
+        grid = GridLines(
+            x=np.linspace(-2e-3, 2e-3, 3),
+            y=np.linspace(-2e-3, 2e-3, 3),
+            z=np.linspace(-1e-3, 1e-3, 3),
+        )
+        ProjectStore.create(tmp_path / "sheet_project", Mesh.from_grid(grid), geometry=[slab])
+        (replayed,) = open_project(tmp_path / "sheet_project").geometry
+        assert replayed.material == PEC
+        assert replayed.volume() == pytest.approx(slab.volume())
+
+    def test_step_round_trip_mixed_categories_units_and_metadata(self, tmp_path):
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.gp import gp_Pln
+
+        face = BRepBuilderAPI_MakeFace(gp_Pln(), -1.0, 1.0, -1.0, 1.0).Shape()
+        source = _write_step(
+            tmp_path / "source.step",
+            [(_box(2.0, 3.0, 4.0), "block", (0.2, 0.6, 0.3)), (face, "plate", None)],
+        )
+        imported = import_step(source, {"block": PEC, "plate": PTFE})
+        for unit in ("m", "cm", "mm", "in"):
+            target = tmp_path / f"target_{unit}.step"
+            export_step(target, imported, unit=unit)
+            found = list(import_step(target).members())
+            assert [type(s) for s in found] == [ImportedSolid, ImportedSheet]
+            assert [s.name for s in found] == ["block", "plate"]
+            assert found[0].color == pytest.approx((0.2, 0.6, 0.3), abs=1e-6)
+            assert found[0].bounding_box()[1] == pytest.approx((2e-3, 3e-3, 4e-3))
+            assert found[1].bounding_box()[1][:2] == pytest.approx((1e-3, 1e-3))
+            assert all(s.material is None for s in found)
+
+    def test_brep_round_trip_and_overwrite(self, tmp_path):
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+        from OCC.Core.gp import gp_Pln
+
+        face = BRepBuilderAPI_MakeFace(gp_Pln(), -1.0, 1.0, -1.0, 1.0).Shape()
+        source = _write_step(
+            tmp_path / "source.step",
+            [(_box(2.0, 3.0, 4.0), "block", None), (face, "plate", None)],
+        )
+        imported = import_step(source)
+        target = tmp_path / "target.brep"
+        export_brep(target, imported, unit="cm")
+        with pytest.raises(FileExistsError):
+            export_brep(target, imported, unit="cm")
+        export_brep(target, imported, unit="cm", overwrite=True)
+        found = list(import_brep(target, unit="cm").members())
+        assert [type(s) for s in found] == [ImportedSolid, ImportedSheet]
+        assert found[0].bounding_box()[1] == pytest.approx((2e-3, 3e-3, 4e-3))
+        assert found[1].bounding_box()[1][:2] == pytest.approx((1e-3, 1e-3))
+
+    def test_step_export_overwrite_and_unit_setting_restored(self, tmp_path):
+        from OCC.Core.Interface import Interface_Static
+
+        body = Brick(origin=(0, 0, 0), size=(0.01, 0.02, 0.03), material=PEC, name="body")
+        previous_write = Interface_Static.CVal("write.step.unit")
+        previous_cascade = Interface_Static.CVal("xstep.cascade.unit")
+        Interface_Static.SetCVal("write.step.unit", "INCH")
+        Interface_Static.SetCVal("xstep.cascade.unit", "CM")
+        try:
+            target = tmp_path / "body.step"
+            export_step(target, body, unit="mm")
+            assert Interface_Static.CVal("write.step.unit") == "INCH"
+            assert Interface_Static.CVal("xstep.cascade.unit") == "CM"
+            assert next(import_step(target).members()).bounding_box()[1] == pytest.approx(
+                (0.01, 0.02, 0.03)
+            )
+            with pytest.raises(FileExistsError):
+                export_step(target, body)
+            export_step(target, body, overwrite=True)
+        finally:
+            if previous_write is not None:
+                Interface_Static.SetCVal("write.step.unit", previous_write)
+            if previous_cascade is not None:
+                Interface_Static.SetCVal("xstep.cascade.unit", previous_cascade)
+
+    @pytest.mark.parametrize("size", [1e-9, 1e-3, 1.0])
+    def test_export_respects_geometry_model_scale(self, tmp_path, size):
+        from OCC.Core.BRepCheck import BRepCheck_Analyzer
+
+        body = Brick(origin=(0, 0, 0), size=(size, size, size), name="scaled")
+        step = tmp_path / "scaled.step"
+        brep = tmp_path / "scaled.brep"
+        export_step(step, body, unit="mm")
+        export_brep(brep, body, unit="mm")
+        for restored in (
+            import_step(step),
+            import_brep(brep, unit="mm"),
+            import_brep(brep, unit="mm", heal=True),
+        ):
+            (member,) = restored.members()
+            assert member.bounding_box()[1] == pytest.approx((size,) * 3, rel=1e-6, abs=1e-12)
+            assert BRepCheck_Analyzer(member._occ_shape()).IsValid()

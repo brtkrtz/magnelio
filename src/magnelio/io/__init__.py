@@ -1,4 +1,4 @@
-"""Project store and CAD file import.
+"""Project store and CAD file exchange.
 
 ``open_project`` lives in the core ``magnelio`` namespace; this
 component holds the reader/writer classes and geometry file I/O.
@@ -6,11 +6,12 @@ The one-shot save_project/load_project (io/hdf5.py) was removed;
 the store supersedes it.
 
 ``import_step`` / ``import_brep`` read geometry drawn in a CAD
-system into the geometry API; ``import_pcb`` reads a printed circuit
+system into the geometry API; ``export_step`` / ``export_brep`` write
+selected geometry. ``import_pcb`` reads a printed circuit
 board from the fabrication data its layout tool writes.
 """
 
-from magnelio.io.cad import import_brep, import_step
+from magnelio.io.cad import export_brep, export_step, import_brep, import_step
 from magnelio.io.pcb import import_pcb
 from magnelio.io.project import (
     CheckpointState,
@@ -33,5 +34,7 @@ __all__ = [
     "write_brep",
     "import_step",
     "import_brep",
+    "export_step",
+    "export_brep",
     "import_pcb",
 ]

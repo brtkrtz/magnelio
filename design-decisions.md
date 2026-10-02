@@ -12049,6 +12049,13 @@ built to survive.
 mesh formats.  Gerber/PCB import was the separate track named here and
 is now [[DD-179]].
 
+The solid-only import boundary and sheet deferral were superseded by
+[[DD-275]] WP6.12. That work also superseded the direct-meter STEP transfer:
+the reader now transfers in millimetres, heals there, then scales complete
+bodies to meter-space. A direct-meter transfer had broken 10-nm solids into
+unbounded free faces at OCCT's absolute sewing tolerance. This entry retains
+the original import decision and its 2026-08-20 implementation state.
+
 **Files:** `src/magnelio/io/cad.py`, `src/magnelio/geo/imported.py`,
 `src/magnelio/io/project.py` (rehydration, `colors`),
 `src/magnelio/post/_colors.py`, `src/magnelio/io/paraview.py`,
@@ -22484,11 +22491,9 @@ or server is started for them.
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
 **Date:** 2026-09-28.
-**Status:** Accepted as the geometry-foundation contract; WP0 through WP5 are
-implemented on `feat/geo-api-foundation`. WP6 is in progress; its orientation,
-constant twist/draft, partition/section, directed imprint/material insertion,
-curve projection, geometry-offset, freeform-bend and EM face-adapter slices
-are implemented; the remaining advanced-CAD roadmap stays open.
+**Status:** Accepted as the geometry-foundation contract; WP0 through WP5 and
+WP6.1/WP6.3-WP6.12 are implemented on `feat/geo-api-foundation`. WP6.2 was
+cancelled; the WP6 acceptance audit remains open.
 **Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
 **Record:** `investigations/geo-api-foundation/` (internal dossier).
 
@@ -23317,3 +23322,27 @@ unchanged. The private eligibility matrix is
 Methods/API prose, Tutorial 31 and
 `tests/unit/test_geo_em_face_adapters.py` cover the contract. WP6.12 and
 umbrella WP6 remain open; WP6.2 is cancelled.
+
+**WP6.12 CAD exchange (2026-10-02).** STEP and BREP imports classify
+independent solids separately from free faces; traversal stops at each solid,
+so its boundary faces never become duplicate sheets. Open shells and mixed
+compounds yield individual free-face `ImportedSheet` values within the
+existing `Group` contract. Repeated assembly leaves retain their placed
+world geometry; duplicate instance names deliberately map to the same
+material key, while unique CAD names distinguish independently mapped
+instances. Unsupported free curves/points warn and a file with neither solid
+nor sheet fails. Materials still come from explicit name mapping; an imported
+sheet's material may pass to `thickened`, but no sheet gains a thin-sheet mesh
+law. STEP import transfers in millimetres, heals before scaling and then
+normalizes geometry to meters; this preserves nanometre-scale topology that
+direct-meter transfer had degraded. STEP preserves length units, body names and unambiguous display colours;
+BREP has only geometry and requires an external unit. `export_step` and
+`export_brep` write selected Solid/Sheet/Group leaves, reject curves and
+refuse overwrite by default. Both write through a temporary file. STEP uses
+an explicit output unit with process-global OCCT settings restored after
+writing; BREP scales coordinates to the caller's stated unit. Neither format
+promises material physics, parametric history, persistent named selections
+or face enumeration. The Magnelio project store remains the replay format.
+Methods/API prose, Tutorial 32 and `tests/unit/test_import_cad.py` cover the
+contract. WP6 overall remains open for its acceptance audit; WP6.2 remains
+cancelled.
