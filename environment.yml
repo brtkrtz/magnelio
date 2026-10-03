@@ -13,8 +13,7 @@ dependencies:
   - pyvista>=0.44  # 3D viewer (DD-190): model.plot(), screenshots in the docs
 
   # CAD / geometry
-  # 8.0.1 returns edges instead of wires from ConnectEdgesToWires.
-  - pythonocc-core>=7.9,<8  # conda-forge only
+  - pythonocc-core>=7.9  # conda-forge only
 
   # Solver acceleration (see design-decisions.md DD-032: three-tier kernel
   # dispatch — Numba CPU fused / CUDA fused / NumPy-CuPy stencil fallback)
