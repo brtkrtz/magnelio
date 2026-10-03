@@ -5,9 +5,8 @@ Covers the three mechanisms on a small conformal coax
 
 * ``EdgeMaterialData.f_A`` — the conformal free-area fraction of the
   E dual face, populated exactly on category-1/2 edges;
-* the tangential-surface re-masking rule (classifier step 6b) — no
-  unmasked E edge may connect two nodes of the same masked-edge
-  component (fixed-point property);
+* the tangential-surface re-masking rule (classifier step 6b) — a
+  remote conductor connection must not mask a local air-gap edge;
 * the LC-consistent M_mu coupling — the co-located pair product
   ``M_eps * M_mu`` is exactly ``eps0*mu0 * eps_r * dz * dz~`` on every
   interior transversal pair with free partners.
@@ -33,8 +32,10 @@ from magnelio._operators.material_matrices import (
 from magnelio.geo import Brick, Cylinder, Difference, GeometryModel
 from magnelio.geo._subcell import (
     _edge_endpoint_nodes,
+    _local_masked_face_bypass,
     _masked_component_labels,
 )
+from magnelio.mesh.grid import GridLines
 
 D_I, D_A, EPS_R, LENGTH, F_MAX = 0.41e-3, 5.0e-3, 9.0, 2.4e-3, 10.0e9
 
@@ -77,8 +78,30 @@ class TestFreeAreaFraction:
 
 
 class TestTangentialSurfaceRemask:
-    def test_no_unmasked_edge_within_one_conductor(self, coax_mesh):
-        """Fixed point of the step-6b rule on the final mesh mask."""
+    def test_remote_bond_does_not_mask_air_gap(self):
+        """A remote PEC detour must not turn a free gap edge into a surface edge."""
+        grid = GridLines(np.arange(4.0), np.arange(2.0), np.arange(2.0))
+        nx, ny, nz = grid.Nx, grid.Ny, grid.Nz
+        ex = np.zeros((nx, ny + 1, nz + 1), dtype=bool)
+        ey = np.zeros((nx + 1, ny, nz + 1), dtype=bool)
+        ez = np.zeros((nx + 1, ny + 1, nz), dtype=bool)
+        ex[:2, 0, 0] = True
+        ex[:2, 0, 1] = True
+        ez[0, 0, 0] = True
+        masked = np.concatenate((ex.ravel(), ey.ravel(), ez.ravel()))
+        target = ex.size + ey.size + 2 * (ny + 1) * nz
+
+        node_a, node_b = _edge_endpoint_nodes(grid)
+        labels = _masked_component_labels(node_a, node_b, masked, (nx + 1) * (ny + 1) * (nz + 1))
+        assert labels[node_a[target]] == labels[node_b[target]]
+        assert not _local_masked_face_bypass(masked, grid)[target]
+
+        ez[1, 0, 0] = True
+        masked = np.concatenate((ex.ravel(), ey.ravel(), ez.ravel()))
+        assert _local_masked_face_bypass(masked, grid)[target]
+
+    def test_coax_surface_edges_reach_local_fixed_point(self, coax_mesh):
+        """The local rule retains the established round-coax surface masks."""
         grid = coax_mesh.grid
         Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
         n_Ex = Nx * (Ny + 1) * (Nz + 1)
@@ -92,15 +115,7 @@ class TestTangentialSurfaceRemask:
                 pec[2, :n_Ez],
             ]
         )
-        node_a, node_b = _edge_endpoint_nodes(grid)
-        labels = _masked_component_labels(
-            node_a,
-            node_b,
-            masked,
-            (Nx + 1) * (Ny + 1) * (Nz + 1),
-        )
-        tangential = ~masked & (labels[node_a] == labels[node_b])
-        assert not tangential.any()
+        assert not _local_masked_face_bypass(masked, grid).any()
 
     def test_donors_are_never_masked(self, coax_mesh):
         em = coax_mesh.edge_material

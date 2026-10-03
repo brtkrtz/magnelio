@@ -91,6 +91,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Conformally meshed conductor loops bonded to a housing no longer
+  create an artificial short across a separate, locally open feed gap.
+
 - Partitioning a solid extruded from a profile no longer fails when the
   source has no name.
 

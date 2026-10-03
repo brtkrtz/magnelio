@@ -2299,6 +2299,11 @@ exists (genuinely 3D contours), the wrong LC partner on a line.
    conductor.  Side fix: enlarged-cell donors can no longer be
    masked edges (previously donated mass onto interior-PEC neighbours
    silently vanished).
+
+   **Correction (DD-276):** The connected-component criterion is
+   superseded. A remote bond can make the two sides of a local air gap
+   one component; the rule then masks the gap itself. The local-face
+   bypass criterion retains surface masking without this false short.
 3. **LC-consistent M_μ coupling** (mesher step 4b,
    ``couple_face_material_pairs``) — per H face, the two spanning
    axes are candidate ladder directions with the co-located E edges
@@ -14203,7 +14208,7 @@ the first probe: the dual-face `eps_avg` had been proposed as the
 default, but on the coax it shows the pin as a plus shape one node
 larger than the geometry — not a bug: the in-plane edges cutting the
 pin have `f_L ≈ 0.27 < η = 0.4`, are masked and lent out, and the
-DD-053 tangential rule (both endpoints in the same masked component)
+DD-053 tangential rule (now local-face bounded by DD-276)
 then re-masks the normal edges around them although the conformal
 pass had measured `ε̄ = 1.65, f_L = 1` there.  Correct for the field
 normal to the cut, irrelevant for TEM, misleading as a default.  The
@@ -23347,3 +23352,38 @@ Methods/API prose, Tutorial 14 and `tests/unit/test_import_cad.py` cover the
 contract. The final acceptance audit is recorded in
 `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record);
 WP6.2 remains cancelled.
+
+---
+
+## DD-276 — Tangential PEC masking needs a local surface path
+
+**Date:** 2026-10-02. **Status:** Implemented; corrects the masking criterion
+of DD-053 without changing its LC-consistent pair coupling.
+
+**Failure.** DD-053 treated every free E edge whose endpoint nodes belonged
+to the same global masked-edge component as tangential to a conductor. That
+is false for an inductive loop bonded to its housing: the central conductor
+and the housing are deliberately one component, while the feed between them
+still has a local air gap. The global rule masked an E edge lying wholly in
+that air gap, creating a second, unintended short near the feed transition.
+The exact CAD classifier called the edge air; bypassing only step 6b left
+it free. The private measurement is
+`investigations/hesr-mesh-short/MEASUREMENTS.md` (internal record); the
+developer's model is `userscripts/hesr/hesr.ipynb` (internal worksheet).
+
+**Decision.** Re-mask a free edge only when its two endpoints have a masked
+three-edge detour around one adjacent primal face. This is local evidence
+that the edge runs along a PEC surface. A bond elsewhere in the model is
+irrelevant. One pass uses the post-conformal mask as its input, preserving
+DD-053's treatment of a curved, translation-invariant coaxial surface.
+The operation is vectorised over the three edge orientations and linear
+in the edge count; it replaces the global sparse connected-component pass.
+
+**Checks.** A synthetic remote-bond graph has connected endpoints but no
+local face detour, and gains a detour only when a masked face side is added.
+The existing round-coax mask and its S-parameter/impedance gate pass. On a
+two-cell replica of the inductive-loop model at 0.35, 0.50 and 0.75 mm
+cell-size floors, the air edge stays free and the inner/outer masked
+networks are disconnected within the feed-transition region. The full
+17-cell TD run remains to be remeasured; the mesh result alone
+establishes removal of the false bond.

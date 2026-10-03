@@ -202,8 +202,8 @@ class EdgeMaterialData:
         E-edge PEC mask in the canonical ``Mesh.pec_mask_edges`` layout.
         Set True for category 3 edges, for short curved-PEC edges
         (f_L < eta) that the enlarged-cell technique borrows out, and
-        for tangential-surface edges re-masked by the DD-053
-        consistency rule (both endpoints on the same conductor).
+        for tangential-surface edges re-masked by the DD-053/276
+        consistency rule (a masked detour around an adjacent grid face).
     enlarged_cell_donor : np.ndarray, dtype int64, shape ``(n_E_total,)``
         Flat E-edge index of the neighbour edge that absorbs the
         borrowed area, or ``-1`` if no borrowing.
@@ -345,9 +345,9 @@ def _masked_component_labels(
 ) -> np.ndarray:
     """Connected-component label per node in the masked-edge graph.
 
-    Nodes not touched by any masked edge are singleton components, so
-    ``labels[a] == labels[b]`` for a two-endpoint edge holds exactly
-    when both endpoints sit on the *same* conductor.
+    Nodes not touched by any masked edge are singleton components.
+    A component can join distant conductor surfaces through a bond;
+    equal labels do not prove that an edge lies on a local PEC surface.
     """
     import scipy.sparse as sp  # noqa: PLC0415
     from scipy.sparse.csgraph import connected_components  # noqa: PLC0415
@@ -360,6 +360,47 @@ def _masked_component_labels(
     )
     _, labels = connected_components(graph, directed=False)
     return labels
+
+
+def _local_masked_face_bypass(masked_flat: np.ndarray, grid: GridLines) -> np.ndarray:
+    """Find free edges bypassed by three masked edges of one primal face.
+
+    A remote connection between two conductors is not evidence that an
+    edge across their local air gap lies on a conducting surface.  A
+    masked detour around an adjacent face provides the local evidence
+    needed for tangential-surface re-masking.
+    """
+    nx, ny, nz = grid.Nx, grid.Ny, grid.Nz
+    n_ex = nx * (ny + 1) * (nz + 1)
+    n_ey = (nx + 1) * ny * (nz + 1)
+    ex = masked_flat[:n_ex].reshape(nx, ny + 1, nz + 1)
+    ey = masked_flat[n_ex : n_ex + n_ey].reshape(nx + 1, ny, nz + 1)
+    ez = masked_flat[n_ex + n_ey :].reshape(nx + 1, ny + 1, nz)
+    bx = np.zeros_like(ex)
+    by = np.zeros_like(ey)
+    bz = np.zeros_like(ez)
+
+    xy_ex = ey[:-1] & ey[1:]
+    bx[:, 1:] |= xy_ex & ex[:, :-1]
+    bx[:, :-1] |= xy_ex & ex[:, 1:]
+    xy_ey = ex[:, :-1] & ex[:, 1:]
+    by[1:] |= xy_ey & ey[:-1]
+    by[:-1] |= xy_ey & ey[1:]
+
+    xz_ex = ez[:-1] & ez[1:]
+    bx[:, :, 1:] |= xz_ex & ex[:, :, :-1]
+    bx[:, :, :-1] |= xz_ex & ex[:, :, 1:]
+    xz_ez = ex[:, :, :-1] & ex[:, :, 1:]
+    bz[1:] |= xz_ez & ez[:-1]
+    bz[:-1] |= xz_ez & ez[1:]
+
+    yz_ey = ez[:, :-1] & ez[:, 1:]
+    by[:, :, 1:] |= yz_ey & ey[:, :, :-1]
+    by[:, :, :-1] |= yz_ey & ey[:, :, 1:]
+    yz_ez = ey[:, :, :-1] & ey[:, :, 1:]
+    bz[:, 1:] |= yz_ez & ez[:, :-1]
+    bz[:, :-1] |= yz_ez & ez[:, 1:]
+    return np.concatenate((bx.ravel(), by.ravel(), bz.ravel())) & ~masked_flat
 
 
 def _bbox_face_edges(grid: GridLines, n_Ex: int, n_Ey: int, n_Ez: int) -> np.ndarray:
@@ -1040,8 +1081,8 @@ def compute_subcell_data(
         pec_mask[2, ez_sel - n_Ex - n_Ey] = False
 
     # ---- Step 6b: tangential-surface re-masking (DD-053) ---------------
-    # An unmasked E edge whose two endpoint nodes are connected through
-    # the masked-edge graph runs tangentially along a PEC surface.  The
+    # An unmasked E edge with a masked detour around an adjacent primal
+    # face runs tangentially along a PEC surface.  The
     # 2D mode solvers put both endpoints into the same Dirichlet
     # conductor group (the edge voltage is identically zero in every
     # mode), while the un-masked 3D edge would evolve a surface-
@@ -1051,11 +1092,8 @@ def compute_subcell_data(
     # (validation/coax_pair_consistent_mu_spike.py).  Applying
     # the PEC surface condition on these edges makes the 3D update and
     # the mode solvers see the same conductor (the DD-050 line).  The
-    # connected-COMPONENT check (rather than mere conductor adjacency)
-    # spares edges that bridge different conductors across a resolved
-    # gap — those legitimately carry voltage.  One pass reaches the
-    # fixed point: re-masked edges connect only nodes that were already
-    # in the same component.
+    # local-face check spares air-gap edges between conductors joined
+    # elsewhere, such as an inductive pickup loop bonded to its housing.
     masked_flat = np.concatenate(
         [
             pec_mask[0, :n_Ex],
@@ -1064,14 +1102,7 @@ def compute_subcell_data(
         ]
     )
     if masked_flat.any():
-        node_a, node_b = _edge_endpoint_nodes(grid)
-        labels = _masked_component_labels(
-            node_a,
-            node_b,
-            masked_flat,
-            (Nx + 1) * (Ny + 1) * (Nz + 1),
-        )
-        tangential = ~masked_flat & (labels[node_a] == labels[node_b])
+        tangential = _local_masked_face_bypass(masked_flat, grid)
         tang_idx = np.nonzero(tangential)[0]
         if len(tang_idx) > 0:
             category[tang_idx] = CAT_INTERIOR_PEC

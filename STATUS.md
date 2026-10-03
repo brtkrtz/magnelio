@@ -42,6 +42,7 @@ This file states what *is*.  Chronology: `git log --first-parent main`; reasonin
 
 ## Recent decisions
 Newest first, one line each; the full record is the DD entry.
+* **DD-276** (2026-10-02) — PEC tangential-edge re-masking now requires a masked detour around an adjacent grid face; a remote inductive-loop bond no longer closes a local feed air gap. The reduced-model mesh and round-coax port gate pass; full TD response is unmeasured.
 * **DD-275** (2026-09-28, merged to local `main` 2026-10-02, WP0-WP5 and WP6.1/WP6.3-WP6.12) — dimensional geometry, affine values, exact curves/Profile holes, owned topology and named histories are implemented. Path carries world poses and relative bends. Sweeps retain frame/twist/draft laws. Partition returns independent Solid/Sheet regions; Section returns exact curves or filled profiles. Directed Imprint splits receiver faces without volume change. Insert assigns material overlap by explicit priority and removes void tools. Bounded Curve projection supports parallel, perspective and closest-point policies. Offsets provide signed planar Curve placement, material-region Profile clearance/erosion and bounded Sheet normal placement. Bend maps existing geometry onto a freeform neutral surface with sampled strain/validity gates and smooth CAD faces. Wrap maps entire layered geometry onto a declared patch with bounded strain; planar tangent lofts supply G1 ends for matching extruded walls. Reusable placements preserve nested component members, materials and owned names; nonuniform scale/shear are rejected. Exact rectangular owned faces define eligible waveguide-port windows and field-frequency planes. CAD exchange preserves solid/sheet categories with explicit STEP/BREP units and documented metadata limits. Methods/API prose and Tutorial 14 cover these contracts. The foundation acceptance audit is complete; WP6.2 is cancelled. Record: `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record).
 * **DD-274** (2026-09-23) — viewer destination is independent of its rendering backend.  A plain script now serves the complete Magnelio toolbar through trame and opens it in the system browser; `target="native"` retains the PyVista/VTK window.  `target="inline"` keeps the Jupyter widget.  Zed's `kernel-zed-*.json` identity selects the browser automatically despite its ipykernel; `plots.configure_viewer(target="browser")` is the once-per-kernel switch for other editor REPLs that do not render the asynchronously filled `VBox`.  The browser server binds loopback on a daemon thread and is reused; missing trame warns and falls back to native.  `mode` remains `client`/`server`/`trame`/`static`/`none`, with `none` still returning the plotter.
   CI compatibility: PyVista 0.49 stores viewers in `trame_pyvista.ui`; OCC 8 requires an explicit trace-clearance check beyond offset contour counting (DD-135).
@@ -122,8 +123,8 @@ translation-invariant ladder direction the meshing-time coupling pass
 (``couple_face_material_pairs``, DD-053) replaces the Krietenstein
 value by the LC-consistent pair value ``ε0μ0·ε_pair·μ̄·d·d̃ / M_ε``;
 Krietenstein remains the correction on genuinely 3D contours.  The
-classifier re-masks tangential-surface E edges (both endpoints on the
-same conductor component), so 2D mode solvers and the 3D update see
+classifier re-masks tangential-surface E edges with a local masked-face
+detour (DD-276), so 2D mode solvers and the 3D update see
 the same conductor.  FIT-TD, ``EigenmodeSolver3D`` and
 ``Numerical2DModeSolver`` all consume the same matrices — no
 ``apply_dm`` switch.
