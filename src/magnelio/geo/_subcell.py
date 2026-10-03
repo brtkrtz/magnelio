@@ -622,11 +622,14 @@ def _apply_longitudinal_eps(
     Per crossing edge the pass sections the dual face at each
     *segment* midpoint (segments = edge span split by the absorbed
     planes) through the same OCC backend as the conformal pass, then
-    combines: ``ε̄ = L / Σ (L_seg / ε_seg)``; σ analogously (any
-    σ_seg = 0 short-circuits to 0, the exact DC series limit).
-    PEC-adjacent edges are skipped — the line-solid f_L path owns
-    them.  Mutates ``conf_eps`` / ``conf_sigma`` / ``conf_f_area``
-    in place.
+    combines the intrinsic free-area dielectric values in series, then
+    applies the edge midpoint's free-area fraction.  Otherwise a curved
+    conductor grazing one segment looks like a dielectric contrast.
+    σ uses the same area convention (any σ_seg = 0 gives zero series
+    conductivity).  Staircase PEC-adjacent edges are skipped; any
+    additional PEC overlap found here joins the line-solid f_L pass.
+    Mutates ``conf_eps`` / ``conf_sigma`` / ``conf_f_area`` and
+    ``pec_adj_flat`` in place.
     """
     from magnelio.geo._filling import (  # noqa: PLC0415
         SECTION_DEFLECTION_FRACTION,
@@ -667,6 +670,7 @@ def _apply_longitudinal_eps(
     axis_parts: list[np.ndarray] = []
     edge_parts: list[np.ndarray] = []
     len_parts: list[np.ndarray] = []
+    midpoint_parts: list[np.ndarray] = []
 
     axis_data = {
         "x": (0, x, xm),
@@ -724,12 +728,14 @@ def _apply_longitudinal_eps(
             axis_parts.append(np.full(n_edge * n_seg, ax_idx, dtype=np.int32))
             edge_parts.append(np.repeat(flat, n_seg))
             len_parts.append(np.tile(seg_lens, n_edge))
+            midpoint_parts.append(np.full(n_edge, 0.5 * (nodes[c] + nodes[c + 1])))
 
     if not spec_parts:
         return
 
     face_specs = np.concatenate(spec_parts, axis=0)
     face_axes = np.concatenate(axis_parts)
+    pec_areas = np.zeros(len(face_specs), dtype=np.float64)
     eps_vals = compute_face_material_areas(
         shapes_with_material,
         material_library,
@@ -739,6 +745,7 @@ def _apply_longitudinal_eps(
         deflection=deflection,
         nudge=nudge,
         section_cache=section_cache,
+        pec_area_out=pec_areas,
         scale=scale,
     )
     sigma_vals = compute_face_material_areas(
@@ -764,25 +771,72 @@ def _apply_longitudinal_eps(
     starts = np.concatenate(([0], starts))
     counts = np.diff(np.append(starts, seg_edge_arr.size))
     edges = seg_edge_arr[starts]
+    edge_midpoints = np.concatenate(midpoint_parts)
     L = _run_sums(seg_len_arr, starts, counts)
 
-    eps_bad = np.isnan(eps_vals) | (eps_vals <= 0)
+    face_areas = (face_specs[:, 3] - face_specs[:, 1]) * (face_specs[:, 4] - face_specs[:, 2])
+    free_frac = 1.0 - np.clip(pec_areas / face_areas, 0.0, 1.0)
+    # A curved PEC wall can reach a segment without a staircase PEC
+    # neighbour.  Its edge still needs the geometric line-solid check.
+    pec_touched = np.logical_or.reduceat(pec_areas > 0.0, starts)
+    pec_adj_flat[edges[pec_touched]] = True
+
+    # The conformal pass only visits staircase-boundary cells.  A
+    # sub-cell curved wall can therefore leave the original midpoint
+    # data absent, even though a segment section detects real PEC.
+    # Recover that midpoint through the same section backend before
+    # combining intrinsic material contrast with its free area.
+    missing = pec_touched & (np.isnan(conf_eps[edges]) | np.isnan(conf_f_area[edges]))
+    if missing.any():
+        mid_specs = face_specs[starts[missing]].copy()
+        mid_specs[:, 0] = edge_midpoints[missing]
+        mid_axes = face_axes[starts[missing]]
+        mid_pec = np.zeros(len(mid_specs), dtype=np.float64)
+        mid_eps = compute_face_material_areas(
+            shapes_with_material,
+            material_library,
+            mid_specs,
+            mid_axes,
+            prop="epsilon",
+            deflection=deflection,
+            nudge=nudge,
+            section_cache=section_cache,
+            pec_area_out=mid_pec,
+            scale=scale,
+        )
+        mid_sigma = compute_face_material_areas(
+            shapes_with_material,
+            material_library,
+            mid_specs,
+            mid_axes,
+            prop="sigma",
+            deflection=deflection,
+            nudge=nudge,
+            section_cache=section_cache,
+            scale=scale,
+        )
+        mid_area = (mid_specs[:, 3] - mid_specs[:, 1]) * (mid_specs[:, 4] - mid_specs[:, 2])
+        conf_eps[edges[missing]] = mid_eps
+        conf_sigma[edges[missing]] = mid_sigma
+        conf_f_area[edges[missing]] = 1.0 - np.clip(mid_pec / mid_area, 0.0, 1.0)
+
+    eps_bad = np.isnan(eps_vals) | (eps_vals <= 0) | (free_frac <= 0)
     eps_ok = ~np.logical_or.reduceat(eps_bad, starts)
     if not eps_ok.any():
         return  # incomplete sectioning everywhere — leave the edges as-is
-    eps_safe = np.where(eps_bad, 1.0, eps_vals)
-    eps_series = L / _run_sums(seg_len_arr / eps_safe, starts, counts)
+    eps_free = np.divide(eps_vals, free_frac, out=np.ones_like(eps_vals), where=~eps_bad)
+    eps_series = L / _run_sums(seg_len_arr / eps_free, starts, counts)
 
-    sig_bad = np.isnan(sigma_vals) | (sigma_vals <= 0)
+    sig_bad = np.isnan(sigma_vals) | (sigma_vals <= 0) | (free_frac <= 0)
     sig_ok = ~np.logical_or.reduceat(sig_bad, starts)
-    sig_safe = np.where(sig_bad, 1.0, sigma_vals)
-    sig_series = np.where(sig_ok, L / _run_sums(seg_len_arr / sig_safe, starts, counts), 0.0)
+    sig_free = np.divide(sigma_vals, free_frac, out=np.ones_like(sigma_vals), where=~sig_bad)
+    sig_series = np.where(sig_ok, L / _run_sums(seg_len_arr / sig_free, starts, counts), 0.0)
 
     sel = edges[eps_ok]
-    conf_eps[sel] = eps_series[eps_ok]
-    conf_sigma[sel] = sig_series[eps_ok]
     f_nan = np.isnan(conf_f_area[sel])
     conf_f_area[sel[f_nan]] = 1.0
+    conf_eps[sel] = eps_series[eps_ok] * conf_f_area[sel]
+    conf_sigma[sel] = sig_series[eps_ok] * conf_f_area[sel]
 
 
 def _run_sums(values: np.ndarray, starts: np.ndarray, counts: np.ndarray) -> np.ndarray:

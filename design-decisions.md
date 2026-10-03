@@ -23387,3 +23387,42 @@ cell-size floors, the air edge stays free and the inner/outer masked
 networks are disconnected within the feed-transition region. The full
 17-cell TD run remains to be remeasured; the mesh result alone
 establishes removal of the false bond.
+
+---
+
+## DD-277 — Absorbed-plane series permittivity separates dielectric and PEC area
+
+**Date:** 2026-10-03. **Status:** Implemented; resolves KB-048 and refines
+the DD-060 longitudinal correction without removing it.
+
+**Failure.** The series pass sections every E edge crossing a floor-absorbed
+material plane. Its section ε̄ includes the PEC-covered area as zero, but the
+harmonic sum treated ε̄ as the dielectric value over the entire dual face.
+Two z edges beside the curved outer conductor of a straight air-filled
+coax therefore acquired ε̄ = 0.983426 while their midpoint free-area
+fraction remained 1. The first interior E mass ceased to match the port
+boundary's E/H pair, and the x1 TEM mode fell to Mur: weighted pair spread
+1.763027e-3 against the 2e-6 DTBC gate. The feed slabs themselves agreed
+to 4.25e-12. Source: `investigations/hesr-port-chain/MEASUREMENTS.md`
+(internal dossier).
+
+**Decision.** Ask the existing area-section backend for the PEC area of
+each segment. Apply the length-weighted harmonic mean to the intrinsic
+dielectric ε̄/f_A (and σ̄/f_A), then multiply by the edge midpoint's f_A.
+An all-PEC or incomplete segment does not create a guessed series value.
+Any PEC overlap found in a segment enters the geometric line-solid f_L
+classification, even without a staircase PEC neighbour. Where the old
+conformal boundary-cell selection did not visit that edge, obtain its
+midpoint ε̄, σ̄ and f_A from the same section backend. Thus a genuine
+absorbed dielectric stack still uses the DD-060 series correction, while
+a curved conductor is handled by the PEC edge category and line fraction.
+Only edges crossing absorbed planes pay the extra section work.
+
+**Checks.** `tests/unit/test_subcell_pipeline.py` covers three curved-wall
+positions: a graze of the dual face alone, a crossing of the primal line,
+and a partly covered midpoint. `tests/unit/test_mesh.py` retains the
+one-plane and two-plane dielectric series gates. The round-coax modal
+and port-power integration tests pass. On the original HESR three-cell
+mesh (89 × 89 × 129, 0.5 mm floor), both offending interior edges now
+have ε̄/f_A = 1; x1 is `dtbc` with pair spread 1.877480e-14. This is a
+port-operator measurement; no full TD response was run.
