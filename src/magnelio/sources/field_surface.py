@@ -88,7 +88,7 @@ class SourceFieldSurface(SourceFieldIncident):
         Source name; an :class:`~magnelio.Excitation` names it to set
         the scale factor and the delay.
     position : tuple of float, optional
-        Where the centre of the recorded box goes in this model [m].
+        Where the center of the recorded box goes in this model [m].
         Defaults to the position it had in the recording.
     rotation : tuple, optional
         ``(axis, degrees)`` turn applied to the recording, e.g.
@@ -146,9 +146,9 @@ class SourceFieldSurface(SourceFieldIncident):
             )
         self._rot = _rotation_matrix(self.rotation)
         self._rot_inv = self._rot.T
-        centre = np.asarray(self.recording.centre, dtype=float)
+        center = np.asarray(self.recording.center, dtype=float)
         if self.position is None:
-            target = centre
+            target = center
         else:
             target = np.asarray(self.position, dtype=float).reshape(3)
             if not np.all(np.isfinite(target)):
@@ -299,8 +299,8 @@ class SourceFieldSurface(SourceFieldIncident):
         # Sample points of this patch, carried into the recording frame.
         pts = np.broadcast_arrays(*(np.asarray(c, dtype=float) for c in coords))
         p_dst = np.stack([p.ravel() for p in pts], axis=0)
-        centre = np.asarray(self.recording.centre, dtype=float)
-        p_src = self._rot_inv @ (p_dst - self._shift[:, None]) + centre[:, None]
+        center = np.asarray(self.recording.center, dtype=float)
+        p_src = self._rot_inv @ (p_dst - self._shift[:, None]) + center[:, None]
         t1, t2 = face.tangent_axes
         u = p_src[t1].reshape(pts[0].shape)
         v = p_src[t2].reshape(pts[0].shape)
@@ -318,7 +318,7 @@ class SourceFieldSurface(SourceFieldIncident):
         sign = float(np.sign(e_src[axis_rec]))
         comp_rec = f"{group}{_AXES[axis_rec]}"
 
-        series = sign * face.resample(comp_rec, u, v, normal=normal)
+        series = sign * face.resample(comp_rec, u, v, position=normal)
         series = np.asarray(series, dtype=self._dtype)
         return (self._xp.asarray(series), group == "H")
 

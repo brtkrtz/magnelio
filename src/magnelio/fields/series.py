@@ -127,9 +127,9 @@ class _FieldSeries:
         return FieldState.zeros(self._grid).positions(component)
 
     @property
-    def cell_centres(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """The 1-D cell-centre coordinates ``(xc, yc, zc)`` of :meth:`cell_centred`."""
-        return FieldState.zeros(self._grid).cell_centres
+    def cell_centers(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """The 1-D cell-center coordinates ``(xc, yc, zc)`` of :meth:`cell_centered`."""
+        return FieldState.zeros(self._grid).cell_centers
 
     # ── frames ───────────────────────────────────────────────────────────
 
@@ -183,7 +183,7 @@ class _FieldSeries:
             )
         return np.asarray(self._raw[name]) / self._lengths()[name][None]
 
-    def cell_centred(
+    def cell_centered(
         self,
         components=None,
         corners=None,
@@ -216,10 +216,10 @@ class _FieldSeries:
         """
         names = list(self.components if components is None else components)
         if frame is not None:
-            out = self.frame(frame).cell_centred(names, corners)
+            out = self.frame(frame).cell_centered(names, corners)
             first_spatial = 0
         else:
-            per_frame = [self.frame(i).cell_centred(names, corners) for i in range(self.n_frames)]
+            per_frame = [self.frame(i).cell_centered(names, corners) for i in range(self.n_frames)]
             out = {c: np.stack([d[c] for d in per_frame], axis=0) for c in names}
             first_spatial = 1
         if squeeze:
@@ -232,7 +232,7 @@ class _FieldSeries:
             }
         return out
 
-    def cell_centred_layer(self, frame: int, axis: int, k: int, components=None) -> dict:
+    def cell_centered_layer(self, frame: int, axis: int, k: int, components=None) -> dict:
         """One cell layer of one frame, averaged onto the cell centres.
 
         Only that layer is computed — a picture of a volume recording
@@ -351,7 +351,7 @@ class _FieldSeries:
             reactive density of the stored near field.
         squeeze : bool, default False
             Drop the spatial axes of length one, as
-            :meth:`cell_centred` does; the trailing vector axis stays.
+            :meth:`cell_centered` does; the trailing vector axis stays.
 
         Returns
         -------
@@ -362,7 +362,7 @@ class _FieldSeries:
         from magnelio.fields._poynting import check_available, cross  # noqa: PLC0415
 
         check_available(self.components)
-        centred = self.cell_centred(corners=corners, frame=frame, squeeze=squeeze)
+        centred = self.cell_centered(corners=corners, frame=frame, squeeze=squeeze)
         return cross(centred, complex_product=complex_product)
 
     # ── the surface current (DD-273) ─────────────────────────────────────
@@ -410,15 +410,15 @@ class _FieldSeries:
     def _label_text(self, i: int) -> str:
         return ""
 
-    def _snapshot(self, i: int, phase: float | None) -> FieldState:
+    def _snapshot(self, i: int, phase_deg: float | None) -> FieldState:
         fs = self.frame(i)
-        if phase is not None and fs.is_complex:
+        if phase_deg is not None and fs.is_complex:
             # e^{+jwt} phasors (see monitors._frame_plots.at_phase):
-            # a rising phase is time running forward.
-            fs = fs.scaled(np.exp(1j * np.deg2rad(float(phase)))).real()
+            # a rising phase_deg is time running forward.
+            fs = fs.scaled(np.exp(1j * np.deg2rad(float(phase_deg)))).real()
         return fs
 
-    def _plot(self, i: int, phase: float | None, component: str, kwargs: dict):
+    def _plot(self, i: int, phase_deg: float | None, component: str, kwargs: dict):
         from magnelio.fields._poynting import COMPONENTS as _S_COMPONENTS  # noqa: PLC0415
 
         # The Poynting vector of a complex frame is already the time
@@ -428,7 +428,7 @@ class _FieldSeries:
         if component in ("S", "|S|") or component in _S_COMPONENTS:
             fs = self.frame(i)
         else:
-            fs = self._snapshot(i, phase)
+            fs = self._snapshot(i, phase_deg)
         fig, ax = fs.plot(component, **kwargs)
         label = self._label_text(i)
         if label and kwargs.get("title") is None:
@@ -549,7 +549,7 @@ class FieldSpectrum(_FieldSeries):
     Parameters
     ----------
     grid : GridLines
-    frequencies : array_like
+    f_axis : array_like
         Frequencies [Hz] of the frames.
     **components : array_like
         Complex field arrays, E in V/m and H in A/m (per √W for a
@@ -558,17 +558,12 @@ class FieldSpectrum(_FieldSeries):
 
     _kind = "frequency"
 
-    def __init__(self, grid: GridLines, frequencies, **components) -> None:
-        self._init(grid, frequencies, components, complex_only=True)
+    def __init__(self, grid: GridLines, f_axis, **components) -> None:
+        self._init(grid, f_axis, components, complex_only=True)
 
     @property
-    def frequencies(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequencies [Hz] of the frames."""
-        return self._labels
-
-    @property
-    def f(self) -> np.ndarray:
-        """Alias of :attr:`frequencies`."""
         return self._labels
 
     @property
@@ -583,10 +578,12 @@ class FieldSpectrum(_FieldSeries):
         """The (complex) frame nearest to *f* [Hz]."""
         return self.frame(self._nearest(f))
 
-    def snapshot(self, f: float | None = None, *, frame: int | None = None, phase: float = 0.0):
-        """The real field ``Re(F · exp(+j·phase))`` of one frame, *phase* in degrees."""
+    def snapshot(self, f: float | None = None, *, frame: int | None = None, phase_deg: float = 0.0):
+        """The real field ``Re(F · exp(+j·phase_deg))`` of one frame, *phase_deg* in degrees."""
+        if f is not None and frame is not None:
+            raise ValueError("give f or frame, not both")
         i = self._nearest(f) if f is not None else (0 if frame is None else frame)
-        return self._snapshot(self._check_index(i), phase)
+        return self._snapshot(self._check_index(i), phase_deg)
 
     def _label_text(self, i: int) -> str:
         return f"f = {self._labels[i] * 1e-9:.4g} GHz"
@@ -597,7 +594,7 @@ class FieldSpectrum(_FieldSeries):
         *,
         f: float | None = None,
         frame: int | None = None,
-        phase: float | None = None,
+        phase_deg: float | None = None,
         **kwargs,
     ):
         """Plot one frame on a slice plane.
@@ -611,9 +608,9 @@ class FieldSpectrum(_FieldSeries):
             Frequency [Hz]; the nearest frame is drawn.
         frame : int, optional
             Frame index (default 0; exclusive with *f*).
-        phase : float, optional
+        phase_deg : float, optional
             Instant of the complex pattern in degrees,
-            ``Re(F · exp(+j·phase))``.  Default: the instant of maximum
+            ``Re(F · exp(+j·phase_deg))``.  Default: the instant of maximum
             energy on the slice (see :meth:`FieldState.plot`).  It does
             not act on ``"S"``: a time-averaged power density has no
             instant.
@@ -627,7 +624,7 @@ class FieldSpectrum(_FieldSeries):
         if f is not None and frame is not None:
             raise ValueError("give f or frame, not both")
         i = self._nearest(f) if f is not None else (0 if frame is None else frame)
-        return self._plot(self._check_index(i), phase, component, kwargs)
+        return self._plot(self._check_index(i), phase_deg, component, kwargs)
 
     def __repr__(self) -> str:
         fr = self._labels

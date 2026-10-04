@@ -1,6 +1,6 @@
 # `magnelio.monitors`
 
-`MonitorFieldFrequency.from_face(face, freqs=...)` records fields on an exact
+`MonitorFieldFrequency.from_face(face, frequencies=...)` records fields on an exact
 axis-normal rectangular `FaceRef`, including an interior face. See
 [selected EM faces](../methods/geometry.md) for the sampling limits.
 

@@ -196,7 +196,7 @@ def write_brep(shapes: list, path: str | Path) -> None:
         ``TopoDS_Shape`` instances.  The write order is preserved and
         recovered verbatim by :func:`read_brep`.
     path : str or Path
-        Output ``.brep`` file.
+        Output ``.brep`` file in metres; no exchange-unit conversion.
     """
     from OCC.Core.BRep import BRep_Builder  # noqa: PLC0415
     from OCC.Core.BRepTools import breptools  # noqa: PLC0415
@@ -230,7 +230,7 @@ def read_brep(path: str | Path) -> list:
     Parameters
     ----------
     path : str or Path
-        A ``.brep`` file written by :func:`write_brep`.
+        A metre-space ``.brep`` file written by :func:`write_brep`.
 
     Returns
     -------
@@ -271,9 +271,9 @@ class LoadedGeometry:
     def __len__(self) -> int:
         return len(self.shapes)
 
-    def plot(self, **kwargs):
-        """Interactive 3D view — same wrapper as ``GeometryModel.plot``."""
-        from magnelio.post.plot_geometry import (  # noqa: PLC0415
+    def show(self, **kwargs):
+        """Interactive 3D view — same wrapper as ``GeometryModel.show``."""
+        from magnelio.post.plot_3d import (  # noqa: PLC0415
             show_geometry,
         )
 
@@ -783,8 +783,8 @@ class _PersistedLumpedMode:
     def __init__(self, z0: float) -> None:
         self.z0 = float(z0)
 
-    def z_modal(self, omega: float) -> complex:
-        del omega
+    def z_modal(self, *, f: float) -> complex:
+        del f
         return complex(self.z0)
 
 
@@ -799,7 +799,7 @@ def _mode_to_dict(mode) -> dict:
             "epsilon_r": float(mode.epsilon_r),
             "z_line": None if mode.z_line is None else float(mode.z_line),
         }
-    return {"kind": "lumped", "z0": float(mode.z_modal(0.0).real)}
+    return {"kind": "lumped", "z0": float(mode.z_modal(f=0.0).real)}
 
 
 def _mode_from_dict(d: dict):
@@ -2148,7 +2148,7 @@ class _LazyRecording:
     Frames are read from ``results.h5`` when asked for (one read per
     frame, the last one kept), a component's stack when asked for; the
     reader's grid, dual widths and time bases are its own.  Everything
-    else — ``cell_centred``, ``plot``, ``show`` — is the container's.
+    else — ``cell_centered``, ``plot``, ``show`` — is the container's.
     """
 
     def __new__(cls, reader):
@@ -2312,12 +2312,12 @@ class _LoadedFieldMonitor:
 
         return SeriesView(self.recording, name=self.name, mirrors=self._mirrors, grid=self._grid)
 
-    def plot(self, component: str = "E", t=None, t_index=None, **kwargs):
+    def plot(self, component: str = "E", t=None, frame=None, **kwargs):
         """Plot one stored frame (see :meth:`MonitorFieldTime.plot`); one frame is read."""
         from magnelio.monitors._frame_plots import plot_frame  # noqa: PLC0415
 
         view = self._view()
-        return plot_frame(view, component, view.index_of(t, t_index), **kwargs)
+        return plot_frame(view, component, view.index_of(t, frame), **kwargs)
 
     def interact(self, component: str = "E", **kwargs):
         """A notebook slider over the stored frames (see :meth:`MonitorFieldTime.interact`)."""
@@ -2465,7 +2465,7 @@ class _LoadedFreqMonitor:
             self.fields = json.loads(g.attrs["fields"])
             # Schema-additive (DD-140); absent means every step.
             self.interval = float(g.attrs["interval"]) if "interval" in g.attrs else None
-            self.freqs = g["freqs"][()]
+            self.frequencies = g["freqs"][()]
             self.corners = _corners_from_array(g["corners"][()])
             if "dual_x" not in g:
                 from magnelio.io._schema import ProjectSchemaError  # noqa: PLC0415
@@ -2490,9 +2490,9 @@ class _LoadedFreqMonitor:
         )
 
     @property
-    def f(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequency array [Hz]."""
-        return np.asarray(self.freqs, dtype=float)
+        return np.asarray(self.frequencies, dtype=float)
 
     @property
     def components(self) -> list[str]:
@@ -2515,7 +2515,7 @@ class _LoadedFreqMonitor:
         if self._spectrum is None and self._reference is not None:
             sig = self._reference() if callable(self._reference) else self._reference
             if sig is not None:
-                self._spectrum = source_spectrum(sig.values, sig.dt, self.freqs)
+                self._spectrum = source_spectrum(sig.values, sig.dt, self.frequencies)
         return self._spectrum
 
     @property
@@ -2559,13 +2559,18 @@ class _LoadedFreqMonitor:
             if ratio is not None:
                 f_axis, values = ratio
                 self._incident_ratio = np.interp(
-                    np.asarray(self.freqs, dtype=float),
+                    np.asarray(self.frequencies, dtype=float),
                     np.asarray(f_axis, dtype=float),
                     np.asarray(values, dtype=float),
                 )
         return self._incident_ratio
 
-    def renormalize(self, source_signal) -> None:
+    @property
+    def is_normalized_to_excitation(self) -> bool:
+        """Whether this view has an excitation reference."""
+        return self._reference is not None
+
+    def normalize_to_excitation(self, source_signal) -> None:
         """Set (or replace) the excitation the bins are divided by."""
         self._reference = source_signal
         self._spectrum = None
@@ -2582,7 +2587,7 @@ class _LoadedFreqMonitor:
 
         mon = MonitorFieldFrequency(
             corners=self.corners,
-            freqs=self.freqs,
+            frequencies=self.frequencies,
             fields=list(self.fields),
             interval=self.interval,
             name=self.name,
@@ -2613,7 +2618,7 @@ class _LoadedFreqMonitor:
             bg = f[self.name]["bins"]
             for comp in self._components:
                 bins = bg[comp][()]
-                acc = DFTAccumulator(self.freqs, tuple(bins.shape[1:]))
+                acc = DFTAccumulator(self.frequencies, tuple(bins.shape[1:]))
                 acc._bins[...] = np.conj(bins) if flip else bins
                 mon._accumulators[comp] = acc
             if "incident_amplitude" in f[self.name]:
@@ -2674,7 +2679,7 @@ class _LoadedFreqMonitor:
     def __repr__(self) -> str:
         return (
             f"_LoadedFreqMonitor(name={self.name!r}, "
-            f"n_freqs={len(self.freqs)}, components={self._components})"
+            f"n_freqs={len(self.frequencies)}, components={self._components})"
         )
 
 
@@ -2905,7 +2910,7 @@ class _LoadedMonitorWallLoss:
         return f[self.name]
 
     @property
-    def f(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequency axis [Hz]."""
         import h5py  # noqa: PLC0415
 
@@ -2913,9 +2918,9 @@ class _LoadedMonitorWallLoss:
             return self._group(fh)["freqs"][()]
 
     @property
-    def freqs(self) -> np.ndarray:
-        """Alias of :attr:`f` (the in-RAM monitor's attribute name)."""
-        return self.f
+    def frequencies(self) -> np.ndarray:
+        """Requested frequencies; same values as :attr:`f_axis`."""
+        return self.f_axis
 
     @property
     def dissipated_fraction(self) -> dict:
@@ -2935,7 +2940,7 @@ class _LoadedMonitorWallLoss:
         return {tag: frac * P_in for tag, frac in self.dissipated_fraction.items()}
 
     def __repr__(self) -> str:
-        return f"_LoadedMonitorWallLoss(name={self.name!r}, n_freqs={len(self.f)})"
+        return f"_LoadedMonitorWallLoss(name={self.name!r}, n_freqs={len(self.f_axis)})"
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -3064,12 +3069,12 @@ class _LoadedFarFieldMonitor:
 
             dump = _read_far_field_dump(self._run_dir, self.name)
             self._monitor = MonitorFarFieldFrequency.from_result_dump(dump)
-            if not self._monitor.is_renormalized and self._reference is not None:
+            if not self._monitor.is_normalized_to_excitation and self._reference is not None:
                 # The streamed run renormalises after its final flush, so
                 # the file carries raw bins; the run's reference waveform
                 # supplies the divisor on read (the _LoadedFreqMonitor
                 # pattern).
-                self._monitor.renormalize(self._reference())
+                self._monitor.normalize_to_excitation(self._reference())
             if self._monitor._incident_amplitude is None and self._incident is not None:
                 # DD-198: the launched incident wave per unit waveform,
                 # derived from the stored port signals like the S-matrix.
@@ -3079,20 +3084,25 @@ class _LoadedFarFieldMonitor:
         return self._monitor
 
     @property
-    def f(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequency axis [Hz]."""
-        return self._hydrate().f
+        return self._hydrate().f_axis
 
     @property
-    def freqs(self) -> np.ndarray:
-        """Alias of :attr:`f` (the in-RAM monitor's attribute name)."""
-        return self._hydrate().freqs
+    def frequencies(self) -> np.ndarray:
+        """Requested frequencies; same values as :attr:`f_axis`."""
+        return self._hydrate().frequencies
 
-    def renormalize(self, source_signal) -> None:
+    @property
+    def is_normalized_to_excitation(self) -> bool:
+        """Whether this view has an excitation reference."""
+        return self._reference is not None
+
+    def normalize_to_excitation(self, source_signal) -> None:
         """Set (or replace) the excitation the surface DFT is divided by."""
         self._reference = lambda: source_signal
         if self._monitor is not None:
-            self._monitor.renormalize(source_signal)
+            self._monitor.normalize_to_excitation(source_signal)
 
     def result(self, *args, **kwargs):
         return self._hydrate().result(*args, **kwargs)
@@ -4507,12 +4517,12 @@ class Project(ScatteringResultMixin):
         """The Excitation dicts stored with a run (DD-224)."""
         return list(self._load_run(name).get("excitations", []))
 
-    def result(self, name: str | tuple[str, int] | None = None):
+    def result(self, run: str | tuple[str, int] | None = None):
         """One run as a :class:`~magnelio.analysis.TDResult`.
 
         Rebuilds the in-RAM result object of the run from the store:
         the recorded port signals, the sampled excitations, the energy
-        trace and lazy readers for the run's monitors.  ``name`` is
+        trace and lazy readers for the run's monitors.  ``run`` is
         the run name (``run_1``, or the ``name=`` given to
         :meth:`~magnelio.AnalysisTD.run`); a scattering channel run may
         be named by its excited pair.  May be omitted when the project
@@ -4521,14 +4531,14 @@ class Project(ScatteringResultMixin):
         from magnelio.analysis._recipe import excitation_from_dict  # noqa: PLC0415
         from magnelio.analysis.time_domain import TDResult  # noqa: PLC0415
 
-        run_name = self._run_name_for_excited(name)
+        run_name = self._run_name_for_excited(run)
         d = self._load_run(run_name)
         info = self._run_info(run_name)
         settings = RunSettings(
             **{
                 **self.settings.__dict__,
                 "dt": float(d["dt"]),
-                "n_actual_steps": int(d["n_steps"]),
+                "n_steps": int(d["n_steps"]),
                 "energy_stop_db": info.get("energy_stop_db"),
                 "port_signal_stop_db": info.get("port_signal_stop_db"),
                 "stop_reason": info.get("stop_reason"),
@@ -4581,6 +4591,21 @@ class Project(ScatteringResultMixin):
         return out
 
     @property
+    def n_steps_by_run(self) -> dict:
+        """Solver steps per stored excitation or general run."""
+        return {
+            tuple(info["excited"]) if info.get("excited") is not None else name: int(
+                info.get("n_steps", 0) or 0
+            )
+            for name, info in self._started_runs().items()
+        }
+
+    @property
+    def max_run_steps(self) -> int:
+        """Longest stored run in solver steps (not a sum)."""
+        return max(self.n_steps_by_run.values(), default=0)
+
+    @property
     def reference_signal(self):
         """Excitation waveform of the longest run (see ``ScatteringTDResult``)."""
         runs = self._all_runs()
@@ -4589,14 +4614,14 @@ class Project(ScatteringResultMixin):
         longest = max(runs.values(), key=lambda d: d["n_steps"])
         return longest["reference"]
 
-    def energy_trace(self, excited: str | tuple[str, int] | None = None):
+    def energy_trace(self, run: str | tuple[str, int] | None = None):
         """Stored ``(step, time, energy)`` trace of a run [structured array].
 
         The same as ``project.runs[name].energy_trace``; this form takes
         a scattering run's excited pair and may omit the selector on a
         one-run project.
         """
-        return self._run_object(self._run_name_for_excited(excited)).energy_trace
+        return self._run_object(self._run_name_for_excited(run)).energy_trace
 
     def _energy_traces(self) -> dict:
         """The non-empty energy traces of every started run, by run name."""
@@ -4684,7 +4709,7 @@ class Project(ScatteringResultMixin):
         last expression of a cell is shown.  For the ready-made
         display that replaces itself at every change, see
         :meth:`follow`; for a panel that keeps moving while other
-        cells run, :meth:`monitor`.
+        cells run, :meth:`watch_panel`.
 
         With ``on_change`` the loop runs here: the callable is called
         with the project at every change, and the project is returned
@@ -4757,7 +4782,7 @@ class Project(ScatteringResultMixin):
         headless run) only the table is shown.
 
         For a panel that keeps moving while you work in other cells,
-        see :meth:`monitor`.
+        see :meth:`watch_panel`.
 
         Parameters
         ----------
@@ -4792,7 +4817,7 @@ class Project(ScatteringResultMixin):
             painter.paint(self, draw)
         return self
 
-    def monitor(self, interval: float = 2.0, *, x: str = "time"):
+    def watch_panel(self, interval: float = 2.0, *, x: str = "time"):
         """A live panel for a notebook: the run table above the energy plot.
 
         Returns an ``ipywidgets`` box that a background thread refreshes
@@ -4815,7 +4840,7 @@ class Project(ScatteringResultMixin):
             import ipywidgets  # noqa: PLC0415
         except ImportError as exc:
             raise ImportError(
-                "Project.monitor() needs ipywidgets; install the notebook extra: "
+                "Project.watch_panel() needs ipywidgets; install the notebook extra: "
                 "pip install 'magnelio[jupyter]'",
             ) from exc
         if not interval > 0.0:
@@ -4824,7 +4849,7 @@ class Project(ScatteringResultMixin):
 
     def monitors_for(
         self,
-        excited: str | tuple[str, int] | None = None,
+        run: str | tuple[str, int] | None = None,
     ) -> dict:
         """Lazy monitor readers for one run, keyed by monitor name.
 
@@ -4835,15 +4860,15 @@ class Project(ScatteringResultMixin):
         (MonitorFieldFrequency DFT) from ``fields_freq.h5`` and
         :class:`_LoadedMonitorWallLoss` (per-tag dissipated fractions) from
         ``wall_loss.h5``.  The user only knows the name, not the kind or
-        the file.  ``excited`` selects the run; it may be omitted
+        the file.  ``run`` selects the run; it may be omitted
         when the project holds one run.
         """
-        run_name = self._run_name_for_excited(excited)
+        run_name = self._run_name_for_excited(run)
         run_dir = self.path / "runs" / run_name
         # A scattering channel run renormalises its frequency monitors
         # with the channel's reference waveform; a general time-domain
         # run keeps them raw (several drives, no single reference —
-        # ``TDResult.renormalize`` is the user's call).
+        # ``TDResult.normalize_to_excitation`` is the user's call).
         scattering = self._run_info(run_name).get("excited") is not None
         out: dict = {
             name: _LoadedFieldMonitor(run_dir, name, grid=self.grid)
@@ -4936,7 +4961,7 @@ class Project(ScatteringResultMixin):
 
     def export_paraview(
         self,
-        excited: str | tuple[str, int] | None = None,
+        run: str | tuple[str, int] | None = None,
         *,
         glyph_percentile: float = 98.0,
         bake_state: bool = True,
@@ -4956,7 +4981,7 @@ class Project(ScatteringResultMixin):
 
         Parameters
         ----------
-        excited : str or tuple, optional
+        run : str or tuple, optional
             Selects the run: a port name, or a ``(name, mode)`` pair.
             May be omitted when the project holds one run.
         glyph_percentile : float, default 98.0
@@ -4986,7 +5011,7 @@ class Project(ScatteringResultMixin):
 
         return export_run_visualization(
             self.path,
-            self._run_name_for_excited(excited),
+            self._run_name_for_excited(run),
             glyph_percentile=glyph_percentile,
             bake_state=bake_state,
             pvpython=pvpython,
@@ -5058,7 +5083,7 @@ class Project(ScatteringResultMixin):
 
     def checkpoint_state(
         self,
-        excited: str | tuple[str, int] | None = None,
+        run: str | tuple[str, int] | None = None,
     ) -> "CheckpointState | None":
         """Load a run's resume checkpoint (``state_dict``), or ``None``.
 
@@ -5072,7 +5097,7 @@ class Project(ScatteringResultMixin):
         entry is the step the checkpoint corresponds to.
         """
         # Design: WP-S8 (resume from checkpoint).
-        name = self._run_name_for_excited(excited)
+        name = self._run_name_for_excited(run)
         ckpt = self.path / "runs" / name / "checkpoint.h5"
         if not ckpt.exists():
             return None
@@ -5208,7 +5233,7 @@ class Project(ScatteringResultMixin):
             dt = float(run["dt"])
             ref = run.get("reference")
             if ref is not None:
-                n_actual = int(len(ref.values))
+                n_actual = int(run["n_steps"]) if len(self._started_runs()) == 1 else None
         except Exception:  # noqa: BLE001 — no started run yet
             pass
         run_info = next(
@@ -5220,7 +5245,7 @@ class Project(ScatteringResultMixin):
             f_min=recipe.get("f_min"),
             n_freq=recipe.get("n_freq"),
             dt=dt,
-            n_actual_steps=n_actual,
+            n_steps=n_actual,
             energy_stop_db=run_info.get("energy_stop_db"),
             port_signal_stop_db=run_info.get("port_signal_stop_db"),
             taper_signals=run_info.get("taper_signals"),
@@ -5322,7 +5347,7 @@ class Project(ScatteringResultMixin):
         if f_ref is None:
             fa = d["f_axis"]
             f_ref = 0.5 * (float(fa[0]) + float(fa[-1]))
-        Z = complex(modes[mode].z_modal(2.0 * math.pi * float(f_ref)))
+        Z = complex(modes[mode].z_modal(f=(2.0 * math.pi * float(f_ref)) / (2.0 * math.pi)))
         if abs(Z.imag) > 1e-9 * abs(Z):
             raise ValueError(
                 f"z_modal({f_ref:.4g} Hz) = {Z:.4g} is not real; pass f_ref=",

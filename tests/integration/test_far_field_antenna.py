@@ -61,7 +61,7 @@ def _wire_mesh(z_nodes, t_nodes, wire_ks):
 
 def _run(mesh, grid, i0, j0, feed_start_z, feed_end_z, bc):
     x0, y0 = float(grid.x[i0]), float(grid.y[j0])
-    ff = MonitorFarFieldFrequency(freqs=[F0], margin_cells=2, name="pattern")
+    ff = MonitorFarFieldFrequency(frequencies=[F0], margin_cells=2, name="pattern")
     ana = AnalysisScatteringTD(
         mesh=mesh.with_boundary_conditions(bc),
         ports=[

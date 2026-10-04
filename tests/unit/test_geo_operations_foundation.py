@@ -207,12 +207,14 @@ def test_shell_openings_accept_refs_and_sets(selection):
 @pytest.mark.parametrize("scale", [1e-9, 1, 1e3])
 @pytest.mark.parametrize("operation", ["filleted", "chamfered", "shelled", "extruded"])
 def test_selected_operations_and_named_history_work_at_different_build_scales(scale, operation):
-    body = geo.Brick(size=(scale, scale, scale), material="pec").tag_face("side", normal="x")
+    body = geo.Brick(size=(scale, scale, scale), material="pec").tagged_face("side", normal="x")
     if operation == "shelled":
-        body = geo.Brick(size=(scale, scale, scale), material="pec").tag_faces("side", normal="x")
+        body = geo.Brick(size=(scale, scale, scale), material="pec").tagged_faces(
+            "side", normal="x"
+        )
         result = body.shelled(0.1 * scale, openings=body.face(normal="z"))
     elif operation == "extruded":
-        body = geo.Brick(size=(scale, scale, scale), material="pec").tag_face("cap", normal="z")
+        body = geo.Brick(size=(scale, scale, scale), material="pec").tagged_face("cap", normal="z")
         result = body.extruded((0, 0, scale), face_near=(scale / 2, scale / 2, scale))
     else:
         result = getattr(body, operation)(
@@ -232,7 +234,7 @@ def test_selected_operations_and_named_history_work_at_different_build_scales(sc
 
 
 def test_connected_edge_selection_replays_exact_origin_without_topology_indices():
-    body = geo.Brick(material="pec").tag_face("side", normal="x")
+    body = geo.Brick(material="pec").tagged_face("side", normal="x")
     cap = body.face(normal="z")
     result = body.filleted(edges=cap.edges, radius=0.1)
     recipe = json.loads(json.dumps(to_recipe(result)))
@@ -377,7 +379,7 @@ def test_tangent_loft_with_several_offset_holes_retains_correspondence():
 def test_reference_codec_refuses_changed_connected_snapshot():
     from copy import deepcopy
 
-    body = geo.Brick(material="pec").tag_face("side", normal="x")
+    body = geo.Brick(material="pec").tagged_face("side", normal="x")
     result = body.filleted(edges=body.face(normal="z").edges, radius=0.1)
     recipe = deepcopy(to_recipe(result))
     for node in recipe["nodes"]:
@@ -404,7 +406,7 @@ def test_tangent_volume_measurement_is_preserved_after_placement_and_tagging():
     result = a.lofted(b, blend="tangent")
     placed = result.rotated((1, 2, 3), 37).translated((3, -2, 4))
     assert placed.volume() == pytest.approx(9 * math.pi, rel=1e-7)
-    tagged = result.tag_face("cap", normal="z")
+    tagged = result.tagged_face("cap", normal="z")
     restored = from_recipe(json.loads(json.dumps(to_recipe(tagged))))
     assert restored.volume() == pytest.approx(result.volume(), rel=1e-9)
     assert "DetachedProfile" in repr(a.detached())

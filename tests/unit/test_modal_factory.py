@@ -275,15 +275,15 @@ def test_rectwg_factory_xmin_xmax_share_te10_cutoff(wr90_mesh):
     spec_min = PortSpecRectWG(
         name="port1",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=3,
     )
     spec_max = PortSpecRectWG(
         name="port2",
         plane=BoxFace.X_MAX,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=3,
     )
     op_min = build_modal_port(spec_min, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
@@ -321,8 +321,8 @@ def test_rectwg_factory_xmax_uv_convention_via_port_report(wr90_mesh):
     spec_max = PortSpecRectWG(
         name="p",
         plane=BoxFace.X_MAX,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=1,
     )
     op = build_modal_port(spec_max, mesh, m_eps, m_mu, dt=dt, f_calc=10e9)
@@ -338,8 +338,8 @@ def test_rectwg_factory_excitation_modulated_gaussian(wr90_mesh):
     spec = PortSpecRectWG(
         name="port1",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
     )
     op = build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
     op.set_excitation(0, WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9))
@@ -370,8 +370,8 @@ def test_build_modal_port_rejects_bad_dt_and_fcalc(wr90_mesh):
     spec = PortSpecRectWG(
         name="p",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
     )
     with pytest.raises(ValueError, match="dt must be positive"):
         build_modal_port(spec, mesh, m_eps, m_mu, dt=0.0, f_calc=10e9)
@@ -402,8 +402,8 @@ def test_three_eq_cells_uniform_grid_accepted():
         spec = PortSpecRectWG(
             name="p",
             plane=face,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
         )
         build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=10e9)
 
@@ -417,8 +417,8 @@ def test_three_eq_cells_violation_at_xmin_raises():
     spec = PortSpecRectWG(
         name="p",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
     )
     with pytest.raises(
         ValueError,
@@ -437,8 +437,8 @@ def test_three_eq_cells_violation_at_xmax_raises():
     spec = PortSpecRectWG(
         name="p",
         plane=BoxFace.X_MAX,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
     )
     with pytest.raises(
         ValueError,
@@ -467,8 +467,8 @@ def test_three_eq_cells_with_buffer_at_xmin_accepted():
         spec = PortSpecRectWG(
             name="p",
             plane=face,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
         )
         build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=10e9)
 
@@ -481,8 +481,8 @@ def test_three_eq_cells_too_few_cells_raises():
     spec = PortSpecRectWG(
         name="p",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
     )
     with pytest.raises(
         ValueError,

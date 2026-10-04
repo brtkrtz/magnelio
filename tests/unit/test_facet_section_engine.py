@@ -234,7 +234,7 @@ class TestMeshGate:
         np.testing.assert_array_equal(facet.grid.x, kernel.grid.x)
         np.testing.assert_array_equal(facet.grid.y, kernel.grid.y)
         np.testing.assert_array_equal(facet.grid.z, kernel.grid.z)
-        # Both classifications are chord-accurate; a cell centre within
+        # Both classifications are chord-accurate; a cell center within
         # that band of the surface may land on either side.
         cells = facet.material_id != kernel.material_id
         assert cells.sum() <= 2e-3 * cells.size

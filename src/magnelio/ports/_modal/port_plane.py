@@ -227,7 +227,7 @@ class PortPlane:
             else (y_n[plane_idx_E_port] if n_axis == 1 else z_n[plane_idx_E_port])
         )
 
-        # Cell-centre / node arrays per axis, used for midpoint coords.
+        # Cell-center / node arrays per axis, used for midpoint coords.
         nodes = (x_n, y_n, z_n)
         centres = (x_c, y_c, z_c)
         deltas = (dx, dy, dz)
@@ -437,7 +437,7 @@ def _build_uv_edges(
         indexing="ij",
     )
 
-    # Primal axis: midpoint along axis = cell-centre in primal_axis dim.
+    # Primal axis: midpoint along axis = cell-center in primal_axis dim.
     # Secondary axis: edge endpoint = node in secondary_axis dim.
     p_mid = centres[primal_axis][p_idx]
     s_mid = nodes[secondary_axis][s_idx]
@@ -461,7 +461,7 @@ def _build_uv_edges(
     )
 
     # H-dual at the co-located (u, v) midpoint.  H-shape's primal-axis
-    # dimension is N_cells (centre-staggered), secondary-axis dim is
+    # dimension is N_cells (center-staggered), secondary-axis dim is
     # N_nodes.  Same primal-axis cell-index, same secondary-axis node-index.
     i_jk_H = _make_ijk(
         normal_axis,
@@ -477,7 +477,7 @@ def _build_uv_edges(
         .astype(np.int64)
     )
 
-    # Stack midpoints into (u, v) — primal_axis's centre along its own
+    # Stack midpoints into (u, v) — primal_axis's center along its own
     # axis is the *u* component if primal_axis is the u-axis-of-face;
     # else it's the *v* component.  We don't know which here, so we
     # return midpoints in the order (axis_along_primal, axis_along_sec).

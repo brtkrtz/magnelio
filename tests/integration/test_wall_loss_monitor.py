@@ -46,7 +46,7 @@ def test_parallel_plate_conductor_loss():
         z=np.linspace(0, length, 61),
     )
     mon = MonitorWallLoss(
-        freqs=freqs,
+        frequencies=freqs,
         normal="z",
         position=2e-3,
         sigma=SIGMA_CU,
@@ -98,7 +98,7 @@ def test_te10_waveguide_conductor_loss():
         z=np.linspace(0, length, 41),
     )
     mon = MonitorWallLoss(
-        freqs=freqs,
+        frequencies=freqs,
         normal="z",
         position=2e-3,
         sigma=SIGMA_CU,
@@ -135,11 +135,11 @@ def test_missing_sigma_raises_at_attach():
     grid = GridLines(
         x=np.linspace(0, 1e-2, 6), y=np.linspace(0, 5e-3, 4), z=np.linspace(0, 2e-2, 11)
     )
-    mon = MonitorWallLoss(freqs=[1e9], normal="z", position=5e-3, bc_faces=("ymin",))
+    mon = MonitorWallLoss(frequencies=[1e9], normal="z", position=5e-3, bc_faces=("ymin",))
     with pytest.raises(ValueError, match="no conductivity"):
         mon.attach(Mesh.from_grid(grid))
 
 
 def test_bad_reference_axis_raises():
     with pytest.raises(ValueError, match="normal must be"):
-        MonitorWallLoss(freqs=[1e9], normal="w", position=0.0)
+        MonitorWallLoss(frequencies=[1e9], normal="w", position=0.0)

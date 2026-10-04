@@ -85,12 +85,12 @@ class TestMonitorWarning:
         dt = (2.0 * np.pi / omega) / 64.0
         n_steps = 640
         mesh = _mesh(pml_cells=2, **bc)
-        mon = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1, name="box")
+        mon = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=1, name="box")
         mon.attach(mesh)
         for n in range(n_steps):
             mon.record(_cw_state(mesh.grid, 0.0, 0.0, n * dt, dt, omega), n, n * dt, dt)
         waveform = np.cos(omega * np.arange(n_steps) * dt)
-        mon.renormalize(Signal1D(t=np.arange(n_steps) * dt, values=waveform, dt=dt))
+        mon.normalize_to_excitation(Signal1D(t=np.arange(n_steps) * dt, values=waveform, dt=dt))
         spectrum = mon._source_spectrum[0]
         mon._acc["zmax"]["Ex"].result[0][...] = amplitude * spectrum
         mon._acc["zmax"]["Hy"].result[0][...] = amplitude * spectrum / ETA0

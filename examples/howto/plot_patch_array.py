@@ -26,7 +26,7 @@ New compared with the antenna tutorials and the coupler pages:
 - **in-phase feeding of a second row without a meander**: the two rows
   face each other across the distribution line, which would feed them
   in anti-phase; sliding that line a quarter of a guided wavelength
-  off the array centre makes one arm half a wavelength longer than
+  off the array center makes one arm half a wavelength longer than
   the other and restores the phase — every arm stays straight;
 - a **microstrip port in an absorbing wall**: the array's 50 Ω trunk
   enters the model through a short shielded launch on the CPML face,
@@ -196,7 +196,7 @@ def rect(x0, y0, x1, y1):
 
 
 def trace(x0, y0, x1, y1, width):
-    """A trace of ``width`` along the centre line (x0, y0) -> (x1, y1), square ends."""
+    """A trace of ``width`` along the center line (x0, y0) -> (x1, y1), square ends."""
     x0, x1 = sorted((x0, x1))
     y0, y1 = sorted((y0, y1))
     return rect(x0 - width / 2, y0 - width / 2, x1 + width / 2, y1 + width / 2)
@@ -298,12 +298,12 @@ def board(copper_pieces, feed, shield_pieces=(), y_wall=None):
 # the two 100 Ω arms that feed the column's patches — the lower one
 # from its top edge, the upper one from its bottom edge.  Fed like
 # that, the rows radiate in anti-phase; the crossbar therefore sits
-# :math:`\lambda_g/4` *below* the array centre, so the arm to the upper
+# :math:`\lambda_g/4` *below* the array center, so the arm to the upper
 # row is :math:`\lambda_g/2` longer than the arm to the lower row and
 # the half-wave of line undoes the half-turn of the mirror.
 
 l_line = 5e-3  # element: feed line from the pin to the patch
-delta = lam_g_arm / 4  # crossbar offset below the array centre
+delta = lam_g_arm / 4  # crossbar offset below the array center
 
 
 def element(L, y_inset):
@@ -352,7 +352,7 @@ f_axis = np.linspace(f_min, f_max, 401)
 
 def simulate(model):
     mesh = mio.Mesh.from_geometry(model, mesh_control, f_max=f_max)
-    farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
+    farfield = monitors.MonitorFarFieldFrequency(frequencies=[f0], name="farfield")
     analysis = mio.AnalysisScatteringTD(mesh=mesh, f_min=f_min, monitors=(farfield,), verbose=False)
     result = analysis.run(f_axis=f_axis, excited=["feed"])
     s11 = result.S("feed", "feed")

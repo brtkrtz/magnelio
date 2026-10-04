@@ -21,7 +21,7 @@ class TestSolidWalls:
         pec = Material.lossy_metal("cu", sigma=5.8e7)
         mesh = Mesh.from_grid(
             _grid(),
-            regions=[(pec, (2 * D, 2 * D, 1 * D, 6 * D, 5 * D, 3 * D))],
+            regions=[(pec, ((2 * D, 2 * D, 1 * D), (6 * D, 5 * D, 3 * D)))],
         )
         surfs = enumerate_pec_surfaces(mesh)
         assert len(surfs) == 1
@@ -34,7 +34,7 @@ class TestSolidWalls:
         pec = Material.lossy_metal("cu", sigma=5.8e7)
         mesh = Mesh.from_grid(
             _grid(),
-            regions=[(pec, (2 * D, 2 * D, 1 * D, 6 * D, 5 * D, 3 * D))],
+            regions=[(pec, ((2 * D, 2 * D, 1 * D), (6 * D, 5 * D, 3 * D)))],
         )
         surf = enumerate_pec_surfaces(mesh)[0]
         assert surf.weight.sum() == pytest.approx(2 * surf.area)
@@ -45,7 +45,7 @@ class TestSolidWalls:
         pec = Material.pec()
         mesh = Mesh.from_grid(
             _grid(),
-            regions=[(pec, (2 * D, 2 * D, 0.0, 6 * D, 5 * D, 2 * D))],
+            regions=[(pec, ((2 * D, 2 * D, 0.0), (6 * D, 5 * D, 2 * D)))],
         )
         surf = enumerate_pec_surfaces(mesh)[0]
         bx, by, bz = 4 * D, 3 * D, 2 * D
@@ -59,8 +59,8 @@ class TestSolidWalls:
         mesh = Mesh.from_grid(
             _grid(),
             regions=[
-                (m1, (1 * D, 1 * D, 1 * D, 3 * D, 3 * D, 3 * D)),
-                (m2, (5 * D, 1 * D, 1 * D, 7 * D, 3 * D, 3 * D)),
+                (m1, ((1 * D, 1 * D, 1 * D), (3 * D, 3 * D, 3 * D))),
+                (m2, ((5 * D, 1 * D, 1 * D), (7 * D, 3 * D, 3 * D))),
             ],
         )
         surfs = enumerate_pec_surfaces(mesh)
@@ -77,8 +77,8 @@ class TestSolidWalls:
         mesh = Mesh.from_grid(
             _grid(),
             regions=[
-                (m, (1 * D, 1 * D, 1 * D, 3 * D, 3 * D, 3 * D)),
-                (m, (3 * D, 1 * D, 1 * D, 5 * D, 3 * D, 3 * D)),
+                (m, ((1 * D, 1 * D, 1 * D), (3 * D, 3 * D, 3 * D))),
+                (m, ((3 * D, 1 * D, 1 * D), (5 * D, 3 * D, 3 * D))),
             ],
         )
         surf = enumerate_pec_surfaces(mesh)[0]
@@ -101,7 +101,7 @@ class TestBoundaryWalls:
         pec = Material.pec()
         mesh = Mesh.from_grid(
             _grid(),
-            regions=[(pec, (2 * D, 2 * D, 0.0, 6 * D, 5 * D, 2 * D))],
+            regions=[(pec, ((2 * D, 2 * D, 0.0), (6 * D, 5 * D, 2 * D)))],
         )
         surfs = enumerate_pec_surfaces(mesh, bc_pec_faces=("zmin",))
         areas = {s.tag: s.area for s in surfs}

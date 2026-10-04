@@ -195,7 +195,7 @@ no criterion — because the first samples of a run are the empty grid,
 which in dB is a plunge to −3000 that would squash the decay into a
 line along the top; `floor_db=` pins the lower end by hand.
 
-`monitor()` returns a notebook widget — the run table above the
+`watch_panel()` returns a notebook widget — the run table above the
 energy plot — that a background thread refreshes every few seconds
 until the project is finished.  Left as the last expression of a
 cell, the cell returns at once and the panel keeps moving while other
@@ -247,3 +247,23 @@ prompt with what it is, how large it is and what state it is in — never
 with its arrays.  In a notebook the same summaries render as tables.
 The arrays are one attribute away (`result.energy_trace`,
 `s_params.matrix`); the summary is the part meant to be read.
+
+## Selecting a run and reading its count
+
+`name` names a new `AnalysisTD.run(name=...)`. Once stored, select it with
+`project.result(run=...)`, `monitors_for(run=...)`, `energy_trace(run=...)`,
+`checkpoint_state(run=...)` or `resume(project, run=...)`. An exact stored
+name wins over a scattering `(port, mode)` interpretation. A sole run can be
+implicit; multiple runs require a selector. `excited` on scattering launch
+and power-wave access continues to mean an actual excitation.
+
+A single `TDResult` and `Run` expose `n_steps`. Scattering aggregates expose
+`n_steps_by_run` and `max_run_steps`, the maximum count rather than a sum.
+`project.result(run=...).settings.n_steps` identifies one run;
+`project.settings.n_steps` is absent for a combined result. Extrapolating
+signals does not add solver steps to their provenance.
+
+For observation, `watch_panel()` immediately returns a notebook widget with
+`stop()`. `watch()` supplies a generator or callback, while `follow()` blocks
+and displays progress. See the [naming migration](../migration-api-naming.md)
+when upgrading existing scripts.

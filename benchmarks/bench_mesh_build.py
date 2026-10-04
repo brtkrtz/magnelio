@@ -317,7 +317,7 @@ def build_array(n: int, p: dict = ARRAY) -> mio.GeometryModel:
     def tree(cx, cy, span, along_x, depth):
         """Feed point (cx, cy) splitting into two sub-trees ``span`` apart."""
         if depth == 0:
-            # The patch, fed at the centre of its lower edge by a 100 Ω stub.
+            # The patch, fed at the center of its lower edge by a 100 Ω stub.
             strips.append(
                 geo.Brick(
                     origin=(cx - patch_w / 2, cy, h),

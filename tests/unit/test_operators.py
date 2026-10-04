@@ -96,7 +96,7 @@ class TestMSigmaM:
         inc = Material(name="inc", mu=(5.0, 6.0, 7.0), sigma_m=(5.0, 6.0, 7.0))
         mesh = Mesh.from_grid(
             grid,
-            regions=[(inc, (1e-3, 0.8e-3, 0.0, 2.5e-3, 3.0e-3, 2.2e-3))],
+            regions=[(inc, ((1e-3, 0.8e-3, 0.0), (2.5e-3, 3.0e-3, 2.2e-3)))],
             background=bg,
         )
         M_mu = build_M_mu(mesh)

@@ -9,7 +9,36 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- Public API names now distinguish physical frequency in Hz, excitation
+  normalization, rectangular corner origins, field frames and eigenmodes,
+  renderer options, stored-run selection and per-run counts. Immutable
+  geometry operations use `tagged_*` and `imprinted`. The
+  `migration-api-naming` guide lists every breaking mapping; existing
+  supported projects retain their coordinates, units and checkpoint meaning.
+- Sampled spectral axes use `f_axis`, requested recording samples use
+  `frequencies`, degree-valued phase inputs use `phase_deg`, and cell-centered
+  field access uses US spelling. Memory estimates use `estimate_memory`
+  and `n_runs`; material grid regions accept two 3D corners.
+
+### Removed
+
+- Geometry's deprecated `plot` aliases and the surface-current
+  `current_through` integral. Use `show` for interactive geometry and read
+  the local surface-current vector or magnitude for current distributions.
+
+
 ### Added
+
+- Time-domain analyses provide `estimate_memory()` allocation budgets before
+  operator construction, including phase peaks, CPU/GPU scenarios and
+  time/frequency field-monitor storage. Unknown recording horizons and
+  unmodelled auxiliary allocations are reported explicitly. The memory
+  planning guide and project-storage tutorial show the workflow.
+
+- The final meshing progress line includes the total cell count and the
+  completed mesh's array storage in GiB/MiB/KiB, counting shared buffers once.
 
 - Named rectangular CAD faces can define waveguide-port windows and
   frequency-field recording planes through `from_face` factories, with
@@ -64,6 +93,10 @@ major version is 0, minor releases may change the public API.
   intrinsic holes.
 
 ### Changed
+
+- The `show()` help and 3D viewer guide now explain common viewer options,
+  camera presets and custom views, including coordinate units and automatic
+  scene fitting, with concrete examples.
 
 - The geometry tutorials are now one illustrated "Geometry toolbox" page,
   with short recipes for profiles, owned faces, CAD exchange, mechanical

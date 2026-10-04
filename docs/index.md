@@ -68,6 +68,7 @@ methods/index
 :maxdepth: 1
 :caption: Upgrading
 
+migration-api-naming
 migration-geometry
 migration-0.8
 migration-0.7

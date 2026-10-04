@@ -616,8 +616,8 @@ The public API is organised SciPy-style along one axis — the domain
 
 | Tier | Import path | Contents |
 |------|-------------|----------|
-| **Core** | `magnelio` (10 names) | The model container and run vocabulary (`GeometryModel`, `Material`, `Mesh`/`MeshControl`, `BoundaryConditions`), the problem classes (`AnalysisScatteringTD`, `AnalysisEigenmode`), the store entry points (`open_project`, `resume`), and `__version__`. |
-| **Domain namespaces** | `magnelio.<domain>` | One namespace per subject area: `geo` (primitives, CSG, `Curve`, `ThinWire`), `materials` (dispersion, roughness, impedance fits), `mesh` (`GridLines`, `BoxFace`), `boundaries` (BC classes), `ports` (declarative `Port*` trio, `PortSpec*` family, conductor specs, `Mode`/`ModeType`, reports), `sources`, `monitors` (the four `Monitor*` classes), `circuit` (`SeriesRLC`/`ParallelRLC`, `EdgePath`, curve rasteriser), `signals`, `solver`, `analysis` (result types), `post` (S-parameter pipeline), `plots`, `io`, `constants`.  Reserved (DD-224, not yet shipped): `fields` (public field container), `particles` (species, emission models), `optimize` (sweeps/optimisers). |
+| **Core** | `magnelio` (14 names) | The model container and run vocabulary (`GeometryModel`, `Material`, `Mesh`/`MeshControl`, `BoundaryConditions`, `Excitation`), the problem classes (`AnalysisTD`, `AnalysisScatteringTD`, `AnalysisEigenmode`), the store entry points (`open_project`, `resume`), verbosity controls (`set_verbosity`, `get_verbosity`), and `__version__`. |
+| **Domain namespaces** | `magnelio.<domain>` | One namespace per subject area: `geo` (dimensional geometry, owned topology, primitives, CSG and transforms), `materials` (dispersion, roughness, impedance fits), `mesh` (`GridLines`, `BoxFace`), `boundaries` (BC classes), `ports` (declarative `Port*` and `PortSpec*` families, conductor specs, `Mode`/`ModeType`, reports), `sources`, `monitors` (`Monitor*` families), `circuit` (`SeriesRLC`/`ParallelRLC`, `EdgePath`, curve rasteriser), `signals`, `fields` (public field containers and recordings), `solver`, `analysis` (analyses' result contracts and memory estimates), `post` (post-processing), `plots`, `io`, `constants`. Reserved (DD-224, not yet shipped): `particles` (species, emission models), `optimize` (sweeps/optimisers). |
 | Internals | underscore modules; names outside `__all__` | No stability guarantee (`magnelio._operators`, `magnelio.ports._modal`, …; plumbing such as port builders/operators, the V/I recorder and `MonitorRegion` is importable but not part of the documented surface). |
 
 Placement rule: the core holds the model container, run vocabulary and
@@ -625,6 +625,12 @@ problem classes; every other public name lives in exactly one domain
 namespace; plumbing is not exported.  Every public name has exactly
 one documented home (`validation/tools/check_api_surface.py` enforces
 this, including the pinned core surface).
+
+DD-279 records the implemented naming revision: explicit physical units,
+coordinates, normalization, selectors, operation scope and public type homes.
+The version-neutral `docs/migration-api-naming.md` lists every breaking
+mapping;
+stored physical meaning is preserved through explicit recipe/reader mapping.
 
 ### 8.1 High-level example — `AnalysisScatteringTD`
 
@@ -676,7 +682,7 @@ from magnelio.mesh import BoxFace
 from magnelio.ports import PortSpecRectWG
 
 spec = PortSpecRectWG(name="p1", plane=BoxFace.Z_MIN,
-                      width_a=22.86e-3, height_b=10.16e-3, n_modes=1)
+                      width=22.86e-3, height=10.16e-3, n_modes=1)
 analysis = AnalysisScatteringTD(mesh=mesh, f_max=f_max, ports=[spec])
 ```
 
@@ -866,7 +872,7 @@ unrelated new cut faces remain unnamed. Named result replay identifies the
 chosen region by exact BREP matching of reconstructed partition results,
 without numeric kernel indices. Gate: `tests/unit/test_geo_partition_foundation.py`.
 
-WP6.5 adds `Solid.imprint(cutter)` and
+WP6.5 adds `Solid.imprinted(cutter)` and
 `geo.insert(*bodies, priorities=..., voids=...)`. Imprint is directed: only
 the receiver's boundary faces split at intersection curves with a Solid or
 Sheet; its volume and material remain unchanged, and the cutter remains
@@ -1043,8 +1049,8 @@ Selectors have named and semantic forms: `solid.face("port")` retrieves a
 name, while `solid.face(near=..., normal=..., surface_type=...)` selects once.
 Edges and vertices use `edge` / `vertex`; `faces(...)` and `edges(...)` are
 the explicit plurals returning `FaceSetRef` and `EdgeSetRef`.  Persistent
-registration is immutable through `tag_face`, `tag_faces`, `tag_edge`,
-`tag_edges`, and `tag_vertex`.  Public numeric OCC indices are forbidden.
+registration is immutable through `tagged_face`, `tagged_faces`, `tagged_edge`,
+`tagged_edges`, and `tagged_vertex`.  Public numeric OCC indices are forbidden.
 
 Semantic constraints filter first; nearest distance is then measured to the
 complete subshape.  Zero candidates raises `TopologySelectionError`.  A tie
@@ -1234,7 +1240,7 @@ suffix-free name is the contract protocol (`ScatteringResult`).
 | Class | Status | Base | Result |
 |-------|--------|------|--------|
 | `AnalysisScatteringTD` | shipped | `AnalysisTD` | `ScatteringTDResult` |
-| `AnalysisEigenmode` | shipped | (`_AnalysisBase` pending) | `EigenmodeResult` |
+| `AnalysisEigenmode` | shipped | `_AnalysisBase` | `EigenmodeResult` |
 | `AnalysisTD` | shipped (Phase B) | `_AnalysisBase` | `TDResult` |
 | `AnalysisWakefieldTD` | reserved | `AnalysisTD` | `WakefieldTDResult` |
 | `AnalysisPIC` | reserved | `AnalysisTD` | `PICResult` |
@@ -1249,7 +1255,7 @@ as `Mesh.sources`, stored in `mesh.h5` by class-name tag),
 `Waveform<Kind>` objects in `magnelio.signals` are pure time functions
 with a bandwidth (ABC `Waveform`; the recipe serialises them by
 class-name tag), and the core `Excitation(source, mode=, waveform=,
-amplitude=, delay=, phase=)` binds one to the other in
+amplitude=, delay=, phase_deg=)` binds one to the other in
 `run(excitations=[…])` — simultaneous in one run (`AnalysisTD`,
 shipped in Phase B: `run(t_end=, name=)`, continuous-wave rules,
 delay-aware run-length estimate, one excitation buffer per port mode,

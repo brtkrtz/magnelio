@@ -209,12 +209,12 @@ def test_reflection_reverses_twist_handedness_and_preserves_draft():
 
 
 def test_face_ref_sheet_and_named_recipe_keep_ownership_material_and_laws():
-    owner = geo.Cylinder(axis="z", radius=2, inner_radius=0.5, height=1, material="pec").tag_face(
-        "end", normal="z"
-    )
+    owner = geo.Cylinder(
+        axis="z", radius=2, inner_radius=0.5, height=1, material="pec"
+    ).tagged_face("end", normal="z")
     face = owner.face("end")
     spine = geo.Curve.line(face.centroid, (0, 0, 5))
-    result = face.swept(spine, twist_deg=90, draft_deg=1).tag_face("outlet", normal="z")
+    result = face.swept(spine, twist_deg=90, draft_deg=1).tagged_face("outlet", normal="z")
     restored = from_recipe(json.loads(json.dumps(to_recipe(result))))
     assert restored.volume() == pytest.approx(result.volume(), rel=1e-8)
     assert restored.face("outlet").area == pytest.approx(result.face("outlet").area)

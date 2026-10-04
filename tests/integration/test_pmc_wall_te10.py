@@ -1,7 +1,7 @@
 """WP-U0 stage 1 regression: TD PMC wall consistency (natural BC).
 
 Before WP-U0 the TD ``PMCBoundary`` zeroed tangential H on the
-cell-centre layer (wall dx/2 *inside*) while both mode solvers use the
+cell-center layer (wall dx/2 *inside*) while both mode solvers use the
 natural boundary (wall dx/2 *outside*) — one full cell apart.  On this
 fixture that produced a non-passive S-matrix (|S21| up to +14.6 dB
 between the two cut-offs) and in-band |S11| never better than −17 dB.

@@ -9,7 +9,7 @@ symmetry plane — are omitted from the surface and booked as image
 planes for the transform.
 
 Sampling: each face lies on a grid-node plane; the tangential fields
-are taken from the sanctioned cell-centre interpolation of the two
+are taken from the sanctioned cell-center interpolation of the two
 adjacent cell layers and linearly combined onto the node plane.  That
 keeps the surface exactly closed (faces meet at box edges without
 gaps or overhangs) and second-order accurate on graded grids.
@@ -78,7 +78,7 @@ class MonitorFarFieldFrequency:
 
     Parameters
     ----------
-    freqs : array_like
+    frequencies : array_like
         Frequencies [Hz] to record.
     name : str
         Monitor name (store key).
@@ -90,10 +90,10 @@ class MonitorFarFieldFrequency:
     Examples
     --------
     >>> from magnelio import monitors
-    >>> ff = monitors.MonitorFarFieldFrequency(freqs=[2.45e9], name="pattern")
+    >>> ff = monitors.MonitorFarFieldFrequency(frequencies=[2.45e9], name="pattern")
     """
 
-    freqs: np.ndarray
+    frequencies: np.ndarray
     name: str = "far_field"
     margin_cells: int = 3
 
@@ -114,9 +114,9 @@ class MonitorFarFieldFrequency:
     _accepted_power: Optional[np.ndarray] = field(default=None, repr=False, init=False)
 
     def __post_init__(self) -> None:
-        self.freqs = np.atleast_1d(np.asarray(self.freqs, dtype=float))
-        if self.freqs.size == 0:
-            raise ValueError("freqs must contain at least one frequency")
+        self.frequencies = np.atleast_1d(np.asarray(self.frequencies, dtype=float))
+        if self.frequencies.size == 0:
+            raise ValueError("frequencies must contain at least one frequency")
         if self.margin_cells < 1:
             raise ValueError(
                 "margin_cells must be at least 1: the node-plane sampling "
@@ -162,7 +162,7 @@ class MonitorFarFieldFrequency:
         for bf in self._faces:
             shape = (bf.c1.size, bf.c2.size)
             self._acc[bf.name] = {
-                comp: DFTAccumulator(self.freqs, shape) for comp in _TANGENTIALS[bf.axis]
+                comp: DFTAccumulator(self.frequencies, shape) for comp in _TANGENTIALS[bf.axis]
             }
 
     def _exclude_metal_and_feeds(self, mesh, lo_n) -> None:
@@ -204,7 +204,7 @@ class MonitorFarFieldFrequency:
     # Normalisation (wired by the analysis after each run)
     # ------------------------------------------------------------------
 
-    def renormalize(self, source_signal) -> None:
+    def normalize_to_excitation(self, source_signal) -> None:
         """Normalize the surface DFT to 1 W incident CW power.
 
         Called for you at the end of a scattering run; call directly
@@ -215,11 +215,11 @@ class MonitorFarFieldFrequency:
         self._source_spectrum = source_spectrum(
             source_signal.values,
             source_signal.dt,
-            self.freqs,
+            self.frequencies,
         )
 
     @property
-    def is_renormalized(self) -> bool:
+    def is_normalized_to_excitation(self) -> bool:
         """Whether the 1 W renormalization has been applied."""
         return self._source_spectrum is not None
 
@@ -228,7 +228,7 @@ class MonitorFarFieldFrequency:
         # channel, so the per-1-W normalisation refers to the incident
         # power actually launched at each frequency (TE/TM ports).
         self._incident_amplitude = np.interp(
-            self.freqs, np.asarray(f_axis, dtype=float), np.asarray(ratio, dtype=float)
+            self.frequencies, np.asarray(f_axis, dtype=float), np.asarray(ratio, dtype=float)
         )
 
     def _set_accepted_power(self, f_axis, accepted) -> None:
@@ -236,7 +236,7 @@ class MonitorFarFieldFrequency:
         # run's accepted-power curve, interpolated onto the monitor
         # frequencies, feeds FarFieldResult.gain.
         self._accepted_power = np.interp(
-            self.freqs, np.asarray(f_axis, dtype=float), np.asarray(accepted, dtype=float)
+            self.frequencies, np.asarray(f_axis, dtype=float), np.asarray(accepted, dtype=float)
         )
 
     # ------------------------------------------------------------------
@@ -244,25 +244,29 @@ class MonitorFarFieldFrequency:
     # ------------------------------------------------------------------
 
     @property
-    def f(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequency axis [Hz]."""
-        return self.freqs
+        return self.frequencies
 
-    def _freq_index(self, f: Optional[float], f_index: Optional[int]) -> int:
-        if f_index is not None:
-            return int(f_index)
+    def _freq_index(self, f: Optional[float], frame: Optional[int]) -> int:
+        if frame is not None and f is not None:
+            raise ValueError("give f or frame, not both")
+        if frame is not None:
+            if not -len(self.frequencies) <= int(frame) < len(self.frequencies):
+                raise IndexError("frame out of range")
+            return int(frame)
         if f is None:
-            if self.freqs.size == 1:
+            if self.frequencies.size == 1:
                 return 0
             raise ValueError(
-                f"this monitor recorded {self.freqs.size} frequencies; "
-                f"pass f= or f_index= to pick one."
+                f"this monitor recorded {self.frequencies.size} frequencies; "
+                f"pass f= or frame= to pick one."
             )
-        idx = int(np.argmin(np.abs(self.freqs - f)))
-        if abs(self.freqs[idx] - f) > 1e-6 * max(abs(f), 1.0):
+        idx = int(np.argmin(np.abs(self.frequencies - f)))
+        if abs(self.frequencies[idx] - f) > 1e-6 * max(abs(f), 1.0):
             raise ValueError(
                 f"frequency {f:.6g} Hz was not recorded; available: "
-                f"{np.array2string(self.freqs, precision=6)}"
+                f"{np.array2string(self.frequencies, precision=6)}"
             )
         return idx
 
@@ -271,7 +275,7 @@ class MonitorFarFieldFrequency:
             raise ValueError(
                 "far-field data is only meaningful per watt of incident "
                 "power; run the monitor through a scattering analysis, or "
-                "call renormalize(reference_signal) for a hand-driven run."
+                "call normalize_to_excitation(reference_signal) for a hand-driven run."
             )
         spectrum = self._source_spectrum[idx : idx + 1]
         incident = 1.0 if self._incident_amplitude is None else float(self._incident_amplitude[idx])
@@ -308,7 +312,7 @@ class MonitorFarFieldFrequency:
         self,
         f: Optional[float] = None,
         *,
-        f_index: Optional[int] = None,
+        frame: Optional[int] = None,
         theta: Optional[np.ndarray] = None,
         phi: Optional[np.ndarray] = None,
     ) -> FarFieldResult:
@@ -317,10 +321,10 @@ class MonitorFarFieldFrequency:
         Parameters
         ----------
         f : float, optional
-            Frequency [Hz]; must be one of :attr:`freqs` (omit for a
+            Frequency [Hz]; must be one of :attr:`frequencies` (omit for a
             single-frequency monitor).
-        f_index : int, optional
-            Index into :attr:`freqs`, alternative to *f*.
+        frame : int, optional
+            Index into :attr:`frequencies`, alternative to *f*.
         theta, phi : array_like, optional
             Spherical evaluation grids [rad]; defaults to 2° over the
             full sphere.
@@ -329,7 +333,7 @@ class MonitorFarFieldFrequency:
         -------
         FarFieldResult
         """
-        idx = self._freq_index(f, f_index)
+        idx = self._freq_index(f, frame)
         accepted = None
         if self._accepted_power is not None:
             accepted = float(self._accepted_power[idx])
@@ -344,7 +348,7 @@ class MonitorFarFieldFrequency:
         result = ntff_transform(
             sets,
             self._image_planes,
-            float(self.freqs[idx]),
+            float(self.frequencies[idx]),
             theta=theta,
             phi=phi,
             accepted_power=accepted,
@@ -361,7 +365,7 @@ class MonitorFarFieldFrequency:
         scale = max(abs(result.P_rad), abs(p_surface))
         if scale > 0.0 and abs(result.P_rad - p_surface) > _CLOSURE_TOLERANCE * scale:
             balance = result.P_rad / p_surface if p_surface > 0.0 else float("inf")
-            f_ghz = float(self.freqs[idx]) / 1e9
+            f_ghz = float(self.frequencies[idx]) / 1e9
             warnings.warn(
                 f"far-field monitor {self.name!r} at {f_ghz:.4g} GHz: the "
                 f"pattern radiates {balance:.3f} of the power leaving the "
@@ -376,22 +380,22 @@ class MonitorFarFieldFrequency:
             )
         return result
 
-    def plot_cut(self, f: Optional[float] = None, *, f_index: Optional[int] = None, **kwargs):
+    def plot_cut(self, f: Optional[float] = None, *, frame: Optional[int] = None, **kwargs):
         """Polar cut of the pattern at one recorded frequency.
 
-        Keyword arguments beyond *f*/*f_index* go to
+        Keyword arguments beyond *f*/*frame* go to
         :meth:`FarFieldResult.plot_cut` (``plane=``, ``angle=``,
         ``quantity=`` and the drawing options).
         """
-        return self.result(f, f_index=f_index).plot_cut(**kwargs)
+        return self.result(f, frame=frame).plot_cut(**kwargs)
 
-    def plot_3d(self, f: Optional[float] = None, *, f_index: Optional[int] = None, **kwargs):
+    def plot_3d(self, f: Optional[float] = None, *, frame: Optional[int] = None, **kwargs):
         """3D radiation surface at one recorded frequency.
 
-        Keyword arguments beyond *f*/*f_index* go to
+        Keyword arguments beyond *f*/*frame* go to
         :meth:`FarFieldResult.plot_3d`.
         """
-        return self.result(f, f_index=f_index).plot_3d(**kwargs)
+        return self.result(f, frame=frame).plot_3d(**kwargs)
 
     # ------------------------------------------------------------------
     # Persistence (the MonitorWallLoss result_dump pattern)
@@ -437,7 +441,7 @@ class MonitorFarFieldFrequency:
         ]
         dump = {
             "name": self.name,
-            "freqs": np.asarray(self.freqs, dtype=float),
+            "freqs": np.asarray(self.frequencies, dtype=float),
             "margin_cells": int(self.margin_cells),
             "faces": faces,
             "image_planes": planes,
@@ -460,7 +464,7 @@ class MonitorFarFieldFrequency:
         attached to a grid).
         """
         mon = cls(
-            freqs=np.asarray(dump["freqs"], dtype=float),
+            frequencies=np.asarray(dump["freqs"], dtype=float),
             name=str(dump.get("name", "far_field")),
             margin_cells=int(dump.get("margin_cells", 3)),
         )
@@ -488,7 +492,7 @@ class MonitorFarFieldFrequency:
             mon._faces.append(bf)
             mon._acc[name] = {}
             for comp, bins in saved["bins"].items():
-                acc = DFTAccumulator(mon.freqs, (c1.size, c2.size))
+                acc = DFTAccumulator(mon.frequencies, (c1.size, c2.size))
                 acc.result[...] = np.asarray(bins)
                 mon._acc[name][comp] = acc
         mon._image_planes = [
@@ -527,7 +531,7 @@ class MonitorFarFieldFrequency:
             self._incident_amplitude = np.asarray(dump["incident_amplitude"])
 
     def __repr__(self) -> str:
-        n_freqs = self.freqs.size
+        n_freqs = self.frequencies.size
         return (
             f"MonitorFarFieldFrequency(name={self.name!r}, n_freqs={n_freqs}, "
             f"margin_cells={self.margin_cells})"

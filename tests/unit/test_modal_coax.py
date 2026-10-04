@@ -96,18 +96,18 @@ class TestCoaxModeProperties:
         # z_modal uses z_line for TEM modes (frequency-independent)
         omega1 = 2 * math.pi * 1e9
         omega2 = 2 * math.pi * 50e9
-        assert m.z_modal(omega1) == complex(m.z_line)
-        assert m.z_modal(omega2) == complex(m.z_line)
+        assert m.z_modal(f=(omega1) / (2.0 * math.pi)) == complex(m.z_line)
+        assert m.z_modal(f=(omega2) / (2.0 * math.pi)) == complex(m.z_line)
 
     def test_z_wave_equals_eta(self):
         m = self._solve(eps_r=2.1)
-        z = m.z_wave(2 * math.pi * 10e9)
+        z = m.z_wave(f=(2 * math.pi * 10e9) / (2.0 * math.pi))
         assert z.real == pytest.approx(ETA0 / math.sqrt(2.1), rel=1e-12)
 
     def test_gamma_propagating(self):
         m = self._solve(eps_r=2.1)
         omega = 2 * math.pi * 10e9
-        gamma = m.gamma(omega)
+        gamma = m.gamma(f=(omega) / (2.0 * math.pi))
         # γ = j·ω·√ε_r/c₀
         assert gamma.imag == pytest.approx(omega * math.sqrt(2.1) / C0, rel=1e-12)
 

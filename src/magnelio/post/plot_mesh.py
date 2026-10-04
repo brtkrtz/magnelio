@@ -24,7 +24,7 @@ Three fills are offered, and they answer different questions:
     conductor contour comes out as the smooth ring it is.
 ``fill="material"``
     The cell classification — the material whose volume contains the
-    cell centre.  This is the staircase *baseline* of the material
+    cell center.  This is the staircase *baseline* of the material
     matrices, not the accuracy of the discretisation: on every cell the
     geometry cuts, the solver overrides it with area/length-weighted
     sub-cell values.  Thin sheets are invisible here by design.
@@ -368,7 +368,7 @@ def plot_mesh_section(
     nearest to it, as measured by the sub-cell classifier — every cell
     in the colour of its classified material, blended towards PEC grey
     by that share.  ``"material"`` shows the cell classification: the
-    material containing each cell's centre, on the real cell size.  It
+    material containing each cell's center, on the real cell size.  It
     is the staircase baseline the sub-cell values override on every
     cut cell, not the accuracy of the discretisation, and thin sheets
     do not appear in it.  ``"conformal"`` shows the dual faces of the

@@ -91,7 +91,7 @@ def test_a_macro_pad_adds_and_subtracts_its_primitives():
 
 
 def test_a_macro_pad_rotates_about_the_macro_origin():
-    """The rotation moves an off-centre primitive, it does not spin it."""
+    """The rotation moves an off-center primitive, it does not spin it."""
     shape = _copper("%AMOff*", "1,1,1.0,2.0,0,90*", "%", "%ADD10Off*%", "D10*", "X0Y0D03*")
     (lo, hi) = _bounds(shape)
 
@@ -145,7 +145,7 @@ def test_a_full_circle_arc_is_an_annulus():
 
 def test_an_arc_tighter_than_the_track_is_refused():
     """Its outline would fold through itself; no reading of it is right."""
-    with pytest.raises(ValueError, match="covers its own centre"):
+    with pytest.raises(ValueError, match="covers its own center"):
         _copper(
             "%ADD10C,2.0*%",
             "D10*",

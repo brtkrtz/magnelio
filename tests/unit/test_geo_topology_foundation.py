@@ -105,7 +105,7 @@ def test_references_are_read_only_owner_views_not_geometry():
         geo.Union(b, f)
     with pytest.raises(TypeError):
         geo.Translation((1, 0, 0)) @ f
-    assert not hasattr(geo.Profile, "tag_face")
+    assert not hasattr(geo.Profile, "tagged_face")
 
 
 def test_curved_normals_and_detachment():
@@ -148,28 +148,28 @@ def test_detached_profile_keeps_holes_placement_and_material():
 def tagged_box(size=1):
     return (
         geo.Brick(size=(size, size, size), material="pec", name="body")
-        .tag_face("port", normal="z")
-        .tag_edge("rim", near=(size / 2, 0, size))
-        .tag_vertex("corner", near=(0, 0, size))
-        .tag_faces("walls", surface_type="plane")
-        .tag_edges("outline", curve_type="line")
+        .tagged_face("port", normal="z")
+        .tagged_edge("rim", near=(size / 2, 0, size))
+        .tagged_vertex("corner", near=(0, 0, size))
+        .tagged_faces("walls", surface_type="plane")
+        .tagged_edges("outline", curve_type="line")
     )
 
 
 def test_registration_is_immutable_unique_and_kind_specific():
     b = geo.Brick()
-    t = b.tag_face("port", normal="z").tag_edge("port", near=(0.5, 0, 1))
+    t = b.tagged_face("port", normal="z").tagged_edge("port", near=(0.5, 0, 1))
     with pytest.raises(geo.TopologySelectionError):
         b.face("port")
     assert t.face("port").owner is t
     assert t.edge("port").owner is t
     with pytest.raises(ValueError, match="already exists"):
-        t.tag_face("port", normal="x")
+        t.tagged_face("port", normal="x")
     with pytest.raises(ValueError, match="non-empty"):
-        b.tag_face(" ", normal="z")
+        b.tagged_face(" ", normal="z")
     with pytest.raises(geo.TopologySelectionError, match="singular"):
         t.faces("port")
-    s = b.tag_faces("all")
+    s = b.tagged_faces("all")
     with pytest.raises(geo.TopologySelectionError, match="plural"):
         s.face("all")
     assert len(s.faces("all")) == 6
@@ -198,12 +198,12 @@ def test_all_names_follow_composed_affine_placements_and_reflections(size):
     assert len(names(moved, scale)) == 5
     assert len(moved.faces(normal=expected_normal)) == 1
     assert b.face("port").normal == (0, 0, 1)
-    added = moved.tag_face("side", near=transform.point((size, size / 2, size / 2)))
+    added = moved.tagged_face("side", near=transform.point((size, size / 2, size / 2)))
     assert added.scaled(0.5).face("side").area == pytest.approx(size**2)
 
 
 def test_tagged_arrays_groups_and_conflicting_union_names():
-    b = geo.Brick(material="pec").tag_face("port", normal="z")
+    b = geo.Brick(material="pec").tagged_face("port", normal="z")
     group = b.translated((2, 0, 0), repeat=3, copy=True, group=True)
     assert [s.face("port").centroid[0] for s in group.members()] == [0.5, 2.5, 4.5, 6.5]
     assert all(s.face("port").owner is s for s in group.members())
@@ -221,10 +221,10 @@ def test_tagged_arrays_groups_and_conflicting_union_names():
 def test_boolean_split_requires_deliberate_set_and_never_retargets(kind, selectors):
     b = geo.Brick(size=(2, 2, 2), material="pec")
     slit = geo.Brick(origin=(0.9, -1, -1), size=(0.2, 4, 4))
-    singular = getattr(b, "tag_" + kind)("pick", **selectors)
+    singular = getattr(b, "tagged_" + kind)("pick", **selectors)
     with pytest.raises(geo.TopologyEvolutionError, match="split into 2"):
         _ = singular - slit
-    deliberate = getattr(b, "tag_" + kind + "s")("pick", **selectors)
+    deliberate = getattr(b, "tagged_" + kind + "s")("pick", **selectors)
     split = deliberate - slit
     assert len(getattr(split, kind + "s")("pick")) == 2
     assert sum(
@@ -242,7 +242,7 @@ def test_boolean_split_requires_deliberate_set_and_never_retargets(kind, selecto
     ],
 )
 def test_deleted_names_fail_at_construction_call(kind, selectors):
-    b = getattr(geo.Brick(), "tag_" + kind)("pick", **selectors)
+    b = getattr(geo.Brick(), "tagged_" + kind)("pick", **selectors)
     with pytest.raises(geo.TopologyEvolutionError, match="deleted|provable"):
         _ = b - geo.Brick(size=(2, 2, 2))
 
@@ -259,7 +259,7 @@ def test_deleted_names_fail_at_construction_call(kind, selectors):
     ],
 )
 def test_provable_face_successor_and_store_replay(operation):
-    b = geo.Brick(material="pec").tag_face("port", normal="z")
+    b = geo.Brick(material="pec").tagged_face("port", normal="z")
     r = operation(b)
     expected_normal = (0, 0, -1) if type(r).__name__ == "_ExtrudedFaceShape" else (0, 0, 1)
     assert r.face("port").normal == pytest.approx(expected_normal)
@@ -272,8 +272,10 @@ def test_provable_face_successor_and_store_replay(operation):
 def test_shell_reports_offset_face_split_and_replays_deliberate_set():
     b = geo.Brick(material="pec")
     with pytest.raises(geo.TopologyEvolutionError, match="split"):
-        b.tag_face("cap", normal="z").shelled(thickness=0.1, opening_face_near=(0.5, 0.5, 0))
-    shell = b.tag_faces("cap", normal="z").shelled(thickness=0.1, opening_face_near=(0.5, 0.5, 0))
+        b.tagged_face("cap", normal="z").shelled(thickness=0.1, opening_face_near=(0.5, 0.5, 0))
+    shell = b.tagged_faces("cap", normal="z").shelled(
+        thickness=0.1, opening_face_near=(0.5, 0.5, 0)
+    )
     assert len(shell.faces("cap")) == 2
     restored = from_recipe(json.loads(json.dumps(to_recipe(shell))))
     assert len(restored.faces("cap")) == 2
@@ -283,19 +285,19 @@ def test_shell_reports_offset_face_split_and_replays_deliberate_set():
 
 
 def test_fillet_and_chamfer_unique_edge_successors_and_vertex_deletion():
-    b = geo.Brick().tag_edge("rim", near=(0.5, 0, 1))
+    b = geo.Brick().tagged_edge("rim", near=(0.5, 0, 1))
     for r in [
         b.filleted(near=(0, 0, 0.5), radius=0.1),
         b.chamfered(near=(0, 0, 0.5), distance=0.1),
     ]:
         assert r.edge("rim").length == pytest.approx(0.9)
-    corner = geo.Brick().tag_vertex("corner", near=(0, 0, 1))
+    corner = geo.Brick().tagged_vertex("corner", near=(0, 0, 1))
     with pytest.raises(geo.TopologyEvolutionError):
         corner.filleted(near=(0, 0, 0.5), radius=0.1)
 
 
 def test_unprovable_loft_face_successor_is_explicit():
-    a = geo.Brick(material="pec").tag_face("port", normal="z")
+    a = geo.Brick(material="pec").tagged_face("port", normal="z")
     b = geo.Brick(origin=(0, 0, 3), material="pec")
     with pytest.raises(geo.TopologyEvolutionError, match="provable"):
         a.lofted((0.5, 0.5, 1), b, (0.5, 0.5, 3), blend="ruled")
@@ -330,7 +332,7 @@ def test_project_round_trip_preserves_semantic_origin_history_and_sets(tmp_path,
 
 
 def test_split_set_replay_and_origin_cardinality_validation():
-    b = geo.Brick(size=(2, 2, 2)).tag_faces("top", normal="z")
+    b = geo.Brick(size=(2, 2, 2)).tagged_faces("top", normal="z")
     r = b - geo.Brick(origin=(0.9, -1, -1), size=(0.2, 4, 4))
     recipe = json.loads(json.dumps(to_recipe(r)))
     assert len(from_recipe(recipe).faces("top")) == 2
@@ -399,7 +401,7 @@ def test_nearest_selection_screens_cached_bounds_before_exact_distances(monkeypa
 
 
 def test_untagged_lazy_tool_histories_do_not_delete_base_names():
-    b = geo.Brick(material="pec").tag_face("port", normal="z")
+    b = geo.Brick(material="pec").tagged_face("port", normal="z")
     tool = geo.Brick(origin=(3, 0, 0)).filleted(near=(3, 0, 0.5), radius=0.1)
     result = b + tool
     assert result.face("port").area == pytest.approx(1)
@@ -410,8 +412,8 @@ def test_untagged_lazy_tool_histories_do_not_delete_base_names():
 def test_closed_shell_history_retains_both_original_and_offset_branches():
     b = geo.Brick(material="pec")
     with pytest.raises(geo.TopologyEvolutionError, match="split"):
-        b.tag_face("cap", normal="z").shelled(thickness=0.1)
-    shell = b.tag_faces("cap", normal="z").shelled(thickness=0.1)
+        b.tagged_face("cap", normal="z").shelled(thickness=0.1)
+    shell = b.tagged_faces("cap", normal="z").shelled(thickness=0.1)
     assert len(shell.faces("cap")) == 2
     assert sorted(f.area for f in shell.faces("cap")) == pytest.approx([0.64, 1])
     restored = from_recipe(json.loads(json.dumps(to_recipe(shell))))
@@ -430,5 +432,5 @@ def test_planarity_and_detachment_use_geometry_not_only_analytic_type():
     assert len(profile.boundary()) == 1
     spine = geo.Curve.line(f.centroid, (f.centroid[0], f.centroid[1], 3))
     assert profile.swept(spine).volume() == pytest.approx(2)
-    moved = b.tag_face("port", surface_type="bspline", normal="z").mirrored("x")
+    moved = b.tagged_face("port", surface_type="bspline", normal="z").mirrored("x")
     assert moved.face("port").normal == pytest.approx((0, 0, 1))

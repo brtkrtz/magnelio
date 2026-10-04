@@ -34,7 +34,7 @@ class TestSignal1D:
 
     def test_frequency_axis(self):
         sig = self._make_signal(n=128, dt=1e-12)
-        f = sig.f
+        f = sig.f_axis
         assert f[0] == 0.0
         # Nyquist should be 1/(2*dt) = 500 GHz
         assert f[-1] == pytest.approx(500e9, rel=1e-6)

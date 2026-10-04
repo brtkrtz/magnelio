@@ -30,7 +30,7 @@ def _mesh():
 def _ringdown_frequency(result, monitor_name="probe"):
     """Peak of the probe spectrum [Hz], parabolically interpolated."""
     mon = result.monitors[monitor_name]
-    sig = mon.recording.cell_centred(["Ey"], squeeze=True)["Ey"].ravel()
+    sig = mon.recording.cell_centered(["Ey"], squeeze=True)["Ey"].ravel()
     t = mon.t
     spectrum = np.abs(np.fft.rfft(sig * np.hanning(sig.size)))
     df = 1.0 / (sig.size * (t[1] - t[0]))
@@ -150,8 +150,8 @@ def test_recorded_frame_continues_the_march():
 
     p1 = first.monitors["probe"].recording
     p2 = second.monitors["probe"].recording
-    ey1 = p1.cell_centred(["Ey"], squeeze=True)["Ey"]
-    ey2 = p2.cell_centred(["Ey"], squeeze=True)["Ey"]
+    ey1 = p1.cell_centered(["Ey"], squeeze=True)["Ey"]
+    ey2 = p2.cell_centered(["Ey"], squeeze=True)["Ey"]
     t0 = float(rec.times[0])
     idx = np.array([p1.index_of(t0 + t) for t in p2.times])
     np.testing.assert_allclose(p1.times[idx], t0 + p2.times, rtol=0.0, atol=1e-3 * dt)

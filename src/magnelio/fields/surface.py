@@ -55,8 +55,8 @@ class ComponentRecord:
     ----------
     c1, c2 : np.ndarray
         Sample coordinates [m] along the face's two tangent axes — node
-        or cell-centre lines, whichever the component sits on.
-    normals : tuple of float
+        or cell-center lines, whichever the component sits on.
+    normal_positions : tuple of float
         Normal coordinate(s) [m] of the sampled layer(s).  One for E,
         which the face corrections need on the node plane; two for H,
         which they need half a cell outside the face — by the spacing
@@ -68,10 +68,10 @@ class ComponentRecord:
 
     c1: np.ndarray
     c2: np.ndarray
-    normals: tuple
+    normal_positions: tuple
     values: np.ndarray
 
-    def at(self, u, v, normal: float | None = None) -> np.ndarray:
+    def at(self, u, v, position: float | None = None) -> np.ndarray:
         """The whole time series at in-plane points ``(u, v)``.
 
         Bilinear in the face and, for a two-layer record, linear in the
@@ -80,12 +80,12 @@ class ComponentRecord:
         """
         u, v = np.broadcast_arrays(np.asarray(u, dtype=float), np.asarray(v, dtype=float))
         f = self.values
-        if len(self.normals) == 2:
-            lo, hi = self.normals
+        if len(self.normal_positions) == 2:
+            lo, hi = self.normal_positions
             w = (
                 0.0
-                if (normal is None or hi == lo)
-                else float(np.clip((float(normal) - lo) / (hi - lo), 0.0, 1.0))
+                if (position is None or hi == lo)
+                else float(np.clip((float(position) - lo) / (hi - lo), 0.0, 1.0))
             )
             f = f[:, 0] * (1.0 - w) + f[:, 1] * w
         i0, i1, wu = _interp_weights(self.c1, u)
@@ -124,13 +124,13 @@ class FaceRecord:
     tangent_axes: tuple
     components: dict
 
-    def resample(self, comp: str, u, v, normal: float | None = None) -> np.ndarray:
+    def resample(self, comp: str, u, v, position: float | None = None) -> np.ndarray:
         """The time series of *comp* at in-plane points ``(u, v)``."""
         if comp not in self.components:
             raise KeyError(
                 f"face {self.name!r} carries {sorted(self.components)}, not {comp!r}",
             )
-        return self.components[comp].at(u, v, normal)
+        return self.components[comp].at(u, v, position)
 
 
 @dataclass
@@ -189,7 +189,7 @@ class SurfaceRecording:
         return len(self.open_faces) == 6
 
     @property
-    def centre(self) -> tuple:
+    def center(self) -> tuple:
         """Centre of the box [m] in the recording's own frame."""
         return tuple(0.5 * (lo + hi) for lo, hi in self.bounds)
 
@@ -264,7 +264,7 @@ class SurfaceRecording:
             g.attrs["tangent_axes"] = list(int(a) for a in fr.tangent_axes)
             for comp, cr in fr.components.items():
                 cg = g.create_group(comp)
-                cg.attrs["normals"] = [float(v) for v in cr.normals]
+                cg.attrs["normals"] = [float(v) for v in cr.normal_positions]
                 cg.create_dataset("c1", data=cr.c1)
                 cg.create_dataset("c2", data=cr.c2)
                 cg.create_dataset("values", data=np.asarray(cr.values, dtype=float))
@@ -284,7 +284,7 @@ class SurfaceRecording:
                     comp: ComponentRecord(
                         c1=np.asarray(cg["c1"]),
                         c2=np.asarray(cg["c2"]),
-                        normals=tuple(float(v) for v in cg.attrs["normals"]),
+                        normal_positions=tuple(float(v) for v in cg.attrs["normals"]),
                         values=np.asarray(cg["values"]),
                     )
                     for comp, cg in g.items()

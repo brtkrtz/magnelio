@@ -248,7 +248,7 @@ class TestFrozenPECEdges:
         lin = np.linspace(0.0, L, 9)
         mesh = Mesh.from_grid(
             GridLines(x=lin, y=lin, z=lin),
-            regions=[(Material.pec(), (2e-3, 2e-3, 1e-3, 4e-3, 4e-3, 7e-3))],
+            regions=[(Material.pec(), ((2e-3, 2e-3, 1e-3), (4e-3, 4e-3, 7e-3)))],
             boundary_conditions=_BC_OPEN,
         )
         if walls:

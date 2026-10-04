@@ -2,7 +2,7 @@
 """DD-227: the impressed current filament against the Hertzian dipole.
 
 An open ``SourceCurrentPath`` two and a half millimetres long, at the
-centre of an air cube with CPML on all six faces, is the textbook short
+center of an air cube with CPML on all six faces, is the textbook short
 dipole: a uniform current ``I`` over a length ``L`` much smaller than
 the wavelength.  Its far field and radiated power are known in closed
 form, so the whole chain — the sign of the injection, the ``β·I``
@@ -90,7 +90,7 @@ def run(nodes: int, half: float, length: float):
     z = np.asarray(mesh.grid.z)
     snapped = float(z[np.argmin(abs(z - length / 2))] - z[np.argmin(abs(z + length / 2))])
 
-    ff = monitors.MonitorFarFieldFrequency(name="pattern", freqs=[F0])
+    ff = monitors.MonitorFarFieldFrequency(name="pattern", frequencies=[F0])
     result = mio.AnalysisTD(mesh=mesh, monitors=[ff], verbose=False).run(
         excitations=[
             mio.Excitation("fil", waveform=signals.WaveformGaussian(f_max=F_MAX), amplitude=1.0)

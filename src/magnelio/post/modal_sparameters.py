@@ -142,7 +142,7 @@ def channel_reference_impedance(
             line_params[2],
             mode.mode_type.value,
         )
-    return np.array([mode.z_modal(float(w)) for w in omega], dtype=complex)
+    return np.array([mode.z_modal(f=(float(w)) / (2.0 * math.pi)) for w in omega], dtype=complex)
 
 
 def spectral_power_waves(
@@ -177,8 +177,8 @@ def spectral_power_waves(
     dt : float
         Solver time step [s] (discrete factors evaluate at ``ω·dt``).
     mode : Mode or mode-shaped stub
-        Supplies ``z_modal(omega)`` and — on the continuum de-stagger
-        path — ``gamma(omega)``; ``mode_type.value`` selects the
+        Supplies ``z_modal(f=...)`` and — on the continuum de-stagger
+        path — ``gamma(f=...)``; ``mode_type.value`` selects the
         discrete wave-impedance branch.
     normal_dx : float, optional
         Port-normal boundary cell size [m]; enables the two-plane
@@ -236,7 +236,7 @@ def spectral_power_waves(
                     0.5
                     * float(normal_dx)
                     * np.array(
-                        [mode.gamma(float(w)) for w in omega],
+                        [mode.gamma(f=(float(w)) / (2.0 * math.pi)) for w in omega],
                         dtype=complex,
                     )
                 )
@@ -294,7 +294,7 @@ def destaggered_power_waves(
         As in :func:`spectral_power_waves`.
     z_ref : float
         Real reference impedance [Ω] of the fallback split (the
-        frozen ``z_modal(2π·f_ref)`` of the caller).
+        frozen ``z_modal(f=f_ref)`` of the caller).
     normal_dx, line_params
         As in :func:`spectral_power_waves`.
 

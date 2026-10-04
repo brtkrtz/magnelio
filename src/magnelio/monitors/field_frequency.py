@@ -52,7 +52,7 @@ class MonitorFieldFrequency:
         single cell layer (plane, line, point).  A component may be
         ``None`` (or ``±math.inf``) to reach the domain boundary on
         that side.  Omit *corners* entirely for the whole domain.
-    freqs : array_like
+    frequencies : array_like
         Target frequencies [Hz].
     fields : list[str]
         Field groups or components to record.  ``"E"`` expands to
@@ -63,7 +63,7 @@ class MonitorFieldFrequency:
         monitor is arithmetic comparable to the solver itself and can
         double a run's wall-clock time.  Sub-sampling cuts that cost
         proportionally: the recorded step count, and with it the
-        cell-centre interpolation and the complex accumulation, drop by
+        cell-center interpolation and the complex accumulation, drop by
         the same factor.
 
         Unlike :class:`~magnelio.monitors.MonitorFieldTime`, where the
@@ -84,7 +84,7 @@ class MonitorFieldFrequency:
         Rounded **down** to a whole number of time steps (at least
         one), so the realised spacing never exceeds the one asked for;
         the integration weight follows exactly, so the result stays in
-        the same units and ``renormalize`` is unaffected.
+        the same units and ``normalize_to_excitation`` is unaffected.
     name : str
         Monitor label (must be unique within a simulation).
 
@@ -92,7 +92,7 @@ class MonitorFieldFrequency:
     --------
     >>> mon = MonitorFieldFrequency(
     ...     corners=((None, None, 5e-3), (None, None, 5e-3)),
-    ...     freqs=np.linspace(1e9, 10e9, 50),
+    ...     frequencies=np.linspace(1e9, 10e9, 50),
     ...     fields=["E", "H"],
     ...     name="EH_xy_5GHz",
     ... )
@@ -101,14 +101,14 @@ class MonitorFieldFrequency:
     20 points per period of that top frequency instead of every step:
 
     >>> mon = MonitorFieldFrequency(
-    ...     freqs=[2.87e9, 2.91e9],
+    ...     frequencies=[2.87e9, 2.91e9],
     ...     fields=["E"],
     ...     interval=1.0 / (20 * 3.4e9),
     ...     name="E_volume",
     ... )
     """
 
-    freqs: np.ndarray
+    frequencies: np.ndarray
     corners: object = None
     fields: list[str] = field(default_factory=lambda: ["E"])
     interval: float | None = None
@@ -138,14 +138,14 @@ class MonitorFieldFrequency:
     _slices: dict = field(default_factory=dict, repr=False, init=False)
 
     @classmethod
-    def from_face(cls, face, *, freqs, fields=None, interval=None, name=""):
+    def from_face(cls, face, *, frequencies, fields=None, interval=None, name=""):
         """Record frequency-domain fields on an owned rectangular face.
 
         Parameters
         ----------
         face : FaceRef
             Singular planar, axis-normal, hole-free rectangular face.
-        freqs : array_like
+        frequencies : array_like
             Recorded frequencies [Hz].
         fields : list[str], optional
             Field components or groups; defaults to ``["E"]``.
@@ -164,7 +164,7 @@ class MonitorFieldFrequency:
 
         _, _, lo, hi = rectangular_face(face)
         return cls(
-            freqs=freqs,
+            frequencies=frequencies,
             corners=(lo, hi),
             fields=["E"] if fields is None else fields,
             interval=interval,
@@ -199,7 +199,9 @@ class MonitorFieldFrequency:
 
         Examples
         --------
-        >>> mon = MonitorFieldFrequency.from_ranges(x1=0, dx=5e-3, freqs=[2.9e9], fields=["E"])
+        >>> mon = MonitorFieldFrequency.from_ranges(
+        ...     x1=0, dx=5e-3, frequencies=[2.9e9], fields=["E"]
+        ... )
         """
         from magnelio.geo._ranges import corners_from_ranges  # noqa: PLC0415
 
@@ -209,9 +211,9 @@ class MonitorFieldFrequency:
         )
 
     def __post_init__(self) -> None:
-        self.freqs = np.asarray(self.freqs, dtype=float)
-        if self.freqs.ndim != 1 or len(self.freqs) == 0:
-            raise ValueError("freqs must be a non-empty 1D array")
+        self.frequencies = np.asarray(self.frequencies, dtype=float)
+        if self.frequencies.ndim != 1 or len(self.frequencies) == 0:
+            raise ValueError("frequencies must be a non-empty 1D array")
         if self.interval is not None:
             if not self.interval > 0.0:
                 raise ValueError(f"interval must be positive; got {self.interval}")
@@ -223,7 +225,7 @@ class MonitorFieldFrequency:
             self.name = f"field_freq_{id(self):x}"
 
     def _resolve_stride(self, dt: float) -> int:
-        """Recording stride in time steps, validated against ``freqs``.
+        """Recording stride in time steps, validated against ``frequencies``.
 
         Resolved on the first recorded step, the first moment ``dt`` is
         known to a monitor; a rejected interval therefore stops the run
@@ -236,7 +238,7 @@ class MonitorFieldFrequency:
         # and an interval derived from a samples-per-period rule would
         # then trip the very margin it was chosen to keep.
         stride = max(1, int(self.interval / dt * (1.0 + 1e-9)))
-        f_top = float(np.max(self.freqs))
+        f_top = float(np.max(self.frequencies))
         if f_top <= 0.0:
             return stride
         per_period = 1.0 / (f_top * stride * dt)
@@ -285,7 +287,7 @@ class MonitorFieldFrequency:
         shapes = _yee_shapes(self._subgrid.Nx, self._subgrid.Ny, self._subgrid.Nz)
         self._accumulators = {}
         for comp in self._components:
-            self._accumulators[comp] = DFTAccumulator(self.freqs, shapes[comp])
+            self._accumulators[comp] = DFTAccumulator(self.frequencies, shapes[comp])
 
     def attach_operators(self, mesh, M_eps, M_mu) -> None:
         """Take the region's cut of the solver's material diagonals (DD-260).
@@ -314,7 +316,7 @@ class MonitorFieldFrequency:
         time stamps are the ones the port recorder uses for the same
         step (``t`` for the sample of ``e`` taken after step *n*) and
         the transform carries the same sign, so a renormalised pattern
-        is phase-consistent with the run's S-parameters.
+        is phase_deg-consistent with the run's S-parameters.
 
         With an ``interval``, steps off the stride return before the
         copy — which is where a whole-volume monitor spends its time, so
@@ -331,7 +333,7 @@ class MonitorFieldFrequency:
         if stride > 1 and n % stride:
             return
         # The Riemann weight is the sample spacing actually used, so the
-        # bins keep their units and ``renormalize`` is unaffected.  The
+        # bins keep their units and ``normalize_to_excitation`` is unaffected.  The
         # leapfrog half-step below stays on the *solver* dt: it is where
         # H physically sits, not a property of the sampling.
         dt_weight = stride * dt
@@ -375,7 +377,7 @@ class MonitorFieldFrequency:
             "fields": list(self.fields),
             "interval": self.interval,
             "symmetry": mirrors_to_jsonable(self._mirrors),
-            "freqs": np.asarray(self.freqs, dtype=float),
+            "freqs": np.asarray(self.frequencies, dtype=float),
             "corners": _corners_array(self.corners),
             # The region's own grid lines (nodes) and the dual widths of
             # its h samples — what rebuilds the FieldSpectrum (DD-259).
@@ -387,7 +389,7 @@ class MonitorFieldFrequency:
             "dual_z": np.asarray(dual[2], dtype=float),
             "bins": {comp: self._accumulators[comp].result for comp in self._components},
             "incident_amplitude": (
-                np.ones(len(self.freqs))
+                np.ones(len(self.frequencies))
                 if self._incident_amplitude is None
                 else np.asarray(self._incident_amplitude, dtype=float)
             ),
@@ -430,7 +432,7 @@ class MonitorFieldFrequency:
     # Source renormalization
     # ------------------------------------------------------------------
 
-    def renormalize(self, source_signal) -> None:
+    def normalize_to_excitation(self, source_signal) -> None:
         """Normalize DFT data to 1 W incident CW power.
 
         A monitor that took part in a scattering run is renormalised
@@ -467,11 +469,11 @@ class MonitorFieldFrequency:
         self._source_spectrum = source_spectrum(
             source_signal.values,
             source_signal.dt,
-            self.freqs,
+            self.frequencies,
         )
 
     @property
-    def is_renormalized(self) -> bool:
+    def is_normalized_to_excitation(self) -> bool:
         """Whether 1 W renormalization has been applied."""
         return self._source_spectrum is not None
 
@@ -495,13 +497,13 @@ class MonitorFieldFrequency:
         # Runtime wiring by the analysis: |a(f)| / |W(f)| of the excited
         # channel interpolated onto the monitor frequencies.
         self._incident_amplitude = np.interp(
-            self.freqs, np.asarray(f_axis, dtype=float), np.asarray(ratio, dtype=float)
+            self.frequencies, np.asarray(f_axis, dtype=float), np.asarray(ratio, dtype=float)
         )
 
     @property
-    def f(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequency array [Hz]."""
-        return self.freqs
+        return self.frequencies
 
     def _require_source(self) -> None:
         """Refuse to hand out raw bins under the name of physical fields."""
@@ -513,7 +515,7 @@ class MonitorFieldFrequency:
                 f"in field units x seconds — not fields per 1 W CW.  A monitor "
                 f"that took part in a scattering run is renormalised "
                 f"automatically; if this one was filled by hand, call "
-                f".renormalize(result.reference_signal).  Read .spectrum_raw for "
+                f".normalize_to_excitation(result.reference_signal).  Read .spectrum_raw for "
                 f"the raw transform itself."
             )
 
@@ -527,7 +529,11 @@ class MonitorFieldFrequency:
             for comp, acc in self._accumulators.items()
         }
         return FieldSpectrum._from_raw(
-            self._subgrid, np.asarray(self.freqs, dtype=float), raw, dual=self._dual, ops=self._ops
+            self._subgrid,
+            np.asarray(self.frequencies, dtype=float),
+            raw,
+            dual=self._dual,
+            ops=self._ops,
         )
 
     @property
@@ -535,7 +541,7 @@ class MonitorFieldFrequency:
         """The pattern as a :class:`~magnelio.fields.FieldSpectrum`, per 1 W CW.
 
         Every frame keeps the Yee staggering of the region.  Raises
-        without a source reference (see :meth:`renormalize`);
+        without a source reference (see :meth:`normalize_to_excitation`);
         :attr:`spectrum_raw` is the undivided transform.
         """
         self._require_source()
@@ -564,12 +570,12 @@ class MonitorFieldFrequency:
         self,
         component: str = "E",
         f: float | None = None,
-        f_index: int | None = None,
+        frame: int | None = None,
         *,
         normal: str | None = None,
         position: float = 0.0,
         plot_type: str = "vector",
-        phase: float = 0.0,
+        phase_deg: float = 0.0,
         ax=None,
         scale_mm: bool = True,
         cmap: str | None = None,
@@ -586,7 +592,7 @@ class MonitorFieldFrequency:
         """Plot the pattern at one frequency.
 
         A point region draws its magnitude over frequency (ignores *f*
-        / *f_index*); a line region the values along its axis; a plane
+        / *frame*); a line region the values along its axis; a plane
         region the pattern on its own plane; a volume the plane selected
         with *normal* and *position*.  Only the drawn layer is averaged
         onto cell centres.  The pattern is per 1 W CW (see
@@ -599,18 +605,18 @@ class MonitorFieldFrequency:
             magnitude, ``"Ex"``, ``"Hz"``, … for a single component.
         f : float, optional
             Frequency [Hz]; the nearest frame is drawn.
-        f_index : int, optional
+        frame : int, optional
             Frame index (overrides *f*).
         normal : {"x", "y", "z"}, optional
             Slice-plane normal for a volume (required there).
         position : float
             Slice-plane position along *normal* [m]; snapped to the
-            nearest cell-centre plane.
+            nearest cell-center plane.
         plot_type : str
             ``"vector"``, ``"color"``, or ``"contour"``.
-        phase : float
+        phase_deg : float
             Instant of the complex pattern in degrees,
-            ``Re(F · exp(+j·phase))``, the pattern at ``w t = phase``,
+            ``Re(F · exp(+j·phase_deg))``, the pattern at ``w t = phase_deg``,
             so it advances with time; a group magnitude is the envelope
             and ignores it.
         ax : matplotlib.axes.Axes, optional
@@ -645,8 +651,8 @@ class MonitorFieldFrequency:
         return plot_frame(
             view,
             component,
-            view.index_of(f, f_index),
-            phase=phase,
+            view.index_of(f, frame),
+            phase_deg=phase_deg,
             normal=normal,
             position=position,
             plot_type=plot_type,
@@ -671,7 +677,7 @@ class MonitorFieldFrequency:
         normal: str | None = None,
         position: float = 0.0,
         plot_type: str = "vector",
-        phase: float = 0.0,
+        phase_deg: float = 0.0,
         scale_mm: bool = True,
         cmap: str | None = None,
         geometry=None,
@@ -695,7 +701,7 @@ class MonitorFieldFrequency:
             normal=normal,
             position=position,
             plot_type=plot_type,
-            phase=phase,
+            phase_deg=phase_deg,
             scale_mm=scale_mm,
             cmap=cmap,
             geometry=geometry,
@@ -709,13 +715,13 @@ class MonitorFieldFrequency:
     def show(self, component: str = "E", **kwargs):
         """Interactive 3D view of the DFT field on a cutting plane.
 
-        The geometry viewer with the field laid on its cut, a phase
+        The geometry viewer with the field laid on its cut, a phase_deg
         slider for the complex pattern, a frequency slider when several
         bins were recorded, and the position slider walking through the
         region.  See :func:`magnelio.plots.show_field` for the arguments
-        — the bin (``f=`` or ``frame=``), ``phase``, the plane
+        — the bin (``f=`` or ``frame=``), ``phase_deg``, the plane
         (``normal``, ``position``), ``volume`` for the region behind the
-        cut, and the rendering ``mode``.
+        cut, and the rendering ``render_mode``.
 
         The monitor carries the field alone: pass ``geometry=`` to draw
         the model with it, and ``mesh=`` to cut the metal cells out of
@@ -734,7 +740,7 @@ class MonitorFieldFrequency:
         return (
             f"MonitorFieldFrequency(name={self.name!r}, "
             f"fields={self.fields}, "
-            f"n_freqs={len(self.freqs)}, "
+            f"n_freqs={len(self.frequencies)}, "
             f"region={shape})"
         )
 
@@ -752,4 +758,4 @@ def renormalize_all(monitors, source_signal) -> None:
 
     for mon in monitors or ():
         if isinstance(mon, (MonitorFieldFrequency, MonitorFarFieldFrequency)):
-            mon.renormalize(source_signal)
+            mon.normalize_to_excitation(source_signal)

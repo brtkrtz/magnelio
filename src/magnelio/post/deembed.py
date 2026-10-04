@@ -87,7 +87,7 @@ def _channel_shift_factor(
     gamma = getattr(mode, "gamma", None)
     cont = None
     if gamma is not None:
-        g = np.array([gamma(float(w)) for w in omega], dtype=complex)
+        g = np.array([gamma(f=float(w) / (2.0 * np.pi)) for w in omega], dtype=complex)
         cont = np.exp(g * distance)
     if zeta is not None and dz:
         with np.errstate(invalid="ignore", divide="ignore"):

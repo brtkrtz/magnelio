@@ -105,7 +105,7 @@ class TestFromGrid:
     def test_region_string(self):
         mesh = Mesh.from_grid(
             self._grid(),
-            regions=[("pec", (0, 0, 0, 4e-3, 4e-3, 2e-3))],
+            regions=[("pec", ((0, 0, 0), (4e-3, 4e-3, 2e-3)))],
         )
         assert mesh.material_library[1].is_pec
 
@@ -115,8 +115,8 @@ class TestFromGrid:
         mesh = Mesh.from_grid(
             self._grid(),
             regions=[
-                ("pec", (0, 0, 0, 4e-3, 4e-3, 1e-3)),
-                ("pec", (0, 0, 3e-3, 4e-3, 4e-3, 4e-3)),
+                ("pec", ((0, 0, 0), (4e-3, 4e-3, 1e-3))),
+                ("pec", ((0, 0, 3e-3), (4e-3, 4e-3, 4e-3))),
             ],
         )
         assert len(mesh.material_library) == 2  # background + one PEC

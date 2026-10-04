@@ -199,9 +199,9 @@ def _mirror_specs(mesh, nodes) -> tuple:
 def _mirrored_mask(mask, nodes, mirrored_nodes, mirrors) -> np.ndarray:
     """*mask* over the reduced region's cells, laid onto the mirrored region's.
 
-    Every mirrored cell centre is folded back across the planes (in the
+    Every mirrored cell center is folded back across the planes (in the
     reverse order they were applied) onto the reduced region and takes
-    that cell's value; the cell a magnetic wall bisects, whose centre
+    that cell's value; the cell a magnetic wall bisects, whose center
     lies on the wall, takes the wall cell's.
     """
     index = []
@@ -476,7 +476,7 @@ def _layer_sheet(nodes_display, axis: int, k: int, position: float, keep):
 
 
 def _lattice3(centres, density: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Isotropic 3D arrow raster over the cell-centre extents.
+    """Isotropic 3D arrow raster over the cell-center extents.
 
     *density* counts arrows along the longest axis; the others get the
     count that keeps the spacing equal (the 3D counterpart of
@@ -498,7 +498,7 @@ def _lattice3(centres, density: int) -> tuple[np.ndarray, np.ndarray, np.ndarray
 
 
 def _resample3(centres, raster, arrays, valid):
-    """Trilinear resampling of cell-centre volumes onto the arrow raster.
+    """Trilinear resampling of cell-center volumes onto the arrow raster.
 
     Invalid cells (a cell buried in a conductor) are dropped from the
     stencil instead of read as zeros, so no field is smeared into or
@@ -1363,7 +1363,7 @@ def show_field(
     frame: int | None = None,
     t: float | None = None,
     f: float | None = None,
-    phase: float = 0.0,
+    phase_deg: float = 0.0,
     vmax: float | None = None,
     cmap: str | None = None,
     density: int = 20,
@@ -1383,7 +1383,8 @@ def show_field(
     show_wires: bool = True,
     show_grid: bool = False,
     show_labels: bool = True,
-    mode: str | None = None,
+    mode: int | None = None,
+    render_mode: str | None = None,
     target: str | None = None,
     size: tuple[int, int] | None = None,
     quality: float = 1.0,
@@ -1437,9 +1438,9 @@ def show_field(
     t, f : float, optional
         Initial frame by time [s] (time monitors) or frequency [Hz]
         (frequency monitors); the nearest recorded one is used.
-    phase : float, default 0.0
+    phase_deg : float, default 0.0
         Instant [degrees] at which a complex field is shown:
-        ``Re(F · exp(+j·phase))``, the pattern at ``w t = phase``.  The
+        ``Re(F · exp(+j·phase_deg))``, the pattern at ``w t = phase_deg``.  The
         phase advances with time, so the play button walks a travelling
         wave the way it ran in the simulation — away from the port that
         launched it.
@@ -1506,15 +1507,26 @@ def show_field(
         As in the geometry viewer.
     show_grid : bool, default False
         With *mesh*: draw the grid cells on the cut under the field.
-    mode, target, size, quality, scale_mm, camera
+    render_mode, target, size, quality, scale_mm
         As in :func:`~magnelio.plots.show_geometry`; *size* sets the
         widget's height in the notebook, the toolbar's pop-out button
         opens the same view in a browser tab of its own.
+    camera : str or list or tuple, default "iso"
+        Initial view: ``"iso"`` is isometric; ``"xy"``, ``"xz"`` and
+        ``"yz"`` look at those coordinate planes. A custom camera is
+        ``[position, focal_point, view_up]``, each a three-vector.
+        Position and focal point use display coordinates: millimetres
+        with ``scale_mm=True``, metres otherwise. ``view_up`` is a
+        dimensionless vector towards the top of the image and must not
+        be parallel to the viewing direction. The scene is fitted
+        automatically, preserving direction and up while adjusting
+        position, focal point and zoom. The cutting-plane *position*
+        still uses metres.
 
     Returns
     -------
     pyvista.Plotter or None
-        The plotter when ``mode="none"``; otherwise the view is displayed
+        The plotter when ``render_mode="none"``; otherwise the view is displayed
         as a side effect.
 
     Notes
@@ -1527,13 +1539,13 @@ def show_field(
     *Field on cut*, *Vectors on cut*, *Field vectors* (in the volume)
     and *Isosurfaces* beside the geometry's groups.  The second row
     holds the field: play and frame slider with the frame's time,
-    frequency or mode; play and phase slider for complex data; the
+    frequency or mode; play and phase_deg slider for complex data; the
     *Field* selector; the isosurface level and the arrow density.  The
     mouse in the browser: left drag orbits, middle drag (or shift +
     left) pans, right drag or the wheel zooms, ctrl + left rolls; the
     help button lists the same.
 
-    Every sample is a cell-centre average of the staggered components
+    Every sample is a cell-center average of the staggered components
     — the picture stands for a layer of cells, not for a plane — and
     the isosurfaces interpolate those cell values to the nodes before
     they are contoured.
@@ -1573,13 +1585,27 @@ def show_field(
             stacklevel=2,
         )
 
+    if mode is not None:
+        if frames.kind != "mode":
+            raise ValueError(
+                "mode= selects a physical eigenmode only; use render_mode= for rendering"
+            )
+        if any(v is not None for v in (frame, t, f)):
+            raise ValueError("give mode alone for an eigenmode view")
+        if isinstance(mode, (str, bool)) or int(mode) != mode:
+            raise TypeError(
+                "mode must be an integer eigenmode index; use render_mode= for rendering"
+            )
+        frame = int(mode)
+    elif frames.kind == "mode" and any(v is not None for v in (frame, t, f)):
+        raise ValueError("use mode= to select an eigenmode")
     unit_scale = 1e3 if scale_mm else 1.0
     view = _FieldView(
         frames=frames,
         component=component,
         plot_type=plot_type,
         frame=_resolve_frame(frames, frame, t, f),
-        phase=float(phase),
+        phase=float(phase_deg),
         vmax_fixed=vmax,
         cmap=cmap,
         unit_scale=unit_scale,
@@ -1605,7 +1631,7 @@ def show_field(
     for nodes in view.nodes_display:
         extent += [float(nodes[0]), float(nodes[-1])]
 
-    notebook, mode, off_screen, target = _viewer._resolve_mode(mode, target)
+    notebook, render_mode, off_screen, target = _viewer._resolve_mode(render_mode, target)
     if mesh is None and frames.kind == "mode":
         mesh = source.mesh
     if frames.mirrored:
@@ -1636,9 +1662,9 @@ def show_field(
         quality=quality,
         scale_mm=scale_mm,
         camera=camera,
-        off_screen=off_screen or (notebook and mode not in (None, "none")),
+        off_screen=off_screen or (notebook and render_mode not in (None, "none")),
         field_view=view,
         extent=tuple(extent),
         title=frames.name,
     )
-    return _viewer._display(scene, mode, target)
+    return _viewer._display(scene, render_mode, target)

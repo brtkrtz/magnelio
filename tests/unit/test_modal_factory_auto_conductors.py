@@ -357,8 +357,8 @@ class TestWithPecBoundaries:
         mesh_a = Mesh.from_grid(
             grid,
             regions=[
-                (pec, (0.0, 0.0, 0.0, L, W, H)),
-                (air, (dx, dy, dz, L - dx, W - dy, H - dz)),
+                (pec, ((0.0, 0.0, 0.0), (L, W, H))),
+                (air, ((dx, dy, dz), (L - dx, W - dy, H - dz))),
             ],
         )
         # Path B: Vacuum mesh + with_pec_boundaries on all six faces.
@@ -411,11 +411,11 @@ def _rect_coax_from_grid(*, with_inner: bool = True):
         z=np.linspace(0, B, 17),
     )
     regions = [
-        (pec, (0.0, 0.0, 0.0, L, B, B)),
-        (air, (0.0, 1e-3, 1e-3, L, 7e-3, 7e-3)),
+        (pec, ((0.0, 0.0, 0.0), (L, B, B))),
+        (air, ((0.0, 1e-3, 1e-3), (L, 7e-3, 7e-3))),
     ]
     if with_inner:
-        regions.append((pec, (0.0, 3e-3, 3e-3, L, 5e-3, 5e-3)))
+        regions.append((pec, ((0.0, 3e-3, 3e-3), (L, 5e-3, 5e-3))))
     return Mesh.from_grid(grid, regions=regions, boundary_conditions=_BC_OPEN)
 
 
@@ -465,7 +465,7 @@ class TestCellMaterialFallback:
         )
         mesh_mat = Mesh.from_grid(
             grid,
-            regions=[(pec, (0.0, 3e-3, 3e-3, L, 5e-3, 5e-3))],
+            regions=[(pec, ((0.0, 3e-3, 3e-3), (L, 5e-3, 5e-3)))],
         )
         mesh_mask = Mesh.from_grid(grid, boundary_conditions=_BC_PEC_YMIN_YMAX_ZMIN_ZMAX)
         mesh = Mesh(

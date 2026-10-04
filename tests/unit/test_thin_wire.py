@@ -305,7 +305,7 @@ def test_dielectric_cat1_composes_multiplicatively():
     fr4 = Material(name="FR4", epsilon=(4.0, 4.0, 4.0))
     mesh = Mesh.from_grid(
         grid,
-        regions=[(fr4, (0.0, 0.0, 0.0, 8e-3, 4e-3, 8e-3))],
+        regions=[(fr4, ((0.0, 0.0, 0.0), (8e-3, 4e-3, 8e-3)))],
     )
     d = float(grid.dx[0])
     a = 0.05 * d

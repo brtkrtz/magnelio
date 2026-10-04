@@ -33,7 +33,7 @@ KB-038, and its co-located rows still reproduce their class:
     variant                        max        median     previous pin
     baseline, co-located a/b       -25.15 dB  -27.60 dB  peak ~-19, best ~-28
     baseline, de-staggered         -68.13 dB  -73.91 dB  median ~-28, peak -19
-    2x refined, co-located a/b     -31.34 dB  -33.77 dB  -33 centre / -19 edges
+    2x refined, co-located a/b     -31.34 dB  -33.77 dB  -33 center / -19 edges
     2x refined, de-staggered       -74.33 dB  -84.38 dB  median ~-28
 
 Derived from the same run: the de-stagger buys 43.0 dB on the peak and
@@ -61,7 +61,7 @@ about a Mur floor that is not in the loop.
 HISTORY (why the fixture exists).  DD-047 (session 54) measured peak
 |S11| ~ -19 dB / best-case ~ -28 dB on a straight, empty WR-90 with
 both ports modal and source-driven across [8.2, 12.4] GHz; with a 2x
-finer mesh, -33 dB centre / -19 dB edges.  That measurement triggered
+finer mesh, -33 dB center / -19 dB edges.  That measurement triggered
 DD-047's Phase-3 co-simulation plan (Luo-Chen).  Session 57 fixed five
 bugs in the modal-port pipeline (``commit bbd7a07``); session 58
 (DD-048) split the pipeline into a reference path (analytical) and an
@@ -138,15 +138,15 @@ def run_variant(label: str, refine: int = 1) -> None:
     spec_src = PortSpecRectWG(
         name="port1",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=1,
     )
     spec_load = PortSpecRectWG(
         name="port2",
         plane=BoxFace.X_MAX,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=1,
     )
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=F_CALC)

@@ -207,7 +207,7 @@ def _arc_track_face(stroke: ArcStroke, radius: float):
     if mean <= radius:
         raise ValueError(
             f"An arc of radius {mean:g} is drawn with a track {2 * radius:g} "
-            f"wide, so the track covers its own centre. Such an arc has no "
+            f"wide, so the track covers its own center. Such an arc has no "
             f"well-defined outline; re-export the layer with the arc drawn "
             f"as a filled region."
         )
@@ -707,7 +707,7 @@ def layer_shape(layer: GerberLayer, scale: float):
 
 
 def _outline_segments(layer: GerberLayer) -> list:
-    """The centre lines the profile layer draws, as contour segments."""
+    """The center lines the profile layer draws, as contour segments."""
     segments: list = []
     for dark, obj in layer.objects:
         if not dark:

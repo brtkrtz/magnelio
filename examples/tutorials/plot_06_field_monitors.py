@@ -148,13 +148,13 @@ movie = monitors.MonitorFieldTime(
 )
 pattern_h = monitors.MonitorFieldFrequency(
     corners=((None, None, zc), (None, None, zc)),
-    freqs=[f0],
+    frequencies=[f0],
     fields=["E", "H"],
     name="pattern_midplane",
 )
 pattern_e = monitors.MonitorFieldFrequency(
     corners=((None, 0.0, None), (None, 0.0, None)),
-    freqs=[f0],
+    frequencies=[f0],
     fields=["E"],
     name="pattern_vertical",
 )

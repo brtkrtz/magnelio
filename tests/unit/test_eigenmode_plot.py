@@ -2,7 +2,7 @@
 
 Uses a synthetic single-mode result on a uniform grid: the FieldArrays
 carries FIT grid quantities (e = E·l), so a uniform physical field maps
-to Ex = E0·dx on every x-edge and the cell-centre interpolation must
+to Ex = E0·dx on every x-edge and the cell-center interpolation must
 recover E0 exactly.
 """
 

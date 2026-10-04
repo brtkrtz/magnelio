@@ -119,7 +119,7 @@ result = mio.AnalysisScatteringTD(mesh=mesh, ports=list(model.ports), verbose=Fa
 # The test fixture
 # ----------------
 #
-# A cut along the propagation direction, through the trace centre:
+# A cut along the propagation direction, through the trace center:
 # the waveguide port on the left, the trace ending at
 # ``end_position`` relative to the reference plane, the vertical
 # lumped port from the trace end down to the ground plane, and the

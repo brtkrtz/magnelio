@@ -138,7 +138,7 @@ def test_debye_sigma_half_space_fresnel():
     mat = Material.dispersive("debye_sigma", model, sigma=sigma)
     mesh = Mesh.from_grid(
         _line_grid(d_vac + d_lossy),
-        regions=[(mat, (-1.0, -1.0, d_vac, 1.0, 1.0, 1.0))],
+        regions=[(mat, ((-1.0, -1.0, d_vac), (1.0, 1.0, 1.0)))],
     )
     analysis = AnalysisScatteringTD(
         mesh=mesh.with_boundary_conditions(_BCS),
@@ -181,7 +181,9 @@ def test_lorentz_slab_transmission():
     d, L = 5e-3, 30e-3
     mesh = Mesh.from_grid(
         _line_grid(L),
-        regions=[(Material.dispersive("lorentz", model), (-1.0, -1.0, 12.5e-3, 1.0, 1.0, 17.5e-3))],
+        regions=[
+            (Material.dispersive("lorentz", model), ((-1.0, -1.0, 12.5e-3), (1.0, 1.0, 17.5e-3)))
+        ],
     )
     s21, _ = _run_two_port(mesh)
     s21_ref = _slab_s21(F_AXIS, model.evaluate(2 * np.pi * F_AXIS), d, L)
@@ -208,7 +210,7 @@ def test_drude_slab_cutoff():
     d, L = 10e-3, 30e-3
     mesh = Mesh.from_grid(
         _line_grid(L),
-        regions=[(Material.dispersive("plasma", model), (-1.0, -1.0, 10e-3, 1.0, 1.0, 20e-3))],
+        regions=[(Material.dispersive("plasma", model), ((-1.0, -1.0, 10e-3), (1.0, 1.0, 20e-3)))],
     )
     s21, _ = _run_two_port(mesh)
     s21_ref = _slab_s21(F_AXIS, model.evaluate(2 * np.pi * F_AXIS), d, L)
@@ -343,7 +345,7 @@ def test_resume_dispersive_bit_exact(tmp_path):
     )
     assert open_project(p).runs["port1_mode0"].n_steps == n1
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["port1_mode0"].n_steps == n_total
     for chan, (rv, ri) in ref_vi.items():
         gv, gi = proj.signals[("port1", 0)][chan]

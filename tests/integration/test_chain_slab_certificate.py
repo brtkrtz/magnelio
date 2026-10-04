@@ -55,7 +55,7 @@ def _rect_coax_mesh(dielectric_step: bool):
     grid = _rect_coax_grid()
     pec = Material.pec()
     regions = [
-        (pec, (-1e-3, -1e-3, grid.z[0], 1e-3, 1e-3, grid.z[-1])),
+        (pec, ((-1e-3, -1e-3, grid.z[0]), (1e-3, 1e-3, grid.z[-1]))),
     ]
     if dielectric_step:
         # eps step starting in the second cell behind the z_min port:
@@ -65,7 +65,7 @@ def _rect_coax_mesh(dielectric_step: bool):
             0,
             (
                 diel,
-                (-5e-3, -5e-3, grid.z[1], 5e-3, 5e-3, grid.z[-1]),
+                ((-5e-3, -5e-3, grid.z[1]), (5e-3, 5e-3, grid.z[-1])),
             ),
         )
     mesh = Mesh.from_grid(grid, regions=regions)

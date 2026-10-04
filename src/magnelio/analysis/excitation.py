@@ -4,7 +4,7 @@ Run vocabulary (core namespace), like :class:`~magnelio.BoundaryConditions`:
 an :class:`Excitation` names *what* is driven (a port channel or a
 model source, by name), *with what* (a :class:`~magnelio.signals.Waveform`)
 and *how much* (amplitude in the source's natural unit, a delay and,
-on carrier waveforms, a phase).  A time-domain run driven by a list of
+on carrier waveforms, a phase_deg).  A time-domain run driven by a list of
 excitations applies them simultaneously.
 """
 
@@ -40,11 +40,11 @@ class Excitation:
         source publishes it as ``amplitude_unit``.
     delay : float, default 0.0
         Time offset [s] of the waveform; must not be negative.
-    phase : float, default 0.0
+    phase_deg : float, default 0.0
         Phase [degrees].  On a carrier waveform (one with ``f_center``)
-        it is applied as a delay of ``phase / (360 · f_center)``; on a
+        it is applied as a delay of ``phase_deg / (360 · f_center)``; on a
         baseband waveform it is rejected, because a baseband pulse has
-        no phase.  Two modes of one port at 90° make a circularly
+        no phase_deg.  Two modes of one port at 90° make a circularly
         polarised feed.
 
     Notes
@@ -66,7 +66,7 @@ class Excitation:
     waveform: Waveform | None = None
     amplitude: float = 1.0
     delay: float = 0.0
-    phase: float = 0.0
+    phase_deg: float = 0.0
 
     def __post_init__(self) -> None:
         if not isinstance(self.source, str) or not self.source:
@@ -89,18 +89,20 @@ class Excitation:
             raise ValueError(
                 f"Excitation.delay must be a non-negative finite time [s]; got {self.delay!r}",
             )
-        phase = float(self.phase)
-        if not math.isfinite(phase):
-            raise ValueError(f"Excitation.phase must be finite [degrees]; got {self.phase!r}")
-        if phase != 0.0 and self.waveform is not None and self.waveform.f_center is None:
+        phase_deg = float(self.phase_deg)
+        if not math.isfinite(phase_deg):
             raise ValueError(
-                f"Excitation({self.source!r}): phase = {phase:g}° needs a carrier "
+                f"Excitation.phase_deg must be finite [degrees]; got {self.phase_deg!r}"
+            )
+        if phase_deg != 0.0 and self.waveform is not None and self.waveform.f_center is None:
+            raise ValueError(
+                f"Excitation({self.source!r}): phase_deg = {phase_deg:g}° needs a carrier "
                 f"waveform (one with f_center), got {type(self.waveform).__name__}; "
                 f"use delay= to shift a baseband pulse in time",
             )
         object.__setattr__(self, "amplitude", amplitude)
         object.__setattr__(self, "delay", delay)
-        object.__setattr__(self, "phase", phase)
+        object.__setattr__(self, "phase_deg", phase_deg)
 
     @classmethod
     def coerce(cls, spec) -> "Excitation":
@@ -122,18 +124,18 @@ class Excitation:
         )
 
     def effective_delay(self) -> float:
-        """The delay [s] including the phase, ``delay + phase / (360 · f_center)``.
+        """The delay [s] including the phase_deg, ``delay + phase_deg / (360 · f_center)``.
 
-        Raises when a phase is set without a waveform to take it from.
+        Raises when a phase_deg is set without a waveform to take it from.
         """
-        if self.phase == 0.0:
+        if self.phase_deg == 0.0:
             return self.delay
         if self.waveform is None or self.waveform.f_center is None:
             raise ValueError(
-                f"Excitation({self.source!r}): phase = {self.phase:g}° needs a carrier "
+                f"Excitation({self.source!r}): phase_deg = {self.phase_deg:g}° needs a carrier "
                 f"waveform (one with f_center) to resolve to a delay",
             )
-        return self.delay + self.phase / (360.0 * self.waveform.f_center)
+        return self.delay + self.phase_deg / (360.0 * self.waveform.f_center)
 
 
 __all__ = ["Excitation"]

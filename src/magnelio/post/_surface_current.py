@@ -18,7 +18,7 @@ patch's own outward normal, which on a curved conductor is the
 direction of the sub-cell wall vector rather than a staircase axis.
 
 Taking the magnitude from a mean of samples instead would be wrong by
-Jensen's inequality alone; taking it from a cell-centre average of the
+Jensen's inequality alone; taking it from a cell-center average of the
 neighbouring cell — the first thing one writes — puts the sample half a
 cell off the wall and loses half of a thin conductor's current.
 
@@ -90,15 +90,6 @@ class SurfaceCurrent:
         """The current density vector of one frame, ``(n_patches, 3)``."""
         return self.values[int(frame)]
 
-    def current_through(self, frame: int = 0) -> float:
-        """``∮|J_s| dA`` [A·m] — the area integral of the magnitude.
-
-        Divide by the length of the surface along the current to get
-        amperes: on one cell layer of a transmission line that is the
-        layer's thickness, and the result is the conductor current.
-        """
-        return float(np.sum(self.magnitude(frame) * self.areas))
-
     def power_loss(self, surface_resistance, frame: int = 0) -> float:
         """Ohmic loss ``(R_s/2)·∮|J_s|² dA`` [W] of one frame.
 
@@ -149,7 +140,7 @@ class SurfaceCurrent:
             mat of overlapping arrows; the colour scale is unaffected.
         **kwargs
             Passed to :func:`magnelio.plots.show_geometry` — ``mesh=``,
-            ``cut=``, ``mode=``, ``size=`` and the rest.
+            ``cut=``, ``render_mode=``, ``size=`` and the rest.
 
         Returns
         -------

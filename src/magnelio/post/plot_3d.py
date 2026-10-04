@@ -1121,7 +1121,7 @@ def _add_surface_current(pl, scene, current, *, unit_scale, frame: int, density:
     normals = np.asarray(current.normals)[keep]
     vec, mag = vec[keep], mag[keep]
     scale = float(np.sqrt(areas.mean())) * unit_scale
-    # Lift the arrows clear of the metal they sit on: a patch centre is
+    # Lift the arrows clear of the metal they sit on: a patch center is
     # ON the surface, and a glyph drawn there is half inside the solid.
     points = np.asarray(current.positions)[keep] * unit_scale + normals * (0.35 * scale)
     cloud = pv.PolyData(points)
@@ -1706,7 +1706,7 @@ def show_geometry(
     show_wires: bool = True,
     show_grid: bool = True,
     show_labels: bool = True,
-    mode: str | None = None,
+    render_mode: str | None = None,
     target: str | None = None,
     size: tuple[int, int] | None = None,
     render_edges: bool = False,
@@ -1753,7 +1753,7 @@ def show_geometry(
         With ``mesh``: draw the grid cells on the cutting plane.
     show_labels : bool, default True
         Write the names of ports and lumped elements next to them.
-    mode : str, optional
+    render_mode : str, optional
         Where to render in a notebook: ``"client"`` (default) renders
         in the browser and needs no OpenGL in the kernel; ``"server"``
         renders in the kernel and streams images; ``"trame"`` offers
@@ -1776,14 +1776,21 @@ def show_geometry(
         Tessellation fineness; values above 1 give finer triangles.
     scale_mm : bool, default True
         Display in millimetres (``False``: metres).
-    camera : str or sequence, default "iso"
-        Initial camera: a PyVista preset (``"iso"``, ``"xy"``, ``"xz"``,
-        ``"yz"``) or an explicit ``[position, focal_point, view_up]``.
+    camera : str or list or tuple, default "iso"
+        Initial view: ``"iso"`` is isometric; ``"xy"``, ``"xz"`` and
+        ``"yz"`` look at those coordinate planes. A custom camera is
+        ``[position, focal_point, view_up]``, each a three-vector.
+        Position and focal point use display coordinates: millimetres
+        with ``scale_mm=True``, metres otherwise. ``view_up`` is a
+        dimensionless vector towards the top of the image and must not
+        be parallel to the viewing direction. The scene is fitted
+        automatically: direction and up are preserved, but position,
+        focal point and zoom are adjusted to show the scene.
 
     Returns
     -------
     pyvista.Plotter or None
-        The plotter when ``mode="none"``; otherwise the view is displayed
+        The plotter when ``render_mode="none"``; otherwise the view is displayed
         as a side effect and ``None`` is returned.
 
     Notes
@@ -1802,8 +1809,22 @@ def show_geometry(
     ``trame-vuetify``).  Without it a browser target falls back to the
     native VTK window with a warning; an inline target falls back to a
     static image.
+
+    Examples
+    --------
+    Open a coordinate-plane view or a cut with visible tessellation edges:
+
+    >>> model.show(camera="xy")  # doctest: +SKIP
+    >>> model.show(camera="xz", cut=("y", 0.0), render_edges=True)  # doctest: +SKIP
+
+    Define an oblique direction in display coordinates, with z pointing up:
+
+    >>> model.show(  # doctest: +SKIP
+    ...     camera=[(100, 100, 80), (0, 0, 0), (0, 0, 1)],
+    ...     size=(900, 600),
+    ... )
     """
-    notebook, mode, off_screen, target = _resolve_mode(mode, target)
+    notebook, render_mode, off_screen, target = _resolve_mode(render_mode, target)
 
     scene = _build_scene(
         geometry,
@@ -1820,9 +1841,9 @@ def show_geometry(
         quality=quality,
         scale_mm=scale_mm,
         camera=camera,
-        off_screen=off_screen or (notebook and mode not in (None, "none")),
+        off_screen=off_screen or (notebook and render_mode not in (None, "none")),
         surface_current=surface_current,
         current_frame=current_frame,
         current_density=current_density,
     )
-    return _display(scene, mode, target)
+    return _display(scene, render_mode, target)

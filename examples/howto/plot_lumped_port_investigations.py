@@ -331,7 +331,7 @@ ax.legend()
 # ------------------
 #
 # The CPW termination is, once the model exploits the pair's
-# symmetry, *the coax picture again*: the centre strip stops an **end
+# symmetry, *the coax picture again*: the center strip stops an **end
 # gap** short of the ground metallisation behind it — one boolean cut
 # shapes strip, slots, end gap and closing ground plate in a single
 # stroke — and the lumped port bridges the gap longitudinally, on the
@@ -346,7 +346,7 @@ ax.legend()
 # The knobs are the coax knobs: end-gap width, end-gap position, port
 # impedance.
 
-w_cpw = 0.7e-3  # centre strip width
+w_cpw = 0.7e-3  # center strip width
 s_cpw = 0.05e-3  # slot width
 h_cpw = 0.508e-3  # substrate height
 t_cpw = 17e-6  # metallisation thickness
@@ -499,7 +499,7 @@ ax.legend()
 #   waveguide-port solve, not the catalogue number.
 #
 # Symmetry is the CPW's friend: the magnetic wall through the strip
-# centre is what lets a single edge chain terminate the even mode the
+# center is what lets a single edge chain terminate the even mode the
 # way the coax pin gap does.  And keep the test fixture itself above
 # suspicion — its shield (if any) single-mode over the band, its
 # resolution the resolution of the production model.

@@ -51,6 +51,46 @@ other editor REPLs whose kernels cannot identify their frontend.
 Lengths are shown in millimetres (`scale_mm=False` for metres).  The
 projection is parallel, as in engineering drawings.
 
+## Setting the initial camera
+
+Use `camera="iso"` for the default isometric view, or `"xy"`, `"xz"`
+or `"yz"` to look at one of the coordinate planes. The same camera
+options work on geometry and field `show()` calls:
+
+```python
+model.show(camera="xy")
+model.show(camera="xz", cut=("y", 0.0))
+monitor.show("Ez", normal="z", camera="xy")
+```
+
+For an oblique view, pass three vectors: the camera position, the point
+it looks towards, and the direction that should point up in the image.
+The up vector is dimensionless and must not be parallel to the viewing
+direction. The example looks towards the origin with z pointing up:
+
+```python
+model.show(camera=[(100, 100, 80), (0, 0, 0), (0, 0, 1)])
+```
+
+The first two vectors use **display coordinates**: millimetres by
+default, or metres with `scale_mm=False`. This is different from a
+cutting-plane position, which always uses metres. The equivalent view
+in metre coordinates is:
+
+```python
+model.show(
+    camera=[(0.1, 0.1, 0.08), (0, 0, 0), (0, 0, 1)],
+    scale_mm=False,
+)
+```
+
+The viewer fits the scene into the window automatically after setting
+the camera. A custom camera therefore sets its initial viewing direction
+and up vector; its exact position, focal point and zoom are adjusted
+to show the scene. Use the viewer's camera controls to pan or zoom after
+opening it. `size=(900, 600)` sets the view size in pixels, and
+`target="browser"` opens it in the browser.
+
 ## The cutting plane
 
 The cut is **axis-aligned**: a normal (`x`, `y` or `z`), a position
@@ -103,9 +143,9 @@ position slider walks that layer through the recorded volume.
 monitor.show()                                   # |E| with arrows, mid-plane of the region
 monitor.show("Ez", normal="y", position=0.0)     # one signed component, diverging colours
 monitor.show(geometry=model, mesh=mesh)          # with the solids; metal cut out of the sheet
-pattern.show(f=10e9, phase=90.0)                 # a frequency monitor at a phase
+pattern.show(f=10e9, phase_deg=90.0)                 # a frequency monitor at a phase
 eigen.show("H", geometry=model)                  # an eigenmode result: a slider over the modes
-eigen.show(frame=2, glyph="cone")                # starting at mode 2, cones instead of arrows
+eigen.show(mode=2, glyph="cone")                # starting at mode 2, cones instead of arrows
 ```
 
 | Item | Appearance |
@@ -165,7 +205,7 @@ so a surface is as fine as the grid.  Volume rendering with an opacity
 ramp is not offered: the browser renderer takes only uniform image
 data, and a graded grid resampled onto one would lose its resolution.
 
-One thing the picture is not: a plane.  Every value is the cell-centre
+One thing the picture is not: a plane.  Every value is the cell-center
 average of the staggered components in one layer of cells, the same
 convention as the 2D slice plots.
 
@@ -175,14 +215,14 @@ slider moves, so a volume monitor of any size opens at once.
 
 ## Rendering modes
 
-``target`` chooses where the viewer appears; ``mode`` chooses where its
+``target`` chooses where the viewer appears; ``render_mode`` chooses where its
 picture is rendered.  The browser and inline targets offer the same Magnelio
 toolbar.
 
 ```{list-table}
 :header-rows: 1
 
-* - `mode`
+* - `render_mode`
   - Where the picture is rendered
   - When to use it
 * - `"client"` (default)
@@ -250,3 +290,17 @@ needed for Magnelio's viewer.
   {ref}`ParaView export <paraview-export>` covers that.
 - The camera presets do not turn the flat labels: they face the
   camera the view opened with.
+
+## Renderer and physical selection
+
+Use `render_mode` for `"client"`, `"server"`, `"trame"`, `"static"` or
+`"none"`. `mode` selects a physical eigenmode through `field`, `plot` and
+`show`; for example, `result.show(mode=2, render_mode="none")` builds the
+scene for eigenmode 2. Time/frequency recordings instead use `frame` for an
+index or `t`/`f` for a physical value. Choose exactly one selector.
+Degree-valued field-picture phases use `phase_deg`.
+
+Both a model and a project's loaded geometry use `show()` for interactive
+3D. Their `plot_cross_section()` remains a matplotlib picture. The camera,
+units and notebook/browser/native destination rules above also apply to
+loaded geometry.

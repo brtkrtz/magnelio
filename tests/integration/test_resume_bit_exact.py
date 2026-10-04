@@ -55,8 +55,8 @@ def _wr90_solver(n_steps):
         PortSpecRectWG(
             name="port1",
             plane=BoxFace.X_MIN,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
             n_modes=1,
         ),
         mesh,
@@ -70,8 +70,8 @@ def _wr90_solver(n_steps):
         PortSpecRectWG(
             name="port2",
             plane=BoxFace.X_MAX,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
             n_modes=1,
         ),
         mesh,
@@ -160,7 +160,7 @@ def test_resume_bit_exact_cpml_psi():
         },
         verbose=False,
     )
-    # A Gaussian E_z bump at the box centre radiates into the six PML walls,
+    # A Gaussian E_z bump at the box center radiates into the six PML walls,
     # so the ψ convolution fields carry non-trivial state at the checkpoint.
     solver.setup()
     Ez = solver._fields.Ez

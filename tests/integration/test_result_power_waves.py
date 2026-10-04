@@ -71,7 +71,7 @@ def _synthetic_result(Z0: float = 50.0) -> tuple[ScatteringTDResult, float]:
             label="ref",
         ),
         dt=dt,
-        n_actual_steps=n,
+        max_run_steps=n,
         port_modes={"p1": [_LumpedModeStub(z0=Z0)]},
     )
     return result, Z0
@@ -94,7 +94,7 @@ def test_matched_forward_wave_has_vanishing_b():
     # temporal rotation, and V = Z0·I for a matched wave ⇒ b ≡ 0.
     assert np.abs(b.values).max() < 1e-12 * np.abs(a.values).max()
     # Same time axis and metadata as the recorded V.
-    assert a.dt == result.dt and len(a.values) == result.n_actual_steps
+    assert a.dt == result.dt and len(a.values) == result.max_run_steps
     assert a.label == "a(p1,0)" and b.label == "b(p1,0)"
 
 
@@ -112,7 +112,7 @@ def test_power_wave_errors():
         signals=result.signals,
         reference_signal=result.reference_signal,
         dt=result.dt,
-        n_actual_steps=result.n_actual_steps,
+        max_run_steps=result.max_run_steps,
     )
     with pytest.raises(ValueError, match="port_modes"):
         bare.a("p1")

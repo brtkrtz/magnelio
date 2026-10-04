@@ -146,7 +146,7 @@ def test_wrap_rejects_uncovered_source_and_excess_strain():
 
 def test_named_wrapped_body_replays_from_chart():
     wrap, length = _cylinder()
-    source = geo.Brick(origin=(0, -0.2, 0), size=(length, 0.4, 0.02), material="pec").tag_face(
+    source = geo.Brick(origin=(0, -0.2, 0), size=(length, 0.4, 0.02), material="pec").tagged_face(
         "outer", normal=(0, 0, 1)
     )
     result = wrap @ source

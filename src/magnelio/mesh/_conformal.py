@@ -114,7 +114,7 @@ def detect_thin_metallizations(
     instead of a resolved cell layer.
 
     The substrate side is the face whose adjacent material has the
-    higher permittivity, probed at the transverse centre just outside
+    higher permittivity, probed at the transverse center just outside
     each face (PEC neighbours and a PEC background count as eps = 1).
     Ties pick the lower-coordinate face.
 
@@ -169,12 +169,12 @@ def detect_thin_metallizations(
             continue  # degenerate transverse extent
 
         # Substrate side: probe the material just outside each face at
-        # the transverse centre; the denser dielectric wins.
-        centre = [0.5 * (bb_min[t] + bb_max[t]) for t in range(3)]
+        # the transverse center; the denser dielectric wins.
+        center = [0.5 * (bb_min[t] + bb_max[t]) for t in range(3)]
         delta = 0.5 * extents[d]
-        p_lo = list(centre)
+        p_lo = list(center)
         p_lo[d] = bb_min[d] - delta
-        p_hi = list(centre)
+        p_hi = list(center)
         p_hi[d] = bb_max[d] + delta
         # Cell-relative classification tolerance (DD-120): 1e-3 of the
         # hard floor reproduces the historical 1e-7 m at the typical

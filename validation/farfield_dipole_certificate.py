@@ -61,7 +61,7 @@ def _wire_mesh(z_nodes, t_nodes, wire_ks):
 
 def _run(mesh, grid, i0, j0, s, e, bc):
     x0, y0 = float(grid.x[i0]), float(grid.y[j0])
-    ff = MonitorFarFieldFrequency(freqs=[F0], margin_cells=2, name="pattern")
+    ff = MonitorFarFieldFrequency(frequencies=[F0], margin_cells=2, name="pattern")
     ana = AnalysisScatteringTD(
         mesh=mesh.with_boundary_conditions(bc),
         ports=[PortSpecLumped(name="feed", start=(x0, y0, s), end=(x0, y0, e), Z0=Z0_FEED)],
@@ -78,7 +78,7 @@ def _db(x):
 
 
 def main() -> bool:
-    # Full dipole (2-cell centre gap).
+    # Full dipole (2-cell center gap).
     span = 2 * H_CELLS
     nz, nt = span + 2 * (PAD + PML), 1 + 2 * (PAD + PML)
     z = np.linspace(0, nz * D, nz + 1)

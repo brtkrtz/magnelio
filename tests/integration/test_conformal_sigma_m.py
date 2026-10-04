@@ -64,7 +64,7 @@ class TestNoSigmaMPath:
         lin = np.linspace(0.0, 4e-3, 5)
         mesh = Mesh.from_grid(
             GridLines(x=lin, y=lin, z=lin),
-            regions=[(_mag(), (0.0, 0.0, 0.0, 4e-3, 2e-3, 4e-3))],
+            regions=[(_mag(), ((0.0, 0.0, 0.0), (4e-3, 2e-3, 4e-3)))],
         )
         assert mesh.face_material is None
         M = build_M_sigma_m(mesh)

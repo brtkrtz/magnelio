@@ -183,7 +183,7 @@ class TestMurCoefficient:
         discrete = discretize_modes(modes, plane, m_eps)
         # Compute v_p at f_calc analytically
         omega = 2 * math.pi * 10e9
-        gamma = modes[0].gamma(omega)
+        gamma = modes[0].gamma(f=(omega) / (2.0 * math.pi))
         beta = abs(gamma.imag)
         v_p = omega / beta
         dx = float(grid.dx[0])
@@ -382,7 +382,7 @@ class TestVICalibration:
         I_m = op.project_I(h_test)
         assert I_m[0] != 0.0, "I projection vanished — calibration broken"
 
-        Z_modal = float(modes[0].z_modal(2 * math.pi * 10e9).real)
+        Z_modal = float(modes[0].z_modal(f=(2 * math.pi * 10e9) / (2.0 * math.pi)).real)
         ratio = float(V_m[0] / I_m[0])
         # For the analytical synthetic field the calibration is exact;
         # tolerate a tiny round-off slack.
@@ -394,7 +394,7 @@ class TestVICalibration:
     def test_z_modal_attribute_unchanged_by_calibration(self):
         """Calibration only rescales h profile; mode.z_modal stays intact."""
         _, _, op, _, _, _ = _coax_setup(f_calc=10e9)
-        Z_pre = op.discrete_modes[0].mode.z_modal(2 * math.pi * 10e9)
+        Z_pre = op.discrete_modes[0].mode.z_modal(f=(2 * math.pi * 10e9) / (2.0 * math.pi))
         # Z_modal lives on the underlying Mode object — unchanged by the
         # operator's per-mode h-profile rescale.
         ETA0 = math.sqrt(MU0 / 8.854187817e-12)

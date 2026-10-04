@@ -18,7 +18,7 @@ from magnelio.mesh.grid import GridLines
 
 
 def _box(scale=1):
-    return geo.Brick(size=(2 * scale, 3 * scale, 4 * scale), material="air").tag_face(
+    return geo.Brick(size=(2 * scale, 3 * scale, 4 * scale), material="air").tagged_face(
         "end", normal="z"
     )
 
@@ -36,13 +36,13 @@ def test_rectangular_named_face_matches_explicit_declarations(scale):
     assert _declarative_port_from_dict(_declarative_port_to_dict(selected_port)) == explicit_port
 
     selected_monitor = monitors.MonitorFieldFrequency.from_face(
-        face, freqs=[1e9], fields=["Ex"], name="fields"
+        face, frequencies=[1e9], fields=["Ex"], name="fields"
     )
     explicit_monitor = monitors.MonitorFieldFrequency(
-        corners=explicit_port.corners, freqs=[1e9], fields=["Ex"], name="fields"
+        corners=explicit_port.corners, frequencies=[1e9], fields=["Ex"], name="fields"
     )
     assert selected_monitor.corners == explicit_monitor.corners
-    np.testing.assert_array_equal(selected_monitor.freqs, explicit_monitor.freqs)
+    np.testing.assert_array_equal(selected_monitor.frequencies, explicit_monitor.frequencies)
 
     restored = from_recipe(json.loads(json.dumps(to_recipe(box))))
     restored_model = geo.GeometryModel(background=Material.pec()).add(restored)
@@ -65,9 +65,9 @@ def test_moved_owner_requires_new_selection_and_model_membership():
 
 def test_interior_face_is_eligible_for_field_recording():
     internal = geo.Brick(origin=(1, 1, 1), size=(2, 2, 2), material="air")
-    internal = internal.tag_face("slice", normal="z")
+    internal = internal.tagged_face("slice", normal="z")
     monitor = monitors.MonitorFieldFrequency.from_face(
-        internal.face("slice"), freqs=[2e9], name="interior"
+        internal.face("slice"), frequencies=[2e9], name="interior"
     )
     assert monitor.corners == ((1, 1, 3), (3, 3, 3))
     assert monitor.fields == ["E"]
@@ -76,7 +76,7 @@ def test_interior_face_is_eligible_for_field_recording():
 def test_adapter_rejects_ambiguous_curved_oblique_holes_and_nonrectangular_faces():
     box = _box()
     with pytest.raises(TypeError, match="singular FaceRef"):
-        monitors.MonitorFieldFrequency.from_face(box.faces(), freqs=[1e9])
+        monitors.MonitorFieldFrequency.from_face(box.faces(), frequencies=[1e9])
     with pytest.raises(geo.AmbiguousTopologyError):
         box.face(near=(0, 0, 0))
     cases = [
@@ -87,7 +87,7 @@ def test_adapter_rejects_ambiguous_curved_oblique_holes_and_nonrectangular_faces
     ]
     for face, message in cases:
         with pytest.raises(ValueError, match=message):
-            monitors.MonitorFieldFrequency.from_face(face, freqs=[1e9])
+            monitors.MonitorFieldFrequency.from_face(face, frequencies=[1e9])
 
 
 def test_port_rejects_interior_and_displaced_boundary_planes():
@@ -124,17 +124,20 @@ def test_port_face_and_explicit_port_produce_identical_mesh_and_modal_setup():
     )
     assert selected_mode.mode_type == explicit_mode.mode_type
     assert selected_mode.f_cutoff == explicit_mode.f_cutoff
-    assert selected_mode.z_modal(80e9) == explicit_mode.z_modal(80e9)
+    assert selected_mode.z_modal(f=80e9) == explicit_mode.z_modal(f=80e9)
 
 
 def test_selected_and_explicit_observation_planes_record_identical_fields():
     box = _box(1e-3)
     face = box.face("end")
     selected = monitors.MonitorFieldFrequency.from_face(
-        face, freqs=[1e9], fields=["Ex"], name="selected"
+        face, frequencies=[1e9], fields=["Ex"], name="selected"
     )
     explicit = monitors.MonitorFieldFrequency(
-        corners=((0, 0, 4e-3), (2e-3, 3e-3, 4e-3)), freqs=[1e9], fields=["Ex"], name="explicit"
+        corners=((0, 0, 4e-3), (2e-3, 3e-3, 4e-3)),
+        frequencies=[1e9],
+        fields=["Ex"],
+        name="explicit",
     )
     grid = GridLines(
         x=np.linspace(0, 2e-3, 5),
@@ -147,8 +150,8 @@ def test_selected_and_explicit_observation_planes_record_identical_fields():
     for monitor in (selected, explicit):
         monitor.attach(mesh)
         monitor.record(fields, 0, 0.0, 1e-12)
-    a = selected.spectrum_raw.cell_centred(squeeze=True)["Ex"]
-    b = explicit.spectrum_raw.cell_centred(squeeze=True)["Ex"]
+    a = selected.spectrum_raw.cell_centered(squeeze=True)["Ex"]
+    b = explicit.spectrum_raw.cell_centered(squeeze=True)["Ex"]
     np.testing.assert_array_equal(a, b)
 
 

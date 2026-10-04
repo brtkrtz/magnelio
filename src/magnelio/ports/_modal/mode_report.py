@@ -137,15 +137,15 @@ class ModeReport:
 
     def z_modal(self, f: float) -> complex:
         """Power-wave reference impedance at frequency ``f`` [Hz]."""
-        return self._discrete.mode.z_modal(2.0 * math.pi * f)
+        return self._discrete.mode.z_modal(f=f)
 
     def z_wave(self, f: float) -> complex:
         """Modal wave impedance at frequency ``f`` [Hz]."""
-        return self._discrete.mode.z_wave(2.0 * math.pi * f)
+        return self._discrete.mode.z_wave(f=f)
 
     def gamma(self, f: float) -> complex:
         """Propagation constant ``γ = α + jβ`` at frequency ``f`` [Hz]."""
-        return self._discrete.mode.gamma(2.0 * math.pi * f)
+        return self._discrete.mode.gamma(f=f)
 
     def _field_profiles(self, field: str) -> tuple[np.ndarray, np.ndarray]:
         """Physical field at the edge midpoints, V/m or A/m.
@@ -155,7 +155,7 @@ class ModeReport:
         ``ê = E · l_primal`` (the gradient behind ``ê = -∇φ`` is
         topological), the dual profile the face voltage
         ``ĥ = H · l_dual``.  Both scale with a per-edge length, so on a
-        graded mesh reading them as a field tilts every cell-centre
+        graded mesh reading them as a field tilts every cell-center
         vector and biases its magnitude — with an extra bias wherever
         the conductor contour forces a locally different spacing.
 
@@ -183,7 +183,7 @@ class ModeReport:
     def plot(
         self,
         *,
-        field: str = "E",
+        component: str = "E",
         ax: "matplotlib.axes.Axes | None" = None,
         density: int = 20,
         normalize_arrows: bool = True,
@@ -203,8 +203,8 @@ class ModeReport:
 
         Parameters
         ----------
-        field : {"E", "H"}, default "E"
-            Which transverse field profile to draw.
+        component : {"E", "H"}, default "E"
+            Which transverse component profile to draw.
         ax : matplotlib.axes.Axes, optional
             Target axes; a new figure is created when omitted.
         density : int, default 20
@@ -214,7 +214,7 @@ class ModeReport:
             grid, so a locally refined region does not show up as a
             cluster of arrows — but it also does not gain any.  Raise
             this to read a feature that the default spacing steps over,
-            such as the field in a thin gap.
+            such as the component in a thin gap.
         normalize_arrows : bool, default True
             Unit-length arrows with magnitude encoded in colour
             (port-mode style).
@@ -225,7 +225,7 @@ class ModeReport:
         scale_mm : bool, default True
             Axis coordinates in mm instead of m.
         title : str, optional
-            Axes title; default names port, mode, and field.
+            Axes title; default names port, mode, and component.
         geometry : GeometryModel, optional
             Geometry model for a cross-section overlay of the port
             plane (conductors filled, air regions as dashed outlines).
@@ -237,12 +237,12 @@ class ModeReport:
         """
         from magnelio.post.plot_field import CrossSectionOverlay, plot_field_vector
 
-        if field == "E":
+        if component == "E":
             prof_u, prof_v = self._field_profiles("E")
             comp_u = _edge_grid(prof_u, self._plane.u_edge_uv)
             comp_v = _edge_grid(prof_v, self._plane.v_edge_uv)
-            # E_u lives at (u-centre, v-node): average along v.
-            # E_v lives at (u-node, v-centre): average along u.
+            # E_u lives at (u-center, v-node): average along v.
+            # E_v lives at (u-node, v-center): average along u.
             u_cc = _avg_nonzero(comp_u[0][:, :-1], comp_u[0][:, 1:])
             v_cc = _avg_nonzero(comp_v[0][:-1, :], comp_v[0][1:, :])
             valid = _live_cells(comp_u[0], comp_v[0])
@@ -250,7 +250,7 @@ class ModeReport:
             # E_u resolves the v-nodes, E_v the u-nodes.
             u_node_axis = 1
             u_nodes, v_nodes = comp_v[1], comp_u[2]
-        elif field == "H":
+        elif component == "H":
             # H_u is co-located with the v-edges, H_v with the u-edges.
             prof_u, prof_v = self._field_profiles("H")
             comp_u = _edge_grid(prof_u, self._plane.v_edge_uv)
@@ -262,7 +262,7 @@ class ModeReport:
             u_node_axis = 0
             u_nodes, v_nodes = comp_u[1], comp_v[2]
         else:
-            raise ValueError(f"field must be 'E' or 'H'; got {field!r}")
+            raise ValueError(f"component must be 'E' or 'H'; got {component!r}")
 
         uc, vc, u_cc, v_cc, valid = _extend_to_window(
             uc,
@@ -281,10 +281,10 @@ class ModeReport:
         u_name = _AXIS_NAMES[face.u_axis]
         v_name = _AXIS_NAMES[face.v_axis]
         uc, vc, u_cc, v_cc, valid = _apply_mirrors(
-            self._mirrors, face, field, uc, vc, u_cc, v_cc, valid
+            self._mirrors, face, component, uc, vc, u_cc, v_cc, valid
         )
         if title is None:
-            title = f"{self.port_name}: {self.name} ({self.mode_type.value}) {field} profile"
+            title = f"{self.port_name}: {self.name} ({self.mode_type.value}) {component} profile"
             if self._mirrors:
                 title += " — full model"
 
@@ -335,10 +335,10 @@ def _extend_to_window(
     u_bounds: tuple[float, float],
     v_bounds: tuple[float, float],
 ):
-    """Grow the cell-centre picture out to the port-window boundary.
+    """Grow the cell-center picture out to the port-window boundary.
 
     Destaggering lands both components on cell centres, so the picture
-    spans centre to centre and loses *half a cell* on each of the four
+    spans center to center and loses *half a cell* on each of the four
     sides — invisible on a uniform mesh, up to a tenth of the frame
     where the mesh is graded, and a seam in the middle of a mirrored
     full-model plot.
@@ -352,7 +352,7 @@ def _extend_to_window(
 
     An added line is valid exactly where the interior line it continues
     is: what decides whether there is anything to draw out there is
-    whether the neighbourhood is metal, not how large the field happens
+    whether the neighbourhood is metal, not how large the component happens
     to be.  Reading the genuine component instead — blank it out where
     it vanishes — confuses *on* a conductor with *in* one: an electric
     wall forces the tangential half to zero and leaves the normal half
@@ -426,7 +426,7 @@ def _overlay_mirrors(mirrors: tuple, face) -> tuple:
     return tuple((0 if m.axis == first else 1, m.wall, m.at_low) for m in mirrors)
 
 
-def _apply_mirrors(mirrors: tuple, face, field: str, uc, vc, u_cc, v_cc, valid):
+def _apply_mirrors(mirrors: tuple, face, component: str, uc, vc, u_cc, v_cc, valid):
     """Extend the plotted arrays across the port window's symmetry planes.
 
     Each plane doubles the picture along its axis; the component signs
@@ -439,10 +439,10 @@ def _apply_mirrors(mirrors: tuple, face, field: str, uc, vc, u_cc, v_cc, valid):
         arr_axis = 0 if spec.axis == face.u_axis else 1
         coords = uc if arr_axis == 0 else vc
         new_c, u_cc = mirror_extend(
-            coords, u_cc, spec, arr_axis, mirror_sign(field, face.u_axis, spec.axis, spec.kind)
+            coords, u_cc, spec, arr_axis, mirror_sign(component, face.u_axis, spec.axis, spec.kind)
         )
         _, v_cc = mirror_extend(
-            coords, v_cc, spec, arr_axis, mirror_sign(field, face.v_axis, spec.axis, spec.kind)
+            coords, v_cc, spec, arr_axis, mirror_sign(component, face.v_axis, spec.axis, spec.kind)
         )
         _, mask = mirror_extend(coords, valid.astype(float), spec, arr_axis, 1.0)
         valid = mask > 0.5
@@ -500,7 +500,7 @@ def _avg_nonzero(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
     Mode profiles carry exact ``0.0`` on every non-DOF edge (inside or
     on a conductor).  A plain two-point average halves the magnitude
-    and rotates the direction of every cell-centre vector whose
+    and rotates the direction of every cell-center vector whose
     stencil touches a conductor; averaging only the live contributors
     removes that bias while leaving interior cells (both nonzero)
     untouched.
@@ -517,7 +517,7 @@ def _edge_grid(
 
     The port plane spans the full bbox face, so the edge midpoints form
     a complete tensor grid whose coordinates were computed once from
-    the shared node/centre arrays — ``np.unique`` therefore matches
+    the shared node/center arrays — ``np.unique`` therefore matches
     them exactly.  Returns ``(grid, u_coords, v_coords)``.
     """
     us = np.unique(uv[:, 0])

@@ -105,7 +105,7 @@ class TestGaussianModulated:
 
 class TestSine:
     def test_values_and_causality(self):
-        w = WaveformSine(f=1e9, phase=90.0)
+        w = WaveformSine(f=1e9, phase_deg=90.0)
         assert w(0.0) == pytest.approx(1.0)  # sin(90°)
         assert w(-1e-12) == 0.0
         t = np.array([-1e-9, 0.25e-9, 0.5e-9])

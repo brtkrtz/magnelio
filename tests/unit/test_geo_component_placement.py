@@ -13,8 +13,8 @@ from magnelio.geo._topology_store import from_recipe, to_recipe
 def _component():
     shell = (
         geo.Brick(size=(2, 1, 1), material="pec", name="shell")
-        .tag_face("contact", normal="z")
-        .tag_faces("sides", surface_type="plane")
+        .tagged_face("contact", normal="z")
+        .tagged_faces("sides", surface_type="plane")
     )
     core = geo.Brick(origin=(0.5, 0.25, 0), size=(1, 0.5, 1), material="air", name="core")
     outline = geo.Curve.line((0, 0, 0), (2, 0, 0), name="datum")

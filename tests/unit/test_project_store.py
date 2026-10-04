@@ -48,7 +48,7 @@ class TestMeshOnlyRoundTrip:
         fr4 = Material(name="FR4", epsilon=(4.4, 4.4, 4.4), sigma=(0.0, 0.0, 0.0))
         return Mesh.from_grid(
             grid,
-            regions=[(fr4, (0, 0, 0, 6e-3, 2e-3, 4e-3))],
+            regions=[(fr4, ((0, 0, 0), (6e-3, 2e-3, 4e-3)))],
         )
 
     def test_grid_and_materials(self, tmp_path):

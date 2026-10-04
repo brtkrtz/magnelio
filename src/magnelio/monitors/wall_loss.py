@@ -47,7 +47,7 @@ class MonitorWallLoss:
 
     Parameters
     ----------
-    freqs : array_like
+    frequencies : array_like
         Evaluation frequencies [Hz].
     normal : str
         Normal axis (``"x"``, ``"y"`` or ``"z"``) of the power-reference
@@ -82,7 +82,7 @@ class MonitorWallLoss:
         part of the recipe (re-derived on resume).
     """
 
-    freqs: np.ndarray
+    frequencies: np.ndarray
     normal: str
     position: float
     sigma: float | None = None
@@ -113,7 +113,7 @@ class MonitorWallLoss:
     _sym_fraction_factor: float = field(default=1.0, repr=False, init=False)
 
     def __post_init__(self) -> None:
-        self.freqs = np.asarray(self.freqs, dtype=float)
+        self.frequencies = np.asarray(self.frequencies, dtype=float)
         if self.normal not in ("x", "y", "z"):
             raise ValueError(f"normal must be 'x', 'y' or 'z'; got {self.normal!r}")
         self.position = float(self.position)
@@ -129,7 +129,7 @@ class MonitorWallLoss:
         from magnelio.post.wall_loss import _resolve_surface_materials
 
         self._mesh = mesh
-        self._omega = 2.0 * np.pi * self.freqs
+        self._omega = 2.0 * np.pi * self.frequencies
 
         # DD-154: symmetry faces are mirror planes, not conductor
         # walls — they must not dissipate.  The analysis already masks
@@ -180,7 +180,7 @@ class MonitorWallLoss:
                 self.roughness,
                 overrides=self.wall_overrides or None,
             )
-        nf = len(self.freqs)
+        nf = len(self.frequencies)
         self._h_bins = [np.zeros((nf, len(s.comp)), dtype=complex) for s in self._surfaces]
         self._gather_idx = None  # rebuilt lazily on the first record
 
@@ -267,7 +267,7 @@ class MonitorWallLoss:
             # the field monitors make per recorded step.
             e1, h2, e2, h1 = (cp.asnumpy(a) for a in (e1, h2, e2, h1))
         if not self._ref_bins:
-            nf = len(self.freqs)
+            nf = len(self.frequencies)
             for key, arr in (("e1", e1), ("h2", h2), ("e2", e2), ("h1", h1)):
                 self._ref_bins[key] = np.zeros((nf, *arr.shape), dtype=complex)
         for key, arr, ph in (
@@ -311,7 +311,7 @@ class MonitorWallLoss:
         frac = self.dissipated_fraction
         tags = [s.tag for s in self._surfaces]
         return {
-            "freqs": np.asarray(self.freqs, dtype=float),
+            "freqs": np.asarray(self.frequencies, dtype=float),
             "tags": tags,
             "fraction": [np.asarray(frac[t], dtype=float) for t in tags],
             "total": np.asarray(frac["total"], dtype=float),
@@ -336,9 +336,9 @@ class MonitorWallLoss:
     # ------------------------------------------------------------------
 
     @property
-    def f(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequency axis [Hz]."""
-        return self.freqs
+        return self.frequencies
 
     @property
     def reference_power(self) -> np.ndarray:
@@ -370,10 +370,10 @@ class MonitorWallLoss:
         out = {}
         for surf, bins in zip(self._surfaces, self._h_bins):
             if self._resolved is None:
-                R_s = self.sibc.fits[surf.tag].impedance(self.freqs).real
+                R_s = self.sibc.fits[surf.tag].impedance(self.frequencies).real
             else:
                 sig, mur, rough = self._resolved[surf.tag]
-                R_s = surface_resistance(self.freqs, sig, mur, rough)
+                R_s = surface_resistance(self.frequencies, sig, mur, rough)
             h_phys2 = (np.abs(bins) * surf.inv_l_dual[None, :]) ** 2
             out[surf.tag] = 0.5 * R_s * np.sum(surf.weight[None, :] * h_phys2, axis=1)
         return out
@@ -402,6 +402,6 @@ class MonitorWallLoss:
 
     def __repr__(self) -> str:
         return (
-            f"MonitorWallLoss(name={self.name!r}, n_freqs={len(self.freqs)}, "
+            f"MonitorWallLoss(name={self.name!r}, n_freqs={len(self.frequencies)}, "
             f"tags={[s.tag for s in self._surfaces]})"
         )

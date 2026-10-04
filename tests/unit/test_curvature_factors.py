@@ -69,8 +69,8 @@ def test_offset_inversion_matches_brute_clip():
         if rng.random() < 0.2:  # near-axis normals stress the branches
             v = np.eye(3)[rng.integers(3)] + rng.normal(size=3) * 1e-7
         n_hat = v / np.linalg.norm(v)
-        centre = 0.5 * (cell_lo + cell_hi)
-        p = float(n_hat @ centre + rng.uniform(-0.4, 0.4) * float((n_hat * d).sum()))
+        center = 0.5 * (cell_lo + cell_hi)
+        p = float(n_hat @ center + rng.uniform(-0.4, 0.4) * float((n_hat * d).sum()))
         for face in range(6):
             area = _face_area(cell_lo, cell_hi, n_hat, p, face)
             full = _face_area(cell_lo, cell_hi, n_hat, 1e9, face)

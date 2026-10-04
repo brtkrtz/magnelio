@@ -42,15 +42,15 @@ def _wr90_analysis() -> AnalysisScatteringTD:
         PortSpecRectWG(
             name="port1",
             plane=BoxFace.X_MIN,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
             n_modes=1,
         ),
         PortSpecRectWG(
             name="port2",
             plane=BoxFace.X_MAX,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
             n_modes=1,
         ),
     ]
@@ -89,8 +89,8 @@ def _graded_wr90_analysis() -> AnalysisScatteringTD:
             PortSpecRectWG(
                 name="port1",
                 plane=BoxFace.X_MIN,
-                width_a=WR90_A,
-                height_b=WR90_B,
+                width=WR90_A,
+                height=WR90_B,
                 n_modes=1,
             )
         ],
@@ -152,11 +152,11 @@ def test_solve_ports_rectwg_cutoff_and_types():
     assert m.z_line is None
     # Frequency relations delegate to the underlying Mode: above
     # cut-off the TE wave impedance is real and > eta0.
-    z = m.z_modal(10e9)
+    z = m.z_modal(f=10e9)
     assert z.imag == pytest.approx(0.0, abs=1e-9)
     assert z.real > ETA0
     # Propagating at 10 GHz: gamma purely imaginary.
-    g = m.gamma(10e9)
+    g = m.gamma(f=10e9)
     assert g.real == pytest.approx(0.0, abs=1e-12) and g.imag > 0.0
 
 
@@ -181,7 +181,7 @@ def test_solve_ports_tem_z_line_matches_analytic():
     np.testing.assert_allclose(m.z_line, rep.z_line_num, rtol=1e-12)
     # TEM z_modal is the line impedance at any frequency.
     np.testing.assert_allclose(
-        complex(m.z_modal(1e9)),
+        complex(m.z_modal(f=1e9)),
         complex(m.z_line),
         rtol=1e-12,
     )
@@ -224,17 +224,17 @@ class TestModePlot:
         rep = _wr90_analysis().solve_ports()["port1"]
         m = rep.modes[0]
 
-        fig, ax = m.plot(field="E")
+        fig, ax = m.plot(component="E")
         # One quiver + colourbar on a fresh figure; default title set.
         assert "TE" in ax.get_title() and "port1" in ax.get_title()
         plt.close(fig)
 
-        fig, ax = m.plot(field="H", title="custom")
+        fig, ax = m.plot(component="H", title="custom")
         assert ax.get_title() == "custom"
         plt.close(fig)
 
         with pytest.raises(ValueError, match="'E' or 'H'"):
-            m.plot(field="Ez")
+            m.plot(component="Ez")
 
     def test_avg_nonzero_boundary_destaggering(self):
         """Cell centres next to a conductor keep the live edge's value
@@ -259,7 +259,7 @@ class TestModePlot:
         reports = _wr90_analysis().solve_ports()
 
         model = _RecordingModel()
-        fig, ax = reports["port1"].modes[0].plot(field="E", geometry=model)
+        fig, ax = reports["port1"].modes[0].plot(component="E", geometry=model)
         plt.close(fig)
         ((normal, pos, flip),) = model.calls
         assert normal == "x"
@@ -267,7 +267,7 @@ class TestModePlot:
         assert flip is False  # X_MIN: (u, v) = (y, z), ascending
 
         model = _RecordingModel()
-        fig, ax = reports["port2"].modes[0].plot(field="E", geometry=model)
+        fig, ax = reports["port2"].modes[0].plot(component="E", geometry=model)
         plt.close(fig)
         ((normal, pos, flip),) = model.calls
         assert normal == "x"
@@ -305,7 +305,7 @@ class TestModePlot:
         assert len(mode._mirrors) == 1
         assert mode._mirrors[0].kind == "PMC"
 
-        fig, ax = mode.plot(field="E")
+        fig, ax = mode.plot(component="E")
         assert "full model" in ax.get_title()
         # The picture spans the full guide width, wall to wall, and is
         # centred on the symmetry plane.
@@ -355,7 +355,7 @@ class TestModePlot:
         mesh = Mesh.from_geometry(model, MeshControl(), f_max=f_max)
         rep = AnalysisScatteringTD(mesh=mesh, f_max=f_max).solve_ports()["port1"]
         recorder = _RecordingModel()
-        fig, ax = rep.modes[0].plot(field="E", geometry=recorder)
+        fig, ax = rep.modes[0].plot(component="E", geometry=recorder)
         # One image per half-space: the solved side and its mirror.
         assert recorder.calls == 2
         plt.close(fig)
@@ -418,7 +418,7 @@ class TestModePlot:
         rep = _graded_wr90_analysis().solve_ports()["port1"]
         # Port plane is x-normal: u = y (0..a), v = z (0..b, graded).
         for field in ("E", "H"):
-            fig, ax = rep.modes[0].plot(field=field)
+            fig, ax = rep.modes[0].plot(component=field)
             xlim, ylim = ax.get_xlim(), ax.get_ylim()
             assert xlim[0] == pytest.approx(0.0, abs=1e-9)
             assert xlim[1] == pytest.approx(WR90_A * 1e3, rel=1e-9)
@@ -437,7 +437,7 @@ class TestModePlot:
         This window is air throughout, so no raster point may be blank.
         """
         rep = _wr90_analysis().solve_ports()["port1"]
-        fig, ax = rep.modes[0].plot(field="E", normalize_arrows=False)
+        fig, ax = rep.modes[0].plot(component="E", normalize_arrows=False)
         quiv = ax.collections[0]
         off = np.asarray(quiv.get_offsets())
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
@@ -484,7 +484,7 @@ class TestModePlot:
         mode = AnalysisScatteringTD(mesh=mesh, f_max=f_max).solve_ports()["port1"].modes[0]
         assert [s.kind for s in mode._mirrors] == ["PEC"]
 
-        fig, ax = mode.plot(field="E")
+        fig, ax = mode.plot(component="E")
         quiv = ax.collections[0]
         assert np.isfinite(np.asarray(quiv.U)).all()
         assert np.isfinite(np.asarray(quiv.V)).all()

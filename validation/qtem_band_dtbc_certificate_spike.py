@@ -58,7 +58,7 @@ Results (session 89) — gate PASSED
 
 * Evaluator anchors: the exact ``Lambda`` measures |Gamma| ~ 1e-7
   (the _RHO_OFF evaluation floor, as designed); the WP-R4a scalar
-  symbol frozen at band centre reproduces the WP-R4 single-profile
+  symbol frozen at band center reproduces the WP-R4 single-profile
   refutation (-11.6 / -73.8 / -32.4 dB across the layered band,
   -45.4 / -219.6 / -51.6 dB block).
 * Certificate (i) — subspace coupling, a-priori over the band

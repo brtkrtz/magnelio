@@ -28,7 +28,7 @@ def _recording(n_t=5):
                 values = np.tile(base, (n_t, 2, 1, 1))
                 values[:, 1] += 1.0
                 normals = (0.0, 1.0)
-            comps[comp] = ComponentRecord(c1=c1, c2=c2, normals=normals, values=values)
+            comps[comp] = ComponentRecord(c1=c1, c2=c2, normal_positions=normals, values=values)
         faces[name] = FaceRecord(
             name=name,
             axis=axis,
@@ -67,9 +67,9 @@ def test_h_interpolates_between_its_two_layers():
     """The magnetic samples span the normal, so any dual plane is reachable."""
     rec = _recording()
     face = rec.faces["zmin"]
-    a = face.resample("Hx", np.array([0.0]), np.array([0.0]), normal=0.0)
-    b = face.resample("Hx", np.array([0.0]), np.array([0.0]), normal=1.0)
-    mid = face.resample("Hx", np.array([0.0]), np.array([0.0]), normal=0.5)
+    a = face.resample("Hx", np.array([0.0]), np.array([0.0]), position=0.0)
+    b = face.resample("Hx", np.array([0.0]), np.array([0.0]), position=1.0)
+    mid = face.resample("Hx", np.array([0.0]), np.array([0.0]), position=0.5)
     assert np.allclose(b - a, 1.0)
     assert np.allclose(mid, 0.5 * (a + b))
 
@@ -77,8 +77,8 @@ def test_h_interpolates_between_its_two_layers():
 def test_normal_query_is_clamped_not_extrapolated():
     rec = _recording()
     face = rec.faces["zmin"]
-    far = face.resample("Hx", np.array([0.0]), np.array([0.0]), normal=17.0)
-    edge = face.resample("Hx", np.array([0.0]), np.array([0.0]), normal=1.0)
+    far = face.resample("Hx", np.array([0.0]), np.array([0.0]), position=17.0)
+    edge = face.resample("Hx", np.array([0.0]), np.array([0.0]), position=1.0)
     assert np.allclose(far, edge)
 
 
@@ -93,7 +93,7 @@ def test_time_weights_put_h_on_its_own_base():
 
 def test_geometry_properties():
     rec = _recording()
-    assert rec.centre == (0.0, 0.0, 0.0)
+    assert rec.center == (0.0, 0.0, 0.0)
     assert rec.size == (2.0, 4.0, 6.0)
     assert not rec.closed
     assert rec.interval == pytest.approx(1e-12)
@@ -115,7 +115,7 @@ def test_save_load_round_trip(tmp_path):
         assert other.tangent_axes == face.tangent_axes
         for comp, cr in face.components.items():
             assert np.allclose(other.components[comp].values, cr.values)
-            assert other.components[comp].normals == cr.normals
+            assert other.components[comp].normal_positions == cr.normal_positions
 
 
 def test_load_rejects_a_foreign_file(tmp_path):

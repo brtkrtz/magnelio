@@ -198,3 +198,13 @@ Stitching surfaces into solids, free-curve exchange, and formats other
 than STEP and BREP (IGES, mesh formats) are not supported. Sheet
 materials have no thin-sheet mesh law; give a sheet resolved thickness
 before meshing.
+
+## Raw BREP versus CAD exchange
+
+`read_brep(path)` reads an ordered list of OpenCascade shapes in metres;
+`write_brep(shapes, path)` writes that sequence in its given order. This raw
+pair carries no material or named-topology metadata. The CAD-exchange pair
+`import_brep(path, units=...)` / `export_brep(path, geometry, units=...)`
+works with Magnelio geometry and explicit exchange units. Use that pair for
+user CAD workflows. The raw writer's `shapes, path` and CAD export's
+`path, geometry` argument order are deliberate exceptions.

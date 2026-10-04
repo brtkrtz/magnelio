@@ -43,7 +43,7 @@ def _cavity_mesh(h: float, lids: bool, shift: float = 0.0) -> Mesh:
 
     ``lids=False``: the hole pierces the brick (mantle only).
     ``lids=True``:  the brick extends past the hole in z (pillbox).
-    ``shift``:      displaces the cylinder centre (generic alignment).
+    ``shift``:      displaces the cylinder center (generic alignment).
     """
     pec, vac = Material.pec(), Material.air()
     pad = 3 * h if lids else 0.0
@@ -124,7 +124,7 @@ def test_sibc_topology_reuses_conformal_booking():
 def _pillbox_q_error(h: float, shift: float = 0.0) -> float:
     """Relative TM010 wall-loss Q error vs the closed form.
 
-    ``shift`` displaces the cylinder centre by (shift, shift) in
+    ``shift`` displaces the cylinder center by (shift, shift) in
     metres — sub-cell shifts probe generic grid/geometry alignment
     (the centred fixture is anomalously benign: 10² = 6² + 8² puts
     lattice points exactly ON the circle)."""

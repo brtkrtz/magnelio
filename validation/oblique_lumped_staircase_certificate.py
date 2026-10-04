@@ -83,7 +83,7 @@ def run(kind):
     reach = np.hypot(*FAMILY[kind]) * (SIDE_CELLS // 5) * DELTA / np.sqrt(2.0) + MARGIN
     mon = monitors.MonitorFieldFrequency(
         corners=((-reach, -reach, -MARGIN), (reach, reach, MARGIN)),
-        freqs=FREQS,
+        frequencies=FREQS,
         fields=["E"],
         name="E_loop",
     )

@@ -183,7 +183,7 @@ def test_empty_and_ineligible_requests_fail_at_call():
 
 
 def test_named_successor_replays_without_indices_and_split_name_fails():
-    source = _box().tag_face("port", near=(2, 1, 1))
+    source = _box().tagged_face("port", near=(2, 1, 1))
     pieces = source.partition(normal="x", position=1)
     assert len(pieces) == 2
     named = [part for part in pieces if hasattr(part, "_topology_inputs")]
@@ -193,13 +193,13 @@ def test_named_successor_replays_without_indices_and_split_name_fails():
     restored = from_recipe(json.loads(json.dumps(to_recipe(piece))))
     assert restored.face("port").centroid == pytest.approx(piece.face("port").centroid)
     assert restored.volume() == pytest.approx(piece.volume())
-    split_name = _box().tag_face("side", near=(1, 0, 1))
+    split_name = _box().tagged_face("side", near=(1, 0, 1))
     with pytest.raises(geo.TopologyEvolutionError, match="split"):
         split_name.partition(normal="x", position=1)
 
 
 def test_deliberate_face_set_retains_split_successors_on_both_regions():
-    source = _box().tag_faces("wall", normal="y")
+    source = _box().tagged_faces("wall", normal="y")
     pieces = source.partition(normal="x", position=1)
     assert len(pieces) == 2
     assert [len(piece.faces("wall")) for piece in pieces] == [1, 1]
@@ -216,7 +216,7 @@ def test_project_round_trip_of_named_partition_region(tmp_path):
     from magnelio.io.project import ProjectStore
     from magnelio.mesh import GridLines
 
-    source = _box().tag_face("port", near=(2, 1, 1))
+    source = _box().tagged_face("port", near=(2, 1, 1))
     piece = next(
         part
         for part in source.partition(normal="x", position=1)

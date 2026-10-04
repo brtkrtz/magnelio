@@ -151,7 +151,7 @@ class WallPatches:
     cells : np.ndarray
         Cell indices of the wall cells, shape ``(n, 3)``.
     centres : np.ndarray
-        Cell-centre positions [m], shape ``(n, 3)``.
+        Cell-center positions [m], shape ``(n, 3)``.
     normals : np.ndarray
         Unit normals pointing **out of** the conductor, shape ``(n, 3)``.
         On a mesh carrying sub-cell coverage these are the directions of
@@ -326,7 +326,7 @@ def _staircase_patch_block(mesh, acc, inv_dual, faces, tag) -> WallPatches:
             k = idx[:, a]
             centres[at : at + n, a] = nodes[a][k] + 0.5 * widths[a][k]
         # The patch sits on the face of the air cell, half a cell back
-        # along the outward normal from that cell's centre.
+        # along the outward normal from that cell's center.
         k = idx[:, axis]
         centres[at : at + n, axis] -= sign * 0.5 * widths[axis][k]
         at += n

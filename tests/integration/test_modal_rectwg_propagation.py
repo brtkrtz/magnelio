@@ -87,15 +87,15 @@ def _build_ports(
     spec_src = PortSpecRectWG(
         name="port1",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=n_modes,
     )
     spec_load = PortSpecRectWG(
         name="port2",
         plane=BoxFace.X_MAX,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=n_modes,
     )
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
@@ -370,7 +370,7 @@ def test_rectwg_te10_te20_propagating_no_leakage():
     for f in (f_min, f_calc, f_max):
         for label, op in (("X_MIN", op_src), ("X_MAX", op_load)):
             mode = op.discrete_modes[1].mode
-            g = mode.gamma(2.0 * math.pi * f)
+            g = mode.gamma(f=(2.0 * math.pi * f) / (2.0 * math.pi))
             assert g.real == 0.0 and g.imag > 0.0, (
                 f"physical TE20 at {label} must be propagating at f={f / 1e9:.2f} GHz, got γ={g}."
             )

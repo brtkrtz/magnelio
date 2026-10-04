@@ -28,11 +28,11 @@ CrossSectionCache = dict[tuple[str, int], list[tuple[int, list[np.ndarray]]]]
 # Two different questions, historically answered by one number.  The
 # CHORDAL budget says how faithfully a curve is tessellated: the
 # conformal-area sites integrate over the polygon and need it an order
-# finer than a cell-centre point-in-polygon classification does.  The
+# finer than a cell-center point-in-polygon classification does.  The
 # ESCAPE step says how far a degenerate plane may be re-taken to find a
 # clean section, and it has to clear a near-tangency band whose width
 # comes from the geometry — a solid's own lateral extreme sits at a grid
-# anchor, so the neighbouring cell-centre plane grazes it by
+# anchor, so the neighbouring cell-center plane grazes it by
 # construction, and the band is routinely wider than a tessellation
 # chord.  Tying the escape to the chord shrank the reach by the same
 # factor that bought the extra chordal accuracy, until the conformal
@@ -57,15 +57,15 @@ def classify_cells_from_cross_sections(
 ) -> np.ndarray:
     """Assign material IDs to cells using cross-section polygon data.
 
-    For each cell ``(i, j, k)``, the cell-centre point is tested against
-    cross-section polygons at the cell-centre x-plane.  The last matching
+    For each cell ``(i, j, k)``, the cell-center point is tested against
+    cross-section polygons at the cell-center x-plane.  The last matching
     shape wins (same semantics as the previous ``point_in_shape`` loop).
 
     Parameters
     ----------
     cache : CrossSectionCache
         Pre-computed cross-sections, keyed by ``('x', i)`` for x-plane
-        cross-sections at cell-centre positions.
+        cross-sections at cell-center positions.
     grid : GridLines
         The mesh grid.
     background_id : int
@@ -199,7 +199,7 @@ def compute_conformal_eps(
     if extra_boundary_cells is not None:
         # WP-M2: cells intersecting a thin-sheet metal volume are
         # boundary cells even when material_id is blind to the
-        # sub-cell-thin PEC (no cell centre lies inside the metal).
+        # sub-cell-thin PEC (no cell center lies inside the metal).
         boundary = boundary | extra_boundary_cells
 
     # Dual-face midpoints

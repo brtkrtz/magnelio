@@ -43,7 +43,7 @@ class Signal1D:
     # ------------------------------------------------------------------
 
     @property
-    def f(self) -> np.ndarray:
+    def f_axis(self) -> np.ndarray:
         """Frequency axis [Hz]."""
         return np.fft.rfftfreq(len(self.values), d=self.dt)
 

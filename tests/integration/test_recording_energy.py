@@ -36,7 +36,7 @@ def _ringdown(mesh, *, t_end, project=None):
     z0 = mesh.grid.z[8]
     # The flux pairing at node k takes the magnetic samples of cell k
     # (DD-085), so the one-cell layer that can state it is the cell
-    # above the plane: declared at that cell's centre.
+    # above the plane: declared at that cell's center.
     zc = 0.5 * (mesh.grid.z[8] + mesh.grid.z[9])
     layer = monitors.MonitorFieldTime(
         name="layer", corners=((0, 0, zc), (A, B, zc)), fields=["E", "H"], times=every_step
@@ -112,7 +112,10 @@ def test_spectrum_flux_is_the_transmitted_power():
     bc = {"xmin": "PMC", "xmax": "PMC", "ymin": "PEC", "ymax": "PEC", "zmin": "PEC", "zmax": "PEC"}
     freqs = np.array([1e9, 2e9])
     plane = monitors.MonitorFieldFrequency(
-        corners=((None, None, 0.0), (None, None, 0.0)), freqs=freqs, fields=["E", "H"], name="plane"
+        corners=((None, None, 0.0), (None, None, 0.0)),
+        frequencies=freqs,
+        fields=["E", "H"],
+        name="plane",
     )
     ana = AnalysisScatteringTD(
         mesh=Mesh.from_grid(grid).with_boundary_conditions(bc),

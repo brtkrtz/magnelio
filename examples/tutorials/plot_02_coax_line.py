@@ -178,7 +178,7 @@ fig.tight_layout()
 # exact contour on top.  What differs is the cell shading.
 #
 # * Left, the *classification*: the material whose volume contains
-#   each cell's centre.  A circle on a rectangular grid looks like a
+#   each cell's center.  A circle on a rectangular grid looks like a
 #   staircase here, and this picture is often mistaken for the
 #   accuracy of the discretisation.  It is not — it is only the
 #   baseline the sub-cell treatment starts from.
@@ -262,7 +262,7 @@ print(f"z_line reference : {z_ref:7.2f} Ohm")
 # overlays the port-plane cross-section — the grey disc is the inner
 # conductor, the tinted annulus the dielectric:
 
-fig, ax = report.modes[0].plot(field="E", title="Coax TEM mode, transverse E", geometry=model)
+fig, ax = report.modes[0].plot(component="E", title="Coax TEM mode, transverse E", geometry=model)
 
 # %%
 # Run and S-parameters

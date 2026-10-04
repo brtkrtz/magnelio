@@ -44,7 +44,7 @@ def _rect_coax_mesh():
     )
     mesh = Mesh.from_grid(
         grid,
-        regions=[(Material.pec(), (-1e-3, -1e-3, grid.z[0], 1e-3, 1e-3, grid.z[-1]))],
+        regions=[(Material.pec(), ((-1e-3, -1e-3, grid.z[0]), (1e-3, 1e-3, grid.z[-1])))],
     )
     return mesh.with_boundary_conditions(
         {
@@ -67,7 +67,7 @@ def _tilt_transversal_mu(mesh, m_mu, factor):
     of KB-022 could not be used to measure stage 1 directly.
 
     The column sits in the dielectric gap (``j = 1``), not on the
-    centre conductor — a column inside the PEC carries no modal weight
+    center conductor — a column inside the PEC carries no modal weight
     and the gate rightly ignores it.
     """
     grid = mesh.grid

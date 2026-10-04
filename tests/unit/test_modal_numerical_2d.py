@@ -353,7 +353,7 @@ class TestModeStructure:
         m_mu = solver.m_mu_flat
         omega = 2 * math.pi * 10e9
         for m in modes:
-            z_real = abs(m.z_wave(omega))
+            z_real = abs(m.z_wave(f=(omega) / (2.0 * math.pi)))
             scale = MU0 * plane.normal_dx / z_real
             np.testing.assert_allclose(
                 m.discrete_h_u_profile,
@@ -1056,7 +1056,7 @@ class TestTMModeStructure:
         solver, _ = _wr90_tm_solver(Ny=30, Nz=15)
         f_calc = 18e9
         mode = solver.solve(n_modes=1, f_calc=f_calc)[0]
-        z = mode.z_wave(2.0 * math.pi * f_calc)
+        z = mode.z_wave(f=(2.0 * math.pi * f_calc) / (2.0 * math.pi))
         z_real = abs(z.real) + abs(z.imag)
         plane = solver.plane
         m_mu = solver.m_mu_flat
@@ -1125,7 +1125,7 @@ class TestSignFlipPortSymmetry:
         y_min = plane_min.v_edge_uv[:, 0]  # global y from u_local
         y_max = plane_max.u_edge_uv[:, 1]  # global y from v_local
         # Find an edge in each profile with y near a/4 (positive-peak
-        # region of sin(2πy/a)) and at the cross-section centre line.
+        # region of sin(2πy/a)) and at the cross-section center line.
         z_min = plane_min.v_edge_uv[:, 1]
         z_max = plane_max.u_edge_uv[:, 0]
         target_y = WR90_A / 4.0

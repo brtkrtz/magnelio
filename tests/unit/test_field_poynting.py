@@ -57,16 +57,16 @@ class TestThePlaneWave:
         # The wave carries power along +z alone.
         assert np.abs(s[..., 0]).max() == 0.0
         assert np.abs(s[..., 1]).max() == 0.0
-        zc = fs.cell_centres[2]
+        zc = fs.cell_centers[2]
         exact = e0**2 / ETA0 * np.cos(2 * np.pi * zc) ** 2
         np.testing.assert_allclose(s[n // 2, n // 2, :, 2], exact, rtol=0, atol=0.02 * exact.max())
 
     def test_second_order_in_the_cell_size(self):
-        """Halving the cell quarters the error: the cell-centre average is O(h²)."""
+        """Halving the cell quarters the error: the cell-center average is O(h²)."""
 
         def err(n):
             fs = _plane_wave(_cube(n))
-            zc = fs.cell_centres[2]
+            zc = fs.cell_centers[2]
             exact = 9.0 / ETA0 * np.cos(2 * np.pi * zc) ** 2
             got = fs.poynting()[n // 2, n // 2, :, 2]
             return np.abs(got - exact).max() / exact.max()
@@ -107,13 +107,13 @@ class TestTheTwoReadings:
 class TestTheVocabulary:
     def test_cell_centred_derives_the_named_components(self):
         fs = _plane_wave(_cube(8))
-        cc = fs.cell_centred(["Sz", "Ex"])
+        cc = fs.cell_centered(["Sz", "Ex"])
         assert sorted(cc) == ["Ex", "Sz"]
         np.testing.assert_array_equal(cc["Sz"], fs.poynting()[..., 2])
 
     def test_an_unknown_name_is_rejected(self):
         with pytest.raises(KeyError, match="component must be one of"):
-            _plane_wave(_cube(4)).cell_centred(["Bx"])
+            _plane_wave(_cube(4)).cell_centered(["Bx"])
 
     def test_a_series_derives_per_frame(self):
         grid = _series_grid()
@@ -124,13 +124,13 @@ class TestTheVocabulary:
         np.testing.assert_allclose(every[1], rec.frame(1).poynting())
         np.testing.assert_allclose(rec.poynting(frame=1, squeeze=True), every[1][:, :, 0])
         np.testing.assert_allclose(
-            rec.cell_centred(["Sy"], frame=0)["Sy"], every[0][..., 1], rtol=1e-12
+            rec.cell_centered(["Sy"], frame=0)["Sy"], every[0][..., 1], rtol=1e-12
         )
 
     def test_a_layer_derives_too(self):
         grid = _series_grid()
         rec = FieldRecording(grid, [0.0], **_stack(grid, COMPONENTS, 1))
-        layer = rec.cell_centred_layer(0, 2, 0, ["Sx", "Ez"])
+        layer = rec.cell_centered_layer(0, 2, 0, ["Sx", "Ez"])
         assert sorted(layer) == ["Ez", "Sx"]
         np.testing.assert_allclose(layer["Sx"], rec.poynting(frame=0)[:, :, 0, 0], rtol=1e-12)
 
@@ -164,7 +164,7 @@ class TestHalfAField:
         with pytest.raises(KeyError, match="needs all six"):
             rec.frame(0).poynting()
         with pytest.raises(KeyError, match="needs all six"):
-            rec.frame(0).cell_centred(["Sx"])
+            rec.frame(0).cell_centered(["Sx"])
 
     def test_a_hand_built_field_states_it(self):
         """A field assembled by hand records nothing and answers for all six."""
@@ -214,8 +214,8 @@ class TestThePicture:
         matplotlib.use("Agg")
         grid = _series_grid()
         spec = FieldSpectrum(grid, [5e9], **_stack(grid, COMPONENTS, 1, dtype=complex))
-        _, ax_0 = spec.plot("Sz", frame=0, plot_type="color", phase=0.0)
-        _, ax_90 = spec.plot("Sz", frame=0, plot_type="color", phase=90.0)
+        _, ax_0 = spec.plot("Sz", frame=0, plot_type="color", phase_deg=0.0)
+        _, ax_90 = spec.plot("Sz", frame=0, plot_type="color", phase_deg=90.0)
         first = ax_0.get_children()[0].get_array()
         second = ax_90.get_children()[0].get_array()
         np.testing.assert_allclose(np.asarray(first), np.asarray(second))

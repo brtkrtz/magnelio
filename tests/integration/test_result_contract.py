@@ -78,7 +78,7 @@ class TestContractShape:
         assert s.f_max == pytest.approx(F_MAX)
         assert s.n_freq == 201
         assert s.dt is not None and s.dt > 0
-        assert s.n_actual_steps is not None and s.n_actual_steps > 0
+        assert s.n_steps is not None and s.n_steps > 0
         assert s.port_model_used == "modal"
 
     def test_timing_populated(self, result):

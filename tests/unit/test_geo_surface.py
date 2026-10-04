@@ -1,8 +1,8 @@
 """Tests for ``geo.Surface`` — curved sheets from parametric maps.
 
 The fixture is an offset paraboloid dish (focal length F, aperture D,
-centre x_c off the axis) parametrised in polar coordinates about the
-aperture centre, the shape the Cassegrain tutorial builds.  Closed
+center x_c off the axis) parametrised in polar coordinates about the
+aperture center, the shape the Cassegrain tutorial builds.  Closed
 forms: the prism of the dish along z has the volume of the projected
 disc times the length; the paraboloid surface area over the disc is a
 1D integral; every sample lies on z = (x² + y²)/(4F).

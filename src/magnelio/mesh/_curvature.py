@@ -108,7 +108,7 @@ class CurvatureFactors:
             key = (int(i), int(j), int(k))
             cell_lo = np.array([x[i], y[j], z[k]])
             cell_hi = np.array([x[i + 1], y[j + 1], z[k + 1]])
-            centre = 0.5 * (cell_lo + cell_hi)
+            center = 0.5 * (cell_lo + cell_hi)
             recs = []
             # flat families: the wall lies IN a jumped grid plane
             for ax in range(3):
@@ -126,7 +126,7 @@ class CurvatureFactors:
                     n_hat = np.zeros(3)
                     n_hat[ax] = sgn
                     p = sgn * plane
-                    foot = centre - (float(n_hat @ centre) - p) * n_hat
+                    foot = center - (float(n_hat @ center) - p) * n_hat
                     recs.append({"n": n_hat, "p": p, "foot": foot, "area": float(jmp), "fit": True})
             # curved family: divergence-identity normal + offset from
             # the covered-area inversion on cut, non-jump faces
@@ -140,15 +140,15 @@ class CurvatureFactors:
                     recs.append(
                         {
                             "n": -w_c / a_c,
-                            "p": float((-w_c / a_c) @ centre),
-                            "foot": centre,
+                            "p": float((-w_c / a_c) @ center),
+                            "foot": center,
                             "area": a_c,
                             "fit": False,
                         }
                     )
                 else:
                     n_hat, p = rec
-                    foot = centre - (float(n_hat @ centre) - p) * n_hat
+                    foot = center - (float(n_hat @ center) - p) * n_hat
                     recs.append({"n": n_hat, "p": p, "foot": foot, "area": a_c, "fit": True})
             if recs:
                 self._fam[key] = recs

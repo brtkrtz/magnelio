@@ -56,7 +56,7 @@ class SurfacePatchSet:
     Attributes
     ----------
     centers : (n, 3) float
-        Patch centre positions [m].
+        Patch center positions [m].
     normals : (n, 3) float
         Outward unit normals.
     areas : (n,) float

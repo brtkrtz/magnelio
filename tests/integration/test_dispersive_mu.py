@@ -307,7 +307,7 @@ def test_resume_mu_dispersive_bit_exact(tmp_path):
     assert open_project(p).runs["port1_mode0"].n_steps == n1
     stored = open_project(p).mesh.material_library
     assert any(m.dispersion_mu is not None for m in stored.values())
-    proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["port1_mode0"].n_steps == n_total
     for chan, (rv, ri) in ref_vi.items():
         gv, gi = proj.signals[("port1", 0)][chan]

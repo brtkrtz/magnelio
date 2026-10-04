@@ -45,7 +45,7 @@ class TestMeshFromGrid:
         fr4 = Material(name="FR4", epsilon=(4.4, 4.4, 4.4))
         grid = _grid(Nx=10, Ny=10, Nz=10, L=10e-3)
         mesh = Mesh.from_grid(
-            grid, regions=[(fr4, (0, 0, 0, 10e-3, 10e-3, 3e-3))], boundary_conditions=_BC_OPEN
+            grid, regions=[(fr4, ((0, 0, 0), (10e-3, 10e-3, 3e-3)))], boundary_conditions=_BC_OPEN
         )
 
         # First 3 z-layers should be FR4
@@ -59,8 +59,8 @@ class TestMeshFromGrid:
         mesh = Mesh.from_grid(
             grid,
             regions=[
-                (mat_a, (0, 0, 0, 10e-3, 10e-3, 10e-3)),  # whole domain
-                (mat_b, (3e-3, 3e-3, 3e-3, 7e-3, 7e-3, 7e-3)),  # inner cube
+                (mat_a, ((0, 0, 0), (10e-3, 10e-3, 10e-3))),  # whole domain
+                (mat_b, ((3e-3, 3e-3, 3e-3), (7e-3, 7e-3, 7e-3))),  # inner cube
             ],
             boundary_conditions=_BC_OPEN,
         )
@@ -82,7 +82,7 @@ class TestMeshFromGrid:
         grid = _grid(Nx=6, Ny=6, Nz=6, L=6e-3)
         mesh = Mesh.from_grid(
             grid,
-            regions=[(pec, (1e-3, 1e-3, 1e-3, 5e-3, 5e-3, 5e-3))],
+            regions=[(pec, ((1e-3, 1e-3, 1e-3), (5e-3, 5e-3, 5e-3)))],
             boundary_conditions=_BC_OPEN,
         )
         assert mesh.pec_mask_edges.sum() > 0
@@ -90,7 +90,7 @@ class TestMeshFromGrid:
     def test_no_pec_material_all_false(self):
         fr4 = Material(name="FR4", epsilon=(4.4, 4.4, 4.4))
         mesh = Mesh.from_grid(
-            _grid(), regions=[(fr4, (0, 0, 0, 8e-3, 8e-3, 8e-3))], boundary_conditions=_BC_OPEN
+            _grid(), regions=[(fr4, ((0, 0, 0), (8e-3, 8e-3, 8e-3)))], boundary_conditions=_BC_OPEN
         )
         assert not mesh.pec_mask_edges.any()
 

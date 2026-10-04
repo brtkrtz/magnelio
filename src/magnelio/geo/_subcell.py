@@ -526,7 +526,7 @@ def _thin_sheet_cell_seed(
     """Cells strictly overlapping any thin-sheet metal box (WP-M2 seed).
 
     ``material_id`` cannot see a sub-cell-thin PEC volume (no cell
-    centre lies inside the metal), so boundary-cell detection must be
+    center lies inside the metal), so boundary-cell detection must be
     seeded explicitly for the conformal eps/mu candidate selection.
     """
     Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
@@ -1315,7 +1315,7 @@ def compute_subcell_data_mu(
         seed_cells = _thin_sheet_cell_seed(grid, thin_sheet_boxes)
 
     # DD-099 boundary-layer geometric seed: a conductor sliver squeezed
-    # against the domain boundary captures no cell centre, so no
+    # against the domain boundary captures no cell center, so no
     # material_id contrast marks its cells and its wall never registers
     # in A_face_pec (the bbox-tangency void, BOUNDARY_WALL_PLAN WP-B0).
     # NON-PEC cells in the six boundary layers get their faces
@@ -1371,7 +1371,7 @@ def compute_subcell_data_mu(
     L_dual_free[cat1] = L_dual[cat1]
     # Cat-2: A_face_free = A_face · (1 - pec_frac).  L_dual_free
     # falls back to L_dual; the typical curved-PEC geometry has the
-    # dual edge through the cell centre well clear of the PEC region,
+    # dual edge through the cell center well clear of the PEC region,
     # so this is exact for the round-WG case.  A geometry where the
     # PEC contour cuts a dual edge would need a separate line-solid
     # call against the H dual-edge; that is an O(h)-correction on the

@@ -24,7 +24,7 @@ def options(frame):
 def test_straight_annular_sweep_preserves_material_and_holes(frame, scale):
     body = geo.Cylinder(
         axis="y", radius=2 * scale, inner_radius=scale, height=scale, material="pec"
-    ).tag_face("end", normal="y")
+    ).tagged_face("end", normal="y")
     face = body.face("end")
     spine = geo.Curve.line(face.centroid, (0, 4 * scale, 0))
     result = face.swept(spine, **options(frame))
@@ -90,7 +90,7 @@ def test_named_result_project_recipe_preserves_sweep_transport(frame):
         (8 * math.cos(math.pi / 8), 8 * math.sin(math.pi / 8), 0),
         (8 / 2**0.5, 8 / 2**0.5, 0),
     )
-    result = profile.swept(curve, material="pec", **options(frame)).tag_face(
+    result = profile.swept(curve, material="pec", **options(frame)).tagged_face(
         "start", normal=(0, -1, 0)
     )
     restored = from_recipe(json.loads(json.dumps(to_recipe(result))))

@@ -99,7 +99,7 @@ class TestPlotEnergyMethods:
             signals={},
             reference_signal=ref,
             dt=1e-12,
-            n_actual_steps=300,
+            max_run_steps=300,
             energy_traces={("p1", 0): _trace([1.0, 0.1]), ("p2", 0): _trace([1.0, 0.2])},
         )
         fig, ax = result.plot_energy()

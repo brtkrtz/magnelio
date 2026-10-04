@@ -253,8 +253,8 @@ class FieldState:
         return np.meshgrid(*self.positions(component), indexing="ij")
 
     @property
-    def cell_centres(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """The 1-D cell-centre coordinates ``(xc, yc, zc)`` of :meth:`cell_centred`."""
+    def cell_centers(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """The 1-D cell-center coordinates ``(xc, yc, zc)`` of :meth:`cell_centered`."""
         return self._centres()
 
     def _lengths(self) -> dict[str, np.ndarray]:
@@ -365,8 +365,8 @@ class FieldState:
         H = np.stack([out["Hx"], out["Hy"], out["Hz"]], axis=-1)
         return E, H
 
-    def cell_centred(self, components=None, corners=None) -> dict[str, np.ndarray]:
-        """Components averaged onto the cell centres (:attr:`cell_centres`).
+    def cell_centered(self, components=None, corners=None) -> dict[str, np.ndarray]:
+        """Components averaged onto the cell centres (:attr:`cell_centers`).
 
         Parameters
         ----------
@@ -506,7 +506,7 @@ class FieldState:
         """The Poynting vector [W/m²] on the cell centres.
 
         ``E × H`` formed on the cell centres both fields interpolate to
-        (:meth:`cell_centred`), so the staggering is honoured and the
+        (:meth:`cell_centered`), so the staggering is honoured and the
         three components of the result live at one point.  Unlike
         :meth:`energy` and :meth:`flux` this needs no material
         operators — any field states it.
@@ -566,7 +566,7 @@ class FieldState:
 
         if self._recorded is not None:
             check_available(self._recorded)
-        centred = self.cell_centred(corners=corners)
+        centred = self.cell_centered(corners=corners)
         return cross(centred, complex_product=complex_product)
 
     # ── the surface current (DD-273) ─────────────────────────────────────
@@ -622,7 +622,7 @@ class FieldState:
         even) and H like a pseudovector, across an electric (PEC) plane
         the roles swap.  The staggering is kept: a sample sitting on
         the wall appears once, and the cell a magnetic wall bisects
-        gets its centre sample from the wall value (zero for an odd
+        gets its center sample from the wall value (zero for an odd
         component, the neighbour's value for an even one).
 
         Parameters
@@ -756,7 +756,7 @@ class FieldState:
             Normal axis of the slice plane; default the thinnest axis.
         position : float
             Plane position along *normal* [m]; snapped to the nearest
-            cell-centre plane.
+            cell-center plane.
         plot_type : str
             ``"vector"``, ``"color"`` or ``"contour"``.
         ax : matplotlib.axes.Axes, optional
@@ -926,7 +926,7 @@ class FieldState:
         group, walked through the volume by the position slider.  See
         :func:`magnelio.plots.show_field` for the arguments — the plane
         (``normal``, ``position``), ``geometry`` and ``mesh`` overlays,
-        ``phase`` for a complex field, and the rendering ``mode``.
+        ``phase_deg`` for a complex field, and the rendering ``render_mode``.
         """
         from magnelio.post.field_3d import show_field  # noqa: PLC0415
 

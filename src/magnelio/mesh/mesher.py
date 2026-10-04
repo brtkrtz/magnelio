@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from magnelio._memory import array_bytes, format_bytes
 from magnelio.mesh._quality import check_grading_undershoot, check_quality
 from magnelio.mesh.grid import GridLines
 
@@ -369,7 +370,9 @@ class Mesh:
     def from_grid(
         cls,
         grid: GridLines,
-        regions: list[tuple["Material", tuple[float, float, float, float, float, float]]]
+        regions: list[
+            tuple["Material", tuple[tuple[float, float, float], tuple[float, float, float]]]
+        ]
         | None = None,
         background: "Material | None" = None,
         boundary_conditions=None,
@@ -381,7 +384,7 @@ class Mesh:
 
         Args:
             grid:       Pre-built :class:`~magnelio.mesh.grid.GridLines`.
-            regions:    List of ``(material, (xmin, ymin, zmin, xmax, ymax, zmax))``
+            regions:    List of ``(material, ((xmin, ymin, zmin), (xmax, ymax, zmax)))``
                         tuples. Regions are applied in order; later entries overwrite
                         earlier ones where they overlap.
             background: Material to fill all cells not covered by any region.
@@ -413,7 +416,7 @@ class Mesh:
                 z=np.linspace(0, 10e-3, 11),
             )
             fr4 = Material(name="FR4", epsilon=(4.4, 4.4, 4.4))
-            mesh = Mesh.from_grid(grid, regions=[(fr4, (0, 0, 0, 10e-3, 10e-3, 1.6e-3))])
+            mesh = Mesh.from_grid(grid, regions=[(fr4, ((0, 0, 0), (10e-3, 10e-3, 1.6e-3)))])
         """
         from magnelio.materials.material import Material as Mat
         from magnelio.materials.material import resolve_material
@@ -439,9 +442,13 @@ class Mesh:
             yc = 0.5 * (grid.y[:-1] + grid.y[1:])  # shape (Ny,)
             zc = 0.5 * (grid.z[:-1] + grid.z[1:])  # shape (Nz,)
 
-            for mat, bbox in regions:
+            for mat, corners in regions:
                 mat = resolve_material(mat, "Mesh.from_grid regions material")
-                xmin, ymin, zmin, xmax, ymax, zmax = bbox
+                points = np.asarray(corners, dtype=float)
+                if points.shape != (2, 3) or not np.all(np.isfinite(points)):
+                    raise ValueError("regions require two finite 3D corners per material")
+                xmin, ymin, zmin = np.min(points, axis=0)
+                xmax, ymax, zmax = np.max(points, axis=0)
 
                 # Get or assign material ID
                 obj_id = id(mat)
@@ -1311,9 +1318,9 @@ class Mesh:
         _cross_section_cache = None
         if shapes:
             # Assign stable IDs to each distinct material object.
-            # ``shapes_with_material`` (cell-centre filling) excludes
+            # ``shapes_with_material`` (cell-center filling) excludes
             # thin sheets — their volume is thinner than any cell, and
-            # a cell centre landing inside the metal would wrongly
+            # a cell center landing inside the metal would wrongly
             # resolve the sheet as a full PEC cell layer.
             # ``classifier_shapes_all`` (DD-051 sub-cell classification)
             # keeps them: the metal volume enters the conformal
@@ -1335,17 +1342,17 @@ class Mesh:
                 if id(shape) not in _thin_by_shape:
                     shapes_with_material.append((shape, mid))
 
-            # Cell-centre positions for cross-section planes.
+            # Cell-center positions for cross-section planes.
             # classify_cells_from_cross_sections reads only ("x", i) keys
             # (one x-slice already fully classifies a cell via a 2D
             # point-in-polygon test over (y, z)) — so only x-plane
             # sections are computed here; y/z would be dead work.
             xc = 0.5 * (grid.x[:-1] + grid.x[1:])
 
-            # Compute cross-sections at cell-centre planes.  Purely
+            # Compute cross-sections at cell-center planes.  Purely
             # h-relative (DD-120, the old 1e-4 m cap is gone).  The
             # chordal factor is deliberately coarser than the
-            # conformal-area sites': cell-centre classification only
+            # conformal-area sites': cell-center classification only
             # needs point-in-polygon fidelity to a fraction of a cell,
             # while the area integration feeds material matrices and
             # needs an order finer.  The degeneracy-escape step is
@@ -1426,7 +1433,7 @@ class Mesh:
             # correctly sees the dual face as fully PEC.
             # The classifier list includes thin sheets (WP-M2): their
             # metal volume enters the conformal matrices through the
-            # effective PEC solid even though the cell-centre filling
+            # effective PEC solid even though the cell-center filling
             # never sees them.
             classifier_shapes = classifier_shapes_all
             if bg.is_pec and classifier_shapes_all:
@@ -1680,7 +1687,11 @@ class Mesh:
 
             warn_unregistered_walls(mesh, stacklevel=2)
 
-        rep.finish(f"{mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
+        n_cells = mesh.Nx * mesh.Ny * mesh.Nz
+        rep.finish(
+            f"{mesh.Nx} x {mesh.Ny} x {mesh.Nz} = {n_cells:,} cells"
+            f" | {format_bytes(array_bytes(mesh))}"
+        )
         return mesh
 
     # ------------------------------------------------------------------
@@ -3215,7 +3226,7 @@ def _two_ramp_fill(
 def _graded_subdivision(p0: float, p1: float, n: int, g: float) -> list[float]:
     """Subdivide [p0, p1] into *n* cells with symmetric graded spacing.
 
-    Cells grow from both endpoints toward the centre with ratio *g*.  The
+    Cells grow from both endpoints toward the center with ratio *g*.  The
     smallest cells are at the endpoints (material interfaces); the largest
     cell is at the midpoint.
 
@@ -3239,7 +3250,7 @@ def _graded_subdivision(p0: float, p1: float, n: int, g: float) -> list[float]:
     # Sum of geometric series from one end: sum(g^i, i=0..n_half-1)
     series_sum = (g**n_half - 1.0) / (g - 1.0)
 
-    # Extra centre cell for odd n
+    # Extra center cell for odd n
     centre_term = g**n_half if (n % 2 == 1) else 0.0
     denom = 2.0 * series_sum + centre_term
     h0 = interval / denom
@@ -3253,7 +3264,7 @@ def _graded_subdivision(p0: float, p1: float, n: int, g: float) -> list[float]:
         nodes.append(x)
         h *= g
 
-    # Optional centre cell
+    # Optional center cell
     if n % 2 == 1:
         x += h0 * (g**n_half)
         nodes.append(x)
@@ -3301,8 +3312,8 @@ def _ratio_for_exact_fill(interval: float, h0: float, n: int, g: float, symmetri
         if symmetric:
             n_half = n // 2
             series = (r**n_half - 1.0) / (r - 1.0)
-            centre = (r**n_half) if (n % 2 == 1) else 0.0
-            return h0 * (2.0 * series + centre)
+            center = (r**n_half) if (n % 2 == 1) else 0.0
+            return h0 * (2.0 * series + center)
         return h0 * (r**n - 1.0) / (r - 1.0)
 
     if _total(g) < interval:
@@ -3329,8 +3340,8 @@ def _h0_symmetric(interval: float, n: int, g: float) -> float:
         return interval / n
     n_half = n // 2
     series = (g**n_half - 1.0) / (g - 1.0)
-    centre = (g**n_half) if (n % 2 == 1) else 0.0
-    return interval / (2.0 * series + centre)
+    center = (g**n_half) if (n % 2 == 1) else 0.0
+    return interval / (2.0 * series + center)
 
 
 def _h0_one_sided(interval: float, n: int, g: float) -> float:

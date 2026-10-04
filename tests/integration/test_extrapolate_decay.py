@@ -97,12 +97,13 @@ def test_the_report_names_the_trapped_resonance(truncated_run):
 
 def test_the_original_result_is_untouched(truncated_run):
     before = _unitarity_defect(truncated_run)
-    n_before = truncated_run.n_actual_steps
+    n_before = truncated_run.max_run_steps
     extended = truncated_run.extrapolate()
     assert extended is not truncated_run
     assert truncated_run.extrapolation is None
-    assert truncated_run.n_actual_steps == n_before
-    assert extended.n_actual_steps > n_before
+    assert truncated_run.max_run_steps == n_before
+    assert extended.max_run_steps == n_before
+    assert len(extended.reference_signal.values) > n_before
     assert _unitarity_defect(truncated_run) == before
 
 

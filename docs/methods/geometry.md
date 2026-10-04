@@ -50,8 +50,8 @@ the CAD kernel is called.
 `Curve.line(start, end)` builds an exact straight segment. `Curve.circle`
 and `Curve.ellipse` build closed analytic wires, retaining their exact
 conic geometry through rotations and mirrors. They do not approximate the
-boundary with a polygon. Circles take a world centre, radius and plane
-normal. Ellipses take a world centre, two semi-axis lengths, a normal and
+boundary with a polygon. Circles take a world center, radius and plane
+normal. Ellipses take a world center, two semi-axis lengths, a normal and
 `major_axis`: the direction of the first semi-axis, projected into the
 plane. Either semi-axis may be larger. `curve.length` reads the CAD length.
 Arcs, elliptical arcs, splines, helices and `joined()` remain available;
@@ -142,7 +142,7 @@ the domain plane without reconstructing its annular profile:
 from magnelio import geo
 
 coax = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3,
-                    height=6e-3, material="pec").tag_face("port", normal="x")
+                    height=6e-3, material="pec").tagged_face("port", normal="x")
 coax = coax.rotated("z", 22.5)
 port = coax.face("port")
 route = (geo.Path.from_face(port, up="z")
@@ -211,14 +211,14 @@ Register a selection before placement when it has an enduring physical role:
 from magnelio import geo
 
 coax = geo.Cylinder(radius=2e-3, inner_radius=1e-3, height=5e-3, material="pec")
-coax = coax.tag_face("port", near=(1.5e-3, 0, 5e-3), normal="z")
+coax = coax.tagged_face("port", near=(1.5e-3, 0, 5e-3), normal="z")
 coax = coax.rotated("y", 22.5)
 port = coax.face("port")
 extension = port.extruded(tuple(1e-3 * n for n in port.normal))
 ```
 
 Names are non-empty strings, unique per topology kind on their owner.
-`tag_face`, `tag_edge`, `tag_vertex`, `tag_faces` and `tag_edges` return a new
+`tagged_face`, `tagged_edge`, `tagged_vertex`, `tagged_faces` and `tagged_edges` return a new
 owner; the input stays unchanged. Named lookup cannot be combined with
 semantic constraints. Retrieve a singular tag with the singular selector
 and a set tag with the plural selector.
@@ -252,7 +252,7 @@ before performing it:
 
 ```python
 block = geo.Brick(size=(2e-3, 2e-3, 2e-3), material="pec")
-block = block.tag_faces("cap", normal="z")
+block = block.tagged_faces("cap", normal="z")
 slot = geo.Brick(origin=(0.9e-3, -1e-3, -1e-3), size=(0.2e-3, 4e-3, 4e-3))
 split = block - slot
 assert len(split.faces("cap")) == 2
@@ -522,7 +522,7 @@ component, filled annulus and an oblique sheet cutter.
 
 ## Imprint and insert
 
-`receiver.imprint(cutter)` splits only the receiver Solid's boundary faces at
+`receiver.imprinted(cutter)` splits only the receiver Solid's boundary faces at
 their intersections with a Solid or Sheet cutter. The returned Solid keeps the
 receiver's volume, material and placement; the cutter is untouched. This is a
 directed operation: call it on the body whose faces you need to select. An
@@ -554,7 +554,7 @@ from magnelio import geo
 housing = geo.Brick(origin=(0, 0, 0), size=(2e-3,)*3, material="pec")
 window = geo.Brick(origin=(1.8e-3, 0.5e-3, 0.5e-3),
                    size=(0.4e-3, 1e-3, 1e-3))
-housing = housing.imprint(window).tag_face(
+housing = housing.imprinted(window).tagged_face(
     "contact", near=(2e-3, 1e-3, 1e-3), normal="x")
 dielectric = geo.Brick(origin=(0.5e-3,)*3, size=(1e-3,)*3,
                        material="air")
@@ -868,7 +868,7 @@ placed_solid = placement @ housing
 
 This is equivalent to rotating each value and then translating it.  `Mirror`
 reflects across `point · normal == position`; `Scale` is uniform about its
-centre. `Transform @ geometry` always produces one placement and has no
+center. `Transform @ geometry` always produces one placement and has no
 array or aggregation options. Geometry does not right-apply a transform, and `+ vector` is not a
 translation: `+`, `-` and `&` remain solid Boolean operators.
 
@@ -882,7 +882,7 @@ datum curve in one authoring component:
 
 ```python
 shell = geo.Brick(size=(2e-3, 1e-3, 1e-3), material="pec", name="shell")
-shell = shell.tag_face("contact", normal="z")
+shell = shell.tagged_face("contact", normal="z")
 insert = geo.Brick(origin=(0.5e-3, 0.25e-3, 0),
                    size=(1e-3, 0.5e-3, 1e-3), material="air", name="insert")
 datum = geo.Curve.line((0, 0, 0), (2e-3, 0, 0), name="datum")
@@ -986,7 +986,7 @@ two parameters — a paraboloid $z = (x^2 + y^2)/4F$, a hyperboloid, a
 numerically shaped reflector given as a table — and the parameter
 domain is the designer's choice: a reflector rim comes out as an exact
 circle when the dish is parametrised in polar coordinates about the
-aperture centre, with no trimming step.  A parameter row that collapses
+aperture center, with no trimming step.  A parameter row that collapses
 onto a single point (the pole of such a parametrisation) is allowed;
 the surface closes there.
 
@@ -1025,12 +1025,12 @@ same declarations as giving the world-coordinate rectangle explicitly.
 from magnelio import GeometryModel, geo, monitors, ports
 
 guide = geo.Brick(size=(2e-3, 3e-3, 4e-3), material="air")
-guide = guide.tag_face("output", normal="z")
+guide = guide.tagged_face("output", normal="z")
 model = GeometryModel(background="pec").add(guide)
 end = guide.face("output")
 model.add_port(ports.PortWaveguide.from_face(end, model=model, name="output"))
 probe = monitors.MonitorFieldFrequency.from_face(
-    end, freqs=[10e9], fields=["Ex", "Ey"], name="output_fields"
+    end, frequencies=[10e9], fields=["Ex", "Ey"], name="output_fields"
 )
 ```
 
@@ -1072,3 +1072,16 @@ thick on every axis of its bounding box and is classified cell by cell
 like any other body.  Give reflector shells a thickness of two cells or
 more so that the conformal classifier resolves the metal on both faces
 — for a perfect conductor the thickness has no electromagnetic effect.
+
+## Owner operations and explicit grid regions
+
+`tagged_face`, `tagged_faces`, `tagged_edge`, `tagged_edges`, `tagged_vertex`
+and `imprinted` return immutable owners with named topology and history.
+Keep the returned owner; model `add*` operations still mutate their container.
+`Path.forward` and `section` retain their documented names.
+
+For a material distribution on an explicit grid, use
+`Mesh.from_grid(grid, regions=[(material, ((x0, y0, z0), (x1, y1, z1)))])`.
+The two finite 3D corners enclose an axis-aligned volume; corner order does
+not matter. Assignment tests cell centers and later regions overwrite earlier
+ones. The grid remains unchanged.

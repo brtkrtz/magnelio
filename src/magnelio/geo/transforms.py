@@ -177,7 +177,7 @@ class Mirror(Transform):
 
 @dataclass(frozen=True, init=False)
 class Scale(Transform):
-    """Uniform scale about a fixed centre.
+    """Uniform scale about a fixed center.
 
     Parameters
     ----------

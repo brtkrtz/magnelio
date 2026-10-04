@@ -101,6 +101,10 @@ Python 3.12 was considered but narrows the user base with limited additional ben
 
 ## DD-005 — Explicit / Imperative API style
 
+**Naming refinement (2026-10-04):** [[DD-275]] establishes immutable standalone
+geometry; [[DD-279]] distinguishes its returned-owner verbs from mutable
+model operations. The accepted naming revision is not yet implemented.
+
 **Date:** 2026-03-09
 **Status:** Accepted
 
@@ -10000,6 +10004,11 @@ would admit it; the analytic box never does).
 
 ## DD-153 — One vocabulary for boxes, planes, anchors and names across the public API
 
+**Naming refinement (2026-10-04):** [[DD-279]] distinguishes rectangular
+port origins from coax centers, aligns spec dimensions and surface-position
+vocabulary, and extends two-corner regions to Mesh.from_grid. Implementation
+is implemented; this entry retains the historical migration and coordinate rules.
+
 **Context.**  The pre-v0.1.0 API froze several historical dialects
 side by side: box regions were spelled `corners=` (monitors),
 `bbox=` (declarative ports, 2D tangential frame), `tf_sf_box=`
@@ -16792,6 +16801,10 @@ engine and the line table when a ladder row shows them.
 
 ## DD-224 — API grammar for problem classes, sources, waveforms and excitations
 
+**Naming refinement (2026-10-04):** [[DD-279]] retains the class grammar and
+refines run selectors, count scope, result import homes, frequency vocabulary
+and degree-valued phase inputs. The new names are implemented.
+
 **Status:** Decided 2026-08-29 (blueprint session with the developer;
 internal record `investigations/api-blueprint/` holds the suite-convention
 survey it was checked against).  **Phase A shipped 2026-08-29** (branch
@@ -20591,6 +20604,10 @@ their own `__repr__`.
 
 ## DD-255 — a run is watched by polling the store, and one figure is what everyone watches
 
+**Naming refinement (2026-10-04):** [[DD-279]] names the immediate status
+widget watch_panel; watch remains the generator/callback interface and follow
+the blocking display. Observable behaviour is preserved; rename implemented.
+
 **Date:** 2026-09-05 (branch `feat/watch-and-plot-energy`).
 **Status:** Implemented and gated
 (`tests/unit/test_plot_energy.py`, `tests/unit/test_project_monitor.py`,
@@ -20939,6 +20956,11 @@ integration tests that build raw states, `validation/*.py`; internal
 record `investigations/patch-array/kb035_synthetic.py`.
 
 ## DD-259 — Field monitors keep the grid quantities; every view is derived at access time
+
+**Naming refinement (2026-10-04):** [[DD-279]] preserves raw quantities and
+normalization views while aligning normalize_to_excitation, frame/t/f,
+component, spectral axes and center spelling across live and stored results.
+This naming revision is implemented.
 
 **Date:** 2026-09-05
 **Status:** Accepted — all five steps shipped 2026-09-06 (developer
@@ -21611,6 +21633,10 @@ Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
 `docs/methods/viewer.md`, `examples/tutorials/plot_18_periodic_tesla_cell.py`.
 
 ## DD-264 — The second viewer pass: a screenshot of what is on screen, a stored eigenmode result that reads like the in-RAM one
+
+**Naming refinement (2026-10-04):** [[DD-279]] uses show for loaded geometry
+as well as models, removes the obsolete 3D plot entries, and separates physical
+mode from render_mode. The revised entry points are implemented.
 
 **Date:** 2026-09-07
 **Status:** Accepted (developer findings from a second pass over the
@@ -22372,6 +22398,11 @@ a run cut short — and the report says when the cap bit.
 
 ## DD-273 — The surface current is the wall-loss booking, read as a vector
 
+**Naming refinement (2026-10-04):** [[DD-279]] removes current_through
+without replacement and gives SurfaceCurrent the public fields home. Vector
+current, magnitude, metadata and power_loss retain this derivation; naming
+implementation is complete.
+
 **Date:** 2026-09-09.
 **Status:** Accepted — implemented + gated (`tests/unit/test_surface_current.py`,
 `tests/integration/test_surface_current.py`); measurement record
@@ -22494,6 +22525,11 @@ adding a destination to every `show()`.  Documentation builds remain on PyVista'
 or server is started for them.
 
 ## DD-275 — Dimensional geometry, owned topology and affine values
+
+**Naming refinement (2026-10-04):** [[DD-279]] retains this ontology and
+topology history, uses tagged_* and imprinted for returned immutable owners,
+and registers Bend/Wrap/ImportedSheet in the curated geo surface. These
+naming/export changes are implemented.
 
 **Date:** 2026-09-28.
 **Status:** Accepted and implemented on `feat/geo-api-foundation`; WP0-WP5 and
@@ -23426,3 +23462,194 @@ and port-power integration tests pass. On the original HESR three-cell
 mesh (89 × 89 × 129, 0.5 mm floor), both offending interior edges now
 have ε̄/f_A = 1; x1 is `dtbc` with pair spread 1.877480e-14. This is a
 port-operator measurement; no full TD response was run.
+
+---
+
+## DD-278 — TD memory budgets precede operator construction
+
+**Naming refinement (2026-10-04):** [[DD-279]] names the operation
+estimate_memory and its run count n_runs. Allocation accounting and scenario
+assumptions are unchanged; the naming revision is implemented.
+
+**Date:** 2026-10-03. **Status:** Implemented; allocation accounting only.
+
+**Problem.** Large meshes can finish meshing and exhaust RAM and swap
+before time integration begins. The spectral CFL path constructs explicit
+curl topology through Python lists, converts to CSR, copies the matrix for
+its absolute-value bound and allocates Lanczos workspaces. Field-array
+counts alone miss that setup peak. Evidence:
+`investigations/hesr-memory-termination/MEASUREMENTS.md` (internal record).
+
+**Decision.** `AnalysisTD.estimate()` and its scattering subclass return
+a structured `MemoryEstimate` without constructing solver operators,
+solving ports, attaching monitors or writing projects. Phase budgets
+include the existing mesh and distinguish host RAM from device storage;
+phases are not summed. Backend auto-selection remains a labelled CPU
+scenario until explicitly chosen; no CUDA probe is required. Field
+precision follows the existing resolver, while setup calculations and
+frequency bins retain their actual float64/complex128 storage.
+
+Time recordings always expose raw bytes per snapshot. Explicit target
+lists bound their counts; known steps and dt resolve the monitor's
+half-step acceptance and coalescing. Unknown horizons expose interval
+growth instead of guessed totals. A finite step cap without dt still
+bounds snapshots by one per step. The automatic runtime cap is unresolved
+when it requires port/waveform preparation. A duration needs dt to bound
+rounding to the last solver step. Streaming records have bounded RAM
+batches and separate disk totals; sequential runs multiply disk storage,
+not reusable field arrays.
+
+The first implementation models dense mesh/field/coefficient storage,
+material and CFL construction, conservative TD/CPML workspaces, and
+rectangular time/frequency field monitors. Unknown port, source,
+dispersive/SIBC and other-monitor state leaves the total upper budget
+open, with explicit notes. Native objects, allocator pools, Python
+metadata and checkpoint/I/O workspaces remain excluded. Ranges describe
+current allocation paths; they are not guarantees about process RSS.
+This does not repair the CFL scaling defect or introduce mesh planning.
+
+The completed mesher reports dimensions, total cells and held NumPy
+backing storage, counting aliases/views once. Binary GiB/MiB/KiB match
+system memory tools; the number excludes temporary meshing workspaces.
+
+**Checks.** `tests/unit/test_memory.py` covers shared buffers, views,
+external-buffer aliases and cycles. `tests/unit/test_analysis_memory.py`
+compares staggered snapshot/bin payloads to actual monitor allocations,
+checks time coalescing and finite horizons, distinguishes streaming from
+RAM accumulation, verifies precision and sequential-run accounting, and
+forbids operator/CUDA construction. A large-topology fixture exposes the
+curl-list cost without allocating that topology. The methods guide and
+Tutorial 07 demonstrate the public API.
+
+---
+
+## DD-279 — Public API vocabulary reflects physical meaning and operation scope
+
+**Date:** 2026-10-04. **Status:** Implemented and merged to main; unreleased.
+All 25 review cards were agreed with the developer. The accompanying viewer
+camera documentation is implemented separately in `3d40ba21`.
+**Refines in part:** [[DD-005]], [[DD-153]], [[DD-224]], [[DD-255]],
+[[DD-259]], [[DD-264]], [[DD-273]], [[DD-275]], [[DD-278]].
+The thin core, domain placement and one-home rule of [[DD-117]] remain.
+**Records:** `investigations/api-naming-review-2026-10-04/DECISION-PLAN.md`
+and `investigations/api-naming-review-2026-10-04/IMPLEMENTATION-PLAN.md`
+(internal records).
+
+**Problem.** Later features introduced vocabulary differences beyond the
+earlier class/import migrations. Equivalent mode evaluations accepted Hz
+and rad/s; a current-named integral had units A*m; rectangular port center
+was a corner; normal named a coordinate; and normalization, display and run
+selection changed meaning between otherwise equivalent objects. Documented
+geometry exports and returned type homes were incomplete. Uniform spelling
+alone would hide distinct physical or aggregation meanings.
+
+**Decision — one breaking revision.** Provide a complete old/new migration
+table with no compatibility-alias transition phase. Hazardous old calls
+must fail clearly. Preserve the physical interpretation of supported stored
+projects through explicit recipe/reader adaptation; changing a Python name
+does not itself justify a disk schema change. Release/publication is separate
+and requires explicit agreement; a breaking release uses a minor increment
+under the pre-1.0 version policy.
+
+**Physical quantities and locations.**
+
+- Public Mode and ModeReport gamma/z_wave/z_modal evaluate f in Hz. The
+  changed Mode boundary requires keyword-only f; old positional/omega calls
+  fail. Explicit omega_c, stored cutoffs and internal angular calculations
+  retain rad/s, with omega = 2*pi*f at the evaluation boundary.
+- Remove SurfaceCurrent.current_through without an integrated-magnitude
+  replacement. Retain vector J_s, local magnitude, metadata, select/show
+  and independent power_loss; the wall-current derivation is unchanged.
+- Fields normalize_to_excitation, with is_normalized_to_excitation state;
+  networks renormalize(z_ref). Preserve the field view's reference update
+  without altering raw bins, and the network operation's new-result return.
+- Coax anchors remain center; rectangular analytical/declarative/spec ports
+  use origin for their minimum tangential corner. Reject family-inappropriate
+  anchors. Old rectangular corner coordinates map unchanged; declarative
+  world-3D and spec tangential-2D representations remain distinct. Both
+  rectangular declarations use width/height in global tangential axis order.
+- Surface interpolation coordinates are position and stored layer locations
+  normal_positions. Reserve normal for an axis/vector. Material regions for
+  Mesh.from_grid use (material, corners) with two 3D points, retaining
+  cell-centre assignment and later-region overwrite order.
+
+**Observation, display and selection.**
+
+- Project.watch_panel is the immediate widget with stop(); watch remains
+  the generator/callback interface and follow the blocking display.
+- show denotes interactive 3D, plot/plot_* matplotlib, interact notebook
+  slider plots. Add LoadedGeometry.show and remove both obsolete geometry
+  plot entries; keep plot_cross_section and existing display mechanisms.
+- mode selects a physical eigenmode consistently through field/plot/show;
+  render_mode selects renderer operation. Recorded series use frame for an
+  index, t/f for a physical nearest-frame choice. Reject conflicting selectors
+  and retain existing rounding/interpolation conventions.
+- component selects a field picture, including ModeReport.plot. Supported
+  choices do not expand: ModeReport retains its transverse E/H profiles.
+- run selects an existing stored run on project reader/resume operations;
+  name names a new general run; excited selects actual scattering excitations.
+  Preserve supported run names and (port, mode) selectors. A sole run may be
+  implicit; multiple runs require an unambiguous choice.
+
+**Geometry, counts and public homes.**
+
+- Immutable owner operations are tagged_face/tagged_faces/tagged_edge/
+  tagged_edges/tagged_vertex and imprinted. Preserve owner identity and
+  topology history. Model add* remains mutable; Path.forward and section
+  remain documented naming exceptions.
+- n_steps describes one run; max_run_steps the longest run of a combined
+  result; n_runs a run count. Collections remain runs. RunSettings counts
+  refer to one identified run, not an implicit aggregate representative.
+  Individual counts remain accessible; the combined maximum is not a sum.
+  total_time_steps and max_time_steps retain distinct stopping meanings.
+- Register Bend, Wrap and ImportedSheet in geo.__all__ and the generated
+  reference. Strengthen the export audit while explicitly exempting the
+  intentionally soft-private plumbing allowed by [[DD-117]].
+- SurfaceCurrent has its public home in fields, WallLossQ in post, and
+  EigenmodeResult in analysis alongside transient results. Keep existing
+  class identities and implementation placement; do not expand the core.
+
+**Remaining vocabulary and deliberate exceptions.**
+
+- f_axis describes sampled spectral/result axes; frequencies requested
+  recording samples and eigenfrequencies; f a selected frequency. Remove
+  whole-axis f accessors. Classify constructors/accessors by meaning; do not
+  turn eigenfrequency lists into sweep axes or change FFT evaluation.
+- f_min/f_max describe frequency-band endpoints in Hz. Keep the working
+  band of a material approximation and its internal extensions distinct
+  from the user's evaluation band, with unchanged limits and calculations.
+- Use US center/cell_centers/cell_centered/cell_centered_layer spelling.
+- Degree-valued phase inputs are phase_deg, retaining angle_deg, twist_deg,
+  draft_deg and phase_advance_deg. The S-parameter phase(deg=...) output
+  selector remains. Phase values, signs and recorded units do not change.
+- AnalysisTD and scattering use estimate_memory, returning MemoryEstimate
+  with n_runs. No solver setup or simulation occurs; assumed dt/backend/
+  t_end describe an estimate scenario without configuring a subsequent run.
+- Retain raw ordered metre-space read_brep/write_brep separately from CAD
+  import_brep/export_brep with explicit units and geometry objects. Document
+  their types/order contracts and the write_brep(shapes, path) versus
+  export_brep(path, geometry) argument-order exception. User workflow
+  examples use the CAD-exchange pair.
+
+**Implementation and acceptance.** Adapt live objects, returned containers,
+stored readers, wrappers, recipes and public consumers together. Existing
+small tests are supplemented by focused checks for unit conversion/rejection,
+anchor mapping, reader/result parity, raw normalization preservation,
+unequal run lengths and observation return/blocking behaviour. Freeze legacy
+recipe fixtures and verify read/reconstruct/resume without changing stored
+units, phasor conventions or checkpoint meaning. Update methods prose,
+affected tutorials/how-tos, API reference, migration guide and changelog.
+Check public exports including inherited members/returned types, repository
+and private script imports, DD references, docs, ruff and public hygiene.
+All 25 changes are implemented without Python aliases. Focused acceptance
+covers all six rectangular anchor orientations, angular conversion, raw-bin
+preservation, unequal RAM/store run lengths and the actual loaded-geometry
+scene (closing KB-049). A checkpoint generated by the original implementation
+resumes bit-identically; original recipes round-trip with unchanged disk keys.
+The complete migration guide is `docs/migration-api-naming.md`. Public
+consumers, methods and reference exports are migrated. Following explicit
+developer authorization, affected private user scripts and notebook sources
+are migrated too; notebook outputs are preserved. Runtime old-name audits
+remain separate from import checks. Test results and docs/export/import/DD/ruff/hygiene gates are
+recorded in `investigations/api-naming-review-2026-10-04/IMPLEMENTATION-ACCEPTANCE.md`
+(internal record). The developer subsequently authorized merging and pushing main; no release is assigned.

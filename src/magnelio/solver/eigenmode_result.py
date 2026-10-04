@@ -107,8 +107,8 @@ class EigenmodeResult:
         own mesh cuts the metal out of the sheet and names the symmetry
         planes the field is continued across, so the view shows the
         whole cavity.  See :func:`magnelio.plots.show_field` for the
-        arguments — ``frame=`` picks the mode shown first, the plane
-        (`normal`, `position`), `geometry`, the rendering `mode` and
+        arguments — ``mode=`` picks the mode shown first, the plane
+        (`normal`, `position`), `geometry`, the rendering `render_mode` and
         the rest.
 
         Parameters
@@ -163,7 +163,7 @@ class EigenmodeResult:
             Normal axis of the slice plane.
         position : float
             Slice-plane position along *normal* [m]; snapped to the
-            nearest cell-centre plane.
+            nearest cell-center plane.
         plot_type : str
             ``"vector"``, ``"color"``, or ``"contour"``.
         ax : matplotlib.axes.Axes, optional

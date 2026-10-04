@@ -91,21 +91,21 @@ class TestRecording:
     def test_cell_centred_matches_the_frames(self, grid):
         comps = _stack(grid, COMPONENTS, 2)
         rec = FieldRecording(grid, [0.0, 1e-12], **comps)
-        stacked = rec.cell_centred()
+        stacked = rec.cell_centered()
         assert stacked["Ex"].shape == (2, 5, 4, 3)
         for i in range(2):
-            single = rec.cell_centred(frame=i)
+            single = rec.cell_centered(frame=i)
             for c in COMPONENTS:
                 np.testing.assert_allclose(stacked[c][i], single[c])
-                np.testing.assert_allclose(single[c], rec.frame(i).cell_centred([c])[c])
-        box = rec.cell_centred(["Ez"], corners=((0, 0, 0), (4e-3, 10e-3, 4e-3)))
+                np.testing.assert_allclose(single[c], rec.frame(i).cell_centered([c])[c])
+        box = rec.cell_centered(["Ez"], corners=((0, 0, 0), (4e-3, 10e-3, 4e-3)))
         assert box["Ez"].shape == (2, 2, 4, 3)
 
     def test_positions_and_repr(self, grid):
         rec = FieldRecording(grid, [0.0, 2e-12], **_stack(grid, ("Ey",), 2))
         x, y, z = rec.positions("Ey")
         assert x.size == 6 and y.size == 4 and z.size == 4
-        assert len(rec.cell_centres[0]) == 5
+        assert len(rec.cell_centers[0]) == 5
         text = repr(rec)
         assert text.startswith("FieldRecording(2 frames") and "Ey" in text and "ns" in text
 
@@ -115,7 +115,7 @@ class TestRecording:
         rec = FieldRecording(layer_grid, [0.0, 1e-12], **comps)
         assert rec.component("Ez").shape == (2, 6, 5, 1)
         assert rec.component("Ex").shape == (2, 5, 5, 2)
-        assert rec.cell_centred(["Ez"])["Ez"].shape == (2, 5, 4, 1)
+        assert rec.cell_centered(["Ez"])["Ez"].shape == (2, 5, 4, 1)
 
     def test_frame_feeds_an_initial_field(self, grid):
         from magnelio.sources import SourceFieldInitial  # noqa: PLC0415
@@ -144,17 +144,17 @@ class TestSpectrum:
         ez = np.stack([np.ones(z.Ez.shape), 1j * np.ones(z.Ez.shape)])
         spec = FieldSpectrum(grid, [1e9, 2e9], Ez=ez)
         assert spec.is_complex and spec.components == ("Ez",)
-        np.testing.assert_allclose(spec.frequencies, [1e9, 2e9])
-        assert spec.f is spec.frequencies
+        np.testing.assert_allclose(spec.f_axis, [1e9, 2e9])
+        assert not hasattr(spec, "f")
         assert spec.index_of(1.8e9) == 1
         assert spec.at_frequency(2e9).is_complex
         np.testing.assert_allclose(spec.at_frequency(2e9).Ez, 1j)
         # Re(j · e^{+jπ/2}) = -1; the snapshot is real.  The phasors are
         # those of the e^{+jwt} convention, so the phase is w t.
-        snap = spec.snapshot(2e9, phase=90.0)
+        snap = spec.snapshot(2e9, phase_deg=90.0)
         assert not snap.is_complex
         np.testing.assert_allclose(snap.Ez, -1.0, atol=1e-12)
-        np.testing.assert_allclose(spec.snapshot(2e9, phase=-90.0).Ez, 1.0, atol=1e-12)
+        np.testing.assert_allclose(spec.snapshot(2e9, phase_deg=-90.0).Ez, 1.0, atol=1e-12)
         np.testing.assert_allclose(spec.snapshot(frame=1).Ez, 0.0, atol=1e-12)
         assert repr(spec).startswith("FieldSpectrum(2 frames") and "GHz" in repr(spec)
 
@@ -170,7 +170,9 @@ class TestSpectrum:
 
         z = FieldState.zeros(grid)
         spec = FieldSpectrum(grid, [1e9], Ez=np.stack([(1 + 1j) * np.ones(z.Ez.shape)]))
-        fig, ax = spec.plot("Ez", f=1e9, phase=0.0, normal="z", position=2e-3, plot_type="color")
+        fig, ax = spec.plot(
+            "Ez", f=1e9, phase_deg=0.0, normal="z", position=2e-3, plot_type="color"
+        )
         assert "f = 1 GHz" in ax.get_title()
         plt.close(fig)
 
@@ -181,13 +183,13 @@ class TestViewer:
         pv.OFF_SCREEN = True
         comps = _stack(grid, COMPONENTS, 3, scale=1.0)
         rec = FieldRecording(grid, [0.0, 1e-12, 2e-12], dt=1e-12, **comps)
-        pl = rec.show("Ez", normal="z", position=2e-3, mode="none", frame=2, size=(200, 150))
+        pl = rec.show("Ez", normal="z", position=2e-3, render_mode="none", frame=2, size=(200, 150))
         sheet = pl.renderer.actors["field_cut"].mapper.dataset
-        k = int(np.argmin(np.abs(rec.cell_centres[2] - 2e-3)))
-        expected = rec.cell_centred(["Ez"], frame=2)["Ez"][:, :, k].ravel(order="F")
+        k = int(np.argmin(np.abs(rec.cell_centers[2] - 2e-3)))
+        expected = rec.cell_centered(["Ez"], frame=2)["Ez"][:, :, k].ravel(order="F")
         np.testing.assert_allclose(sheet.cell_data["field"], expected)
         pl.close()
         spec = FieldSpectrum(grid, [1e9, 2e9], Ez=comps["Ez"][:2] * (1 + 0j))
-        pl = spec.show("Ez", mode="none", f=2e9, phase=90.0, size=(200, 150))
+        pl = spec.show("Ez", render_mode="none", f=2e9, phase_deg=90.0, size=(200, 150))
         assert "field_cut" in pl.renderer.actors
         pl.close()

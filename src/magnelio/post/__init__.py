@@ -10,9 +10,10 @@ from magnelio.post.modal_sparameters import (
     destaggered_power_waves,
 )
 from magnelio.post.sparameter_result import SParameterResult
-from magnelio.post.wall_loss import wall_loss_Q
+from magnelio.post.wall_loss import WallLossQ, wall_loss_Q
 
 __all__ = [
+    "WallLossQ",
     "compute_s_parameters",
     "compute_band_s_parameters",
     "FarFieldResult",

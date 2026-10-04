@@ -70,8 +70,8 @@ def smooth_surface_impedance(f, sigma: float, mu: float = 1.0) -> np.ndarray:
 def kk_reactance(
     f_eval,
     r_of_f,
-    f_lo: float,
-    f_hi: float,
+    f_min: float,
+    f_max: float,
     guard_decades: float = 8.0,
     n_grid: int = 200_000,
 ) -> np.ndarray:
@@ -80,8 +80,8 @@ def kk_reactance(
 
         X(w) = (2w/pi) PV int_0^inf [R(t) - R(w)] / (t^2 - w^2) dt
 
-    on a dense log grid spanning ``guard_decades`` beyond ``[f_lo,
-    f_hi]`` on both sides.  After the subtraction the integrand is
+    on a dense log grid spanning ``guard_decades`` beyond ``[f_min,
+    f_max]`` on both sides.  After the subtraction the integrand is
     smooth at ``t = w`` (removable singularity); the node closest to
     the pole is replaced by the analytic limit ``R'(w) / (2w)`` with a
     central-difference derivative.  Accuracy is gated against the
@@ -94,8 +94,8 @@ def kk_reactance(
     r_of_f : callable
         Vectorised real part ``R(f)`` [Ohm].  Must be evaluable on the
         whole guard-extended grid.
-    f_lo, f_hi : float
-        Working band [Hz] — sets the grid centre.
+    f_min, f_max : float
+        Working band [Hz] — sets the grid center.
     guard_decades : float, optional
         Log-decades of grid on each side beyond the band.
     n_grid : int, optional
@@ -111,8 +111,8 @@ def kk_reactance(
         2.0
         * np.pi
         * np.logspace(
-            np.log10(f_lo) - guard_decades,
-            np.log10(f_hi) + guard_decades,
+            np.log10(f_min) - guard_decades,
+            np.log10(f_max) + guard_decades,
             int(n_grid),
         )
     )
@@ -177,7 +177,7 @@ class SurfaceImpedanceFit:
         Relative permeability.
     roughness : SurfaceRoughness or None
         Roughness model whose causal completion this fit carries.
-    f_lo, f_hi : float
+    f_min, f_max : float
         Working band [Hz]; accuracy statements hold on this band.
     c0 : float
         Instantaneous (high-frequency) resistance term [Ohm].
@@ -194,8 +194,8 @@ class SurfaceImpedanceFit:
     sigma: float
     mu: float
     roughness: SurfaceRoughness | None
-    f_lo: float
-    f_hi: float
+    f_min: float
+    f_max: float
     c0: float
     branches: tuple[tuple[float, float], ...]
     rel_err_re: float = field(compare=False)
@@ -219,8 +219,8 @@ def fit_surface_impedance(
     sigma: float,
     mu: float = 1.0,
     roughness: SurfaceRoughness | None = None,
-    f_lo: float = 1e8,
-    f_hi: float = 1e11,
+    f_min: float = 1e8,
+    f_max: float = 1e11,
     tol: float = 1e-3,
     guard: float = 10.0,
     max_branches: int = 32,
@@ -241,7 +241,7 @@ def fit_surface_impedance(
     roughness : SurfaceRoughness, optional
         Roughness model; its real factor ``K(f)`` is causally completed
         via :func:`kk_reactance` on the roughness excess.
-    f_lo, f_hi : float, optional
+    f_min, f_max : float, optional
         Working band [Hz].
     tol : float, optional
         Acceptance bound on the band's ``Re Z`` relative error.
@@ -263,13 +263,13 @@ def fit_surface_impedance(
     """
     if sigma <= 0.0:
         raise ValueError(f"fit_surface_impedance: sigma must be > 0, got {sigma!r}")
-    if not f_hi > f_lo > 0.0:
-        raise ValueError(f"fit_surface_impedance: need 0 < f_lo < f_hi, got {f_lo!r}, {f_hi!r}")
+    if not f_max > f_min > 0.0:
+        raise ValueError(f"fit_surface_impedance: need 0 < f_min < f_max, got {f_min!r}, {f_max!r}")
 
-    decades = np.log10(f_hi / f_lo)
+    decades = np.log10(f_max / f_min)
     n_fit = max(60, int(100 * decades))
-    f_band = np.logspace(np.log10(f_lo), np.log10(f_hi), n_fit)
-    f_check = np.logspace(np.log10(f_lo), np.log10(f_hi), 2 * n_fit + 1)
+    f_band = np.logspace(np.log10(f_min), np.log10(f_max), n_fit)
+    f_check = np.logspace(np.log10(f_min), np.log10(f_max), 2 * n_fit + 1)
 
     z_smooth_band = smooth_surface_impedance(f_band, sigma, mu)
     if roughness is None:
@@ -288,8 +288,8 @@ def fit_surface_impedance(
         x_band = z_smooth_band.imag + kk_reactance(
             f_band,
             r_excess,
-            f_lo,
-            f_hi,
+            f_min,
+            f_max,
         )
         z_band = r_full(f_band) + 1j * x_band
         r_check = r_full(f_check)
@@ -300,8 +300,8 @@ def fit_surface_impedance(
             sigma=float(sigma),
             mu=float(mu),
             roughness=roughness,
-            f_lo=float(f_lo),
-            f_hi=float(f_hi),
+            f_min=float(f_min),
+            f_max=float(f_max),
             c0=float(c0),
             branches=tuple((float(b_p), float(c_p)) for b_p, c_p in zip(b, c) if c_p > 0.0),
             rel_err_re=0.0,
@@ -316,8 +316,8 @@ def fit_surface_impedance(
                 sigma=fit.sigma,
                 mu=fit.mu,
                 roughness=fit.roughness,
-                f_lo=fit.f_lo,
-                f_hi=fit.f_hi,
+                f_min=fit.f_min,
+                f_max=fit.f_max,
                 c0=fit.c0,
                 branches=fit.branches,
                 rel_err_re=err_re,
@@ -325,15 +325,15 @@ def fit_surface_impedance(
             )
     raise ValueError(
         f"fit_surface_impedance: Re-part tolerance {tol:g} not reached "
-        f"with {max_branches} branches over {f_lo:g}-{f_hi:g} Hz "
+        f"with {max_branches} branches over {f_min:g}-{f_max:g} Hz "
         f"(last error {err_re:.2e}); widen tol or raise max_branches"
     )
 
 
 def fit_wall_impedances(
     resolved: dict,
-    f_lo: float,
-    f_hi: float,
+    f_min: float,
+    f_max: float,
     *,
     tol: float = 1e-3,
     guard: float = 10.0,
@@ -354,7 +354,7 @@ def fit_wall_impedances(
     resolved : dict
         ``tag -> (sigma, mu, roughness)`` per
         ``resolve_wall_conductors``.
-    f_lo, f_hi : float
+    f_min, f_max : float
         Working band [Hz] passed to :func:`fit_surface_impedance`.
     tol, guard, max_branches : optional
         Forwarded to :func:`fit_surface_impedance`.
@@ -373,8 +373,8 @@ def fit_wall_impedances(
                 sigma,
                 mu,
                 roughness,
-                f_lo=f_lo,
-                f_hi=f_hi,
+                f_min=f_min,
+                f_max=f_max,
                 tol=tol,
                 guard=guard,
                 max_branches=max_branches,

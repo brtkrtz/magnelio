@@ -1,11 +1,11 @@
-"""Cell-centre averaging of the staggered field components (DD-085).
+"""Cell-center averaging of the staggered field components (DD-085).
 
 The solver states are FIT grid quantities — ``e = E·l_primal`` [V] on
 the primal edges, ``h = H·l_dual`` [A] on the dual edges — and every
 sample sits on its own Yee position.  A picture wants one vector per
 cell: each sample is converted to the physical field at its own
 position and then averaged over its staggered neighbours onto the cell
-centre.  This is a low-pass filter and it is not undone; it is applied
+center.  This is a low-pass filter and it is not undone; it is applied
 at *access* time (DD-259), never when a field is stored.
 
 The module lives with the public field containers because they are its

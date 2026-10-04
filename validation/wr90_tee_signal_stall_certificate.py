@@ -65,7 +65,7 @@ def build_analysis(project=None):
 t0 = time.perf_counter()
 ref = build_analysis().run(excited=["port4"], port_signal_stop_db=50.0, taper_signals=True)
 t_ref = time.perf_counter() - t0
-print(f"reference (psd=50): {ref.settings.n_actual_steps} steps  [{t_ref:.1f} s]")
+print(f"reference (psd=50): {ref.settings.n_steps} steps  [{t_ref:.1f} s]")
 
 # Certificate: pure defaults.  Streamed so the run index books the
 # stop reason and the achieved plateau level.
@@ -97,6 +97,6 @@ assert len(stall_warnings) == 1
 assert -60.0 < level < -40.0, level
 # Well before the auto cap (40x the step estimate >> the stall step):
 # one detection window past arming, not tens of thousands of steps.
-assert n_stall < 4 * ref.settings.n_actual_steps, n_stall
+assert n_stall < 4 * ref.settings.n_steps, n_stall
 assert d_s < 2e-3, d_s
 print(f"CERTIFICATE PASSED: stall stop at step {n_stall} ({level:.1f} dB), max |dS| = {d_s:.2e}")

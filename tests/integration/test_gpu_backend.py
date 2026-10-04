@@ -53,7 +53,7 @@ def _coax_mesh():
     mesh = Mesh.from_grid(
         GridLines(x=lin, y=lin, z=z),
         background=Material.from_isotropic("PTFE", epsilon=2.1),
-        regions=[(Material.pec(), (-a / 2, -a / 2, 0.0, a / 2, a / 2, L))],
+        regions=[(Material.pec(), ((-a / 2, -a / 2, 0.0), (a / 2, a / 2, L)))],
     )
     return mesh
 
@@ -109,7 +109,7 @@ class TestGPUBackend:
         lin = np.linspace(0.0, 10e-3, 11)
         mesh = Mesh.from_grid(
             GridLines(x=lin, y=lin, z=lin),
-            regions=[(Material.pec(), (3e-3, 3e-3, 2e-3, 5e-3, 5e-3, 8e-3))],
+            regions=[(Material.pec(), ((3e-3, 3e-3, 2e-3), (5e-3, 5e-3, 8e-3)))],
         )
         mesh = mesh.with_boundary_conditions(
             {
@@ -234,7 +234,7 @@ class TestRecorderStagingGPU:
         ref = _run_coax_res("cupy", total_time_steps=600)
         p = tmp_path / "pp"
         _run_coax_res("cupy", project=p, total_time_steps=250, checkpoint_interval=50)
-        proj = resume(p, excited=("port1", 0), total_time_steps=600, verbose=False)
+        proj = resume(p, run=("port1", 0), total_time_steps=600, verbose=False)
         key = ("port1", 0)
         _assert_vi_bit_exact(
             _vi(ref.signals[key]),
@@ -274,7 +274,7 @@ def _cpml_box_mesh():
     lin = np.linspace(0.0, 10e-3, 11)
     mesh = Mesh.from_grid(
         GridLines(x=lin, y=lin, z=lin),
-        regions=[(Material.pec(), (3e-3, 3e-3, 2e-3, 5e-3, 5e-3, 8e-3))],
+        regions=[(Material.pec(), ((3e-3, 3e-3, 2e-3), (5e-3, 5e-3, 8e-3)))],
     )
     return mesh.with_boundary_conditions(
         {
@@ -330,7 +330,7 @@ class TestCudaGraphsGPU:
             return Mesh.from_grid(
                 GridLines(x=lin, y=lin, z=lin),
                 regions=[
-                    (Material.dispersive("debye", model), (2e-3, 2e-3, 2e-3, 6e-3, 6e-3, 6e-3))
+                    (Material.dispersive("debye", model), ((2e-3, 2e-3, 2e-3), (6e-3, 6e-3, 6e-3)))
                 ],
             )
 
@@ -353,7 +353,7 @@ class TestCudaGraphsGPU:
             metal = Material.lossy_metal("cu", sigma=5.8e7)
             mesh = Mesh.from_grid(
                 GridLines(x=lin, y=lin, z=lin),
-                regions=[(metal, (2 * d, 2 * d, 1 * d, 6 * d, 5 * d, 3 * d))],
+                regions=[(metal, ((2 * d, 2 * d, 1 * d), (6 * d, 5 * d, 3 * d)))],
             )
             surfs = enumerate_sibc_surfaces(mesh, bc_pec_faces=faces)
             resolved = resolve_wall_conductors(mesh, surfs, sigma=5.8e7)
@@ -461,7 +461,7 @@ class TestWallLossMonitorGPU:
 
         def run(backend):
             mon = MonitorWallLoss(
-                freqs=freqs,
+                frequencies=freqs,
                 normal="z",
                 position=2e-3,
                 sigma=5.8e7,

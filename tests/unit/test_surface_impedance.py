@@ -73,7 +73,7 @@ def test_kk_quadrature_against_smooth_closed_form():
 
 @pytest.fixture(scope="module")
 def smooth_fit():
-    return fit_surface_impedance(SIGMA_CU, f_lo=F_LO, f_hi=F_HI, tol=1e-3)
+    return fit_surface_impedance(SIGMA_CU, f_min=F_LO, f_max=F_HI, tol=1e-3)
 
 
 def test_smooth_fit_meets_tolerance(smooth_fit):
@@ -115,8 +115,8 @@ def test_fit_instantaneous_resistance(smooth_fit):
 
 def test_fit_mu_scaling():
     # sqrt(mu) covariance survives the fit machinery end to end.
-    fit1 = fit_surface_impedance(SIGMA_CU, f_lo=1e9, f_hi=1e10, tol=1e-3)
-    fit4 = fit_surface_impedance(SIGMA_CU, mu=4.0, f_lo=1e9, f_hi=1e10, tol=1e-3)
+    fit1 = fit_surface_impedance(SIGMA_CU, f_min=1e9, f_max=1e10, tol=1e-3)
+    fit4 = fit_surface_impedance(SIGMA_CU, mu=4.0, f_min=1e9, f_max=1e10, tol=1e-3)
     f = np.logspace(9, 10, 30)
     assert np.allclose(fit4.impedance(f), 2.0 * fit1.impedance(f), rtol=5e-3)
 
@@ -131,8 +131,8 @@ def rough_fit():
     return fit_surface_impedance(
         SIGMA_CU,
         roughness=Huray.cannonball(6e-6),
-        f_lo=F_LO,
-        f_hi=F_HI,
+        f_min=F_LO,
+        f_max=F_HI,
         tol=1e-3,
     )
 
@@ -173,11 +173,11 @@ def test_rough_smooth_limit_anchor():
     tiny = fit_surface_impedance(
         SIGMA_CU,
         roughness=Huray.cannonball(1e-9),
-        f_lo=1e9,
-        f_hi=1e10,
+        f_min=1e9,
+        f_max=1e10,
         tol=1e-3,
     )
-    smooth = fit_surface_impedance(SIGMA_CU, f_lo=1e9, f_hi=1e10, tol=1e-3)
+    smooth = fit_surface_impedance(SIGMA_CU, f_min=1e9, f_max=1e10, tol=1e-3)
     f = np.logspace(9, 10, 50)
     assert np.allclose(tiny.impedance(f), smooth.impedance(f), rtol=5e-3)
 
@@ -189,32 +189,32 @@ def test_rough_smooth_limit_anchor():
 
 def test_unreachable_tolerance_raises():
     with pytest.raises(ValueError, match="not reached"):
-        fit_surface_impedance(SIGMA_CU, f_lo=F_LO, f_hi=F_HI, tol=1e-9, max_branches=6)
+        fit_surface_impedance(SIGMA_CU, f_min=F_LO, f_max=F_HI, tol=1e-9, max_branches=6)
 
 
 def test_invalid_inputs_raise():
     with pytest.raises(ValueError, match="sigma"):
         fit_surface_impedance(-1.0)
-    with pytest.raises(ValueError, match="f_lo"):
-        fit_surface_impedance(SIGMA_CU, f_lo=1e10, f_hi=1e9)
+    with pytest.raises(ValueError, match="f_min"):
+        fit_surface_impedance(SIGMA_CU, f_min=1e10, f_max=1e9)
 
 
 def test_fit_equality_and_hash():
     # Frozen dataclass identity is physical (band, material, ladder),
     # not bookkeeping: the achieved-error fields are compare=False.
-    fit_a = fit_surface_impedance(SIGMA_CU, f_lo=1e9, f_hi=1e10, tol=1e-3)
-    fit_b = fit_surface_impedance(SIGMA_CU, f_lo=1e9, f_hi=1e10, tol=1e-3)
+    fit_a = fit_surface_impedance(SIGMA_CU, f_min=1e9, f_max=1e10, tol=1e-3)
+    fit_b = fit_surface_impedance(SIGMA_CU, f_min=1e9, f_max=1e10, tol=1e-3)
     assert fit_a == fit_b
     assert hash(fit_a) == hash(fit_b)
-    fit_c = fit_surface_impedance(2.0e7, f_lo=1e9, f_hi=1e10, tol=1e-3)
+    fit_c = fit_surface_impedance(2.0e7, f_min=1e9, f_max=1e10, tol=1e-3)
     assert fit_a != fit_c
 
 
 def test_branch_count_grows_with_tolerance():
     # The acceptance loop actually adapts: a coarse tolerance needs
     # fewer branches than a tight one.
-    coarse = fit_surface_impedance(SIGMA_CU, f_lo=F_LO, f_hi=F_HI, tol=1e-2)
-    tight = fit_surface_impedance(SIGMA_CU, f_lo=F_LO, f_hi=F_HI, tol=5e-4)
+    coarse = fit_surface_impedance(SIGMA_CU, f_min=F_LO, f_max=F_HI, tol=1e-2)
+    tight = fit_surface_impedance(SIGMA_CU, f_min=F_LO, f_max=F_HI, tol=5e-4)
     assert len(coarse.branches) < len(tight.branches)
     assert coarse.rel_err_re <= 1e-2
     assert tight.rel_err_re <= 5e-4

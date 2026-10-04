@@ -12,10 +12,10 @@ where the material is.
 
 The fixture is the stripline-coupler assembly of DD-157, meshed at
 ``min_cell_size = t/4``.  A grid line is anchored on the electrode's
-lateral extreme (x = 6.1804 mm), so the neighbouring cell-centre plane
+lateral extreme (x = 6.1804 mm), so the neighbouring cell-center plane
 at 6.0124 mm grazes the electrode's own side face by construction; the
 tangency band there is 0.238 mm wide, against an escape reach that had
-shrunk to 20 µm.  Refining the mesh moves that cell centre *closer* to
+shrunk to 20 µm.  Refining the mesh moves that cell center *closer* to
 the extreme, so the collision is systematic, not a coincidence of one
 mesh.
 

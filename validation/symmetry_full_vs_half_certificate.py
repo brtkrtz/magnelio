@@ -12,7 +12,7 @@ Certificate quantities (full vs. half):
 
 * ``z_line`` — the published full-model port impedance (stage D
   restores the half-window factor 2);
-* ``S11``/``S21`` over the centre band (S-parameters need no
+* ``S11``/``S21`` over the center band (S-parameters need no
   correction on a symmetric port pair — the full-model wave scale
   cancels in b/a);
 * the peak Poynting flux through a cross-section between port and
@@ -112,7 +112,7 @@ def run_case(symmetric: bool) -> dict:
     probe_at = (1.5e-3, H_SUB + 0.6e-3, L / 4)
     probe = MonitorFieldFrequency(
         corners=(probe_at, probe_at),
-        freqs=[F_PROBE],
+        frequencies=[F_PROBE],
         fields=["E"],
         name="e_probe",
     )
@@ -145,7 +145,7 @@ def main() -> None:
     full = run_case(symmetric=False)
     half = run_case(symmetric=True)
 
-    # Compare on the centre band (the band edges carry the excitation
+    # Compare on the center band (the band edges carry the excitation
     # roll-off).
     n = len(full["f"])
     sel_full = slice(n // 4, 3 * n // 4)

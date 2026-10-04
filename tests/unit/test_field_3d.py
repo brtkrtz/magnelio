@@ -66,14 +66,14 @@ def _time_monitor(grid, corners=((None, None, LZ / 2), (None, None, LZ / 2))):
 def _freq_monitor(grid):
     """Two bins of a uniform complex Ez: 1 at f0, j at f1 (unit reference)."""
     freqs = [1.0e9, 2.0e9]
-    mon = MonitorFieldFrequency(freqs=freqs, fields=["E"], name="p")
+    mon = MonitorFieldFrequency(frequencies=freqs, fields=["E"], name="p")
     mon.attach(_FakeMesh(grid))
     dt = 1e-12
     f = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
     f.Ez[:] = 1e-3
     mon.record(f, 0, 0.0, dt)
     mon.finalize()
-    mon.renormalize(Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt))
+    mon.normalize_to_excitation(Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt))
     # Overwrite the bins with a known pattern: real at f0, imaginary at f1.
     # The bins are grid quantities (E·dz), so 0.4 V/m is 0.4·dz per bin.
     dz = float(grid.z[1] - grid.z[0])
@@ -101,7 +101,7 @@ def _dz(grid):
 class TestFieldState:
     def test_default_cut_is_the_thinnest_axis_at_the_centre(self):
         grid = _grid()
-        pl = _field(grid).show(mode="none", size=(300, 200))
+        pl = _field(grid).show(render_mode="none", size=(300, 200))
         sheet = _sheet(pl)
         assert isinstance(sheet, pv.PolyData)
         # z has the fewest cells (4): the layer is 6 x 8 cells.
@@ -117,13 +117,13 @@ class TestFieldState:
         grid = _grid()
         fs = _field(grid)
         z0 = 0.4 * LZ
-        pl = fs.show("Ez", normal="z", position=z0, mode="none", size=(300, 200))
+        pl = fs.show("Ez", normal="z", position=z0, render_mode="none", size=(300, 200))
         sheet = _sheet(pl)
-        k = int(np.argmin(np.abs(fs.cell_centres[2] - z0)))
-        expected = fs.cell_centred(["Ez"])["Ez"][:, :, k].ravel(order="F")
+        k = int(np.argmin(np.abs(fs.cell_centers[2] - z0)))
+        expected = fs.cell_centered(["Ez"])["Ez"][:, :, k].ravel(order="F")
         np.testing.assert_allclose(sheet.cell_data["field"], expected)
         lo, hi = pl.renderer.actors["field_cut"].mapper.scalar_range
-        assert lo == -hi and hi == pytest.approx(np.abs(fs.cell_centred(["Ez"])["Ez"]).max())
+        assert lo == -hi and hi == pytest.approx(np.abs(fs.cell_centered(["Ez"])["Ez"]).max())
         # A single component is a sheet only.
         assert "field_arrows" not in pl.renderer.actors
         pl.close()
@@ -131,11 +131,11 @@ class TestFieldState:
     def test_magnitude_sheet_and_colour_mode(self):
         grid = _grid()
         fs = _field(grid)
-        pl = fs.show("H", normal="x", position=LX / 2, plot_type="color", mode="none")
+        pl = fs.show("H", normal="x", position=LX / 2, plot_type="color", render_mode="none")
         sheet = _sheet(pl)
         assert sheet.n_cells == grid.Ny * grid.Nz
-        cc = fs.cell_centred(["Hx", "Hy", "Hz"])
-        k = int(np.argmin(np.abs(fs.cell_centres[0] - LX / 2)))
+        cc = fs.cell_centered(["Hx", "Hy", "Hz"])
+        k = int(np.argmin(np.abs(fs.cell_centers[0] - LX / 2)))
         mag = np.sqrt(sum(cc[c][k] ** 2 for c in ("Hx", "Hy", "Hz"))).ravel(order="F")
         np.testing.assert_allclose(sheet.cell_data["field"], mag)
         assert "field_arrows" not in pl.renderer.actors
@@ -145,7 +145,7 @@ class TestFieldState:
     def test_cut_outside_the_region_hides_the_sheet(self):
         grid = _grid()
         with pytest.warns(UserWarning, match="outside the recorded region"):
-            pl = _field(grid).show(normal="z", position=5 * LZ, mode="none")
+            pl = _field(grid).show(normal="z", position=5 * LZ, render_mode="none")
         # Nothing to lay on the cut: no sheet actor is built (or it is hidden).
         actor = pl.renderer.actors.get("field_cut")
         assert actor is None or not actor.GetVisibility()
@@ -155,23 +155,23 @@ class TestFieldState:
     def test_bad_arguments(self):
         fs = _field(_grid())
         with pytest.raises(KeyError, match="not available"):
-            fs.show("Bx", mode="none")
+            fs.show("Bx", render_mode="none")
         with pytest.raises(ValueError, match="plot_type"):
-            fs.show(plot_type="contour", mode="none")
+            fs.show(plot_type="contour", render_mode="none")
         with pytest.raises(ValueError, match="normal"):
-            fs.show(normal="w", mode="none")
+            fs.show(normal="w", render_mode="none")
         with pytest.raises(ValueError, match="mode"):
-            fs.show(mode="hologram")
+            fs.show(render_mode="hologram")
         with pytest.raises(TypeError, match="show_field needs"):
-            plots.show_field(object(), mode="none")
+            plots.show_field(object(), render_mode="none")
 
     def test_plots_namespace_entry_point(self):
-        pl = plots.show_field(_field(_grid()), "Ey", mode="none", size=(200, 150))
+        pl = plots.show_field(_field(_grid()), "Ey", render_mode="none", size=(200, 150))
         assert tuple(pl.window_size) == (200, 150)
         pl.close()
 
     def test_arrows_are_a_polydata_glyph_set(self):
-        pl = _field(_grid()).show(mode="none", density=6)
+        pl = _field(_grid()).show(render_mode="none", density=6)
         arrows = pl.renderer.actors["field_arrows"].mapper.dataset
         assert isinstance(arrows, pv.PolyData) and arrows.n_cells > 0
         # Every actor dataset is polydata (the browser renderer's rule).
@@ -191,7 +191,7 @@ class TestTimeMonitor:
     def test_plane_monitor_defaults_to_its_own_plane(self):
         grid = _grid()
         mon = _time_monitor(grid)
-        pl = mon.show(mode="none")
+        pl = mon.show(render_mode="none")
         sheet = _sheet(pl)
         assert sheet.n_cells == grid.Nx * grid.Ny
         # Frame 0 holds Ez = 1e-3 / dz at every cell.
@@ -201,23 +201,23 @@ class TestTimeMonitor:
     def test_t_picks_the_nearest_frame_and_vmax_spans_all_frames(self):
         grid = _grid()
         mon = _time_monitor(grid)
-        pl = mon.show(mode="none", t=1.9e-12)
+        pl = mon.show(render_mode="none", t=1.9e-12)
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 3e-3 / _dz(grid))
         assert pl.renderer.actors["field_cut"].mapper.scalar_range == (0.0, 3e-3 / _dz(grid))
         pl.close()
         # The first frame is drawn on the same colour scale.
-        pl = mon.show(mode="none", frame=0)
+        pl = mon.show(render_mode="none", frame=0)
         assert pl.renderer.actors["field_cut"].mapper.scalar_range == (0.0, 3e-3 / _dz(grid))
         pl.close()
 
     def test_frame_selection_errors(self):
         mon = _time_monitor(_grid())
         with pytest.raises(IndexError):
-            mon.show(mode="none", frame=7)
+            mon.show(render_mode="none", frame=7)
         with pytest.raises(ValueError, match="one of frame, t or f"):
-            mon.show(mode="none", frame=1, t=0.0)
+            mon.show(render_mode="none", frame=1, t=0.0)
         with pytest.raises(ValueError, match="frequency monitor only"):
-            mon.show(mode="none", f=1e9)
+            mon.show(render_mode="none", f=1e9)
 
     def test_volume_monitor_layers_follow_the_cut(self):
         grid = _grid()
@@ -232,29 +232,29 @@ class TestTimeMonitor:
     def test_unattached_or_drained_monitor_is_refused(self):
         mon = MonitorFieldTime(times=[0.0], fields=["E"], name="x")
         with pytest.raises(RuntimeError, match="not attached"):
-            mon.show(mode="none")
+            mon.show(render_mode="none")
         mon.attach(_FakeMesh(_grid()))
         with pytest.raises(RuntimeError, match="no snapshots"):
-            mon.show(mode="none")
+            mon.show(render_mode="none")
 
 
 class TestFrequencyMonitor:
     def test_phase_turns_the_pattern(self):
         # The DFT bins already hold physical (cell-centred) fields.
         mon = _freq_monitor(_grid())
-        pl = mon.show("Ez", mode="none", f=1e9)
+        pl = mon.show("Ez", render_mode="none", f=1e9)
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 0.4)
         assert "Ez (V/m per √W)" in pl.scalar_bars
         pl.close()
-        pl = mon.show("Ez", mode="none", f=2e9)  # purely imaginary at phase 0
+        pl = mon.show("Ez", render_mode="none", f=2e9)  # purely imaginary at phase 0
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 0.0, atol=1e-12)
         pl.close()
         # Re(j·e^{+jπ/2}) = -1: the phasors are those of the e^{+jwt}
         # convention, so the phase advances with time.
-        pl = mon.show("Ez", mode="none", f=2e9, phase=90.0)
+        pl = mon.show("Ez", render_mode="none", f=2e9, phase_deg=90.0)
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], -0.4)
         pl.close()
-        pl = mon.show("Ez", mode="none", f=2e9, phase=270.0)
+        pl = mon.show("Ez", render_mode="none", f=2e9, phase_deg=270.0)
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 0.4)
         pl.close()
 
@@ -469,7 +469,7 @@ class TestWithMesh:
             return x / r, y / r, 0 * z
 
         fs = FieldState.from_function(mesh.grid, E=radial)
-        pl = fs.show(normal="z", position=5e-3, geometry=model, mesh=mesh, mode="none")
+        pl = fs.show(normal="z", position=5e-3, geometry=model, mesh=mesh, render_mode="none")
         sheet = _sheet(pl)
         g = mesh.grid
         assert 0 < sheet.n_cells < g.Nx * g.Ny
@@ -486,7 +486,7 @@ class TestWithMesh:
     def test_mismatched_mesh_is_refused(self, coax):
         _, mesh = coax
         with pytest.raises(ValueError, match="does not match"):
-            _field(_grid()).show(mesh=mesh, mode="none")
+            _field(_grid()).show(mesh=mesh, render_mode="none")
 
     def test_scene_serialises_for_vtkjs(self, coax, caplog):
         """Sheet, arrows and scalar bar pass trame's vtk.js serialiser."""
@@ -494,7 +494,7 @@ class TestWithMesh:
         model, mesh = coax
         fs = FieldState.from_function(mesh.grid, E=lambda x, y, z: (0 * x, 0 * y, 1 + 0 * z))
         pl = fs.show(
-            normal="y", position=0.0, geometry=model, mesh=mesh, mode="none", size=(300, 200)
+            normal="y", position=0.0, geometry=model, mesh=mesh, render_mode="none", size=(300, 200)
         )
         pl.render()
         serializers.initialize_serializers()
@@ -527,7 +527,7 @@ class TestWithMesh:
         model, mesh = coax
         fs = FieldState.from_function(mesh.grid, E=lambda x, y, z: (0 * x, 0 * y, 1 + 0 * z))
         pl = fs.show(
-            normal="y", position=0.0, geometry=model, mesh=mesh, mode="none", size=(300, 200)
+            normal="y", position=0.0, geometry=model, mesh=mesh, render_mode="none", size=(300, 200)
         )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -552,7 +552,7 @@ class TestVolume:
         fs = _field(grid)
         frames = field_3d._frames_of(fs, None)
         vol = frames.volume(0, ["Ex", "Ey", "Ez"])
-        cc = fs.cell_centred(["Ex", "Ey", "Ez"])
+        cc = fs.cell_centered(["Ex", "Ey", "Ez"])
         for c in ("Ex", "Ey", "Ez"):
             np.testing.assert_array_equal(vol[c], cc[c])
         mon = _time_monitor(grid, corners=None)
@@ -580,7 +580,9 @@ class TestVolume:
 
     def test_volume_arrows_fill_the_kept_half(self):
         grid = _grid()
-        pl = _field(grid).show(mode="none", volume="arrows", density=6, normal="z", position=LZ / 2)
+        pl = _field(grid).show(
+            render_mode="none", volume="arrows", density=6, normal="z", position=LZ / 2
+        )
         arrows = _actor(pl, "field_volume_arrows")
         assert arrows.GetVisibility()
         pd = arrows.mapper.dataset
@@ -604,7 +606,7 @@ class TestVolume:
         fs = FieldState.from_function(
             grid, E=lambda x, y, z: (0 * x, 0 * y, 0.05 + 0.95 * (x / LX) ** 4)
         )
-        pl = fs.show(mode="none", density=6, normal="z", position=LZ / 2, threshold=0.0)
+        pl = fs.show(render_mode="none", density=6, normal="z", position=LZ / 2, threshold=0.0)
         pd = _actor(pl, "field_arrows").mapper.dataset
         lengths = np.asarray(pd["len"], dtype=float)
         # The strongest cell sets the ceiling, so the longest arrow spans
@@ -615,7 +617,7 @@ class TestVolume:
         pl.close()
 
     def test_single_colour_arrows_on_request(self):
-        pl = _field(_grid()).show(mode="none", density=6, arrow_color="#303030")
+        pl = _field(_grid()).show(render_mode="none", density=6, arrow_color="#303030")
         pd = _actor(pl, "field_arrows").mapper.dataset
         assert _actor(pl, "field_arrows").mapper.scalar_visibility is False or (
             "mag" in pd.point_data
@@ -626,7 +628,7 @@ class TestVolume:
         """|E| = |sin(πx/L)| at half the ceiling: two sheets at L/6 and 5L/6."""
         grid = _grid(nx=24)
         pl = _field(grid).show(
-            mode="none", plot_type="color", volume="isosurface", normal="z", position=LZ / 2
+            render_mode="none", plot_type="color", volume="isosurface", normal="z", position=LZ / 2
         )
         iso = _actor(pl, "field_iso")
         assert iso.GetVisibility()
@@ -643,7 +645,7 @@ class TestVolume:
         lo, hi = iso.mapper.scalar_range
         assert lo == 0.0 and hi == pytest.approx(float(_sheet(pl).cell_data["field"].max()))
         # Fixed levels in field units move the sheets.
-        pl2 = _field(grid).show(mode="none", volume="isosurface", levels=[0.9])
+        pl2 = _field(grid).show(render_mode="none", volume="isosurface", levels=[0.9])
         x2 = _actor(pl2, "field_iso").mapper.dataset.points[:, 0] / 1e3
         x_level = np.arcsin(0.9) / np.pi * LX
         assert (np.abs(x2 - x_level) < cell).any() and (np.abs(x2 - (LX - x_level)) < cell).any()
@@ -714,19 +716,19 @@ class TestVolume:
         f.Ex[:] = 0.5e-3
         mon.record(f, 0, -1e-12, 1e-12)
         with pytest.raises(ValueError, match="two cells"):
-            mon.show(mode="none", volume="isosurface")
-        pl = mon.show(mode="none", volume="arrows", density=5)
+            mon.show(render_mode="none", volume="isosurface")
+        pl = mon.show(render_mode="none", volume="arrows", density=5)
         assert _actor(pl, "field_volume_arrows").GetVisibility()
         pl.close()
 
     def test_bad_arguments(self):
         fs = _field(_grid())
         with pytest.raises(ValueError, match="volume must be"):
-            fs.show(mode="none", volume="fog")
+            fs.show(render_mode="none", volume="fog")
         with pytest.raises(ValueError, match="levels"):
-            fs.show(mode="none", levels=[-1.0])
+            fs.show(render_mode="none", levels=[-1.0])
         with pytest.raises(ValueError, match="iso_level"):
-            fs.show(mode="none", iso_level=1.5)
+            fs.show(render_mode="none", iso_level=1.5)
 
 
 class TestVolumeControls:
@@ -877,13 +879,13 @@ class TestGlyphs:
 
     def test_show_takes_the_glyph_arguments(self):
         grid = _grid()
-        pl = _field(grid).show(glyph="cone", glyph_width=1.5, mode="none", size=(300, 200))
+        pl = _field(grid).show(glyph="cone", glyph_width=1.5, render_mode="none", size=(300, 200))
         assert _actor(pl, "field_arrows").mapper.dataset.n_cells > 0
         pl.close()
         with pytest.raises(ValueError, match="glyph must be"):
-            _field(grid).show(glyph="dart", mode="none")
+            _field(grid).show(glyph="dart", render_mode="none")
         with pytest.raises(ValueError, match="glyph_width"):
-            _field(grid).show(glyph_width=0.0, mode="none")
+            _field(grid).show(glyph_width=0.0, render_mode="none")
 
 
 class TestLineAndPointMonitors:
@@ -894,7 +896,7 @@ class TestLineAndPointMonitors:
         y0, z0 = 0.5 * LY, 0.5 * LZ
         mon = _time_monitor(grid, corners=((None, y0, z0), (None, y0, z0)))
         assert mon.recording.shape[1:] == (1, 1)
-        pl = mon.show(mode="none", size=(300, 200))
+        pl = mon.show(render_mode="none", size=(300, 200))
         sheet = _sheet(pl)
         assert sheet.n_cells == grid.Nx
         assert _actor(pl, "field_arrows").mapper.dataset.n_points > 0
@@ -905,11 +907,11 @@ class TestLineAndPointMonitors:
         p = (0.4 * LX, 0.5 * LY, 0.5 * LZ)
         mon = _time_monitor(grid, corners=(p, p))
         assert mon.recording.shape == (1, 1, 1)
-        pl = mon.show(mode="none", size=(300, 200))
+        pl = mon.show(render_mode="none", size=(300, 200))
         assert _sheet(pl).n_cells == 1
         arrows = _actor(pl, "field_arrows").mapper.dataset
         assert arrows.n_points > 0
-        # One arrow, centred on the cell: its x extent straddles the centre.
+        # One arrow, centred on the cell: its x extent straddles the center.
         cx = 0.5 * (grid.x[2] + grid.x[3]) * 1e3
         assert arrows.bounds[0] < cx < arrows.bounds[1]
         pl.close()
@@ -935,13 +937,13 @@ class TestPhasePlay:
         from magnelio.post.plot_3d import _attach_controls, _build_scene  # noqa: PLC0415
 
         grid = _grid()
-        mon = MonitorFieldFrequency(freqs=[1.0e9], fields=["E"], name="p")
+        mon = MonitorFieldFrequency(frequencies=[1.0e9], fields=["E"], name="p")
         mon.attach(_FakeMesh(grid))
         f = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
         f.Ez[:] = 1e-3
         mon.record(f, 0, 0.0, 1e-12)
         mon.finalize()
-        mon.renormalize(Signal1D(t=np.array([0.0]), values=np.array([1e12]), dt=1e-12))
+        mon.normalize_to_excitation(Signal1D(t=np.array([0.0]), values=np.array([1e12]), dt=1e-12))
         frames = field_3d._frames_of(mon, None)
         assert frames.n_frames == 1 and frames.is_complex
         view = _view_of(frames)
@@ -1073,12 +1075,12 @@ class TestEigenmodes:
     def test_show_starts_at_the_requested_mode(self, coax):
         _model, mesh = coax
         result = self._result(mesh)
-        pl = result.show(frame=1, mode="none", size=(300, 200))
+        pl = result.show(mode=1, render_mode="none", size=(300, 200))
         assert "|E| (a.u.)" in pl.scalar_bars
         assert float(_sheet(pl).cell_data["field"].max()) == pytest.approx(1.0)
         pl.close()
         with pytest.raises(IndexError):
-            result.show(frame=5, mode="none")
+            result.show(mode=5, render_mode="none")
 
     def test_complex_mode_is_turned_to_its_energy_maximum(self, coax):
         _model, mesh = coax
@@ -1097,7 +1099,7 @@ class TestEigenmodes:
         _model, mesh = coax
         empty = EigenmodeResult(frequencies=np.zeros(0), modes=[], mesh=mesh)
         with pytest.raises(ValueError, match="no mode"):
-            empty.show(mode="none")
+            empty.show(render_mode="none")
 
 
 @pytest.fixture(scope="module")
@@ -1146,14 +1148,14 @@ class TestMirror:
         model, mesh = half_box
         grid = mesh.grid
         fs = FieldState.from_function(grid, E=lambda x, y, z: (0 * x, 0 * y + 1.0, 0 * z))
-        pl = fs.show(geometry=model, mesh=mesh, normal="z", mode="none", size=(300, 200))
+        pl = fs.show(geometry=model, mesh=mesh, normal="z", render_mode="none", size=(300, 200))
         # The sheet spans both halves, in mm.
         assert _sheet(pl).bounds[0] < -5.0 and _sheet(pl).bounds[1] > 5.0
         # The symmetry plane is drawn at x = 0, not on the scene's edge.
         plane = _actor(pl, "symmetry_xmin").mapper.dataset.bounds
         assert plane[0] == pytest.approx(0.0, abs=1e-9) and plane[1] == pytest.approx(0.0, abs=1e-9)
         pl.close()
-        pl = fs.show(mesh=mesh, mirror=False, normal="z", mode="none", size=(300, 200))
+        pl = fs.show(mesh=mesh, mirror=False, normal="z", render_mode="none", size=(300, 200))
         assert _sheet(pl).bounds[0] >= -1e-9
         pl.close()
 
@@ -1163,7 +1165,12 @@ class TestMirror:
         fs = FieldState.from_function(mesh.grid, E=lambda x, y, z: (0 * x, 0 * y + 1.0, 0 * z))
         with pytest.warns(UserWarning, match="mirror=False"):
             pl = fs.show(
-                geometry=model, mesh=mesh, normal="z", show_grid=True, mode="none", size=(300, 200)
+                geometry=model,
+                mesh=mesh,
+                normal="z",
+                show_grid=True,
+                render_mode="none",
+                size=(300, 200),
             )
         assert "grid_cut" not in pl.renderer.actors
         pl.close()
@@ -1176,7 +1183,7 @@ class TestMirror:
                 normal="z",
                 show_grid=True,
                 mirror=False,
-                mode="none",
+                render_mode="none",
                 size=(300, 200),
             )
         assert pl.renderer.actors["grid_cut"].GetVisibility()

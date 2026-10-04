@@ -121,7 +121,7 @@ def _arc_midpoint_about(u_start, u_end, normal, center, radius):
         if abs(out_of_plane) > 1e-6:
             raise ValueError(
                 f"arc_to(center=..., normal=...) needs both ends in the "
-                f"plane through the centre perpendicular to the normal, "
+                f"plane through the center perpendicular to the normal, "
                 f"but the {label} point is off it by "
                 f"{abs(out_of_plane) * radius:.3e} m."
             )
@@ -457,9 +457,9 @@ class Path:
         which arc is meant:
 
         - *via* — a point the arc passes through.  Always unambiguous,
-          and the form to reach for when the centre is not what you
+          and the form to reach for when the center is not what you
           know.
-        - *center* — the centre of the circle, which must be equidistant
+        - *center* — the center of the circle, which must be equidistant
           from the current point and *end*.  This is the form for a slice
           of a round part, where the axis is the given quantity.
 
@@ -521,10 +521,10 @@ class Path:
         r_start, r_end = math.dist(c, p_start), math.dist(c, p_end)
         r_max = max(r_start, r_end)
         if r_max <= 0.0:
-            raise ValueError("arc_to(center=...) needs a centre distinct from the arc endpoints.")
+            raise ValueError("arc_to(center=...) needs a center distinct from the arc endpoints.")
         if abs(r_start - r_end) > _JOIN_RTOL * r_max:
             raise ValueError(
-                f"arc_to(center=...) needs a centre equidistant from both "
+                f"arc_to(center=...) needs a center equidistant from both "
                 f"ends, but it is {r_start:.6e} m from the start and "
                 f"{r_end:.6e} m from the end."
             )

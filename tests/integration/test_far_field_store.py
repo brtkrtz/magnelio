@@ -50,7 +50,7 @@ def _analysis(mon, project=None):
 
 
 def _monitor():
-    return MonitorFarFieldFrequency(freqs=[F0], margin_cells=1, name="pattern")
+    return MonitorFarFieldFrequency(frequencies=[F0], margin_cells=1, name="pattern")
 
 
 _ANGLES = {"theta": np.linspace(0, np.pi, 19), "phi": np.linspace(0, 2 * np.pi, 37)}
@@ -63,7 +63,7 @@ def test_reader_matches_in_ram_monitor(tmp_path):
     assert (p / "runs" / "feed_mode0" / "far_field.h5").exists()
 
     loaded = open_project(p).monitors["pattern"]
-    np.testing.assert_array_equal(loaded.f, mon.f)
+    np.testing.assert_array_equal(loaded.f_axis, mon.f_axis)
     a = mon.result(F0, **_ANGLES)
     b = loaded.result(F0, **_ANGLES)
     # The divisor differs by the reference-signal storage round trip
@@ -88,7 +88,7 @@ def test_resume_bit_exact(tmp_path):
         total_time_steps=n1,
         checkpoint_interval=60,
     )
-    proj = resume(p, excited=("feed", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("feed", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["feed_mode0"].n_steps == n_total
     resumed = proj.monitors["pattern"].result(F0, **_ANGLES)
     # The reference-signal storage round trip costs a few ulp on the
@@ -112,17 +112,17 @@ def test_stale_result_file_is_rejected(tmp_path):
         f.attrs["n_completed"] = int(f.attrs["n_completed"]) - 1
 
     with pytest.raises(ValueError, match="far_field.h5 is at step"):
-        resume(p, excited=("feed", 0), total_time_steps=300, verbose=False)
+        resume(p, run=("feed", 0), total_time_steps=300, verbose=False)
 
 
 def test_recipe_roundtrip_carries_the_spec():
     from magnelio.analysis._recipe import _monitor_from_dict, _monitor_to_dict
 
-    mon = MonitorFarFieldFrequency(freqs=[1e9, 2e9], margin_cells=4, name="ff")
+    mon = MonitorFarFieldFrequency(frequencies=[1e9, 2e9], margin_cells=4, name="ff")
     back = _monitor_from_dict(_monitor_to_dict(mon))
     assert back.name == mon.name
     assert back.margin_cells == mon.margin_cells
-    np.testing.assert_array_equal(back.freqs, mon.freqs)
+    np.testing.assert_array_equal(back.frequencies, mon.frequencies)
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -184,7 +184,7 @@ def test_legacy_partial_file_resumes_bit_exact(tmp_path):
     ff = p / "runs" / "feed_mode0" / "far_field.h5"
     _demodernise_far_field_file(ff)
 
-    proj = resume(p, excited=("feed", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("feed", 0), total_time_steps=n_total, verbose=False)
     resumed = proj.monitors["pattern"].result(F0, **_ANGLES)
     np.testing.assert_allclose(resumed.E_theta, ref_pattern.E_theta, rtol=1e-10)
     np.testing.assert_allclose(resumed.E_phi, ref_pattern.E_phi, rtol=1e-10)

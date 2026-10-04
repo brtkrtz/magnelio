@@ -8,7 +8,7 @@ records its time series.  Both need the same box, the same face
 sampling and the same exclusions, so the placement lives here.
 
 Sampling convention: each face lies on a node plane; the tangential
-fields come from the sanctioned cell-centre interpolation of the two
+fields come from the sanctioned cell-center interpolation of the two
 adjacent cell layers, linearly combined onto the node plane.  The
 surface stays exactly closed (faces meet at box edges without gaps or
 overhangs) and second-order accurate on graded grids.
@@ -207,7 +207,7 @@ def exclude_pec_patches(mesh, faces, lo_n, port_footprints=None) -> None:
 # Native Yee sampling of a box face (DD-226)
 # ---------------------------------------------------------------------------
 
-# Yee position of each component per axis: "n" = node, "c" = cell centre.
+# Yee position of each component per axis: "n" = node, "c" = cell center.
 _YEE = {
     "Ex": ("c", "n", "n"),
     "Ey": ("n", "c", "n"),

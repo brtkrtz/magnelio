@@ -45,7 +45,7 @@ def _centre(grid):
 
 
 def _filament(grid, half_cells=1, name="fil"):
-    """A z-directed filament of ``2·half_cells`` cells through the centre."""
+    """A z-directed filament of ``2·half_cells`` cells through the center."""
     x0, y0, z0 = _centre(grid)
     return SourceCurrentPath(
         name=name,
@@ -120,7 +120,7 @@ def test_short_filament_radiates_a_hertzian_dipole():
     f0 = 5e9  # λ = 60 mm: 0.73 λ of clearance between filament and absorber
     c = float(line[-1]) / 2
     src = SourceCurrentPath(name="fil", path=[(c, c, c - d), (c, c, c + d)])
-    ff = MonitorFarFieldFrequency(freqs=[f0], margin_cells=2, name="pattern")
+    ff = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=2, name="pattern")
 
     mesh = Mesh.from_grid(grid).with_boundary_conditions(dict.fromkeys(FACES, "CPML"))
     result = AnalysisTD(mesh=mesh, sources=[src], monitors=[ff], f_max=2 * f0, verbose=False).run(
@@ -128,7 +128,7 @@ def test_short_filament_radiates_a_hertzian_dipole():
         total_time_steps=6000,
         energy_stop_db=60,
     )
-    result.renormalize("fil")
+    result.normalize_to_excitation("fil")
     with warnings.catch_warnings():  # the box clearance is the point, see below
         warnings.simplefilter("ignore")
         pattern = ff.result(f0)
