@@ -1776,9 +1776,16 @@ def show_geometry(
         Tessellation fineness; values above 1 give finer triangles.
     scale_mm : bool, default True
         Display in millimetres (``False``: metres).
-    camera : str or sequence, default "iso"
-        Initial camera: a PyVista preset (``"iso"``, ``"xy"``, ``"xz"``,
-        ``"yz"``) or an explicit ``[position, focal_point, view_up]``.
+    camera : str or list or tuple, default "iso"
+        Initial view: ``"iso"`` is isometric; ``"xy"``, ``"xz"`` and
+        ``"yz"`` look at those coordinate planes. A custom camera is
+        ``[position, focal_point, view_up]``, each a three-vector.
+        Position and focal point use display coordinates: millimetres
+        with ``scale_mm=True``, metres otherwise. ``view_up`` is a
+        dimensionless vector towards the top of the image and must not
+        be parallel to the viewing direction. The scene is fitted
+        automatically: direction and up are preserved, but position,
+        focal point and zoom are adjusted to show the scene.
 
     Returns
     -------
@@ -1802,6 +1809,20 @@ def show_geometry(
     ``trame-vuetify``).  Without it a browser target falls back to the
     native VTK window with a warning; an inline target falls back to a
     static image.
+
+    Examples
+    --------
+    Open a coordinate-plane view or a cut with visible tessellation edges:
+
+    >>> model.show(camera="xy")  # doctest: +SKIP
+    >>> model.show(camera="xz", cut=("y", 0.0), render_edges=True)  # doctest: +SKIP
+
+    Define an oblique direction in display coordinates, with z pointing up:
+
+    >>> model.show(  # doctest: +SKIP
+    ...     camera=[(100, 100, 80), (0, 0, 0), (0, 0, 1)],
+    ...     size=(900, 600),
+    ... )
     """
     notebook, mode, off_screen, target = _resolve_mode(mode, target)
 

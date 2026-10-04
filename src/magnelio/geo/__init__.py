@@ -435,15 +435,58 @@ class GeometryModel:
             Show this mesh's grid with the geometry: the grid cells —
             coloured by assigned material — on the cutting plane.
         **kwargs
-            Forwarded (``cut``, ``flip``, ``show_ports``, ``show_wires``,
-            ``show_grid``, ``mode``, ``target``, ``size``, ``render_edges``,
-            ``edge_color``, ``quality``, ``scale_mm``, ``camera``).
+            Viewer options forwarded to
+            :func:`magnelio.plots.show_geometry`. Common options:
+
+            - ``camera="iso"`` (default), ``"xy"``, ``"xz"`` or
+              ``"yz"`` selects the initial view. A custom camera is
+              ``[position, focal_point, view_up]``, each a three-vector.
+            - ``cut=("y", 0.0)`` opens a section at y = 0 m;
+              ``flip=True`` removes the other side.
+            - ``target="browser"``, ``"inline"`` or ``"native"``
+              selects the display destination; the default is automatic.
+            - ``mode="client"`` renders in the browser, ``"server"``
+              streams kernel-rendered images, ``"static"`` shows a
+              screenshot, and ``"none"`` returns a plotter without
+              displaying it. ``"trame"`` offers a client/server toggle.
+            - ``size=(900, 600)`` sets the view size in pixels;
+              ``scale_mm=False`` displays metres instead of millimetres.
+            - ``show_ports``, ``show_wires``, ``show_grid`` and
+              ``show_labels`` control the initial visibility of those
+              groups. ``render_edges=True`` draws tessellation edges,
+              ``edge_color`` sets their colour, and ``quality`` controls
+              tessellation fineness (default 1.0).
 
         Returns
         -------
         pyvista.Plotter or None
             The plotter for ``mode="none"``; otherwise the view is
             displayed and ``None`` is returned.
+
+        Notes
+        -----
+        A custom camera's position and focal point use display coordinates:
+        millimetres by default, metres with ``scale_mm=False``. ``view_up``
+        is a dimensionless vector pointing towards the top of the image;
+        it must not be parallel to the viewing direction. The viewer fits
+        the scene automatically, preserving the viewing direction and up
+        vector but adjusting the position, focal point and zoom. Cutting
+        plane positions always use metres, independently of display units.
+
+        Examples
+        --------
+        Look at the xy plane, or open a cut in the xz view:
+
+        >>> model.show(camera="xy")  # doctest: +SKIP
+        >>> model.show(camera="xz", cut=("y", 0.0))  # doctest: +SKIP
+
+        Choose an oblique direction with z pointing up. The first two
+        vectors below are in millimetres; the scene is fitted automatically:
+
+        >>> model.show(  # doctest: +SKIP
+        ...     camera=[(100, 100, 80), (0, 0, 0), (0, 0, 1)],
+        ...     target="browser",
+        ... )
         """
         from magnelio.post.plot_3d import show_geometry as _show_geometry  # noqa: PLC0415
 

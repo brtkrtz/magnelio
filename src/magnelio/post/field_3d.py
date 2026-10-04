@@ -1506,10 +1506,21 @@ def show_field(
         As in the geometry viewer.
     show_grid : bool, default False
         With *mesh*: draw the grid cells on the cut under the field.
-    mode, target, size, quality, scale_mm, camera
+    mode, target, size, quality, scale_mm
         As in :func:`~magnelio.plots.show_geometry`; *size* sets the
         widget's height in the notebook, the toolbar's pop-out button
         opens the same view in a browser tab of its own.
+    camera : str or list or tuple, default "iso"
+        Initial view: ``"iso"`` is isometric; ``"xy"``, ``"xz"`` and
+        ``"yz"`` look at those coordinate planes. A custom camera is
+        ``[position, focal_point, view_up]``, each a three-vector.
+        Position and focal point use display coordinates: millimetres
+        with ``scale_mm=True``, metres otherwise. ``view_up`` is a
+        dimensionless vector towards the top of the image and must not
+        be parallel to the viewing direction. The scene is fitted
+        automatically, preserving direction and up while adjusting
+        position, focal point and zoom. The cutting-plane *position*
+        still uses metres.
 
     Returns
     -------

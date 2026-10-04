@@ -74,6 +74,10 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- The `show()` help and 3D viewer guide now explain common viewer options,
+  camera presets and custom views, including coordinate units and automatic
+  scene fitting, with concrete examples.
+
 - The geometry tutorials are now one illustrated "Geometry toolbox" page,
   with short recipes for profiles, owned faces, CAD exchange, mechanical
   STEP import and PCB fabrication-data import.

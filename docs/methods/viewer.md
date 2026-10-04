@@ -51,6 +51,46 @@ other editor REPLs whose kernels cannot identify their frontend.
 Lengths are shown in millimetres (`scale_mm=False` for metres).  The
 projection is parallel, as in engineering drawings.
 
+## Setting the initial camera
+
+Use `camera="iso"` for the default isometric view, or `"xy"`, `"xz"`
+or `"yz"` to look at one of the coordinate planes. The same camera
+options work on geometry and field `show()` calls:
+
+```python
+model.show(camera="xy")
+model.show(camera="xz", cut=("y", 0.0))
+monitor.show("Ez", normal="z", camera="xy")
+```
+
+For an oblique view, pass three vectors: the camera position, the point
+it looks towards, and the direction that should point up in the image.
+The up vector is dimensionless and must not be parallel to the viewing
+direction. The example looks towards the origin with z pointing up:
+
+```python
+model.show(camera=[(100, 100, 80), (0, 0, 0), (0, 0, 1)])
+```
+
+The first two vectors use **display coordinates**: millimetres by
+default, or metres with `scale_mm=False`. This is different from a
+cutting-plane position, which always uses metres. The equivalent view
+in metre coordinates is:
+
+```python
+model.show(
+    camera=[(0.1, 0.1, 0.08), (0, 0, 0), (0, 0, 1)],
+    scale_mm=False,
+)
+```
+
+The viewer fits the scene into the window automatically after setting
+the camera. A custom camera therefore sets its initial viewing direction
+and up vector; its exact position, focal point and zoom are adjusted
+to show the scene. Use the viewer's camera controls to pan or zoom after
+opening it. `size=(900, 600)` sets the view size in pixels, and
+`target="browser"` opens it in the browser.
+
 ## The cutting plane
 
 The cut is **axis-aligned**: a normal (`x`, `y` or `z`), a position
