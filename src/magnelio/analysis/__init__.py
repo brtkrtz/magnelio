@@ -14,6 +14,7 @@ Each ``Analysis*`` class solves a specific physical question in one
 """
 
 from magnelio.analysis.eigenmode import AnalysisEigenmode
+from magnelio.analysis.memory import MemoryEstimate, MemoryPhase, MonitorMemoryEstimate
 from magnelio.analysis.result_interface import (
     RunSettings,
     ScatteringResult,
@@ -23,6 +24,9 @@ from magnelio.analysis.scattering_td import AnalysisScatteringTD, ScatteringTDRe
 from magnelio.analysis.time_domain import AnalysisTD, TDResult
 
 __all__ = [
+    "MemoryEstimate",
+    "MemoryPhase",
+    "MonitorMemoryEstimate",
     "ScatteringTDResult",
     "TDResult",
     "RunSettings",

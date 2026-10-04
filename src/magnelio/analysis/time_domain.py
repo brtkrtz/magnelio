@@ -76,6 +76,7 @@ from magnelio.solver.stability import spectral_dt
 from magnelio.sources.base import Source
 
 if TYPE_CHECKING:
+    from magnelio.analysis.memory import MemoryEstimate
     from magnelio.io.project import Project
 
 PortSpec = Union[
@@ -804,6 +805,72 @@ class AnalysisTD(_AnalysisBase):
                 f"port, element and source names must be unique together; got {all_labels}",
             )
         self._check_excitable()
+
+    def estimate(
+        self,
+        *,
+        excited=None,
+        total_time_steps: int | None = None,
+        max_time_steps: int | str | None = "auto",
+        t_end: float | None = None,
+        dt: float | None = None,
+        backend: str | None = None,
+    ) -> MemoryEstimate:
+        """Budget memory without constructing operators or starting a run.
+
+        Parameters
+        ----------
+        excited : iterable, optional
+            Scattering channels, with the same meaning as ``run(excited=)``.
+            Not used by the general TD analysis.
+        total_time_steps : int, optional
+            Upper bound on steps in each run, as in ``run``.
+        max_time_steps : int, None or "auto", default "auto"
+            Explicit runtime cap when no fixed length is supplied. The
+            automatic cap is left unresolved because it requires port
+            and waveform preparation. Early stop criteria can only
+            reduce the actual recording below the reported bounds.
+        t_end : float, optional
+            Physical duration [s], mutually exclusive with steps. For
+            ``AnalysisTD`` this matches ``run(t_end=)``; on a scattering
+            analysis it is an estimate scenario, not a run parameter.
+        dt : float, optional
+            Assumed step [s] for converting duration and monitor schedules.
+            Uses the cached normal-accuracy CFL step if available; never
+            computes a new CFL eigenvalue. An assumed step does not set
+            the solver's actual step.
+        backend : {"auto", "numpy", "cupy"}, optional
+            Backend scenario. Default: analysis setting. Unresolved
+            ``"auto"`` reports a CPU scenario without initialising CUDA.
+
+        Returns
+        -------
+        MemoryEstimate
+            Structured phase and monitor budgets in bytes. ``print`` the
+            result for binary storage units (GiB, MiB, KiB). Missing contributions and
+            unknown recording horizons are explicit; phase peaks include
+            the existing mesh and must not be added together.
+
+        Notes
+        -----
+        This is an allocation budget, not a prediction of process RSS.
+        Field monitors are accounted for at their staggered sample shapes;
+        time recordings report bytes per frame and schedule growth, with
+        finite totals when possible. Project-backed recordings stream to
+        disk with bounded RAM buffers. Port/source auxiliary state and
+        other monitor types currently leave the overall upper budget open.
+        """
+        from magnelio.analysis.memory import estimate_td  # noqa: PLC0415
+
+        return estimate_td(
+            self,
+            excited=excited,
+            total_time_steps=total_time_steps,
+            max_time_steps=max_time_steps,
+            t_end=t_end,
+            dt=dt,
+            backend=backend,
+        )
 
     def _check_excitable(self) -> None:
         """Raise unless the analysis has something an excitation may name."""

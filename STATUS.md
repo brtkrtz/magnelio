@@ -29,8 +29,7 @@ the 3D viewer; **DD-257** (CPU kernels 1.2× faster, bit-identical);
 (2026-09-02…04, the API grammar, DD-224…248) — migration guides
 `docs/migration-0.5.md` … `docs/migration-0.8.md`.
 
-Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
-3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
+Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration: 3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
 four GPU / single-precision tests need a working CUDA toolchain — they
 fail in this sandbox on the release tag and on `main` alike).
 The foundation was merged to local `main` on 2026-10-02. WP0-WP5 and WP6.1/WP6.3-WP6.12 are implemented.
@@ -318,6 +317,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
+* **Large-grid TD setup memory** — DD-278 adds `analysis.estimate()` phase/monitor budgets and total-cell/held-array mesh reporting in GiB/MiB/KiB; unknown auxiliary costs remain explicit. The CFL scaling defect stays open: approximately 112 GiB of curl-list payload at 168.7 million cells, plus roughly 48 GiB of mesh arrays and conversion/Lanczos workspaces. Two earlyoom terminations confirmed; allocation sites unknown. Evidence: `investigations/hesr-memory-termination/MEASUREMENTS.md` (internal record).
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

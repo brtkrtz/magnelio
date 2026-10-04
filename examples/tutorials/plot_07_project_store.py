@@ -102,6 +102,18 @@ analysis = mio.AnalysisScatteringTD(
     verbose=False,
 )
 
+# %%
+# Check the allocation budget before launching the runs
+# ----------------------------------------------------
+#
+# The estimate constructs no solver operators and writes no project files.
+# Its phases include the mesh already held in RAM. The volume DFT monitor
+# needs its complex accumulators in RAM even though its finished bins are
+# saved to disk. Unknown port costs leave the overall upper budget open.
+# See :doc:`/methods/memory-planning` for finite time-recording budgets.
+
+print(analysis.estimate(excited=["port3", "port4"]))
+
 result = analysis.run(excited=["port3", "port4"], port_signal_stop_db=50.0)
 print(type(result).__name__, "->", result.status)
 

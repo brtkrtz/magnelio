@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from magnelio._memory import array_bytes, format_bytes
 from magnelio.mesh._quality import check_grading_undershoot, check_quality
 from magnelio.mesh.grid import GridLines
 
@@ -1680,7 +1681,11 @@ class Mesh:
 
             warn_unregistered_walls(mesh, stacklevel=2)
 
-        rep.finish(f"{mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
+        n_cells = mesh.Nx * mesh.Ny * mesh.Nz
+        rep.finish(
+            f"{mesh.Nx} x {mesh.Ny} x {mesh.Nz} = {n_cells:,} cells"
+            f" | {format_bytes(array_bytes(mesh))}"
+        )
         return mesh
 
     # ------------------------------------------------------------------

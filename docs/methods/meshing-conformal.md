@@ -83,6 +83,13 @@ counts as conductor, as the kernel's classifier would have it.
 
 ## Graded Cartesian mesh
 
+The final meshing progress line reports the three grid dimensions, total
+cell count and memory held by the mesh's NumPy buffers. Shared buffers are
+counted once; units are binary (`GiB = 2³⁰ bytes`). This is the completed
+mesh's array storage, excluding CAD objects, Python-object overhead and
+temporary meshing allocations. Analysis setup and time integration need
+additional memory.
+
 The mesh generator (`mesh/mesher.py`) produces a graded (non-uniform)
 Cartesian tensor-product grid: geometry-derived fixpoints ("anchors",
 plane clustering, DD-059…DD-062) plus feature-based two-scale

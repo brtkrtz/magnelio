@@ -11,6 +11,15 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Time-domain analyses provide `estimate()` allocation budgets before
+  operator construction, including phase peaks, CPU/GPU scenarios and
+  time/frequency field-monitor storage. Unknown recording horizons and
+  unmodelled auxiliary allocations are reported explicitly. The memory
+  planning guide and project-storage tutorial show the workflow.
+
+- The final meshing progress line includes the total cell count and the
+  completed mesh's array storage in GiB/MiB/KiB, counting shared buffers once.
+
 - Named rectangular CAD faces can define waveguide-port windows and
   frequency-field recording planes through `from_face` factories, with
   explicit domain and geometry eligibility checks. The geometry guide and

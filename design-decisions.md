@@ -23426,3 +23426,57 @@ and port-power integration tests pass. On the original HESR three-cell
 mesh (89 × 89 × 129, 0.5 mm floor), both offending interior edges now
 have ε̄/f_A = 1; x1 is `dtbc` with pair spread 1.877480e-14. This is a
 port-operator measurement; no full TD response was run.
+
+---
+
+## DD-278 — TD memory budgets precede operator construction
+
+**Date:** 2026-10-03. **Status:** Implemented; allocation accounting only.
+
+**Problem.** Large meshes can finish meshing and exhaust RAM and swap
+before time integration begins. The spectral CFL path constructs explicit
+curl topology through Python lists, converts to CSR, copies the matrix for
+its absolute-value bound and allocates Lanczos workspaces. Field-array
+counts alone miss that setup peak. Evidence:
+`investigations/hesr-memory-termination/MEASUREMENTS.md` (internal record).
+
+**Decision.** `AnalysisTD.estimate()` and its scattering subclass return
+a structured `MemoryEstimate` without constructing solver operators,
+solving ports, attaching monitors or writing projects. Phase budgets
+include the existing mesh and distinguish host RAM from device storage;
+phases are not summed. Backend auto-selection remains a labelled CPU
+scenario until explicitly chosen; no CUDA probe is required. Field
+precision follows the existing resolver, while setup calculations and
+frequency bins retain their actual float64/complex128 storage.
+
+Time recordings always expose raw bytes per snapshot. Explicit target
+lists bound their counts; known steps and dt resolve the monitor's
+half-step acceptance and coalescing. Unknown horizons expose interval
+growth instead of guessed totals. A finite step cap without dt still
+bounds snapshots by one per step. The automatic runtime cap is unresolved
+when it requires port/waveform preparation. A duration needs dt to bound
+rounding to the last solver step. Streaming records have bounded RAM
+batches and separate disk totals; sequential runs multiply disk storage,
+not reusable field arrays.
+
+The first implementation models dense mesh/field/coefficient storage,
+material and CFL construction, conservative TD/CPML workspaces, and
+rectangular time/frequency field monitors. Unknown port, source,
+dispersive/SIBC and other-monitor state leaves the total upper budget
+open, with explicit notes. Native objects, allocator pools, Python
+metadata and checkpoint/I/O workspaces remain excluded. Ranges describe
+current allocation paths; they are not guarantees about process RSS.
+This does not repair the CFL scaling defect or introduce mesh planning.
+
+The completed mesher reports dimensions, total cells and held NumPy
+backing storage, counting aliases/views once. Binary GiB/MiB/KiB match
+system memory tools; the number excludes temporary meshing workspaces.
+
+**Checks.** `tests/unit/test_memory.py` covers shared buffers, views,
+external-buffer aliases and cycles. `tests/unit/test_analysis_memory.py`
+compares staggered snapshot/bin payloads to actual monitor allocations,
+checks time coalescing and finite horizons, distinguishes streaming from
+RAM accumulation, verifies precision and sequential-run accounting, and
+forbids operator/CUDA construction. A large-topology fixture exposes the
+curl-list cost without allocating that topology. The methods guide and
+Tutorial 07 demonstrate the public API.
