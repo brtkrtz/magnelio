@@ -187,7 +187,7 @@ def plot_field_scalar(
     Parameters
     ----------
     xc, yc : np.ndarray
-        Cell-centre coordinates of the two in-plane axes.
+        Cell-center coordinates of the two in-plane axes.
     values : np.ndarray
         Real-valued 2D array, shape ``(len(xc), len(yc))``.
     xlabel, ylabel : str
@@ -385,7 +385,7 @@ def _resample(
     arrays: list,
     valid: np.ndarray | None,
 ) -> tuple[list, np.ndarray]:
-    """Bilinear resampling of cell-centre data onto the arrow raster.
+    """Bilinear resampling of cell-center data onto the arrow raster.
 
     Invalid cells (``valid=False`` — a cell buried in a conductor, say)
     carry no data: they are dropped from the stencil instead of being
@@ -458,7 +458,7 @@ def plot_field_vector(
     and grid points whose vector tilts out of the plane by more than
     ~72° (``|w| >= 3x`` the in-plane part, at significant magnitude)
     are drawn as circle markers instead of unreadable foreshortened
-    arrows: a filled circle with a centre dot (⊙) where the field
+    arrows: a filled circle with a center dot (⊙) where the field
     points along the positive normal axis, with a cross (⊗) along the
     negative one.  Without *w* the plot shows the in-plane projection
     only and the colour bar is labelled accordingly.
@@ -466,7 +466,7 @@ def plot_field_vector(
     Parameters
     ----------
     xc, yc : np.ndarray
-        Cell-centre coordinates of the two in-plane axes.
+        Cell-center coordinates of the two in-plane axes.
     u, v : np.ndarray
         In-plane vector components, shape ``(len(xc), len(yc))``.
     w : np.ndarray or None

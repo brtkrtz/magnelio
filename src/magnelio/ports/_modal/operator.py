@@ -639,7 +639,7 @@ class PortOperatorModal:
         self._mur_r = np.empty(self._n_modes, dtype=float)
         self._tau_m = np.empty(self._n_modes, dtype=float)
         for m, dm in enumerate(self.discrete_modes):
-            gamma = dm.mode.gamma(omega_calc)
+            gamma = dm.mode.gamma(f=(omega_calc) / (2.0 * math.pi))
             beta = abs(gamma.imag)
             v_p = (omega_calc / beta) if beta > 0.0 else C0
             self._v_p[m] = v_p
@@ -972,7 +972,7 @@ class PortOperatorModal:
                 I_test = float(np.dot(self._mh_u, dm.h_u_profile**2)) + float(
                     np.dot(self._mh_v, dm.h_v_profile**2)
                 )
-            Z = dm.mode.z_modal(omega_calc)
+            Z = dm.mode.z_modal(f=(omega_calc) / (2.0 * math.pi))
             Z_real_part = float(Z.real)
 
             # Physical power of the unit-coefficient travelling wave

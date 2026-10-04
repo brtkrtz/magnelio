@@ -571,7 +571,7 @@ def test_line_table_keeps_the_first_origin_and_the_ids():
     ids = table.resolve(ax, pu, pv, origin)
     assert ids.tolist() == [0, 0, 1, 2]
     assert table.origin.tolist() == [-MM, -3 * MM, -MM]  # the first asker's
-    # The z line through the cube's centre enters at z = 0 and leaves at
+    # The z line through the cube's center enters at z = 0 and leaves at
     # z = 1 mm, parameters relative to its origin.
     sl = slice(table.hit_offsets[0], table.hit_offsets[1])
     assert table.ok[0]
@@ -585,7 +585,7 @@ def test_line_table_keeps_the_first_origin_and_the_ids():
         np.array([7.0, 0.0]),
     )
     assert ids.tolist() == [0, 3] and table.origin[0] == -MM and table.ax.size == 4
-    # The single-point classifier: centre inside, outside beyond a face,
+    # The single-point classifier: center inside, outside beyond a face,
     # on the boundary → inside.
     assert table.classify_point(np.array([0.5 * MM, 0.5 * MM, 0.5 * MM]), [2]) is False
     assert table.classify_point(np.array([0.5 * MM, 0.5 * MM, 1.5 * MM]), [2]) is True

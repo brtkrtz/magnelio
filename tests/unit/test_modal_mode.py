@@ -30,14 +30,14 @@ class TestGamma:
     def test_tem_propagates_at_speed_of_light_vacuum(self):
         m = _make(ModeType.TEM, omega_c=0.0, epsilon_r=1.0)
         omega = 2 * math.pi * 10e9
-        gamma = m.gamma(omega)
+        gamma = m.gamma(f=(omega) / (2.0 * math.pi))
         assert gamma.real == pytest.approx(0.0, abs=1e-6)
         assert gamma.imag == pytest.approx(omega / C0, rel=1e-12)
 
     def test_tem_in_dielectric(self):
         m = _make(ModeType.TEM, omega_c=0.0, epsilon_r=4.0)
         omega = 2 * math.pi * 10e9
-        gamma = m.gamma(omega)
+        gamma = m.gamma(f=(omega) / (2.0 * math.pi))
         # γ = j·ω·√(με) = j·ω·√ε_r/c₀
         assert gamma.imag == pytest.approx(2.0 * omega / C0, rel=1e-12)
 
@@ -48,7 +48,7 @@ class TestGamma:
         omega_c = 2 * math.pi * f_c
         m = _make(ModeType.TE, omega_c=omega_c, epsilon_r=1.0)
         omega = 2 * math.pi * 10e9
-        gamma = m.gamma(omega)
+        gamma = m.gamma(f=(omega) / (2.0 * math.pi))
         # β = √(k² - kc²) = (1/c) √(ω² - ω_c²)
         expected_beta = math.sqrt(omega**2 - omega_c**2) / C0
         assert gamma.real == pytest.approx(0.0, abs=1e-3)
@@ -58,7 +58,7 @@ class TestGamma:
         omega_c = 2 * math.pi * 10e9
         m = _make(ModeType.TE, omega_c=omega_c, epsilon_r=1.0)
         omega = 2 * math.pi * 5e9
-        gamma = m.gamma(omega)
+        gamma = m.gamma(f=(omega) / (2.0 * math.pi))
         # α = (1/c)·√(ω_c² - ω²) (real, positive)
         expected_alpha = math.sqrt(omega_c**2 - omega**2) / C0
         assert gamma.imag == pytest.approx(0.0, abs=1e-6)
@@ -67,28 +67,28 @@ class TestGamma:
     def test_at_cutoff_gamma_zero(self):
         omega_c = 2 * math.pi * 10e9
         m = _make(ModeType.TE, omega_c=omega_c, epsilon_r=1.0)
-        gamma = m.gamma(omega_c)
+        gamma = m.gamma(f=(omega_c) / (2.0 * math.pi))
         assert abs(gamma) < 1e-3
 
 
 class TestZWave:
     def test_tem_equals_eta(self):
         m = _make(ModeType.TEM, epsilon_r=2.1)
-        z = m.z_wave(2 * math.pi * 10e9)
+        z = m.z_wave(f=(2 * math.pi * 10e9) / (2.0 * math.pi))
         assert z.real == pytest.approx(ETA0 / math.sqrt(2.1), rel=1e-12)
         assert z.imag == 0.0
 
     def test_tem_frequency_independent(self):
         m = _make(ModeType.TEM, epsilon_r=1.0)
-        z_low = m.z_wave(2 * math.pi * 1e9)
-        z_high = m.z_wave(2 * math.pi * 100e9)
+        z_low = m.z_wave(f=(2 * math.pi * 1e9) / (2.0 * math.pi))
+        z_high = m.z_wave(f=(2 * math.pi * 100e9) / (2.0 * math.pi))
         assert z_low == z_high
 
     def test_te_propagating_real_positive(self):
         omega_c = 2 * math.pi * 6.557e9
         m = _make(ModeType.TE, omega_c=omega_c, epsilon_r=1.0)
         omega = 2 * math.pi * 10e9
-        z = m.z_wave(omega)
+        z = m.z_wave(f=(omega) / (2.0 * math.pi))
         # Z_TE = ω·μ/β where β = √(ω²με − ω_c²με)
         beta = math.sqrt(omega**2 - omega_c**2) / C0
         expected = omega * MU0 / beta
@@ -99,7 +99,7 @@ class TestZWave:
         omega_c = 2 * math.pi * 8e9
         m = _make(ModeType.TM, omega_c=omega_c, epsilon_r=1.0)
         omega = 2 * math.pi * 10e9
-        z = m.z_wave(omega)
+        z = m.z_wave(f=(omega) / (2.0 * math.pi))
         # Z_TM = β/(ω·ε)
         beta = math.sqrt(omega**2 - omega_c**2) / C0
         expected = beta / (omega * EPS0)
@@ -109,7 +109,7 @@ class TestZWave:
     def test_te_evanescent_purely_imaginary(self):
         omega_c = 2 * math.pi * 10e9
         m = _make(ModeType.TE, omega_c=omega_c, epsilon_r=1.0)
-        z = m.z_wave(2 * math.pi * 5e9)
+        z = m.z_wave(f=(2 * math.pi * 5e9) / (2.0 * math.pi))
         # Z_TE = j·ω·μ/α (purely imaginary, positive imag)
         assert z.real == pytest.approx(0.0, abs=1e-12)
         assert z.imag > 0.0
@@ -117,7 +117,7 @@ class TestZWave:
     def test_tm_evanescent_purely_imaginary(self):
         omega_c = 2 * math.pi * 10e9
         m = _make(ModeType.TM, omega_c=omega_c, epsilon_r=1.0)
-        z = m.z_wave(2 * math.pi * 5e9)
+        z = m.z_wave(f=(2 * math.pi * 5e9) / (2.0 * math.pi))
         # Z_TM = α/(j·ω·ε) = -j·α/(ω·ε) (purely imaginary, negative imag)
         assert z.real == pytest.approx(0.0, abs=1e-12)
         assert z.imag < 0.0
@@ -125,19 +125,19 @@ class TestZWave:
     def test_z_wave_zero_omega_rejected(self):
         m = _make(ModeType.TEM)
         with pytest.raises(ValueError):
-            m.z_wave(0.0)
+            m.z_wave(f=(0.0) / (2.0 * math.pi))
 
 
 class TestZModal:
     def test_falls_back_to_z_wave_when_z_line_none(self):
         m = _make(ModeType.TE, omega_c=2 * math.pi * 8e9)
         omega = 2 * math.pi * 10e9
-        assert m.z_modal(omega) == m.z_wave(omega)
+        assert m.z_modal(f=(omega) / (2.0 * math.pi)) == m.z_wave(f=(omega) / (2.0 * math.pi))
 
     def test_returns_z_line_when_set(self):
         m = _make(ModeType.TEM, z_line=50.0)
-        z_at_low = m.z_modal(2 * math.pi * 1e9)
-        z_at_high = m.z_modal(2 * math.pi * 100e9)
+        z_at_low = m.z_modal(f=(2 * math.pi * 1e9) / (2.0 * math.pi))
+        z_at_high = m.z_modal(f=(2 * math.pi * 100e9) / (2.0 * math.pi))
         assert z_at_low == complex(50.0)
         assert z_at_high == complex(50.0)
 
@@ -145,7 +145,7 @@ class TestZModal:
         # If a solver chose to set z_line on a TE mode (unusual but allowed),
         # z_modal returns it.
         m = _make(ModeType.TE, omega_c=2 * math.pi * 8e9, z_line=75.0)
-        z = m.z_modal(2 * math.pi * 10e9)
+        z = m.z_modal(f=(2 * math.pi * 10e9) / (2.0 * math.pi))
         assert z == complex(75.0)
 
 

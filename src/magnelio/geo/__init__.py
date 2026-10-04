@@ -492,22 +492,6 @@ class GeometryModel:
 
         return _show_geometry(self, mesh=mesh, **kwargs)
 
-    def plot(self, mesh=None, **kwargs):
-        """Deprecated alias of :meth:`show`.
-
-        ``plot`` draws into matplotlib everywhere else in magnelio;
-        the interactive 3D view is ``show``.
-        """
-        import warnings  # noqa: PLC0415
-
-        warnings.warn(
-            "GeometryModel.plot() is deprecated; use GeometryModel.show() "
-            "(plot() draws into matplotlib everywhere else in magnelio)",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.show(mesh=mesh, **kwargs)
-
     # ------------------------------------------------------------------
     # Validation
     # ------------------------------------------------------------------
@@ -573,6 +557,9 @@ class GeometryModel:
 
 
 __all__ = [
+    "Bend",
+    "Wrap",
+    "ImportedSheet",
     "Shape",
     "Curve",
     "Sheet",

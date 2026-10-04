@@ -195,7 +195,7 @@ def test_oblique_placement_preserves_volume_and_world_frame():
 
 def test_named_end_face_survives_and_replays_through_project(tmp_path):
     bend, length = _cylindrical()
-    source = _block(length).tag_face("end", normal="x")
+    source = _block(length).tagged_face("end", normal="x")
     result = bend @ source
     assert result.face("end").area == pytest.approx(0.04)
     restored = from_recipe(json.loads(json.dumps(to_recipe(result))))
@@ -209,10 +209,10 @@ def test_named_end_face_survives_and_replays_through_project(tmp_path):
 
 def test_singular_face_name_fails_when_interval_seam_splits_it():
     bend, length = _cylindrical()
-    source = _block(length, before=0.5, after=0.5).tag_face("side", near=(0.5, 0.2, 0))
+    source = _block(length, before=0.5, after=0.5).tagged_face("side", near=(0.5, 0.2, 0))
     with pytest.raises(geo.TopologyEvolutionError, match="split"):
         bend @ source
-    deliberate = _block(length, before=0.5, after=0.5).tag_faces("side", near=(0.5, 0.2, 0))
+    deliberate = _block(length, before=0.5, after=0.5).tagged_faces("side", near=(0.5, 0.2, 0))
     assert len((bend @ deliberate).faces("side")) == 3
 
 

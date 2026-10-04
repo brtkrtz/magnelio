@@ -365,7 +365,7 @@ class MonitorFieldTime:
         self,
         component: str = "E",
         t: float | None = None,
-        t_index: int | None = None,
+        frame: int | None = None,
         *,
         normal: str | None = None,
         position: float = 0.0,
@@ -386,7 +386,7 @@ class MonitorFieldTime:
         """Plot one frame of the recording.
 
         A point region draws its value over time (ignores *t* /
-        *t_index*); a line region the values along its axis at one
+        *frame*); a line region the values along its axis at one
         instant; a plane region the frame on its own plane; a volume
         the plane selected with *normal* and *position*.  Only the
         drawn layer is averaged onto cell centres.
@@ -398,14 +398,14 @@ class MonitorFieldTime:
             ``"Ex"``, ``"Hy"``, … for a single component.
         t : float, optional
             Instant [s]; the nearest frame is drawn.
-        t_index : int, optional
+        frame : int, optional
             Frame index (overrides *t*).
         normal : {"x", "y", "z"}, optional
             Slice-plane normal for a volume (required there); for a
             plane region it may name the plane's own normal.
         position : float
             Slice-plane position along *normal* [m]; snapped to the
-            nearest cell-centre plane.
+            nearest cell-center plane.
         plot_type : str
             ``"vector"``, ``"color"``, or ``"contour"``.
         ax : matplotlib.axes.Axes, optional
@@ -440,7 +440,7 @@ class MonitorFieldTime:
         return plot_frame(
             view,
             component,
-            view.index_of(t, t_index),
+            view.index_of(t, frame),
             normal=normal,
             position=position,
             plot_type=plot_type,
@@ -507,7 +507,7 @@ class MonitorFieldTime:
         the region.  See :func:`magnelio.plots.show_field` for the
         arguments — the frame (``t=`` or ``frame=``), the plane
         (``normal``, ``position``), ``volume`` for the region behind the
-        cut, and the rendering ``mode``.
+        cut, and the rendering ``render_mode``.
 
         The monitor carries the field alone: pass ``geometry=`` to draw
         the model with it, and ``mesh=`` to cut the metal cells out of

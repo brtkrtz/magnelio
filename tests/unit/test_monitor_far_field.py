@@ -38,7 +38,7 @@ def _mesh(pml_cells=2, **bc) -> Mesh:
 
 class TestPlacement:
     def test_box_sits_inside_absorber_plus_margin(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         mon.attach(_mesh(pml_cells=2))
         names = {bf.name for bf in mon._faces}
         assert names == {"xmin", "xmax", "ymin", "ymax", "zmin", "zmax"}
@@ -49,7 +49,7 @@ class TestPlacement:
         assert mon._image_planes == []
 
     def test_ground_plane_is_omitted_and_booked(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         mon.attach(_mesh(pml_cells=2, zmin="PEC"))
         names = {bf.name for bf in mon._faces}
         assert "zmin" not in names and len(names) == 5
@@ -62,36 +62,36 @@ class TestPlacement:
         assert xmin.slab[2].start == 0
 
     def test_symmetry_plane_keeps_the_full_sphere(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         mon.attach(_mesh(pml_cells=2, zmin=("SymmetryPEC", 0.0)))
         (plane,) = mon._image_planes
         assert not plane.physical_halfspace
 
     def test_pmc_wall_position_is_the_natural_magnetic_wall(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         mon.attach(_mesh(pml_cells=2, zmin="PMC"))
         (plane,) = mon._image_planes
         assert plane.position == pytest.approx(-0.5 * H)
 
     def test_periodic_face_is_rejected(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         with pytest.raises(ValueError, match="[Pp]eriodic"):
             mon.attach(_mesh(pml_cells=2, xmin="Periodic", xmax="Periodic"))
 
     def test_all_wall_cavity_is_rejected(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9])
+        mon = MonitorFarFieldFrequency(frequencies=[1e9])
         bc = {f: "PEC" for f in ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")}
         with pytest.raises(ValueError, match="cavity"):
             mon.attach(_mesh(pml_cells=0, **bc))
 
     def test_too_small_interior_is_rejected(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=3)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=3)
         with pytest.raises(ValueError, match="physical volume"):
             mon.attach(_mesh(pml_cells=2))
 
     def test_margin_below_one_is_rejected(self):
         with pytest.raises(ValueError, match="margin_cells"):
-            MonitorFarFieldFrequency(freqs=[1e9], margin_cells=0)
+            MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=0)
 
 
 def _cw_state(grid, E0, H0, t, dt, omega):
@@ -129,12 +129,12 @@ class TestAccumulation:
         E0, H0 = 2.5, 0.75
 
         mesh = _mesh(pml_cells=2)
-        mon = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=1)
         mon.attach(mesh)
         for n in range(n_steps):
             mon.record(_cw_state(mesh.grid, E0, H0, n * dt, dt, omega), n, n * dt, dt)
         waveform = np.cos(omega * np.arange(n_steps) * dt)
-        mon.renormalize(Signal1D(t=np.arange(n_steps) * dt, values=waveform, dt=dt))
+        mon.normalize_to_excitation(Signal1D(t=np.arange(n_steps) * dt, values=waveform, dt=dt))
 
         for patches in mon._patch_sets(0):
             tang_e = patches.E[np.abs(patches.E) > 1e-12]
@@ -144,14 +144,14 @@ class TestAccumulation:
 
     def test_result_requires_renormalization(self):
         mesh = _mesh(pml_cells=2)
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         mon.attach(mesh)
         with pytest.raises(ValueError, match="incident"):
             mon.result(1e9)
 
     def test_unknown_frequency_is_rejected(self):
         mesh = _mesh(pml_cells=2)
-        mon = MonitorFarFieldFrequency(freqs=[1e9, 2e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9, 2e9], margin_cells=1)
         mon.attach(mesh)
         with pytest.raises(ValueError, match="not recorded"):
             mon.result(1.5e9)
@@ -166,15 +166,15 @@ class TestPersistence:
         dt = (2.0 * np.pi / omega) / 64.0
         mesh = _mesh(pml_cells=2)
 
-        mon = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=1)
         mon.attach(mesh)
         for n in range(100):
             mon.record(_cw_state(mesh.grid, 1.0, 0.5, n * dt, dt, omega), n, n * dt, dt)
         waveform = np.cos(omega * np.arange(100) * dt)
-        mon.renormalize(Signal1D(t=np.arange(100) * dt, values=waveform, dt=dt))
+        mon.normalize_to_excitation(Signal1D(t=np.arange(100) * dt, values=waveform, dt=dt))
         dump = mon.result_dump()
 
-        fresh = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1)
+        fresh = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=1)
         fresh.attach(mesh)
         fresh.load_result_dump(dump)
         a = mon.result(f0, theta=np.linspace(0, np.pi, 7), phi=np.linspace(0, np.pi, 5))
@@ -192,15 +192,15 @@ class TestPersistence:
             for n in range(lo, hi):
                 mon.record(_cw_state(mesh.grid, 1.0, 0.5, n * dt, dt, omega), n, n * dt, dt)
 
-        whole = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1)
+        whole = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=1)
         whole.attach(mesh)
         run(whole, 0, 128)
 
-        first = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1)
+        first = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=1)
         first.attach(mesh)
         run(first, 0, 60)
         dump = first.result_dump()
-        second = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1)
+        second = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=1)
         second.attach(mesh)
         second.load_result_dump(dump)
         run(second, 60, 128)
@@ -216,7 +216,7 @@ class TestFeedFootprintsAndMetal:
     """DD-198: patches inside feed guides and conductors are left out."""
 
     def test_footprint_face_sits_at_the_absorber_interface_and_is_masked(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         mon._port_footprints = {"xmin": [{1: (3, 6), 2: (2, 5)}]}
         mon.attach(_mesh(pml_cells=2))
         xmin = next(bf for bf in mon._faces if bf.name == "xmin")
@@ -231,10 +231,10 @@ class TestFeedFootprintsAndMetal:
         assert other.keep is None
 
     def test_masked_patches_carry_no_area(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9], margin_cells=1)
         mon._port_footprints = {"xmin": [{1: (3, 6), 2: (2, 5)}]}
         mon.attach(_mesh(pml_cells=2))
-        mon.renormalize(Signal1D(t=np.arange(4) * 1e-12, values=np.ones(4), dt=1e-12))
+        mon.normalize_to_excitation(Signal1D(t=np.arange(4) * 1e-12, values=np.ones(4), dt=1e-12))
         sets = mon._patch_sets(0)
         xmin = next(bf for bf in mon._faces if bf.name == "xmin")
         idx = [bf.name for bf in mon._faces].index("xmin")
@@ -243,7 +243,7 @@ class TestFeedFootprintsAndMetal:
         assert np.all(areas[xmin.keep == 1.0] > 0.0)
 
     def test_dump_round_trip_keeps_the_weights_and_the_incident_ratio(self):
-        mon = MonitorFarFieldFrequency(freqs=[1e9, 2e9], margin_cells=1)
+        mon = MonitorFarFieldFrequency(frequencies=[1e9, 2e9], margin_cells=1)
         mon._port_footprints = {"xmin": [{1: (3, 6), 2: (2, 5)}]}
         mon.attach(_mesh(pml_cells=2))
         mon._set_incident_amplitude([0.5e9, 3e9], [0.8, 1.2])

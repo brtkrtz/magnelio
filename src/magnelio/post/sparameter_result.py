@@ -150,11 +150,11 @@ def _draw_smith_grid(ax, *, labels: bool = True, color: str = "0.78", lw: float 
     ax.plot(np.cos(th), np.sin(th), color="0.35", lw=1.0, zorder=1)
     ax.plot([-1.0, 1.0], [0.0, 0.0], color="0.35", lw=0.8, zorder=1)
     for r in _SMITH_R:
-        centre, radius = r / (1.0 + r), 1.0 / (1.0 + r)
-        ax.plot(centre + radius * np.cos(th), radius * np.sin(th), color=color, lw=lw, zorder=0)
+        center, radius = r / (1.0 + r), 1.0 / (1.0 + r)
+        ax.plot(center + radius * np.cos(th), radius * np.sin(th), color=color, lw=lw, zorder=0)
         if labels:
             ax.text(
-                centre - radius,
+                center - radius,
                 0.015,
                 f"{r:g}",
                 color="0.45",

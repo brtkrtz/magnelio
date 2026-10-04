@@ -68,7 +68,7 @@ class RectWGAnalyticalModeSolver:
     the Poynting axial component directly (no factor of 1/2, no complex
     conjugation).  For modes that are evanescent at ``f_calc`` the
     bake-in uses ``|Z(f_calc)|``; the actual frequency-dependent phase is
-    recovered at run time via ``Mode.z_modal(omega)`` in the operator.
+    recovered at run time via ``Mode.z_modal(f=...)`` in the operator.
     """
 
     width_a: float

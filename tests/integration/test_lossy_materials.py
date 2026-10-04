@@ -157,7 +157,7 @@ def test_lossy_half_space_fresnel():
     lossy = Material.from_isotropic("half_space", epsilon=1.0, sigma=sigma)
     mesh = Mesh.from_grid(
         grid,
-        regions=[(lossy, (-1.0, -1.0, d_vac, 1.0, 1.0, 1.0))],
+        regions=[(lossy, ((-1.0, -1.0, d_vac), (1.0, 1.0, 1.0)))],
     )
     analysis = AnalysisScatteringTD(
         mesh=mesh.with_boundary_conditions(_BCS),
@@ -184,7 +184,7 @@ def test_lossy_metal_is_pec_in_field_solve():
     """A lossy-metal obstacle produces the BIT-IDENTICAL field solution
     to the same obstacle in PEC (DD-081, A1: is_pec classification is
     untouched; finite sigma is consumed only by loss models)."""
-    obstacle_box = (-2e-3, -GAP_B / 2, 8e-3, 2e-3, 0.0, 10e-3)
+    obstacle_box = ((-2e-3, -GAP_B / 2, 8e-3), (2e-3, 0.0, 10e-3))
     results = {}
     for name, mat in (
         ("pec", Material.pec()),

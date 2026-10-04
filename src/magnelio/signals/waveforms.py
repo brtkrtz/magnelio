@@ -82,7 +82,7 @@ def modulated_gaussian(
     f_max: float,
     f_min: float,
 ) -> float | np.ndarray:
-    """Gaussian envelope modulated at the band centre (f_min + f_max) / 2.
+    """Gaussian envelope modulated at the band center (f_min + f_max) / 2.
 
     The envelope sigma scales with the passband bandwidth ``f_max -
     f_min`` rather than ``f_max`` alone, so the spectrum is tightly
@@ -340,7 +340,7 @@ class WaveformGaussian(Waveform):
 
 @dataclass(frozen=True)
 class WaveformGaussianModulated(Waveform):
-    """Gaussian envelope on a carrier at the band centre, unit peak.
+    """Gaussian envelope on a carrier at the band center, unit peak.
 
     The band-limited pulse for TE/TM modes and any drive whose lower
     band edge matters: the envelope's sigma follows the passband
@@ -376,7 +376,7 @@ class WaveformGaussianModulated(Waveform):
 
     @property
     def f_center(self) -> float:
-        """Carrier frequency [Hz]: the centre of ``[f_min, f_max]``."""
+        """Carrier frequency [Hz]: the center of ``[f_min, f_max]``."""
         return 0.5 * (self.f_min + self.f_max)
 
     @property
@@ -408,7 +408,7 @@ def _raised_cosine_ramp(t, rise_time: float):
 
 @dataclass(frozen=True)
 class WaveformSine(Waveform):
-    """Continuous-wave sinusoid ``sin(2π f t + phase)``, unit amplitude.
+    """Continuous-wave sinusoid ``sin(2π f t + phase_deg)``, unit amplitude.
 
     A single-frequency drive; zero for ``t < 0``.  Its duration is
     infinite (``t_end = inf``), so a run driven by it needs an explicit
@@ -420,7 +420,7 @@ class WaveformSine(Waveform):
     ----------
     f : float
         Frequency [Hz].
-    phase : float, default 0.0
+    phase_deg : float, default 0.0
         Phase [degrees].
     rise_time : float, optional
         Length of the raised-cosine switch-on [s].  ``None`` (default)
@@ -428,12 +428,12 @@ class WaveformSine(Waveform):
     """
 
     f: float
-    phase: float = 0.0
+    phase_deg: float = 0.0
     rise_time: float | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "f", _positive("f", self.f))
-        object.__setattr__(self, "phase", float(self.phase))
+        object.__setattr__(self, "phase_deg", float(self.phase_deg))
         if self.rise_time is not None:
             object.__setattr__(self, "rise_time", _positive("rise_time", self.rise_time))
 
@@ -456,7 +456,7 @@ class WaveformSine(Waveform):
     def __call__(self, t):
         scalar = not _is_array(t)
         tt = float(t) if scalar else t
-        out = np.sin(2.0 * math.pi * self.f * tt + math.radians(self.phase))
+        out = np.sin(2.0 * math.pi * self.f * tt + math.radians(self.phase_deg))
         if self.rise_time is not None:
             out = out * _raised_cosine_ramp(tt, self.rise_time)
         out = np.where(tt < 0.0, 0.0, out)

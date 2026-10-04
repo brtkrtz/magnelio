@@ -239,7 +239,7 @@ def test_rlc_source_resume_bit_exact(tmp_path):
     )
     assert open_project(p).runs["feed_mode0"].n_steps == n1
 
-    proj = resume(p, excited=("feed", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("feed", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["feed_mode0"].n_steps == n_total
     for chan, (rv, ri) in ref_vi.items():
         gv, gi = proj.signals[("feed", 0)][chan]

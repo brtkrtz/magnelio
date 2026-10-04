@@ -66,8 +66,8 @@ def _wr90_solver(n_steps):
         PortSpecRectWG(
             name="port1",
             plane=BoxFace.X_MIN,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
             n_modes=1,
         ),
         mesh,
@@ -81,8 +81,8 @@ def _wr90_solver(n_steps):
         PortSpecRectWG(
             name="port2",
             plane=BoxFace.X_MAX,
-            width_a=WR90_A,
-            height_b=WR90_B,
+            width=WR90_A,
+            height=WR90_B,
             n_modes=1,
         ),
         mesh,

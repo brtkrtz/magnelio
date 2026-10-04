@@ -49,8 +49,8 @@ def _fit(c0=0.0, branches=(), sigma=5.8e7):
         sigma=sigma,
         mu=1.0,
         roughness=None,
-        f_lo=1e9,
-        f_hi=1e11,
+        f_min=1e9,
+        f_max=1e11,
         c0=c0,
         branches=tuple(branches),
         rel_err_re=0.0,
@@ -62,7 +62,7 @@ def _brick_mesh(sigma=5.8e7):
     metal = Material.lossy_metal("cu", sigma=sigma)
     return Mesh.from_grid(
         _grid(),
-        regions=[(metal, (2 * D, 2 * D, 1 * D, 6 * D, 5 * D, 3 * D))],
+        regions=[(metal, ((2 * D, 2 * D, 1 * D), (6 * D, 5 * D, 3 * D)))],
     )
 
 

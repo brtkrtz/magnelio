@@ -801,7 +801,7 @@ class _Interpreter:
                     "the layer with G75 in force."
                 )
             if "I" not in coordinates and "J" not in coordinates:
-                raise self.fail("an arc (G02/G03) without a centre offset (I/J).")
+                raise self.fail("an arc (G02/G03) without a center offset (I/J).")
             offset_x = self._coordinate(coordinates.get("I", "0"))
             offset_y = self._coordinate(coordinates.get("J", "0"))
             center = (start[0] + offset_x, start[1] + offset_y)

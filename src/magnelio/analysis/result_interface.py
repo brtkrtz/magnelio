@@ -35,7 +35,7 @@ class RunSettings:
     f_min: float | None = None
     n_freq: int | None = None
     dt: float | None = None
-    n_actual_steps: int | None = None
+    n_steps: int | None = None
     accuracy: str | None = None
     energy_stop_db: float | None = None
     port_signal_stop_db: float | None = None
@@ -332,6 +332,16 @@ class ScatteringResult(Protocol):
     (reference-plane shift) and the ``to_touchstone`` / ``to_skrf``
     exports.
     """
+
+    @property
+    def max_run_steps(self) -> int:
+        """Maximum solver-step count across the runs."""
+        ...
+
+    @property
+    def n_steps_by_run(self) -> dict:
+        """Solver steps keyed by existing excitation or run."""
+        ...
 
     @property
     def f_axis(self) -> np.ndarray:

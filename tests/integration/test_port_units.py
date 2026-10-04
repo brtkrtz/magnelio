@@ -88,7 +88,7 @@ def test_dielectric_step_fresnel_unitarity():
     mesh = Mesh.from_grid(
         _plate_grid(),
         regions=[
-            (diel, (-WIDTH, -GAP, 0.0, WIDTH, GAP, LENGTH)),
+            (diel, ((-WIDTH, -GAP, 0.0), (WIDTH, GAP, LENGTH))),
         ],
     )
     ana = _two_port_analysis(mesh)
@@ -161,7 +161,7 @@ def test_frequency_monitor_fields_per_1w_cw():
 
     freqs = np.array([1e9, 2e9])
     mon = MonitorFieldFrequency(
-        corners=((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)), freqs=freqs, fields=["Ey"], name="probe"
+        corners=((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)), frequencies=freqs, fields=["Ey"], name="probe"
     )
     mesh = Mesh.from_grid(_plate_grid())
     ana = AnalysisScatteringTD(
@@ -177,9 +177,9 @@ def test_frequency_monitor_fields_per_1w_cw():
     zline = ana.solve_ports()["m1"].z_line_num
     res = ana.run(f_axis=freqs, excited=["m1"], total_time_steps=20000, energy_stop_db=None)
 
-    assert mon.is_renormalized, "the run must hand its excitation to the monitor"
+    assert mon.is_normalized_to_excitation, "the run must hand its excitation to the monitor"
     assert res.reference_signal is not None
-    ey = np.abs(mon.spectrum.cell_centred(["Ey"])["Ey"].reshape(len(freqs), -1)[:, 0])
+    ey = np.abs(mon.spectrum.cell_centered(["Ey"])["Ey"].reshape(len(freqs), -1)[:, 0])
     e_expect = np.sqrt(zline * 1.0) / GAP
     assert np.all(np.abs(ey / e_expect - 1.0) < 1e-3), (
         f"|Ey| at 1 W CW = {ey} vs expected {e_expect:.1f} V/m"

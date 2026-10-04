@@ -84,7 +84,7 @@ def test_plane_intersections_signed_offsets_and_noop():
 @pytest.mark.parametrize("mirror", [False, True])
 def test_from_placed_named_face_and_exact_hollow_bend_to_plane(mirror):
     body = geo.Cylinder(axis="x", radius=0.2, inner_radius=0.1, height=1, material="pec")
-    body = body.tag_face("port", normal="x").rotated("z", 22.5)
+    body = body.tagged_face("port", normal="x").rotated("z", 22.5)
     if mirror:
         body = body.mirrored("y")
     face = body.face("port")
@@ -270,10 +270,10 @@ def test_routed_named_face_and_swept_body_round_trip_through_project(tmp_path):
     from magnelio.mesh import GridLines
 
     body = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3, height=6e-3, material="pec")
-    body = body.tag_face("port", normal="x").rotated("z", 22.5)
+    body = body.tagged_face("port", normal="x").rotated("z", 22.5)
     route = geo.Path.from_face(body.face("port"), up="z").turn_right(radius=8e-3, angle_deg=22.5)
     route = route.straight_to_plane("x", 20e-3)
-    extension = body.face("port").swept(route.curve()).tag_face("outlet", normal="x")
+    extension = body.face("port").swept(route.curve()).tagged_face("outlet", normal="x")
     model = mio.GeometryModel()
     model.add(geo.Group(body, extension))
     grid = GridLines(

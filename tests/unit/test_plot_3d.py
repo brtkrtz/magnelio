@@ -95,7 +95,7 @@ class TestScene:
 
     def test_returns_plotter_and_draws_bodies_in_mm(self, coax):
         model, _ = coax
-        pl = model.show(mode="none")
+        pl = model.show(render_mode="none")
         assert isinstance(pl, pv.Plotter)
         names = set(pl.renderer.actors)
         assert {"shape_0", "shape_1", "domain", "port_0", "port_1"} <= names
@@ -106,18 +106,18 @@ class TestScene:
 
     def test_scale_mm_false_keeps_metres(self, coax):
         model, _ = coax
-        pl = model.show(mode="none", scale_mm=False)
+        pl = model.show(render_mode="none", scale_mm=False)
         assert _dataset(pl, "shape_1").bounds[5] == pytest.approx(10e-3, abs=1e-9)
 
     def test_bodies_are_watertight(self, coax):
         model, _ = coax
-        pl = model.show(mode="none")
+        pl = model.show(render_mode="none")
         for name in ("shape_0", "shape_1"):
             assert _dataset(pl, name).n_open_edges == 0, name
 
     def test_cut_clips_every_body_and_caps(self, coax):
         model, _ = coax
-        pl = model.show(mode="none", cut=("y", 0.0))
+        pl = model.show(render_mode="none", cut=("y", 0.0))
         for name in ("shape_0", "shape_1"):
             ds = _dataset(pl, name)
             ylo, yhi = ds.bounds[2:4]
@@ -128,35 +128,35 @@ class TestScene:
 
     def test_flip_keeps_the_other_half(self, coax):
         model, _ = coax
-        pl = model.show(mode="none", cut=("y", 0.0), flip=True)
+        pl = model.show(render_mode="none", cut=("y", 0.0), flip=True)
         ylo, yhi = _dataset(pl, "shape_0").bounds[2:4]
         assert ylo == pytest.approx(0.0, abs=1e-6)
         assert yhi > 0.4
 
     def test_cut_outside_body_hides_or_keeps_it_whole(self, coax):
         model, _ = coax
-        pl = model.show(mode="none", cut=("z", 20e-3))
+        pl = model.show(render_mode="none", cut=("z", 20e-3))
         # The plane is beyond the line: nothing removed on the kept side.
         assert pl.renderer.actors["shape_1"].GetVisibility()
         assert _dataset(pl, "shape_1").bounds[5] == pytest.approx(10.0, abs=1e-6)
-        pl = model.show(mode="none", cut=("z", -1e-3))
+        pl = model.show(render_mode="none", cut=("z", -1e-3))
         assert not pl.renderer.actors["shape_1"].GetVisibility()
 
     def test_bad_cut_axis_rejected(self, coax):
         model, _ = coax
         with pytest.raises(ValueError, match="cut normal"):
-            model.show(mode="none", cut=("w", 0.0))
+            model.show(render_mode="none", cut=("w", 0.0))
 
     def test_bad_mode_rejected(self, coax):
         model, _ = coax
         with pytest.raises(ValueError, match="mode must be one of"):
-            model.show(mode="opengl")
+            model.show(render_mode="opengl")
 
 
 class TestGrid:
     def test_cut_sheet(self, coax):
         model, mesh = coax
-        pl = model.show(mesh=mesh, mode="none", cut=("y", 0.0))
+        pl = model.show(mesh=mesh, render_mode="none", cut=("y", 0.0))
         # No grid "cage" on the domain faces: the grid shows on the cut only.
         assert "grid_faces" not in pl.renderer.actors
         nx, nz = mesh.Nx, mesh.Nz
@@ -173,7 +173,7 @@ class TestGrid:
         # must keep colouring by the RGB array, not by material_id
         # through a lookup table (that rendered every cell dark grey).
         model, mesh = coax
-        pl = model.show(mesh=mesh, mode="none", cut=("y", 0.0))
+        pl = model.show(mesh=mesh, render_mode="none", cut=("y", 0.0))
         mapper = pl.renderer.actors["grid_cut"].mapper
         assert mapper.GetArrayName() == "color"
         assert mapper.GetScalarModeAsString() == "UseCellFieldData"
@@ -195,9 +195,9 @@ class TestGrid:
 
     def test_no_cut_or_show_grid_false_hides_sheet(self, coax):
         model, mesh = coax
-        pl = model.show(mesh=mesh, mode="none")
+        pl = model.show(mesh=mesh, render_mode="none")
         assert not pl.renderer.actors["grid_cut"].GetVisibility()
-        pl = model.show(mesh=mesh, mode="none", cut=("y", 0.0), show_grid=False)
+        pl = model.show(mesh=mesh, render_mode="none", cut=("y", 0.0), show_grid=False)
         assert not pl.renderer.actors["grid_cut"].GetVisibility()
 
     def test_material_colours_follow_the_2d_palette(self, coax):
@@ -215,7 +215,7 @@ class TestGrid:
 
 class TestOverlays:
     def test_features_are_drawn(self, features_model):
-        pl = features_model.show(mode="none")
+        pl = features_model.show(render_mode="none")
         names = set(pl.renderer.actors)
         assert {"wire_0", "port_0", "element_0", "symmetry_xmin", "domain"} <= names
         assert "symmetry_xmax" not in names
@@ -225,17 +225,17 @@ class TestOverlays:
         assert zhi == pytest.approx(6.0, abs=0.1)
 
     def test_labels_are_polydata_text(self, features_model, coax):
-        pl = features_model.show(mode="none")
+        pl = features_model.show(render_mode="none")
         labels = [n for n in pl.renderer.actors if n.startswith("label_")]
         assert len(labels) == 2  # feed, load
         for n in labels:
             assert isinstance(_dataset(pl, n), pv.PolyData)
             assert _dataset(pl, n).n_cells > 0
-        pl = features_model.show(mode="none", show_labels=False)
+        pl = features_model.show(render_mode="none", show_labels=False)
         assert not [n for n in pl.renderer.actors if n.startswith("label_")]
         # Face ports carry their name on the window, lying in its plane.
         model, _ = coax
-        pl = model.show(mode="none")
+        pl = model.show(render_mode="none")
         labels = [n for n in pl.renderer.actors if n.startswith("label_")]
         assert len(labels) == 2
         for n in labels:
@@ -246,7 +246,7 @@ class TestOverlays:
     def test_cut_removes_features_in_the_removed_half(self, features_model):
         # Element at z = 6..7 mm, port at z = 0..1 mm: a cut at z = 4 mm
         # keeping the lower half removes the element and its label.
-        pl = features_model.show(mode="none", cut=("z", 4e-3))
+        pl = features_model.show(render_mode="none", cut=("z", 4e-3))
         acts = pl.renderer.actors
         assert acts["port_0"].GetVisibility()
         assert not acts["element_0"].GetVisibility()
@@ -255,7 +255,7 @@ class TestOverlays:
         # The wire (z = 1..6 mm) is clipped, not hidden.
         assert acts["wire_0"].GetVisibility()
         assert _dataset(pl, "wire_0").bounds[5] == pytest.approx(4.0, abs=0.05)
-        pl = features_model.show(mode="none", cut=("z", 4e-3), flip=True)
+        pl = features_model.show(render_mode="none", cut=("z", 4e-3), flip=True)
         assert pl.renderer.actors["element_0"].GetVisibility()
         assert not pl.renderer.actors["port_0"].GetVisibility()
 
@@ -302,7 +302,7 @@ class TestOverlays:
         # The in-browser renderer serialises polydata only; a
         # rectilinear grid in the scene left the widget blank.
         model, mesh = coax
-        pl = model.show(mesh=mesh, mode="none", cut=("y", 0.0))
+        pl = model.show(mesh=mesh, render_mode="none", cut=("y", 0.0))
         for name, actor in pl.renderer.actors.items():
             mapper = getattr(actor, "mapper", None)
             if mapper is None or getattr(mapper, "dataset", None) is None:
@@ -310,14 +310,14 @@ class TestOverlays:
             assert isinstance(mapper.dataset, pv.PolyData), name
 
     def test_toggles(self, features_model):
-        pl = features_model.show(mode="none", show_wires=False, show_ports=False)
+        pl = features_model.show(render_mode="none", show_wires=False, show_ports=False)
         names = set(pl.renderer.actors)
         assert not names & {"wire_0", "port_0", "element_0"}
         assert not [n for n in names if n.startswith("label_")]
 
     def test_face_port_window(self, coax):
         model, _ = coax
-        pl = model.show(mode="none")
+        pl = model.show(render_mode="none")
         quad = _dataset(pl, "port_0")
         assert quad.n_cells == 1
         assert quad.bounds[4] == pytest.approx(0.0, abs=1e-6)  # zmin face
@@ -330,7 +330,7 @@ class TestOverlays:
         model.add(geo.Difference(a, b))
         model.add(geo.Brick(origin=(2e-3, 0, 0), size=(1e-3, 1e-3, 1e-3), material="pec"))
         with pytest.warns(UserWarning, match="no volume"):
-            pl = model.show(mode="none")
+            pl = model.show(render_mode="none")
         assert "shape_1" in pl.renderer.actors
         assert "shape_0" not in pl.renderer.actors
 
@@ -347,7 +347,7 @@ class TestBrowserSerialisation:
 
         serializers = pytest.importorskip("trame_vtk.modules.vtk.serializers")
         model, mesh = coax
-        pl = model.show(mesh=mesh, mode="none", cut=("y", 0.0), size=(300, 200))
+        pl = model.show(mesh=mesh, render_mode="none", cut=("y", 0.0), size=(300, 200))
         pl.render()
         serializers.initialize_serializers()
         ctx = serializers.SynchronizationContext()
@@ -382,7 +382,7 @@ class TestEntryPoints:
         model, _ = coax
         pl = plots.show_geometry(
             model,
-            mode="none",
+            render_mode="none",
             size=(320, 240),
             render_edges=True,
             edge_color="#ff0000",
@@ -393,7 +393,7 @@ class TestEntryPoints:
 
     def test_screenshot_renders(self, coax, tmp_path):
         model, mesh = coax
-        pl = model.show(mesh=mesh, mode="none", cut=("y", 0.0), size=(300, 200))
+        pl = model.show(mesh=mesh, render_mode="none", cut=("y", 0.0), size=(300, 200))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             img = pl.screenshot(tmp_path / "coax.png", return_img=True)
@@ -422,7 +422,7 @@ class TestTinyBodies:
         post = geo.Brick(origin=(0.4e-3, 0.4e-3, 0), size=(25e-6, 12.6e-6, 60e-6), material="pec")
         model.add(geo.Difference(air, post))
         model.add(post)
-        pl = model.show(mode="none")
+        pl = model.show(render_mode="none")
         assert pl is not None
 
 
@@ -434,7 +434,7 @@ class TestTinyBodies:
 class TestToolbar:
     def test_screenshot_is_taken_in_the_browser_when_it_renders_there(self, coax):
         model, _ = coax
-        pl = model.show(mode="none")
+        pl = model.show(render_mode="none")
 
         class _Viewer:
             SERVER_RENDERING = "srv"
@@ -468,11 +468,11 @@ class TestToolbar:
 
         model, _ = coax
         server = get_server("magnelio_test_viewer", client_type="vue3")
-        first = model.show(mode="none")
+        first = model.show(render_mode="none")
         plot_3d._install_viewer(first, server, "client")
         assert pv_ui._VIEWERS[first._id_name].plotter is first
 
-        second = model.show(mode="none")
+        second = model.show(render_mode="none")
         second._id_name = first._id_name  # what a recycled address produces
         plot_3d._install_viewer(second, server, "client")
         assert pv_ui._VIEWERS[second._id_name].plotter is second
@@ -481,7 +481,7 @@ class TestToolbar:
 
     def test_the_browser_tab_is_named_after_the_view(self, coax):
         model, _ = coax
-        model.show(mode="none")
+        model.show(render_mode="none")
         assert plot_3d._view_title() == "Magnelio Viewer"
 
     def test_group_titles_name_the_vectors(self):
@@ -520,7 +520,7 @@ class TestToolbar:
             pv_ui = pytest.importorskip("trame_pyvista.ui")
 
         model, _mesh = coax
-        pl = model.show(mode="none")
+        pl = model.show(render_mode="none")
         server = get_server(f"mio_test_toolbar_{id(pl)}", client_type="vue3")
         plot_3d._install_viewer(pl, server, "client")
         viewer = pv_ui.get_viewer(pl, server=server, suppress_rendering=True)

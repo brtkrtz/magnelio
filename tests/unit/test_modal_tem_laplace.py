@@ -496,7 +496,7 @@ class TestModeStructure:
             assert m.z_line is not None
             assert m.z_line > 0
             # z_modal(omega) for TEM with z_line set returns z_line.
-            assert m.z_modal(2 * math.pi * 1e9) == complex(m.z_line)
+            assert m.z_modal(f=(2 * math.pi * 1e9) / (2.0 * math.pi)) == complex(m.z_line)
 
     def test_discretize_modes_pass_through(self, coax_modes):
         modes, plane, m_eps_2d, _ = coax_modes

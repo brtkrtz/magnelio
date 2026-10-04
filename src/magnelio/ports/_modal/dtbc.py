@@ -249,7 +249,7 @@ def dtbc_wave_impedance(
 
     the continuum relations under ``omega -> (2/dt) sin(omega dt/2)``
     and ``beta -> (2/dz) sin(beta_hat dz/2)``.  The continuum
-    ``z_wave(omega)`` misses this by O((omega dt)^2, (beta dz)^2) — a
+    ``z_wave(f=...)`` misses this by O((omega dt)^2, (beta dz)^2) — a
     -40 to -60 dB measured-|S11| cap on lambda/20 meshes.  Below the
     discrete cut-off (``s < q/2``) the branch ``rad = -j sqrt(...)``
     continues the outgoing (decaying) root: Z_TE inductive, Z_TM

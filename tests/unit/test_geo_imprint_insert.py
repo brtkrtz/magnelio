@@ -22,7 +22,7 @@ def _box(origin=(0, 0, 0), size=(2, 2, 2), material="pec", name=None):
 def test_imprint_is_directed_and_preserves_both_volumes_and_materials():
     receiver = _box()
     cutter = _box((1, 1, -1), (2, 2, 2), "air")
-    result = receiver.imprint(cutter)
+    result = receiver.imprinted(cutter)
     assert result is not receiver
     assert isinstance(result, geo.Solid)
     assert result.material is receiver.material
@@ -35,19 +35,19 @@ def test_imprint_is_directed_and_preserves_both_volumes_and_materials():
 def test_imprint_accepts_sheet_and_no_intersection():
     receiver = _box()
     sheet = geo.Profile.rectangle((1, 1, 1), (4, 4))
-    result = receiver.imprint(sheet)
+    result = receiver.imprinted(sheet)
     assert result.volume() == pytest.approx(8)
     assert len(result.faces()) > 6
-    far = receiver.imprint(_box((4, 0, 0), (1, 1, 1), None))
+    far = receiver.imprinted(_box((4, 0, 0), (1, 1, 1), None))
     assert far is not receiver
     assert far.volume() == pytest.approx(8)
     assert len(far.faces()) == 6
 
 
 def test_imprint_named_receiver_history_and_exact_replay():
-    receiver = _box().tag_face("cap", near=(1, 1, 2))
+    receiver = _box().tagged_face("cap", near=(1, 1, 2))
     cutter = _box((1, 1, -1), (2, 2, 2), None)
-    result = receiver.imprint(cutter)
+    result = receiver.imprinted(cutter)
     assert result.face("cap").area == pytest.approx(4)
     assert receiver.face("cap").area == pytest.approx(4)
     restored = from_recipe(json.loads(json.dumps(to_recipe(result))))
@@ -57,11 +57,11 @@ def test_imprint_named_receiver_history_and_exact_replay():
 
 def test_imprint_singular_split_fails_but_deliberate_set_survives():
     cutter = _box((1, 1, -1), (2, 2, 2), None)
-    receiver = _box().tag_face("side", near=(2, 1, 1))
+    receiver = _box().tagged_face("side", near=(2, 1, 1))
     with pytest.raises(geo.TopologyEvolutionError, match="imprint.*split"):
-        receiver.imprint(cutter)
-    chosen = _box().tag_faces("sides", normal="x")
-    result = chosen.imprint(cutter)
+        receiver.imprinted(cutter)
+    chosen = _box().tagged_faces("sides", normal="x")
+    result = chosen.imprinted(cutter)
     assert len(result.faces("sides")) > 1
 
 
@@ -202,8 +202,8 @@ def test_full_consumption_omits_unnamed_loser_and_preserves_winner():
 
 
 def test_insert_preserves_only_its_source_names_and_replays():
-    host = _box().tag_face("outer", near=(0, 1, 1))
-    inserted = _box((0.5, 0.5, 0.5), (1, 1, 1), "air").tag_face("insert_cap", near=(1, 1, 1.5))
+    host = _box().tagged_face("outer", near=(0, 1, 1))
+    inserted = _box((0.5, 0.5, 0.5), (1, 1, 1), "air").tagged_face("insert_cap", near=(1, 1, 1.5))
     host_result, inserted_result = geo.insert(host, inserted, priorities=(0, 1)).members()
     assert host_result.face("outer").area == pytest.approx(4)
     with pytest.raises(geo.TopologySelectionError):
@@ -215,11 +215,11 @@ def test_insert_preserves_only_its_source_names_and_replays():
 
 
 def test_insert_named_deleted_face_fails_eagerly():
-    host = _box().tag_face("inside", near=(0, 1, 1))
+    host = _box().tagged_face("inside", near=(0, 1, 1))
     winning = _box((-1, -1, -1), (2, 4, 4), "air")
     with pytest.raises(geo.TopologyEvolutionError, match="insert.*deleted"):
         geo.insert(host, winning, priorities=(0, 1))
-    split_host = _box().tag_face("wall", near=(0, 1, 1))
+    split_host = _box().tagged_face("wall", near=(0, 1, 1))
     slot = _box((-1, 0.5, -1), (2, 1, 4), "air")
     with pytest.raises(geo.TopologyEvolutionError, match="insert.*split"):
         geo.insert(split_host, slot, priorities=(0, 1))
@@ -232,9 +232,9 @@ def test_project_round_trip_of_named_imprinted_insert_region(tmp_path):
     from magnelio.io.project import ProjectStore
     from magnelio.mesh import GridLines
 
-    host = _box().tag_face("cap", near=(1, 1, 2))
+    host = _box().tagged_face("cap", near=(1, 1, 2))
     tool = _box((1, 1, -1), (2, 2, 2), None)
-    imprinted = host.imprint(tool)
+    imprinted = host.imprinted(tool)
     dielectric = _box((0.5, 0.5, 0.5), (1, 1, 1), "air")
     assembly = geo.insert(imprinted, dielectric, priorities=(0, 1))
     lines = np.linspace(0, 2, 3)
@@ -252,7 +252,7 @@ def test_project_round_trip_of_named_imprinted_insert_region(tmp_path):
 def test_imprint_and_insert_are_scale_covariant(length):
     source = _box(size=(2 * length,) * 3)
     cutter = _box((length, length, -length), (2 * length,) * 3, "air")
-    imprinted = source.imprint(cutter)
+    imprinted = source.imprinted(cutter)
     assert imprinted.volume() / length**3 == pytest.approx(8)
     assert len(imprinted.faces()) > 6
     regions = tuple(geo.insert(source, cutter, priorities=(0, 1)).members())
@@ -262,9 +262,9 @@ def test_imprint_and_insert_are_scale_covariant(length):
 
 @pytest.mark.parametrize("length", [1e-9, 1e3])
 def test_named_imprint_and_insert_replay_at_model_scale(length):
-    receiver = _box(size=(2 * length,) * 3).tag_face("cap", near=(length, length, 2 * length))
+    receiver = _box(size=(2 * length,) * 3).tagged_face("cap", near=(length, length, 2 * length))
     cutter = _box((length, length, -length), (2 * length,) * 3, "air")
-    imprinted = receiver.imprint(cutter)
+    imprinted = receiver.imprinted(cutter)
     restored_imprint = from_recipe(json.loads(json.dumps(to_recipe(imprinted))))
     assert restored_imprint.face("cap").area / length**2 == pytest.approx(4)
     host_region = next(geo.insert(imprinted, cutter, priorities=(0, 1)).members())
@@ -277,7 +277,7 @@ def test_wrong_categories_and_material_roles_fail_at_call():
     body = _box()
     sheet = geo.Profile.rectangle((0, 0, 0), (1, 1))
     with pytest.raises(TypeError, match="cutter"):
-        body.imprint(geo.Curve.line((0, 0, 0), (1, 0, 0)))
+        body.imprinted(geo.Curve.line((0, 0, 0), (1, 0, 0)))
     with pytest.raises(ValueError, match="at least one"):
         geo.insert(priorities=())
     with pytest.raises(TypeError, match="body"):

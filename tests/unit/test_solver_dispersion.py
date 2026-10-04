@@ -73,7 +73,7 @@ class TestOperatorConstruction:
         lin = np.linspace(0.0, 2e-3, 3)
         mesh = Mesh.from_grid(
             GridLines(x=lin, y=lin, z=lin),
-            regions=[(_debye_mat(), (0.0, 0.0, 0.0, 1e-3, 1e-3, 1e-3))],
+            regions=[(_debye_mat(), ((0.0, 0.0, 0.0), (1e-3, 1e-3, 1e-3)))],
             boundary_conditions=_BC_OPEN,
         )
         op = DispersionOperator.from_mesh(mesh, DT)
@@ -172,8 +172,8 @@ class TestCheckpointRewind:
         mesh = Mesh.from_grid(
             _grid(),
             regions=[
-                (mat, (0.0, 0.0, 0.0, 3e-3, 6e-3, 6e-3)),
-                (_debye_mat("real_poles"), (3e-3, 0.0, 0.0, 6e-3, 6e-3, 6e-3)),
+                (mat, ((0.0, 0.0, 0.0), (3e-3, 6e-3, 6e-3))),
+                (_debye_mat("real_poles"), ((3e-3, 0.0, 0.0), (6e-3, 6e-3, 6e-3))),
             ],
             boundary_conditions=_BC_OPEN,
         )
@@ -235,7 +235,7 @@ class TestFusedADEKernels:
             mesh = Mesh.from_grid(
                 _grid(8),
                 background=Material.air(),
-                regions=[(mat, (2e-3, 2e-3, 2e-3, 6e-3, 6e-3, 6e-3))],
+                regions=[(mat, ((2e-3, 2e-3, 2e-3), (6e-3, 6e-3, 6e-3)))],
                 boundary_conditions=_BC_OPEN,
             )
             s = _solver(mesh, steps=n_steps)
@@ -286,7 +286,7 @@ class TestFusedADEKernels:
         mesh = Mesh.from_grid(
             _grid(4),
             background=Material.air(),
-            regions=[(mat, (1e-3, 1e-3, 1e-3, 3e-3, 3e-3, 3e-3))],
+            regions=[(mat, ((1e-3, 1e-3, 1e-3), (3e-3, 3e-3, 3e-3)))],
             boundary_conditions=_BC_OPEN,
         )
         op = DispersionOperator.from_mesh(mesh, DT)
@@ -353,7 +353,7 @@ class TestFusedADEKernels:
         mesh = Mesh.from_grid(
             _grid(4),
             background=Material.air(),
-            regions=[(mat, (1e-3, 1e-3, 1e-3, 3e-3, 3e-3, 3e-3))],
+            regions=[(mat, ((1e-3, 1e-3, 1e-3), (3e-3, 3e-3, 3e-3)))],
             boundary_conditions=_BC_OPEN,
         )
         op = DispersionOperator.from_mesh(mesh, DT)
@@ -369,7 +369,7 @@ class TestFusedADEKernels:
         mesh = Mesh.from_grid(
             _grid(4),
             background=Material.air(),
-            regions=[(mat, (1e-3, 1e-3, 1e-3, 3e-3, 3e-3, 3e-3))],
+            regions=[(mat, ((1e-3, 1e-3, 1e-3), (3e-3, 3e-3, 3e-3)))],
             boundary_conditions=_BC_OPEN,
         )
         op = DispersionOperator.from_mesh(mesh, DT)
@@ -394,7 +394,7 @@ class TestCFLConvention:
         """The dispersive material's CFL input is its eps_inf (the
         high-frequency wave speed), identical to a static eps_inf fill —
         pole strength must not enter (DD-084)."""
-        box = (0.0, 0.0, 0.0, 3e-3, 6e-3, 6e-3)
+        box = ((0.0, 0.0, 0.0), (3e-3, 6e-3, 6e-3))
         m_disp = Mesh.from_grid(
             _grid(),
             regions=[(_debye_mat(eps_inf=2.0, delta_eps=50.0), box)],

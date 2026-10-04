@@ -150,7 +150,7 @@ class TestPositions:
         np.testing.assert_allclose(px, x)
         np.testing.assert_allclose(py, yc)
         np.testing.assert_allclose(pz, zc)
-        np.testing.assert_allclose(f.cell_centres[1], yc)
+        np.testing.assert_allclose(f.cell_centers[1], yc)
 
 
 class TestSampling:
@@ -171,8 +171,8 @@ class TestSampling:
 
     def test_cell_centred_linear(self, grid):
         f = FieldState.from_function(grid, E=_linear, H=_linear)
-        cc = f.cell_centred(["Ex", "Hz"])
-        xc, yc, zc = f.cell_centres
+        cc = f.cell_centered(["Ex", "Hz"])
+        xc, yc, zc = f.cell_centers
         X, Y, Z = np.meshgrid(xc, yc, zc, indexing="ij")
         np.testing.assert_allclose(cc["Ex"], 1.0 + X, rtol=1e-12)
         np.testing.assert_allclose(cc["Hz"], 3.0 * Z, rtol=1e-12)

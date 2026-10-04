@@ -9,7 +9,7 @@ reflection, usable band, phase error.  Edit the knobs and re-run
 until the numbers meet your spec, then carry the settings over.
 
 The termination mirrors how CPWs are excited with lumped ports in
-practice, and it is the same picture as the coax: the centre strip
+practice, and it is the same picture as the coax: the center strip
 stops an **end gap** short of the ground metallisation behind it, and
 the lumped port bridges that gap *longitudinally*, on the symmetry
 plane of the pair.  Declaring that plane as a magnetic symmetry wall
@@ -41,7 +41,7 @@ from magnelio import geo, plots, ports
 # ``cell`` is the floor for the slot region — copy the resolution
 # your production mesh will actually have there.
 
-w = 0.7e-3  # centre strip width [m]
+w = 0.7e-3  # center strip width [m]
 s = 0.05e-3  # slot width [m]
 h = 0.508e-3  # substrate height [m]
 t = 17e-6  # metallisation thickness [m]
@@ -143,7 +143,7 @@ result = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).run(excited=[("wg", 
 # ----------------
 #
 # A top view of the metallisation plane (the half-model above the
-# symmetry plane): centre strip up to the gap start, slot and ground,
+# symmetry plane): center strip up to the gap start, slot and ground,
 # the end gap, and the lumped port bridging it longitudinally on the
 # symmetry plane at the lower edge.
 

@@ -16,8 +16,15 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Five entries are open as of 2026-09-08: KB-023, KB-038, KB-043,
-KB-046 and KB-047.**  Everything else is struck through and resolved.
+**Five entries are open as of 2026-10-04: KB-023, KB-038, KB-043,
+KB-046 and KB-047.** Everything else is struck through and resolved.
+
+## KB-049: ~~Loaded geometry lacks the 3D `show()` method~~ — Resolved (2026-10-04)
+
+DD-279 provides `LoadedGeometry.show()` through the same 3D scene builder
+as live geometry. Both obsolete geometry `plot()` entries are removed in
+this breaking naming revision. A loaded geometry scene was built headlessly
+and the reader delegation is covered by the API acceptance tests.
 
 ## KB-048: ~~An absorbed material plane can send a straight coax TEM port to Mur~~ — Resolved (2026-10-03)
 

@@ -673,7 +673,7 @@ def _sharp_edges(occ_shape):
     Skipped are seam edges (``BRep_Tool.IsClosed(edge, face)``: a
     cylinder's seam is a straight line through ``(R, 0)`` and would
     put a phantom plane through the cylinder axis; a sphere's seam
-    meridian lies in an axis-normal plane through its centre),
+    meridian lies in an axis-normal plane through its center),
     degenerated edges, and edges at which every adjacent analytic
     surface continues on both sides (a Boolean fuse leaves coplanar
     sub-faces unmerged, and a cylinder touching a flat face is split
@@ -784,7 +784,7 @@ def _edge_flat_planes(edge) -> dict[str, set[float]]:
       edge in a tilted plane yields the plane's axis, a skew edge
       nothing);
     * a circle or ellipse — the axis its normal is parallel to, at the
-      centre's coordinate (exact analytic position);
+      center's coordinate (exact analytic position);
     * any other curve — every axis along which its geometry-only
       bounding box has zero extent (a planar spline in an axis-normal
       plane), at that extent.
@@ -1813,7 +1813,7 @@ def cross_section_polygons(
         missing material — so with this set such planes are answered by
         a face-face Boolean instead.  Off by default: the check plus the
         heavier Boolean are wasted work for callers that never sample a
-        plane on a face, such as the mesher's cell-centre planes.
+        plane on a face, such as the mesher's cell-center planes.
     nudge : float, optional
         Step length of the degeneracy-escape ladder [m] — how far the
         plane may be re-taken when the section comes back with an open
@@ -2095,9 +2095,9 @@ def _section_batch_enabled() -> bool:
     return os.environ.get("MAGNELIO_SECTION_BATCH", "").strip() != "0"
 
 
-def _is_generatrix(p1, p2, centre, axis_dir, radius: float, tol: float) -> bool:
+def _is_generatrix(p1, p2, center, axis_dir, radius: float, tol: float) -> bool:
     """Whether the segment *p1*–*p2* runs along the cylinder
-    (*centre*, *axis_dir*, *radius*): parallel to the axis at its radius.
+    (*center*, *axis_dir*, *radius*): parallel to the axis at its radius.
 
     Scalar arithmetic on the three components: the callers ask this
     once per edge of every cylindrical face, and NumPy's overhead on
@@ -2111,20 +2111,20 @@ def _is_generatrix(p1, p2, centre, axis_dir, radius: float, tol: float) -> bool:
     cx, cy, cz = sy * az - sz * ay, sz * ax - sx * az, sx * ay - sy * ax
     if math.sqrt(cx * cx + cy * cy + cz * cz) > 1e-9 * length:
         return False
-    return abs(_axis_distance(p1, centre, (ax, ay, az)) - radius) <= tol
+    return abs(_axis_distance(p1, center, (ax, ay, az)) - radius) <= tol
 
 
-def _axis_distance(point, centre, axis_dir) -> float:
-    """Distance of *point* from the line through *centre* along the
+def _axis_distance(point, center, axis_dir) -> float:
+    """Distance of *point* from the line through *center* along the
     unit vector *axis_dir*."""
-    rx, ry, rz = point[0] - centre[0], point[1] - centre[1], point[2] - centre[2]
+    rx, ry, rz = point[0] - center[0], point[1] - center[1], point[2] - center[2]
     along = rx * axis_dir[0] + ry * axis_dir[1] + rz * axis_dir[2]
     qx, qy, qz = rx - along * axis_dir[0], ry - along * axis_dir[1], rz - along * axis_dir[2]
     return math.sqrt(qx * qx + qy * qy + qz * qz)
 
 
 def _is_rim(
-    c_centre, c_normal, c_radius: float, centre, axis_dir, radius: float, tol: float
+    c_centre, c_normal, c_radius: float, center, axis_dir, radius: float, tol: float
 ) -> bool:
     """Whether the circle (*c_centre*, *c_normal*, *c_radius*) is a
     parameter line of the cylinder: coaxial, centred on the axis, at
@@ -2134,7 +2134,7 @@ def _is_rim(
     cx, cy, cz = ny * az - nz * ay, nz * ax - nx * az, nx * ay - ny * ax
     if math.sqrt(cx * cx + cy * cy + cz * cz) > 1e-9:
         return False
-    return _axis_distance(c_centre, centre, (ax, ay, az)) <= tol and abs(c_radius - radius) <= tol
+    return _axis_distance(c_centre, center, (ax, ay, az)) <= tol and abs(c_radius - radius) <= tol
 
 
 def _weld_nodes(
@@ -3104,10 +3104,10 @@ class _PlanarSectionEngine:
         cut) or whose shift is far beyond the chord error keep their
         chord position.  Returns the points and the mask of moved ones.
         """
-        centre = self._s_centre[slot]
+        center = self._s_centre[slot]
         a = self._s_axis[slot]
         r = self._s_radius[slot]
-        rel = chord - centre
+        rel = chord - center
         rel_perp = rel - np.einsum("ij,ij->i", rel, a)[:, None] * a
         d = rel_perp.copy()
         d[:, axis] = 0.0
@@ -3140,11 +3140,11 @@ class _PlanarSectionEngine:
         torus slots at *pts*, and its gradient (unit-scale by
         construction, so the Newton step below is a length)."""
         kind = self._s_kind[slot]
-        centre = self._s_centre[slot]
+        center = self._s_centre[slot]
         a = self._s_axis[slot]
         r1 = self._s_radius[slot]
         r2 = self._s_radius2[slot]
-        rel = pts - centre
+        rel = pts - center
         h = np.einsum("ij,ij->i", rel, a)
         rel_perp = rel - h[:, None] * a
         rho = np.linalg.norm(rel_perp, axis=1)
@@ -3170,7 +3170,7 @@ class _PlanarSectionEngine:
             grad[tor] = (ring[:, None] * radial[tor] + h[tor, None] * a[tor]) / np.where(
                 dist > 0.0, dist, 1.0
             )[:, None]
-        # A point on the axis (cone apex, sphere centre) has no
+        # A point on the axis (cone apex, sphere center) has no
         # gradient; the caller keeps the chord position there.
         grad[(rho <= 0.0) & (kind != 2)] = 0.0
         return f, grad
@@ -4816,8 +4816,8 @@ def _arc_pieces(curve, reversed_edge: bool, start, axis: int, u: int, v: int):
     if abs((n.X(), n.Y(), n.Z())[axis]) < 1.0 - 1e-12:
         return None
     loc = frame.Location()
-    centre = (loc.X(), loc.Y(), loc.Z())
-    cu, cv = centre[u], centre[v]
+    center = (loc.X(), loc.Y(), loc.Z())
+    cu, cv = center[u], center[v]
     r = float(circ.Radius())
     if r <= 0.0:
         return None
@@ -7057,7 +7057,7 @@ def compute_face_material_areas(
         return polys
 
     # Step 1: group face indices by (axis, plane_pos).
-    # The plane_pos values come from cell-centre arrays, so identical-
+    # The plane_pos values come from cell-center arrays, so identical-
     # value floats compare equal — no rounding needed.
     plane_to_face_indices = _faces_by_plane(face_axes, face_specs[:, 0])
 

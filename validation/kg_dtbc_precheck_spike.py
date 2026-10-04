@@ -721,7 +721,7 @@ def measurement_chain_check(name, res, mode_type, facs=(1.02, 1.05, 1.2, 1.6)):
             if which == "disc":
                 Z = closed_form_Z(np.array([w]), r, q, K0_static, mode_type)[0]
             else:
-                Z = res["dm"].mode.z_modal(w / dt)
+                Z = res["dm"].mode.z_modal(f=(w / dt) / (2.0 * math.pi))
             sz = np.sqrt(Z)
             a = (V / sz * ep + sz * I_rot) / (ep + em)
             b = (V / sz * em - sz * I_rot) / (ep + em)

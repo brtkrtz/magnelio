@@ -349,7 +349,7 @@ def test_runtime_cap_truncates_books_and_resumes(tmp_path):
 
     # The cap-truncated run resumes on its inherited launch criterion
     # (a fresh auto cap budget) and now ends on a real criterion.
-    proj2 = mio.resume(tmp_path / "pp", excited="port1", verbose=False)
+    proj2 = mio.resume(tmp_path / "pp", run="port1", verbose=False)
     info2 = proj2.runs["port1_mode0"]
     assert info2.stop_reason in ("energy", "port_signal")
     assert info2.n_steps > 120
@@ -388,9 +388,38 @@ def test_lumped_element_streams_and_resumes(tmp_path):
             excited=[("port1", 0)],
             max_time_steps=120,
         )
-    proj = mio.resume(tmp_path / "pp", excited="port1", verbose=False)
+    proj = mio.resume(tmp_path / "pp", run="port1", verbose=False)
     info = proj.runs["port1_mode0"]
     assert info.stop_reason in ("energy", "port_signal")
     s11_proj = np.abs(proj.S("port1", "port1"))
     assert np.allclose(s11_proj, s11_ram, atol=5e-3)
     assert all("shunt" not in str(c) for c in proj.channels)
+
+
+def test_unequal_run_counts_match_ram_and_store(tmp_path, monkeypatch):
+    model, mesh, f_max = _model_and_mesh()
+    ram_analysis = _analysis(mesh, model, f_max)
+    original = ram_analysis._run_one_excitation
+    lengths = {("port1", 0): 24, ("port2", 0): 40}
+
+    def unequal(**kwargs):
+        kwargs["total_time_steps"] = lengths[kwargs["excited_chan"]]
+        return original(**kwargs)
+
+    monkeypatch.setattr(ram_analysis, "_run_one_excitation", unequal)
+    ram = ram_analysis.run(excited=["port1", "port2"], total_time_steps=40)
+    assert ram.n_steps_by_run == lengths
+    assert ram.max_run_steps == 40
+    assert ram.settings.n_steps is None
+
+    path = tmp_path / "unequal"
+    stored_analysis = _analysis(mesh, model, f_max, project=path)
+    stored_analysis.run(excited=["port1"], total_time_steps=24)
+    stored = stored_analysis.run(excited=["port2"], total_time_steps=40)
+    assert stored.n_steps_by_run == lengths
+    assert stored.max_run_steps == ram.max_run_steps
+    assert stored.settings.n_steps is None
+    assert stored.result(run=("port1", 0)).settings.n_steps == 24
+    assert stored.result(run=("port2", 0)).settings.n_steps == 40
+    with pytest.raises(ValueError, match="select"):
+        stored.result()

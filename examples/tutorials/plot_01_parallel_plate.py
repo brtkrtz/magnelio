@@ -179,7 +179,7 @@ print(f"relative deviation: {abs(z_line / z_analytic - 1):.2e}")
 # The transverse mode profile confirms what a TEM plate mode should
 # look like — a uniform vertical E field:
 
-fig, ax = report.modes[0].plot(field="E", title="TEM mode, transverse E")
+fig, ax = report.modes[0].plot(component="E", title="TEM mode, transverse E")
 
 # %%
 # Run and S-parameters

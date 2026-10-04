@@ -179,7 +179,7 @@ class TestPortPlaneIndexing:
                 assert e_flat[plane.e_u_indices[idx_in_array]] == 700 + 10 * j + k
 
     def test_x_max_uses_inner_cell_for_h(self):
-        """X_MAX: H tangential is at the last cell-centre (i=Nx-1)."""
+        """X_MAX: H tangential is at the last cell-center (i=Nx-1)."""
         Nx, Ny, Nz = 4, 3, 2
         mesh = _small_mesh(Nx, Ny, Nz)
         plane = PortPlane.from_mesh(BoxFace.X_MAX, mesh)

@@ -78,10 +78,10 @@ Supported port specs
 * Modal — ``PortSpecCoax``, ``PortSpecRectWG``, ``PortSpecNumerical``,
   ``PortSpecMultiConductor``.  Built via :func:`build_modal_port`,
   the operator carries one or more ``DiscreteMode`` instances whose
-  ``Mode.z_modal(omega)`` provides the reference impedance.
+  ``Mode.z_modal(f=...)`` provides the reference impedance.
 * Lumped — ``PortSpecLumped``.  Built via
   :func:`build_lumped_port`; the analysis synthesises an internal
-  ``_LumpedModeStub`` with constant ``z_modal(omega) = Z0`` for the
+  ``_LumpedModeStub`` with constant ``z_modal(f=...) = Z0`` for the
   power-wave decomposition.
 
 Note
@@ -101,7 +101,7 @@ from __future__ import annotations
 
 import math
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Iterable, Union
 
 import numpy as np
@@ -243,18 +243,20 @@ class ScatteringTDResult(ScatteringResultMixin):
     reference_signal : Signal1D
         The excitation waveform sampled on the same time axis as the
         recorded signals.  Useful for monitor renormalisation
-        (``MonitorFieldFrequency.renormalize``) and for
+        (``MonitorFieldFrequency.normalize_to_excitation``) and for
         incident/reflected decomposition in time-domain plots.  On
         multi-excitation runs with auto-derived waveforms this is the
         waveform of the *longest* run — per-mode waveforms can differ
         (cut-off-dependent band); the S-parameters are unaffected.
     dt : float
         Solver time step [s].
-    n_actual_steps : int
-        Number of leapfrog steps actually executed.  Equals
-        ``len(reference_signal.values)``; can be smaller than the
+    max_run_steps : int
+        Maximum leapfrog count across the runs. Signal extrapolation
+        can extend the records without changing this count. Can be smaller than the
         configured ``total_time_steps`` when ``energy_stop_db``
         triggered an early termination.
+    n_steps_by_run : dict
+        Solver steps per excited ``(port, mode)``, retained by derived results.
     port_modes : dict[str, list] or None
         Per-port ordered Mode list (lumped ports carry a
         ``_LumpedModeStub``), as used by the S-parameter
@@ -309,7 +311,7 @@ class ScatteringTDResult(ScatteringResultMixin):
     signals: dict
     reference_signal: Signal1D
     dt: float
-    n_actual_steps: int
+    max_run_steps: int
     port_modes: dict | None = None
     port_normal_dx: dict | None = None
     port_line_params: dict | None = None
@@ -317,6 +319,7 @@ class ScatteringTDResult(ScatteringResultMixin):
     port_source_used: str | None = None
     # Per-excitation reference waveforms (multi-excitation modal runs
     # auto-derive per-mode waveforms); backs the f_axis= recompute.
+    n_steps_by_run: dict = field(default_factory=dict)
     reference_signals: dict | None = None
     # Settings the run was produced with (result contract).
     settings: "RunSettings | None" = None
@@ -376,7 +379,7 @@ class ScatteringTDResult(ScatteringResultMixin):
             ("excitations", list(self.excitations)),
             ("channels", list(self.channels)),
             ("frequency", f"{f[0] / 1e9:.4g}–{f[-1] / 1e9:.4g} GHz ({f.size} points)"),
-            ("steps", f"{self.n_actual_steps} ({self.n_actual_steps * self.dt * 1e9:.3g} ns)"),
+            ("steps", f"{self.max_run_steps} ({self.max_run_steps * self.dt * 1e9:.3g} ns)"),
             ("dt", self.dt),
             ("port model", self.port_model_used),
             ("stop reason", settings.stop_reason if settings is not None else None),
@@ -543,7 +546,7 @@ class ScatteringTDResult(ScatteringResultMixin):
         from magnelio.signals import Signal1D  # noqa: PLC0415
 
         signals, reports = {}, {}
-        n_max = self.n_actual_steps
+        n_max = self.max_run_steps
         for excited, chans in self.signals.items():
             ref = (self.reference_signals or {}).get(excited, self.reference_signal)
             if fit_start is None:
@@ -589,7 +592,7 @@ class ScatteringTDResult(ScatteringResultMixin):
         grown = replace(
             self,
             signals=signals,
-            n_actual_steps=int(n_max),
+            max_run_steps=self.max_run_steps,
             reference_signal=_padded(self.reference_signal),
             reference_signals=(
                 None
@@ -720,8 +723,8 @@ class ScatteringTDResult(ScatteringResultMixin):
             result holds exactly one excitation.
         f_ref : float, optional
             Frequency [Hz] at which the frozen reference impedance
-            ``Z = z_modal(2π·f_ref)`` is evaluated.  Defaults to the
-            centre of the result's frequency axis.  With
+            ``Z = z_modal(f=f_ref)`` is evaluated.  Defaults to the
+            center of the result's frequency axis.  With
             ``destagger=False`` this Z parameterises the whole
             decomposition; with ``destagger=True`` it only backs the
             out-of-band fallback bins (see
@@ -1409,7 +1412,8 @@ class AnalysisScatteringTD(AnalysisTD):
             signals={chan: r.signals for chan, r in zip(excited_list, runs)},
             reference_signal=representative.reference_signal,
             dt=dt,
-            n_actual_steps=representative.n_actual,
+            max_run_steps=representative.n_actual,
+            n_steps_by_run={chan: r.n_actual for chan, r in zip(excited_list, runs)},
             port_modes=first.port_modes,
             port_normal_dx=first.port_normal_dx,
             port_line_params=first.port_line_params,
@@ -1420,7 +1424,7 @@ class AnalysisScatteringTD(AnalysisTD):
             port_reference_scale=first.port_reference_scale,
             settings=self._run_settings(
                 dt=dt,
-                n_actual_steps=representative.n_actual,
+                n_steps=representative.n_actual if len(runs) == 1 else None,
                 accuracy=accuracy,
                 energy_stop_db=energy_stop_db,
                 port_signal_stop_db=port_signal_stop_db,
@@ -1855,7 +1859,7 @@ class AnalysisScatteringTD(AnalysisTD):
             # the pulse duration.  x_skirt = erfcinv(2·skirt); the
             # gate rejects tails above 1e-6 of peak in the last
             # n_syn/32 samples, so budget 13 Gaussian time constants
-            # across the window (centre-to-edge 6.5 σ_t ≈ 3e-10 of
+            # across the window (center-to-edge 6.5 σ_t ≈ 3e-10 of
             # peak) and round up to a power of two.  A failing gate
             # still auto-doubles at excitation time.
             x_skirt = float(erfcinv(2.0 * skirt))
@@ -2096,14 +2100,15 @@ class AnalysisScatteringTD(AnalysisTD):
             signals=signals_by_excitation,
             reference_signal=ref_sig,
             dt=dt,
-            n_actual_steps=n_actual,
+            max_run_steps=n_actual,
+            n_steps_by_run={chan: item[3] for chan, item in zip(excited_list, per_excitation)},
             port_modes=port_modes,
             port_normal_dx=port_normal_dx,
             port_line_params={},
             port_model_used="band",
             settings=self._run_settings(
                 dt=dt,
-                n_actual_steps=n_actual,
+                n_steps=n_actual if len(per_excitation) == 1 else None,
                 port_model_used="band",
             ),
             port_dispersion={rec.name: rec for rec in band_records},

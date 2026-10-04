@@ -38,8 +38,8 @@ def coax_run():
         MeshControl(min_nodes_per_wavelength=12, max_cell_size=0.35e-3),
         f_max=F_MAX,
     )
-    fields = MonitorFieldFrequency(name="H", freqs=F, fields=["H"])
-    wall = MonitorWallLoss(freqs=F, normal="z", position=LZ / 2, sigma=SIGMA, name="wall")
+    fields = MonitorFieldFrequency(name="H", frequencies=F, fields=["H"])
+    wall = MonitorWallLoss(frequencies=F, normal="z", position=LZ / 2, sigma=SIGMA, name="wall")
     analysis = AnalysisScatteringTD(
         mesh=mesh,
         ports=[

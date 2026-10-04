@@ -121,11 +121,11 @@ def _tfsf_amplitude_and_leakage(direction, polarization, n=24, inset=6):
     src.set_excitation(WaveformGaussian(f_max=f_max))
     bcs = {f: PECBoundary(f) for f in ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")}
 
-    # Stop with the pulse peak at the centre of the box, which it reaches at
+    # Stop with the pulse peak at the center of the box, which it reaches at
     # t0 + k.r_centre / c0.
     c0 = 299_792_458.0
-    centre = np.array([0.5 * (ax[0] + ax[-1]) for ax in axes])
-    n_steps = int(math.ceil((4.0 / f_max + float(np.dot(direction, centre)) / c0) / dt))
+    center = np.array([0.5 * (ax[0] + ax[-1]) for ax in axes])
+    n_steps = int(math.ceil((4.0 / f_max + float(np.dot(direction, center)) / c0) / dt))
     solver = FITTimeDomainSolver(
         mesh=mesh,
         boundary_conditions=bcs,

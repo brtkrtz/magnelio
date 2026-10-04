@@ -47,16 +47,16 @@ def region_of_grid(grid) -> MonitorRegion:
     )
 
 
-def at_phase(values: np.ndarray, phase: float | None) -> np.ndarray:
-    """``Re(F · exp(+j·phase))`` of a complex array (degrees); real data passes.
+def at_phase(values: np.ndarray, phase_deg: float | None) -> np.ndarray:
+    """``Re(F · exp(+j·phase_deg))`` of a complex array (degrees); real data passes.
 
     The library's phasors follow the ``e^{+j w t}`` convention — the
     running DFT accumulates ``sum F(t) e^{-j w t} dt``, so the instant
-    of a pattern at time *t* is ``Re(F e^{+j w t})``.  *phase* is that
+    of a pattern at time *t* is ``Re(F e^{+j w t})``.  *phase_deg* is that
     ``w t`` in degrees: it advances with time, and a travelling wave
     moves the way it ran in the simulation.
     """
-    # Design: DD-267 (phase is wt: the reconstruction must read the
+    # Design: DD-267 (phase_deg is wt: the reconstruction must read the
     # bins with the sign the accumulator gave them — it did not, and
     # every animation ran backwards) and DD-268 (the accumulator now
     # sums e^{-jwt}, so that sign is +j).  The same rule in
@@ -64,9 +64,9 @@ def at_phase(values: np.ndarray, phase: float | None) -> np.ndarray:
     # fields.series._FieldSeries._snapshot.
     if not np.iscomplexobj(values):
         return np.asarray(values, dtype=float)
-    if phase is None or phase == 0.0:
+    if phase_deg is None or phase_deg == 0.0:
         return np.real(values)
-    return np.real(values * np.exp(1j * np.deg2rad(float(phase))))
+    return np.real(values * np.exp(1j * np.deg2rad(float(phase_deg))))
 
 
 @dataclass
@@ -104,6 +104,8 @@ class SeriesView:
 
     def index_of(self, value: float | None, index: int | None) -> int:
         """The frame index from an explicit index or a label value (time / frequency)."""
+        if index is not None and value is not None:
+            raise ValueError("give frame or a physical value, not both")
         if index is not None:
             return self.series._check_index(index)
         if value is not None:
@@ -112,29 +114,29 @@ class SeriesView:
 
     # ── the data of a picture ────────────────────────────────────────────
 
-    def trace(self, component: str, phase: float | None = None) -> np.ndarray:
+    def trace(self, component: str, phase_deg: float | None = None) -> np.ndarray:
         """A point region's value over every frame, ``(n_frames,)``."""
         s = self.series
         comps = self._comps(component)
-        cc = s.cell_centred(comps)
+        cc = s.cell_centered(comps)
         data = {c: np.asarray(a).reshape(s.n_frames) for c, a in cc.items()}
         if component in _GROUPS:
             return _resolve_component(data, component)
-        return at_phase(data[component], phase)
+        return at_phase(data[component], phase_deg)
 
-    def line(self, component: str, index: int, phase: float | None = None):
+    def line(self, component: str, index: int, phase_deg: float | None = None):
         """A line region's values at one frame: ``(free_axis, coords, values)``."""
         s = self.series
         comps = self._comps(component)
-        cc = s.cell_centred(comps, frame=index)
+        cc = s.cell_centered(comps, frame=index)
         free = [a for a, n in enumerate(s.shape) if n > 1]
         axis = free[0] if free else 0
         data = {c: np.asarray(a).reshape(s.shape[axis]) for c, a in cc.items()}
         if component in _GROUPS:
             vals = _resolve_component(data, component)
         else:
-            vals = at_phase(data[component], phase)
-        coords = s.cell_centres[axis]
+            vals = at_phase(data[component], phase_deg)
+        coords = s.cell_centers[axis]
         fld, comp_axis = component_mirror_key(component)
         for spec in self.mirrors:
             if spec.axis != axis:
@@ -147,11 +149,11 @@ class SeriesView:
     def plane(self, normal: str | None, position: float) -> PlaneView:
         return resolve_plane_view(self.region, normal, position)
 
-    def layer(self, index: int, pv: PlaneView, comps, phase: float | None = None) -> dict:
+    def layer(self, index: int, pv: PlaneView, comps, phase_deg: float | None = None) -> dict:
         """The cell layer of one frame on the plane *pv*, mirrored across the in-plane planes."""
         k = 0 if pv.slice_index is None else int(pv.slice_index)
-        raw = self.series.cell_centred_layer(index, pv.normal_idx, k, list(comps))
-        return {c: at_phase(a, phase) for c, a in raw.items()}
+        raw = self.series.cell_centered_layer(index, pv.normal_idx, k, list(comps))
+        return {c: at_phase(a, phase_deg) for c, a in raw.items()}
 
     def _comps(self, component: str) -> list[str]:
         from magnelio.fields._poynting import (  # noqa: PLC0415
@@ -211,7 +213,7 @@ def plot_frame(
     component: str,
     index: int,
     *,
-    phase: float | None = None,
+    phase_deg: float | None = None,
     normal: str | None = None,
     position: float = 0.0,
     plot_type: str = "vector",
@@ -234,12 +236,12 @@ def plot_frame(
     frame; a line region draws the values along its axis at the frame;
     a plane region draws the frame on its own plane and a volume on the
     plane selected with *normal* and *position*.  Complex series (a
-    spectrum) are drawn at *phase* — component plots as
-    ``Re(F·exp(+j·phase))``, group magnitudes as the envelope.
+    spectrum) are drawn at *phase_deg* — component plots as
+    ``Re(F·exp(+j·phase_deg))``, group magnitudes as the envelope.
 
     ``"S"`` and ``"Sx"``/``"Sy"``/``"Sz"`` are the Poynting vector,
     derived from the six recorded components; being a power density it
-    is real already, so *phase* does not act on it (DD-270).
+    is real already, so *phase_deg* does not act on it (DD-270).
     """
     s = view.series
     region = view.region
@@ -250,10 +252,10 @@ def plot_frame(
         from magnelio.monitors.plotting import plot_freq_0d, plot_time_0d  # noqa: PLC0415
 
         if kind == "frequency":
-            arr = view.trace(component) if is_group else s.cell_centred([component])[component]
+            arr = view.trace(component) if is_group else s.cell_centered([component])[component]
             arr = np.asarray(arr).reshape(s.n_frames)
-            return plot_freq_0d(s.frequencies, arr, component, view.name, what="abs", ax=ax)
-        return plot_time_0d(s.times, view.trace(component, phase), component, view.name, ax=ax)
+            return plot_freq_0d(s.f_axis, arr, component, view.name, what="abs", ax=ax)
+        return plot_time_0d(s.times, view.trace(component, phase_deg), component, view.name, ax=ax)
 
     index = view.index_of(None, index)
     if region.ndim == 1:
@@ -263,11 +265,11 @@ def plot_frame(
             axis, coords, vals = view.line(component, index)
             label = f"|{component}|"
         else:
-            axis, coords, vals = view.line(component, index, phase)
+            axis, coords, vals = view.line(component, index, phase_deg)
             label = component
         title = f"{view.name} — {label}, {view.label(index)}"
-        if kind == "frequency" and not is_group and phase:
-            title += f", phase={phase:.0f}°"
+        if kind == "frequency" and not is_group and phase_deg:
+            title += f", phase_deg={phase_deg:.0f}°"
         return plot_time_1d(coords, vals, label, _AXES[axis], title, ax=ax, scale_mm=scale_mm)
 
     pv = view.plane(normal, position)
@@ -285,7 +287,7 @@ def plot_frame(
             raise KeyError(
                 f"Need both {comp_u} and {comp_v} recorded.  Available: {list(s.components)}"
             )
-        layer = view.layer(index, pv, comps, phase)
+        layer = view.layer(index, pv, comps, phase_deg)
         u_arr, v_arr = layer[comp_u], layer[comp_v]
         w_arr = layer.get(comp_w)
         c0, c1, (u_arr, v_arr, w_arr) = mirror_plane_arrays(
@@ -297,8 +299,8 @@ def plot_frame(
         )
         what = "Poynting vector" if group == "S" else f"{group}-field"
         title = f"{view.name} — {what}, {view.label(index)}"
-        if kind == "frequency" and phase:
-            title += f", phase={phase:.0f}°"
+        if kind == "frequency" and phase_deg:
+            title += f", phase_deg={phase_deg:.0f}°"
         return plot_field_vector(
             c0,
             c1,
@@ -326,17 +328,17 @@ def plot_frame(
     if is_group:
         # The envelope of a complex group, the magnitude of a real one.
         k = 0 if pv.slice_index is None else int(pv.slice_index)
-        raw = s.cell_centred_layer(index, pv.normal_idx, k, comps)
+        raw = s.cell_centered_layer(index, pv.normal_idx, k, comps)
         vals = np.sqrt(sum(np.abs(np.asarray(a)) ** 2 for a in raw.values()))
         label = component
     else:
-        vals = view.layer(index, pv, comps, phase)[component]
+        vals = view.layer(index, pv, comps, phase_deg)[component]
         label = component
     fld, comp_axis = component_mirror_key(component)
     c0, c1, (vals,) = mirror_plane_arrays(pv, view.mirrors, c0, c1, [(vals, fld, comp_axis)])
     title = f"{view.name} — {label}, {view.label(index)}"
-    if kind == "frequency" and not is_group and phase:
-        title += f", phase={phase:.0f}°"
+    if kind == "frequency" and not is_group and phase_deg:
+        title += f", phase_deg={phase_deg:.0f}°"
     if is_group:
         effective_cmap = cmap or "viridis"
         sym = False
@@ -378,7 +380,7 @@ def interact(
     normal: str | None = None,
     position: float = 0.0,
     plot_type: str = "vector",
-    phase: float | None = None,
+    phase_deg: float | None = None,
     scale_mm: bool = True,
     cmap: str | None = None,
     geometry=None,
@@ -408,9 +410,9 @@ def interact(
 
     def layer_values(i):
         if pv is None:
-            return view.line(component, i, phase)[2]
+            return view.line(component, i, phase_deg)[2]
         comps = view._comps(component if (is_group or plot_type != "vector") else "E")
-        return view.layer(i, pv, comps, phase)
+        return view.layer(i, pv, comps, phase_deg)
 
     if plot_type == "vector":
         if pv is None:
@@ -425,7 +427,7 @@ def interact(
             raise KeyError(f"Need both {comp_u} and {comp_v} recorded.")
         global_max = 0.0
         for i in range(n):
-            layer = view.layer(i, pv, comps, phase)
+            layer = view.layer(i, pv, comps, phase_deg)
             mag2 = layer[comp_u] ** 2 + layer[comp_v] ** 2
             if comp_w in layer:
                 mag2 = mag2 + layer[comp_w] ** 2
@@ -462,7 +464,7 @@ def interact(
                 view,
                 component,
                 i,
-                phase=phase,
+                phase_deg=phase_deg,
                 normal=normal,
                 position=position,
                 plot_type=plot_type,

@@ -590,8 +590,8 @@ def _candidate_summary(members, kind, scale):
             point = VertexRef(None, shape, scale).point
             summaries.append(f"vertex at {point}")
         else:
-            _, centre = _measure(shape, 2 if kind == "face" else 1, scale)
-            summaries.append(f"{_type(shape, kind)} centred at {centre}")
+            _, center = _measure(shape, 2 if kind == "face" else 1, scale)
+            summaries.append(f"{_type(shape, kind)} centred at {center}")
     return "; ".join(sorted(summaries)) + ("; ..." if len(members) > 8 else "")
 
 

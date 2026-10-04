@@ -22,8 +22,10 @@ from magnelio.analysis.result_interface import (
 )
 from magnelio.analysis.scattering_td import AnalysisScatteringTD, ScatteringTDResult
 from magnelio.analysis.time_domain import AnalysisTD, TDResult
+from magnelio.solver.eigenmode_result import EigenmodeResult
 
 __all__ = [
+    "EigenmodeResult",
     "MemoryEstimate",
     "MemoryPhase",
     "MonitorMemoryEstimate",
@@ -36,7 +38,7 @@ __all__ = [
 
 def resume(
     project,
-    excited=None,
+    run=None,
     *,
     energy_stop_db: float | None = None,
     total_time_steps: int | None = None,
@@ -61,8 +63,8 @@ def resume(
     ----------
     project : str or Path or Project
         The project directory (or an open reader) to continue.
-    excited : str or (str, int), optional
-        Which run to resume: a scattering run by its excited
+    run : str or (str, int), optional
+        Which run to resume: a scattering run by its run
         ``(port, mode)`` pair, an ``AnalysisTD`` run by its name.  May
         be omitted when the project holds exactly one run.
     energy_stop_db : float, optional
@@ -118,7 +120,7 @@ def resume(
 
         return _resume_scattering(
             proj,
-            excited,
+            run,
             energy_stop_db=energy_stop_db,
             total_time_steps=total_time_steps,
             port_signal_stop_db=port_signal_stop_db,
@@ -131,7 +133,7 @@ def resume(
 
         return _resume_td(
             proj,
-            excited,
+            run,
             energy_stop_db=energy_stop_db,
             total_time_steps=total_time_steps,
             port_signal_stop_db=port_signal_stop_db,

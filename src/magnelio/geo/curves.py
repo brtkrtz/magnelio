@@ -77,7 +77,7 @@ def _ellipse_frame(p_start, p_end, center, semi_axes, major_axis, normal):
         if abs(xu * xu + xv * xv - 1.0) > 2.0 * _JOIN_RTOL:
             raise ValueError(
                 f"The {label} point of the elliptical arc does not lie on the "
-                f"ellipse (centre {c}, semi-axes {a:.6e} x {b:.6e} m): "
+                f"ellipse (center {c}, semi-axes {a:.6e} x {b:.6e} m): "
                 f"(x/a)^2 + (y/b)^2 = {xu * xu + xv * xv:.6f}."
             )
         return math.atan2(xv, xu)
@@ -442,7 +442,7 @@ class Curve(Shape):
         Parameters
         ----------
         center : tuple of float
-            World centre [meters].
+            World center [meters].
         radius : float
             Positive radius [meters].
         normal : str or sequence of float, optional
@@ -470,7 +470,7 @@ class Curve(Shape):
         Parameters
         ----------
         center : tuple of float
-            World centre [meters].
+            World center [meters].
         semi_axes : tuple of float
             Positive ``(a, b)`` lengths [meters]; either may be larger.
         major_axis : str or sequence of float

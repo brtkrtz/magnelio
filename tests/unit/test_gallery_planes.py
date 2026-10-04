@@ -75,7 +75,7 @@ def _first_mesh(script: Path, monkeypatch):
     monkeypatch.setattr(Mesh, "from_geometry", classmethod(capture))
     # Anything that would open a window or render a section before the
     # mesh exists: the 3D viewer blocks headless, sections cost OCC time.
-    monkeypatch.setattr(GeometryModel, "plot", lambda self, *a, **k: None)
+    monkeypatch.setattr(GeometryModel, "show", lambda self, *a, **k: None)
     monkeypatch.setattr(GeometryModel, "plot_cross_section", lambda self, *a, **k: figure())
     monkeypatch.setattr(plots, "plot_cross_section", figure)
     monkeypatch.setattr(plots, "show_geometry", lambda *a, **k: None)

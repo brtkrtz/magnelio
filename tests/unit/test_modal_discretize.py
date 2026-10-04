@@ -173,7 +173,7 @@ class TestDiscreteModeProperties:
         # H_u co-located at v-edges (= Ez edge midpoints).  For TE10 this
         # is the dominant H component.
         peak_h = np.max(np.abs(discrete[0].h_u_profile))
-        z_te = float(modes[0].z_wave(2 * np.pi * 10e9).real)
+        z_te = float(modes[0].z_wave(f=(2 * np.pi * 10e9) / (2.0 * np.pi)).real)
         ratio = peak_e / peak_h
         assert ratio == pytest.approx(z_te, rel=1e-10)
 

@@ -78,8 +78,8 @@ class TestTheEnumeration:
 
     def test_the_normal_points_out_of_the_metal(self):
         patches = enumerate_wall_patches(_brick_mesh())
-        centre = np.array([10e-3, 10e-3, 10e-3])  # centre of the cube
-        outward = np.sum(patches.normals * (patches.centres - centre), axis=1)
+        center = np.array([10e-3, 10e-3, 10e-3])  # center of the cube
+        outward = np.sum(patches.normals * (patches.centres - center), axis=1)
         assert np.all(outward > 0.0)
 
 

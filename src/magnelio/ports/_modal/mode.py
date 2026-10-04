@@ -7,7 +7,7 @@ Poynting-normalised transverse field profile at any (u, v) point of the
 port plane.
 
 Modal wave impedance ``Z_wave(omega)`` and propagation constant
-``gamma(omega)`` are derived from the textbook closed-form relations and
+``gamma(f=...)`` are derived from the textbook closed-form relations and
 exposed as methods so callers can evaluate them at any frequency without
 holding an external table.
 """
@@ -85,7 +85,7 @@ class Mode:
         multi-conductor ports (TEM/QTEM).  ``None`` for hollow-pipe
         modes where no inner-conductor current is available.
         ``z_modal()`` returns this value when set; otherwise falls back
-        to ``z_wave(omega)``.
+        to ``z_wave(f=f)``.
     discrete_e_u_profile : np.ndarray or None, default None
         Numerical-path ``E_u`` profile, sampled at the port-plane
         u-edge midpoints.  Shape ``(N_u,)``.  M_ε-orthonormal by
@@ -165,17 +165,18 @@ class Mode:
                     f"{n_v_e} vs {n_v_h})."
                 )
 
-    def gamma(self, omega: float) -> complex:
-        """Propagation constant ``γ = α + jβ`` at angular frequency ``omega``.
+    def gamma(self, *, f: float) -> complex:
+        """Propagation constant ``γ = α + jβ`` at frequency ``f`` [Hz].
 
         Above cut-off, the mode is propagating and ``γ = j β``.  Below
         cut-off it is evanescent and ``γ = α`` (real).
 
         Parameters
         ----------
-        omega : float
-            Angular frequency [rad/s].
+        f : float
+            Frequency [Hz].
         """
+        omega = 2.0 * math.pi * f
         k_sq = (omega**2) * MU0 * EPS0 * self.epsilon_r
         kc_sq = (self.omega_c**2) * MU0 * EPS0 * self.epsilon_r
         diff = kc_sq - k_sq
@@ -183,8 +184,8 @@ class Mode:
             return 1j * math.sqrt(-diff)
         return complex(math.sqrt(diff))
 
-    def z_wave(self, omega: float) -> complex:
-        """Modal wave impedance at angular frequency ``omega``.
+    def z_wave(self, *, f: float) -> complex:
+        """Modal wave impedance at frequency ``f`` [Hz].
 
         - TEM: ``Z = η₀ / √ε_r`` (frequency-independent).
         - TE:  ``Z = j ω μ / γ`` (real positive above cut-off, reactive below).
@@ -192,18 +193,19 @@ class Mode:
 
         Parameters
         ----------
-        omega : float
-            Angular frequency [rad/s].  Must be > 0.
+        f : float
+            Frequency [Hz].  Must be > 0.
         """
-        if omega <= 0.0:
-            raise ValueError("z_wave requires omega > 0")
+        omega = 2.0 * math.pi * f
+        if f <= 0.0:
+            raise ValueError("z_wave requires f > 0")
 
         eta = ETA0 / math.sqrt(self.epsilon_r)
 
         if self.mode_type is ModeType.TEM:
             return complex(eta)
 
-        gamma = self.gamma(omega)
+        gamma = self.gamma(f=f)
 
         if self.mode_type is ModeType.TE:
             return 1j * omega * MU0 / gamma
@@ -212,12 +214,12 @@ class Mode:
 
         raise ValueError(f"Unknown mode_type: {self.mode_type}")
 
-    def z_modal(self, omega: float) -> complex:
+    def z_modal(self, *, f: float) -> complex:
         """Reference impedance for power-wave decomposition.
 
         For multi-conductor modes (TEM/QTEM with ``z_line`` set), returns
         the line impedance ``Z₀ = 2P/I·I*``.  For hollow-pipe modes,
-        falls back to ``z_wave(omega)``.
+        falls back to ``z_wave(f=f)``.
 
         This is the impedance to use in
         ``V_m^± = (V_m ± Z_modal · I_m) / 2`` for the modal-load
@@ -225,9 +227,9 @@ class Mode:
 
         Parameters
         ----------
-        omega : float
-            Angular frequency [rad/s].
+        f : float
+            Frequency [Hz].
         """
         if self.z_line is not None:
             return complex(self.z_line)
-        return self.z_wave(omega)
+        return self.z_wave(f=f)

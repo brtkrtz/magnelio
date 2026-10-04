@@ -59,8 +59,8 @@ wraps a trace and its substrate around a cylindrical patch.
 Owned topology is separate from standalone geometry: `TopologyRef`,
 `VertexRef`, `EdgeRef`, `FaceRef`, `EdgeSetRef` and `FaceSetRef` hold one
 `Solid` owner. The Solid selectors `face`, `edge`, `vertex`, `faces` and
-`edges` accept semantic constraints or registered names; `tag_face`,
-`tag_edge`, `tag_vertex`, `tag_faces` and `tag_edges` register immutable names.
+`edges` accept semantic constraints or registered names; `tagged_face`,
+`tagged_edge`, `tagged_vertex`, `tagged_faces` and `tagged_edges` register immutable names.
 `TopologySelectionError`, `AmbiguousTopologyError` and `TopologyEvolutionError`
 distinguish missing, tied and lost selections. The
 {ref}`owned topology guide <geometry-owned-topology>`
@@ -106,7 +106,7 @@ tangencies, coincident faces and named-topology splits have explicit rules in
 the [partition and section guide](../methods/geometry.md). Tutorial 14 shows
 a hollow component and an oblique cutter.
 
-`Solid.imprint(cutter)` returns a receiver with faces split at the cutter's
+`Solid.imprinted(cutter)` returns a receiver with faces split at the cutter's
 intersection curves while preserving its volume and material. `insert` takes
 physical Solids with explicit integer priorities and optional material-less
 void tools, trims losing volumes and returns a material-preserving `Group`.

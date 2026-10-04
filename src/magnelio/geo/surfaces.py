@@ -102,7 +102,7 @@ class Surface(Sheet):
         --------
         An offset paraboloid dish of focal length ``F`` and aperture
         ``D``, centred ``x_c`` off the axis, parametrised in polar
-        coordinates about the aperture centre so that its rim is a
+        coordinates about the aperture center so that its rim is a
         circle::
 
             def dish(r, phi):

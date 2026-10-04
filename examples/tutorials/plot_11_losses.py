@@ -173,7 +173,7 @@ wg_mesh = mio.Mesh.from_geometry(wg, mio.MeshControl(min_nodes_per_wavelength=18
 
 def run_waveguide(**wall_kwargs):
     monitor = monitors.MonitorWallLoss(
-        freqs=np.linspace(f_lo, f_hi, 9),
+        frequencies=np.linspace(f_lo, f_hi, 9),
         normal="z",
         position=5e-3,
         sigma=sigma_steel,
@@ -233,7 +233,7 @@ ax.plot(
 )
 ax.plot(f_wg[in_band] / 1e9, NP2DB * alpha_te10[in_band], "--", label="TE10 closed form")
 ax.plot(
-    mon_pec.f / 1e9,
+    mon_pec.f_axis / 1e9,
     NP2DB * alpha_pert,
     "s",
     ms=5,

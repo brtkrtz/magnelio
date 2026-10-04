@@ -145,7 +145,7 @@ def _microstrip_setup(
     Geometry (in the port plane y, z):
     - Ground plane along z = 0 across the full y range.
     - One strip of width W at z = h per entry of ``strip_centres``
-      (the y position of its centre); the default is a single strip
+      (the y position of its center); the default is a single strip
       at y = 0, two entries make an edge-coupled pair.
     - Substrate of ε_r = ``eps_substrate`` for 0 < z < h.
     - Vacuum elsewhere.
@@ -381,7 +381,7 @@ class TestQTEMModeStructure:
     def test_z_modal_returns_z_line(self, coax_qtem_modes):
         modes, *_ = coax_qtem_modes
         for m in modes:
-            assert m.z_modal(2 * math.pi * 1e9) == complex(m.z_line)
+            assert m.z_modal(f=(2 * math.pi * 1e9) / (2.0 * math.pi)) == complex(m.z_line)
 
 
 # ---------------------------------------------------------------------

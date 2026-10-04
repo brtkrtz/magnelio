@@ -177,15 +177,15 @@ class PortSpecRectWG:
         Port label.
     plane : BoxFace
         Bbox face on which the port lives.
-    width_a : float
+    width : float
         Cross-section dimension along the *lower-numbered* tangential
         global axis [m].
-    height_b : float
+    height : float
         Cross-section dimension along the *higher-numbered* tangential
         global axis [m].
     epsilon_r : float, default 1.0
         Relative permittivity.
-    center : tuple[float, float], default (0.0, 0.0)
+    origin : tuple[float, float], default (0.0, 0.0)
         Lower-left corner of the cross-section in the *global*
         tangential frame (lower-axis first).
     n_modes : int, default 1
@@ -195,10 +195,10 @@ class PortSpecRectWG:
 
     name: str
     plane: BoxFace
-    width_a: float
-    height_b: float
+    width: float
+    height: float
     epsilon_r: float = 1.0
-    center: tuple[float, float] = (0.0, 0.0)
+    origin: tuple[float, float] = (0.0, 0.0)
     n_modes: int = 1
 
 
@@ -296,7 +296,7 @@ class RegionConductor:
 
     The two ranges are given in the *global* axis ordering — the same
     convention as :attr:`PortSpecCoax.center` and
-    :attr:`PortSpecRectWG.width_a`.  Concretely:
+    :attr:`PortSpecRectWG.width`.  Concretely:
 
     - X-face port (u/v axes are y, z): ``(y_range, z_range)``.
     - Y-face port (u/v axes are x, z): ``(x_range, z_range)``.
@@ -1530,13 +1530,13 @@ def build_modal_port(
     elif isinstance(spec, PortSpecRectWG):
         u_c, v_c = _global_pair_to_uv(
             spec.plane,
-            spec.center[0],
-            spec.center[1],
+            spec.origin[0],
+            spec.origin[1],
         )
         width_a_uv, height_b_uv = _global_pair_to_uv(
             spec.plane,
-            spec.width_a,
-            spec.height_b,
+            spec.width,
+            spec.height,
         )
 
         # Path (a): analytical reference (DD-048).

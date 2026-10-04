@@ -95,7 +95,7 @@ C0 = 299_792_458.0
 
 
 def graded_axis(lo, hi, n_cells, growth):
-    """Symmetric grading: fine at both ends, growth toward the centre."""
+    """Symmetric grading: fine at both ends, growth toward the center."""
     half = n_cells // 2
     d = np.ones(half)
     for i in range(1, half):

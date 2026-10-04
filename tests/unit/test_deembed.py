@@ -113,8 +113,8 @@ class TestFactorAlgebra:
 class TestDispersionTiers:
     def test_continuum_fallback_uses_mode_gamma(self):
         class _Mode:
-            def gamma(self, omega):
-                return 1j * omega / 3e8
+            def gamma(self, *, f):
+                return 1j * (2 * np.pi * f) / 3e8
 
         s = _s_params()
         d = 2e-3

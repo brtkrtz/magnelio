@@ -269,6 +269,9 @@ class PortWaveguide:
             raise ValueError(f"n_modes must be >= 1; got {self.n_modes}")
 
 
+_ANCHOR_UNSET = object()
+
+
 @dataclass(frozen=True)
 class PortAnalytical:
     """Declarative port with a closed-form analytical reference mode.
@@ -289,9 +292,11 @@ class PortAnalytical:
         dimension along the lower-numbered global tangential axis.
     epsilon_r : float, default 1.0
         Relative permittivity of the (homogeneous) filling.
-    center : tuple of float, default (0.0, 0.0, 0.0)
-        Cross-section anchor as an ``(x, y, z)`` world-coordinate point
-        [m] — the coax axis, or the lower-left corner of the rectangle.
+    center, origin : tuple of float, optional
+        Coax axis (``center``) or minimum rectangular tangential corner
+        (``origin``), as an ``(x, y, z)`` world-coordinate point [m].
+        The appropriate anchor defaults to ``(0.0, 0.0, 0.0)``; supplying
+        the other family's anchor is rejected.
         The component along the face's normal axis is fixed by *plane*
         already and is ignored (``None`` is fine there).
     n_modes : int, default 1
@@ -306,12 +311,26 @@ class PortAnalytical:
     width: Optional[float] = None
     height: Optional[float] = None
     epsilon_r: float = 1.0
-    center: tuple = (0.0, 0.0, 0.0)
+    center: tuple = _ANCHOR_UNSET
+    origin: tuple = _ANCHOR_UNSET
     n_modes: int = 1
 
     def __post_init__(self) -> None:
         face = normalize_box_face(self.plane)
-        point_on_face(face, self.center)  # fail fast on bad input
+        if self.family == "coax":
+            if self.origin is not _ANCHOR_UNSET:
+                raise TypeError("coax ports use center=, not origin=")
+            if self.center is _ANCHOR_UNSET:
+                object.__setattr__(self, "center", (0.0, 0.0, 0.0))
+            point_on_face(face, self.center)
+            object.__setattr__(self, "origin", None)
+        elif self.family == "rect_wg":
+            if self.center is not _ANCHOR_UNSET:
+                raise TypeError("rectangular ports use origin=, not center=")
+            if self.origin is _ANCHOR_UNSET:
+                object.__setattr__(self, "origin", (0.0, 0.0, 0.0))
+            point_on_face(face, self.origin)
+            object.__setattr__(self, "center", None)
         if self.n_modes < 1:
             raise ValueError(f"n_modes must be >= 1; got {self.n_modes}")
         if self.family == "coax":
@@ -412,7 +431,7 @@ def resolve_declarative_port(
     face = normalize_box_face(port.plane)
 
     if isinstance(port, PortAnalytical):
-        center_uv = point_on_face(face, port.center)
+        anchor_uv = point_on_face(face, port.center if port.family == "coax" else port.origin)
         if port.family == "coax":
             return PortSpecCoax(
                 name=port.name,
@@ -420,16 +439,16 @@ def resolve_declarative_port(
                 inner_radius=port.inner_radius,
                 outer_radius=port.outer_radius,
                 epsilon_r=port.epsilon_r,
-                center=center_uv,
+                center=anchor_uv,
                 n_modes=port.n_modes,
             )
         return PortSpecRectWG(
             name=port.name,
             plane=face,
-            width_a=port.width,
-            height_b=port.height,
+            width=port.width,
+            height=port.height,
             epsilon_r=port.epsilon_r,
-            center=center_uv,
+            origin=anchor_uv,
             n_modes=port.n_modes,
         )
 

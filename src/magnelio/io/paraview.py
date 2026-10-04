@@ -663,7 +663,7 @@ def _export_time_monitor(run_dir: Path, pv_dir: Path, name: str, percentile: flo
 
         def steps():
             for ti in _sample_steps(n):
-                cc = reader.frame(ti).cell_centred(vec[1])
+                cc = reader.frame(ti).cell_centered(vec[1])
                 yield [cc[c][sl] for c in vec[1]]
 
         cap, exponent = _magnitude_stats(steps(), percentile)
@@ -673,7 +673,7 @@ def _export_time_monitor(run_dir: Path, pv_dir: Path, name: str, percentile: flo
     mon_dir.mkdir(parents=True, exist_ok=True)
     entries = []
     for ti in range(n):
-        cc = reader.frame(ti).cell_centred(components)
+        cc = reader.frame(ti).cell_centered(components)
         rg = _freq_vtr_grid(node_x, node_y, node_z)
         cd = rg.GetCellData()
 
@@ -772,7 +772,7 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
 
     reader = _LoadedFreqMonitor(run_dir, name, grid=grid)
     components = list(reader.components)
-    freqs = np.asarray(reader.f, dtype=float)
+    freqs = np.asarray(reader.f_axis, dtype=float)
     if freqs.size == 0 or not components:
         return None
     # Ship the same quantity the monitor's own ``.data`` reports — fields
@@ -794,7 +794,7 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
     vec = _pick_vector(components)
     entries = []
     for fi, f_val in enumerate(freqs):
-        bins = spec_series.cell_centred(components, frame=fi)
+        bins = spec_series.cell_centered(components, frame=fi)
         rg = _freq_vtr_grid(node_x, node_y, node_z)
         cd = rg.GetCellData()
 
@@ -844,7 +844,7 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
 
         def steps():
             for fi in _sample_steps(len(freqs)):
-                cc = spec_series.cell_centred(triple, frame=fi)
+                cc = spec_series.cell_centered(triple, frame=fi)
                 yield [cc[c][sl] for c in triple]
 
         cap, exponent = _magnitude_stats(steps(), percentile)

@@ -210,7 +210,7 @@ def build_mesh(
 
 
 def _face_positions(grid) -> np.ndarray:
-    """Face-centre coordinates for all H-faces, [Hx | Hy | Hz], (n, 3)."""
+    """Face-center coordinates for all H-faces, [Hx | Hy | Hz], (n, 3)."""
     x, y, z = grid.x, grid.y, grid.z
     xc = 0.5 * (x[:-1] + x[1:])
     yc = 0.5 * (y[:-1] + y[1:])
@@ -230,7 +230,7 @@ def _face_positions(grid) -> np.ndarray:
 
 
 def _edge_positions(grid) -> np.ndarray:
-    """Edge-centre coordinates for all E-edges, [Ex | Ey | Ez], (n, 3)."""
+    """Edge-center coordinates for all E-edges, [Ex | Ey | Ez], (n, 3)."""
     x, y, z = grid.x, grid.y, grid.z
     xc = 0.5 * (x[:-1] + x[1:])
     yc = 0.5 * (y[:-1] + y[1:])

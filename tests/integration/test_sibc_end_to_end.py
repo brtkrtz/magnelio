@@ -80,7 +80,7 @@ def test_parallel_plate_sibc_alpha_and_monitor():
     """|S21| carries the closed-form conductor attenuation; the wall
     monitor reports the SIBC's own extraction (windows measured above)."""
     mon = MonitorWallLoss(
-        freqs=FREQS,
+        frequencies=FREQS,
         normal="z",
         position=2e-3,
         sigma=SIGMA,

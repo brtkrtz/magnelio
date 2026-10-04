@@ -7,7 +7,7 @@ form a directional coupler: a fraction of the power entering one
 line leaves the *near* end of the other, and — ideally — nothing
 leaves its far end.  The classic single-section design has two knobs,
 the gap between the lines and their width, and one number to hit: the
-coupling at the centre frequency.  This guide sets a **−10 dB** coupler
+coupling at the center frequency.  This guide sets a **−10 dB** coupler
 at 5 GHz on a 0.813 mm substrate and reads the result off a four-port
 S-parameter run.
 
@@ -56,7 +56,7 @@ h_sub = 0.813e-3  # substrate height
 t_cu = 35e-6  # copper thickness
 h_box = 5.0e-3  # shield height above the ground plane
 z0 = 50.0  # system impedance
-f0 = 5.0e9  # centre frequency
+f0 = 5.0e9  # center frequency
 f_min, f_max = 2.0e9, 8.0e9
 coupling_db = -10.0  # target coupling at f0
 
@@ -176,7 +176,7 @@ _, _, _, _, report, section_model = pair_modes(s_design)
 fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.4))
 for ax, mode in zip(axes, report.modes):
     mode.plot(
-        field="E",
+        component="E",
         ax=ax,
         title=f"{mode.name}: ε_eff = {mode.epsilon_eff:.3f}",
         geometry=section_model,
@@ -189,7 +189,7 @@ fig.tight_layout()
 #
 # Each line is one path: from its port on the box wall, straight in,
 # a 90° arc onto the coupled section, along it, an arc back out and
-# straight to the second port (given only a centre, ``arc_to`` draws
+# straight to the second port (given only a center, ``arc_to`` draws
 # the shorter of the two arcs — the quarter turn, on either line).
 # ``traced`` widens the centreline into copper of thickness ``t_cu``
 # on top of the substrate; ``caps="flat"`` ends the tracks square on

@@ -138,7 +138,7 @@ def test_band_result_time_domain_waves_raise(band_result):
         band_result.b("port1")
     # Raw V/I stays inspectable.
     v_sig, i_sig = band_result.signals[("port1", 0)][("port1", 0)]
-    assert v_sig.values.size == band_result.n_actual_steps
+    assert v_sig.values.size == band_result.max_run_steps
 
 
 def test_default_port_model_is_modal():
@@ -165,7 +165,7 @@ def test_default_port_model_is_modal():
     assert s11_db.max() > -100.0
     # Time-domain power waves stay available on the default path.
     b1 = result.b("port1")
-    assert b1.values.size == result.n_actual_steps
+    assert b1.values.size == result.max_run_steps
 
 
 def _near_dc_analysis(**kwargs) -> AnalysisScatteringTD:
@@ -296,8 +296,8 @@ def test_port_model_band_requires_multiconductor_everywhere():
                 PortSpecRectWG(
                     name="port2",
                     plane=BoxFace.Z_MAX,
-                    width_a=10.0e-3,
-                    height_b=8.0e-3,
+                    width=10.0e-3,
+                    height=8.0e-3,
                     n_modes=1,
                 ),
             ],
@@ -572,7 +572,7 @@ def test_band_run_resumes_bit_exactly(tmp_path):
         from magnelio.io.project import open_project
 
         assert open_project(path).runs["port1_mode0"].n_steps == n1
-        proj = resume(path, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+        proj = resume(path, run=("port1", 0), total_time_steps=n_total, verbose=False)
 
     ref = open_project(ref_path)
     assert proj.runs["port1_mode0"].state == "done"

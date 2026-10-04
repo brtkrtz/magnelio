@@ -137,7 +137,7 @@ class TestWaveformRecipe:
         [
             signals.WaveformGaussian(f_max=10e9),
             signals.WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9),
-            signals.WaveformSine(f=2e9, phase=30.0, rise_time=1e-9),
+            signals.WaveformSine(f=2e9, phase_deg=30.0, rise_time=1e-9),
             signals.WaveformSine(f=2e9),
             signals.WaveformStep(rise_time=1e-10, hold=1e-9, fall_time=2e-10),
             signals.WaveformStep(rise_time=1e-10),
@@ -186,7 +186,7 @@ class TestMonitorRecipe:
         assert (d["normal"], d["position"]) == ("y", 2e-3)
         back = _monitor_from_dict(d)
         assert (back.normal, back.position, back.name) == ("y", 2e-3, "f")
-        wl = monitors.MonitorWallLoss(freqs=[1e9], normal="x", position=1e-3, sigma=5.8e7)
+        wl = monitors.MonitorWallLoss(frequencies=[1e9], normal="x", position=1e-3, sigma=5.8e7)
         d = _monitor_to_dict(wl)
         assert (d["normal"], d["position"]) == ("x", 1e-3)
         back = _monitor_from_dict(d)
@@ -197,7 +197,7 @@ class TestMonitorRecipe:
             _monitor_from_dict({"type": "MonitorFluxTime", "plane": ["z", 5e-3], "name": "f"})
 
     def test_far_field_tag_and_retired_alias(self):
-        ff = monitors.MonitorFarFieldFrequency(freqs=[2e9], margin_cells=2, name="ff")
+        ff = monitors.MonitorFarFieldFrequency(frequencies=[2e9], margin_cells=2, name="ff")
         d = _monitor_to_dict(ff)
         assert d["type"] == "MonitorFarFieldFrequency"
         back = _monitor_from_dict(d)

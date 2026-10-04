@@ -1,7 +1,7 @@
 """WP-U0 acceptance: TD PMC wall consistency on the parallel plate.
 
 Before WP-U0 stage 1 the TD ``PMCBoundary`` zeroed tangential H on the
-first/last *cell-centre* layer, placing the magnetic wall ~dx/2 inside
+first/last *cell-center* layer, placing the magnetic wall ~dx/2 inside
 the outermost grid line, while both mode solvers (2D port modes,
 ``EigenmodeSolver3D``) use the natural boundary — wall dx/2 *outside*.
 Measured consequence (session 94, this fixture): the TD TE(1,0)
@@ -29,7 +29,7 @@ wall dx/2 outside).  Three measurement legs certify the fix:
    on the PMC walls, so removing the legacy zeroing must not change
    TEM results beyond the floating-point floor.  The same high-level TEM
    fixture is run twice — production (natural) PMC vs. a local shim
-   reproducing the legacy cell-centre zeroing — and S11/S21 are
+   reproducing the legacy cell-center zeroing — and S11/S21 are
    compared bit-for-bit.
 
 Geometry: air brick a x b x L = 10 x 5 x 20 mm; PMC on the x faces,
@@ -274,7 +274,7 @@ def pulsed_passivity(f_max=20.0e9):
 
 
 class _LegacyPMCBoundary:
-    """The pre-WP-U0 PMC: zero tangential H on the cell-centre layer."""
+    """The pre-WP-U0 PMC: zero tangential H on the cell-center layer."""
 
     def __init__(self, face: str) -> None:
         self.face = face
@@ -325,7 +325,7 @@ def tem_bit_compatibility():
     s_old = _tem_run(legacy=True)
     worst = max(float(np.max(np.abs(np.asarray(n) - np.asarray(o)))) for n, o in zip(s_new, s_old))
     if worst == 0.0:
-        print("  TEM S11/S21 bit-identical (natural PMC vs. legacy cell-centre zeroing)")
+        print("  TEM S11/S21 bit-identical (natural PMC vs. legacy cell-center zeroing)")
     elif worst < 1e-12:
         print(
             f"  TEM S11/S21 at the FP floor: max |delta| = "

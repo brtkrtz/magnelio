@@ -485,7 +485,7 @@ class TestAThreshold:
         I_sig = Signal1D(t=t, values=np.zeros(N), dt=dt)
         recorder = {("p", 0): (V_sig, I_sig)}
         port_modes = {"p": [_tem_mode()]}
-        # Sample around the band centre AND well outside.
+        # Sample around the band center AND well outside.
         f_axis = np.array([1e9, f0, 2 * f0, 50e9, 80e9])
         S = compute_s_parameters(
             recorder,

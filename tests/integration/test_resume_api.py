@@ -136,7 +136,7 @@ def test_resume_bounded_bit_exact(tmp_path):
     # A Run is a live view; keep the first march's clock before it moves.
     first_started, first_finished, first_elapsed = first.started, first.finished, first.elapsed
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["port1_mode0"].state == "done"
     assert proj.runs["port1_mode0"].n_steps == n_total
     _assert_bit_exact(ref_vi, _vi(proj.signals[("port1", 0)]), "bounded-resume")
@@ -167,7 +167,7 @@ def test_resume_port_signal_gated(tmp_path):
     # Continue on the port-signal criterion alone: the DTBC line drains
     # its pulse quickly, so the envelope reaches -45 dB soon after the
     # arming guard and the run flips to done past the bounded stop.
-    proj = resume(p, excited=("port1", 0), port_signal_stop_db=45.0, verbose=False)
+    proj = resume(p, run=("port1", 0), port_signal_stop_db=45.0, verbose=False)
     meta = proj.runs["port1_mode0"]
     assert meta.state == "done"
     assert meta.n_steps > n1
@@ -190,7 +190,7 @@ def test_resume_energy_gated_bit_exact(tmp_path):
         total_time_steps=None,
     )
     ref_vi = _vi(ref.signals[("port1", 0)])
-    assert ref.n_actual_steps > 120  # decays well after the bounded stub
+    assert ref.max_run_steps > 120  # decays well after the bounded stub
 
     p = tmp_path / "pp"
     _tem_analysis(project=p).run(
@@ -199,9 +199,9 @@ def test_resume_energy_gated_bit_exact(tmp_path):
         total_time_steps=100,
         checkpoint_interval=40,
     )
-    proj = resume(p, excited=("port1", 0), energy_stop_db=60.0, verbose=False)
+    proj = resume(p, run=("port1", 0), energy_stop_db=60.0, verbose=False)
 
-    assert proj.runs["port1_mode0"].n_steps == ref.n_actual_steps
+    assert proj.runs["port1_mode0"].n_steps == ref.max_run_steps
     _assert_bit_exact(ref_vi, _vi(proj.signals[("port1", 0)]), "energy-resume")
 
 
@@ -240,7 +240,7 @@ def test_resume_after_graceful_abort(tmp_path):
     assert 0 < n_ab < n_total
 
     # A bare resume() finishes the aborted run to its original target.
-    proj = resume(p, excited=("port1", 0), verbose=False)
+    proj = resume(p, run=("port1", 0), verbose=False)
     assert proj.runs["port1_mode0"].state == "done"
     assert proj.runs["port1_mode0"].n_steps == n_total
     _assert_bit_exact(ref_vi, _vi(proj.signals[("port1", 0)]), "abort-resume")
@@ -271,7 +271,7 @@ def test_resume_fill_in_leaves_sibling_untouched(tmp_path):
     )
     before = _vi(open_project(p).signals[("port2", 0)])
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=n_total, verbose=False)
     # port1 grew to full length; port2 is byte-for-byte the same.
     assert proj.runs["port1_mode0"].n_steps == n_total
     assert proj.runs["port2_mode0"].n_steps == n_total
@@ -298,12 +298,12 @@ def test_resume_guards(tmp_path):
 
     # target not past the checkpoint (150) → clear error
     with pytest.raises(ValueError, match="not past the checkpoint"):
-        resume(p, excited=("port1", 0), total_time_steps=120, verbose=False)
+        resume(p, run=("port1", 0), total_time_steps=120, verbose=False)
 
     # bare resume of a *done* bounded run has nothing to extend (inherited
     # total == n_completed) → the same guard fires
     with pytest.raises(ValueError, match="not past the checkpoint"):
-        resume(p, excited=("port1", 0), verbose=False)
+        resume(p, run=("port1", 0), verbose=False)
 
 
 def test_resume_without_checkpoint_raises(tmp_path):
@@ -324,7 +324,7 @@ def test_resume_without_checkpoint_raises(tmp_path):
     assert ckpt.exists()
     ckpt.unlink()
     with pytest.raises(ValueError, match="no checkpoint"):
-        resume(open_project(p), excited=("port1", 0), total_time_steps=300, verbose=False)
+        resume(open_project(p), run=("port1", 0), total_time_steps=300, verbose=False)
 
 
 def test_resume_without_recipe_raises(tmp_path):

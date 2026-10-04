@@ -438,8 +438,8 @@ def split_terms(channel, mode, normal_dx, omega, dt):
     which must read the instrument floor).
     """
     z_true, theta_true = channel_z_theta(channel)
-    z_ship = complex(mode.z_modal(omega))
-    theta_ship = 0.5 * float(normal_dx) * complex(mode.gamma(omega))
+    z_ship = complex(mode.z_modal(f=(omega) / (2.0 * math.pi)))
+    theta_ship = 0.5 * float(normal_dx) * complex(mode.gamma(f=(omega) / (2.0 * math.pi)))
     gam_of = lambda th: 2.0 * th / float(normal_dx)  # noqa: E731
 
     def price(z, theta):

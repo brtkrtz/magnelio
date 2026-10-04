@@ -883,7 +883,7 @@ class TestOCCPointInShape:
         from magnelio.geo.operations import Difference
         from magnelio.geo.primitives import Brick, Cylinder
 
-        # Box with cylindrical hole along z at centre
+        # Box with cylindrical hole along z at center
         base = Brick(origin=(0, 0, 0), size=(10e-3, 10e-3, 10e-3), material=_air())
         hole = Cylinder(origin=(5e-3, 5e-3, 0), radius=2e-3, height=10e-3, material=_air())
         diff = Difference(base, hole)
@@ -4187,8 +4187,8 @@ class TestOverlapBatching:
         assert [(i, j) for i, j, _ in found] == [(0, 6), (0, 7), (0, 8)]
 
 
-def test_plot_is_a_deprecated_alias_of_show():
-    """``plot`` draws into matplotlib elsewhere; the 3D view is ``show`` (DD-264)."""
+def test_obsolete_geometry_plot_is_removed():
+    """Interactive geometry is exposed through show alone."""
     import pytest
 
     import magnelio as mio
@@ -4196,6 +4196,5 @@ def test_plot_is_a_deprecated_alias_of_show():
 
     model = mio.GeometryModel(background="pec")
     model.add(geo.Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material="air"))
-    with pytest.deprecated_call(match="use GeometryModel.show"):
-        pl = model.plot(mode="none")
-    assert pl is not None
+    with pytest.raises(AttributeError):
+        model.plot()

@@ -1121,7 +1121,7 @@ def _add_surface_current(pl, scene, current, *, unit_scale, frame: int, density:
     normals = np.asarray(current.normals)[keep]
     vec, mag = vec[keep], mag[keep]
     scale = float(np.sqrt(areas.mean())) * unit_scale
-    # Lift the arrows clear of the metal they sit on: a patch centre is
+    # Lift the arrows clear of the metal they sit on: a patch center is
     # ON the surface, and a glyph drawn there is half inside the solid.
     points = np.asarray(current.positions)[keep] * unit_scale + normals * (0.35 * scale)
     cloud = pv.PolyData(points)
@@ -1706,7 +1706,7 @@ def show_geometry(
     show_wires: bool = True,
     show_grid: bool = True,
     show_labels: bool = True,
-    mode: str | None = None,
+    render_mode: str | None = None,
     target: str | None = None,
     size: tuple[int, int] | None = None,
     render_edges: bool = False,
@@ -1753,7 +1753,7 @@ def show_geometry(
         With ``mesh``: draw the grid cells on the cutting plane.
     show_labels : bool, default True
         Write the names of ports and lumped elements next to them.
-    mode : str, optional
+    render_mode : str, optional
         Where to render in a notebook: ``"client"`` (default) renders
         in the browser and needs no OpenGL in the kernel; ``"server"``
         renders in the kernel and streams images; ``"trame"`` offers
@@ -1790,7 +1790,7 @@ def show_geometry(
     Returns
     -------
     pyvista.Plotter or None
-        The plotter when ``mode="none"``; otherwise the view is displayed
+        The plotter when ``render_mode="none"``; otherwise the view is displayed
         as a side effect and ``None`` is returned.
 
     Notes
@@ -1824,7 +1824,7 @@ def show_geometry(
     ...     size=(900, 600),
     ... )
     """
-    notebook, mode, off_screen, target = _resolve_mode(mode, target)
+    notebook, render_mode, off_screen, target = _resolve_mode(render_mode, target)
 
     scene = _build_scene(
         geometry,
@@ -1841,9 +1841,9 @@ def show_geometry(
         quality=quality,
         scale_mm=scale_mm,
         camera=camera,
-        off_screen=off_screen or (notebook and mode not in (None, "none")),
+        off_screen=off_screen or (notebook and render_mode not in (None, "none")),
         surface_current=surface_current,
         current_frame=current_frame,
         current_density=current_density,
     )
-    return _display(scene, mode, target)
+    return _display(scene, render_mode, target)

@@ -277,7 +277,7 @@ def from_recipe(recipe):
         elif op == "imprint":
             receiver = decode(node["receiver"])
             cutter = decode(node["cutter"])
-            shape = receiver.imprint(cutter)
+            shape = receiver.imprinted(cutter)
             if _brep_text(shape._occ_shape(node["scale"])) != node["brep"]:
                 raise TopologyEvolutionError("An imprinted body has no exact construction match.")
         elif op in ("bend", "wrap"):

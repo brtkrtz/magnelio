@@ -49,12 +49,12 @@ def tem_line():
     k = int(np.argmin(np.abs(np.asarray(mesh.grid.z))))
     # The flux pairing at node k takes the magnetic samples of cell k
     # (DD-085), so the layer that can state it is the cell above the
-    # plane: the monitor is declared at that cell's centre.
+    # plane: the monitor is declared at that cell's center.
     zc = 0.5 * (mesh.grid.z[k] + mesh.grid.z[k + 1])
     monitor = MonitorFieldFrequency(
         name="layer",
         corners=((None, None, zc), (None, None, zc)),
-        freqs=FREQS,
+        frequencies=FREQS,
         fields=["E", "H"],
     )
     analysis = AnalysisScatteringTD(
@@ -94,7 +94,7 @@ def test_the_integral_is_the_flux_identity(tem_line):
     s = spectrum.poynting()
     area = _cross_section_areas(mesh.grid)
     integral = np.array([float(np.sum(s[i, :, :, 0, 2] * area)) for i in range(spectrum.n_frames)])
-    # A TEM mode is uniform across the section, so the cell-centre
+    # A TEM mode is uniform across the section, so the cell-center
     # average is exact there and only the booking is under test.
     np.testing.assert_allclose(integral, identity, rtol=1e-6)
 

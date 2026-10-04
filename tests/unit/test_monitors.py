@@ -61,7 +61,7 @@ def _unit_reference(mon, dt=1e-12):
     """
     from magnelio.signals.signal_1d import Signal1D
 
-    mon.renormalize(Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt))
+    mon.normalize_to_excitation(Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt))
     return mon
 
 
@@ -203,7 +203,7 @@ class TestMonitorFieldTime:
             mon.record(fields, n, t, dt)
 
         assert mon.t.shape == (3,)
-        data = mon.recording.cell_centred(squeeze=True)
+        data = mon.recording.cell_centered(squeeze=True)
         assert "Ez" in data
         assert data["Ez"].shape == (3,)  # 0D: squeezed
 
@@ -227,7 +227,7 @@ class TestMonitorFieldTime:
         for n in range(2):
             mon.record(fields, n, n * dt, dt)
 
-        data = mon.recording.cell_centred(squeeze=True)
+        data = mon.recording.cell_centered(squeeze=True)
         assert "Ex" in data
         assert "Ey" in data
         assert "Ez" in data
@@ -267,7 +267,7 @@ class TestMonitorFieldTime:
         mon.attach(mesh)
         mon.record(fields, 0, 0.0, 1e-12)
 
-        ez = mon.recording.cell_centred(["Ez"], squeeze=True)["Ez"]
+        ez = mon.recording.cell_centered(["Ez"], squeeze=True)["Ez"]
         assert ez.shape == (1,)
         assert mon.recording.component("Ez").shape == (1, 2, 2, 1)
 
@@ -390,7 +390,7 @@ class TestMonitorFieldFrequency:
         f0 = 1e9
         mon = MonitorFieldFrequency(
             corners=((0.005, 0.01, 0.015), (0.005, 0.01, 0.015)),
-            freqs=np.array([f0]),
+            frequencies=np.array([f0]),
             fields=["Ez"],
             name="test_dft_0d",
         )
@@ -409,7 +409,7 @@ class TestMonitorFieldFrequency:
             fields.Ez[:] = np.sin(omega * t)
             mon.record(fields, n, t, dt)
 
-        data = mon.spectrum_raw.cell_centred(squeeze=True)
+        data = mon.spectrum_raw.cell_centered(squeeze=True)
         assert "Ez" in data
         # DFT of sin(wt) at f0: |F| ≈ T/2 where T = n_steps * dt
         # T = 2000 * 1e-12 = 2e-9 s, so |F| ≈ 1e-9
@@ -424,7 +424,7 @@ class TestMonitorFieldFrequency:
         cz = 0.5 * (grid.z[2] + grid.z[3])
         mon = MonitorFieldFrequency(
             corners=((None, None, cz), (None, None, cz)),
-            freqs=np.array([1e9, 2e9]),
+            frequencies=np.array([1e9, 2e9]),
             fields=["Ez"],
             name="test_dft_2d",
         )
@@ -433,7 +433,7 @@ class TestMonitorFieldFrequency:
         fields = _make_fields(grid)
         mon.record(fields, 0, 0.0, 1e-12)
 
-        data = mon.spectrum_raw.cell_centred(squeeze=True)
+        data = mon.spectrum_raw.cell_centered(squeeze=True)
         assert "Ez" in data
         # Shape: (2 freqs, Nx, Ny) — squeezed from (2, 4, 5, 1)
         assert data["Ez"].shape == (2, 4, 5)
@@ -448,7 +448,7 @@ class TestMonitorFieldFrequency:
         cz = 0.5 * (grid.z[1] + grid.z[2])
         mon = MonitorFieldFrequency(
             corners=((None, cy, cz), (None, cy, cz)),
-            freqs=np.array([1e9]),
+            frequencies=np.array([1e9]),
             fields=["Ez"],
             name="test_dft_1d",
         )
@@ -481,7 +481,7 @@ class TestFreqMonitorInterval:
         grid = _make_grid(4, 5, 6)
         mon = MonitorFieldFrequency(
             corners=((0.005, 0.01, 0.015), (0.005, 0.01, 0.015)),
-            freqs=np.array(freqs if freqs is not None else [f0]),
+            frequencies=np.array(freqs if freqs is not None else [f0]),
             fields=["Ez"],
             interval=interval,
             name="sub",
@@ -546,7 +546,7 @@ class TestFreqMonitorInterval:
         grid = _make_grid(2, 2, 2)
         mon = MonitorFieldFrequency(
             corners=((0.005, 0.01, 0.015), (0.005, 0.01, 0.015)),
-            freqs=np.array([1e9]),
+            frequencies=np.array([1e9]),
             fields=["Ez"],
             interval=5e-12,
             name="resumed",
@@ -590,12 +590,12 @@ class TestFreqMonitorRenormalize:
         grid = _make_grid(4, 5, 6)
         mon = MonitorFieldFrequency(
             corners=((0.005, 0.01, 0.015), (0.005, 0.01, 0.015)),
-            freqs=freqs,
+            frequencies=freqs,
             fields=["Ez"],
             name="test_conv",
         )
         mon.attach(_FakeMesh(grid))
-        mon.renormalize(sig)
+        mon.normalize_to_excitation(sig)
 
         np.testing.assert_allclose(
             mon._source_spectrum[0],
@@ -617,7 +617,7 @@ class TestFreqMonitorRenormalize:
 
         mon = MonitorFieldFrequency(
             corners=((0.005, 0.01, 0.015), (0.005, 0.01, 0.015)),
-            freqs=np.array([f0]),
+            frequencies=np.array([f0]),
             fields=["Ez"],
             name="test_renorm",
         )
@@ -641,7 +641,8 @@ class TestFreqMonitorRenormalize:
             mon.record(fields, n, t, dt)
 
         # Before renormalization: raw DFT magnitude ∝ src_amp * transfer
-        raw = mon.spectrum_raw.cell_centred(squeeze=True)
+        bins_before = {c: acc.result.copy() for c, acc in mon._accumulators.items()}
+        raw = mon.spectrum_raw.cell_centered(squeeze=True)
         raw_mag = np.abs(raw["Ez"][0])
 
         src_signal = Signal1D(
@@ -649,11 +650,11 @@ class TestFreqMonitorRenormalize:
             values=src_values,
             dt=dt,
         )
-        mon.renormalize(src_signal)
-        assert mon.is_renormalized
+        mon.normalize_to_excitation(src_signal)
+        assert mon.is_normalized_to_excitation
 
         # After renormalization: normalized magnitude ≈ transfer function
-        norm = mon.spectrum.cell_centred(squeeze=True)
+        norm = mon.spectrum.cell_centered(squeeze=True)
         norm_mag = np.abs(norm["Ez"][0])
         np.testing.assert_allclose(
             norm_mag,
@@ -663,12 +664,20 @@ class TestFreqMonitorRenormalize:
         )
 
         # spectrum_raw should still return the unnormalized DFT
-        raw2 = mon.spectrum_raw.cell_centred(squeeze=True)
+        raw2 = mon.spectrum_raw.cell_centered(squeeze=True)
         np.testing.assert_allclose(
             np.abs(raw2["Ez"][0]),
             raw_mag,
             rtol=1e-10,
         )
+
+        mon.normalize_to_excitation(
+            Signal1D(t=src_signal.t, values=2 * src_signal.values, dt=src_signal.dt)
+        )
+        replaced = mon.spectrum.cell_centered(squeeze=True)
+        np.testing.assert_allclose(replaced["Ez"], norm["Ez"] / 2)
+        for comp, before in bins_before.items():
+            np.testing.assert_array_equal(mon._accumulators[comp].result, before)
 
     def test_renormalize_2d_shape(self):
         """Renormalization broadcasts correctly over spatial dims."""
@@ -683,7 +692,7 @@ class TestFreqMonitorRenormalize:
 
         mon = MonitorFieldFrequency(
             corners=((None, None, cz), (None, None, cz)),
-            freqs=freqs,
+            frequencies=freqs,
             fields=["Ez"],
             name="test_renorm_2d",
         )
@@ -695,9 +704,9 @@ class TestFreqMonitorRenormalize:
 
         src_values = np.sin(2 * np.pi * 1.5e9 * np.arange(n_steps) * dt)
         sig = Signal1D(t=np.arange(n_steps) * dt, values=src_values, dt=dt)
-        mon.renormalize(sig)
+        mon.normalize_to_excitation(sig)
 
-        data = mon.spectrum.cell_centred(squeeze=True)
+        data = mon.spectrum.cell_centered(squeeze=True)
         assert data["Ez"].shape == (2, 4, 5)  # (n_freqs, Nx, Ny)
 
 
@@ -708,7 +717,7 @@ class TestDataStatesItsUnit:
     @staticmethod
     def _recorded():
         grid = _make_grid(4, 5, 6)
-        mon = MonitorFieldFrequency(freqs=[1e9], fields=["Ez"], name="units")
+        mon = MonitorFieldFrequency(frequencies=[1e9], fields=["Ez"], name="units")
         mon.attach(_FakeMesh(grid))
         mon.record(_make_fields(grid), 0, 0.0, 1e-12)
         return mon
@@ -724,7 +733,7 @@ class TestDataStatesItsUnit:
             _ = mon.spectrum
         message = str(excinfo.value)
         assert ".spectrum_raw" in message
-        assert ".renormalize(" in message
+        assert ".normalize_to_excitation(" in message
 
     def test_component_refuses_too(self):
         mon = self._recorded()
@@ -733,17 +742,17 @@ class TestDataStatesItsUnit:
 
     def test_raw_bins_stay_reachable_without_a_reference(self):
         mon = self._recorded()
-        assert mon.spectrum_raw.cell_centred()["Ez"].shape == (1, 4, 5, 6)
+        assert mon.spectrum_raw.cell_centered()["Ez"].shape == (1, 4, 5, 6)
 
     def test_the_bins_survive_renormalization(self):
         """The divisor is stored, never applied to the accumulator — so a
         repeated call cannot stack, and raw stays raw."""
         mon = self._recorded()
-        before = mon.spectrum_raw.cell_centred()["Ez"].copy()
+        before = mon.spectrum_raw.cell_centered()["Ez"].copy()
         _unit_reference(mon)
         _unit_reference(mon)
-        np.testing.assert_array_equal(mon.spectrum_raw.cell_centred()["Ez"], before)
-        np.testing.assert_allclose(mon.spectrum.cell_centred()["Ez"], before)
+        np.testing.assert_array_equal(mon.spectrum_raw.cell_centered()["Ez"], before)
+        np.testing.assert_allclose(mon.spectrum.cell_centered()["Ez"], before)
 
     def test_renormalize_all_skips_other_monitor_kinds(self):
         from magnelio.monitors.field_frequency import renormalize_all
@@ -760,8 +769,8 @@ class TestDataStatesItsUnit:
             [time, freq],
             Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt),
         )
-        assert freq.is_renormalized
-        assert not hasattr(time, "is_renormalized")
+        assert freq.is_normalized_to_excitation
+        assert not hasattr(time, "is_normalized_to_excitation")
 
 
 # -- DFTAccumulator tests -------------------------------------------------
@@ -956,9 +965,9 @@ class TestMonitor3DPlotting:
         mon = self._volume_monitor()
         fig, ax = mon.plot(component="Ez", normal="y", position=0.008, plot_type="color")
         qm = [c for c in ax.collections if hasattr(c, "get_clim")][0]
-        cc = mon.recording.cell_centres[1]
+        cc = mon.recording.cell_centers[1]
         k = int(np.argmin(np.abs(cc - 0.008)))
-        expected = mon.recording.cell_centred(["Ez"], frame=0)["Ez"][:, k, :]
+        expected = mon.recording.cell_centered(["Ez"], frame=0)["Ez"][:, k, :]
         np.testing.assert_allclose(np.asarray(qm.get_array()).reshape(expected.shape), expected)
         assert "y=" in ax.get_title()
         plt.close(fig)
@@ -982,7 +991,7 @@ class TestMonitor3DPlotting:
         grid = _make_grid(4, 5, 6)
         mesh = _FakeMesh(grid)
         fields = _make_fields(grid)
-        mon = MonitorFieldFrequency(freqs=[1e9], fields=["E"], name="vol_f")
+        mon = MonitorFieldFrequency(frequencies=[1e9], fields=["E"], name="vol_f")
         mon.attach(mesh)
         dt = 1e-12
         for n in range(4):

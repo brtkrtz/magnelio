@@ -54,15 +54,15 @@ def _wr90_specs():
     spec_src = PortSpecRectWG(
         name="port1",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=1,
     )
     spec_load = PortSpecRectWG(
         name="port2",
         plane=BoxFace.X_MAX,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=1,
     )
     return [spec_src, spec_load]
@@ -83,15 +83,15 @@ def test_construction_validates_inputs():
     spec_a = PortSpecRectWG(
         name="dup",
         plane=BoxFace.X_MIN,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=1,
     )
     spec_b = PortSpecRectWG(
         name="dup",
         plane=BoxFace.X_MAX,
-        width_a=WR90_A,
-        height_b=WR90_B,
+        width=WR90_A,
+        height=WR90_B,
         n_modes=1,
     )
     with pytest.raises(ValueError, match="unique"):
@@ -316,9 +316,9 @@ def test_run_returns_single_excitation_result():
     inner = result.signals[("port1", 0)]
     assert ("port1", 0) in inner and ("port2", 0) in inner
     V_src, I_src = inner[("port1", 0)]
-    assert len(V_src.values) == result.n_actual_steps
-    assert len(I_src.values) == result.n_actual_steps
-    assert len(result.reference_signal.values) == result.n_actual_steps
+    assert len(V_src.values) == result.max_run_steps
+    assert len(I_src.values) == result.max_run_steps
+    assert len(result.reference_signal.values) == result.max_run_steps
 
     S11 = result.S("port1", "port1")
     S21 = result.S("port2", "port1")
@@ -503,8 +503,8 @@ def test_run_with_discrete_port_spec():
     # Time-domain payload reaches the recorder for the lumped channel
     inner = result.signals[("p1", 0)]
     V_sig, I_sig = inner[("p1", 0)]
-    assert len(V_sig.values) == result.n_actual_steps
-    assert len(I_sig.values) == result.n_actual_steps
+    assert len(V_sig.values) == result.max_run_steps
+    assert len(I_sig.values) == result.max_run_steps
 
 
 def test_bc_pec_faces_consolidated_into_mesh():

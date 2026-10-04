@@ -701,7 +701,7 @@ class _FilterStub:
 def _frame_grid(nx=4, ny=3, nz=2, dx=1e-3):
     """A monitor frame as the export writes it: cell data on the node grid.
 
-    ``Ex = 1`` everywhere, ``Ey = y`` (the cell centre's coordinate),
+    ``Ex = 1`` everywhere, ``Ey = y`` (the cell center's coordinate),
     ``Ez = 0``; the vector ``E`` beside the three components.
     """
     import vtk

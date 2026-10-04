@@ -36,8 +36,8 @@ class DiscreteMode:
     ----------
     mode : Mode
         The original analytical mode.  Carries ``omega_c``, ``epsilon_r``,
-        ``mode_type``, and the impedance methods ``z_modal(omega)``,
-        ``z_wave(omega)``, ``gamma(omega)``.
+        ``mode_type``, and the impedance methods ``z_modal(f=...)``,
+        ``z_wave(f=...)``, ``gamma(f=...)``.
     e_u_profile : np.ndarray, shape (N_u,)
         ``E_u`` profile on the plane's u-edges.  A basis vector in the
         ``M_eps``-weighted Hilbert space, so it carries no absolute

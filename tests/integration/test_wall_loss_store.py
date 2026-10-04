@@ -38,7 +38,7 @@ _BCS = {
 
 def _monitor(**kw):
     return MonitorWallLoss(
-        freqs=FREQS,
+        frequencies=FREQS,
         normal="z",
         position=2e-3,
         sigma=SIGMA_CU,
@@ -87,7 +87,7 @@ def test_reader_matches_in_ram_monitor(tmp_path):
 
     loaded = open_project(p).monitors["walls"]
     _assert_same_fraction(loaded.dissipated_fraction, mon.dissipated_fraction)
-    np.testing.assert_array_equal(loaded.f, mon.f)
+    np.testing.assert_array_equal(loaded.f_axis, mon.f_axis)
     _assert_same_fraction(loaded.power_loss(2.5), mon.power_loss(2.5))
     # The tag types survive: BC walls stay face-name strings.
     assert "ymin" in loaded.dissipated_fraction
@@ -117,7 +117,7 @@ def test_resume_bit_exact(tmp_path):
     )
     assert open_project(p).runs["port1_mode0"].n_steps == n1
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["port1_mode0"].n_steps == n_total
     _assert_same_fraction(proj.monitors["walls"].dissipated_fraction, ref_frac)
 
@@ -135,7 +135,7 @@ def test_recipe_roundtrip_carries_the_spec():
     assert back.mu == mon.mu
     assert back.bc_faces == mon.bc_faces
     assert back.roughness == mon.roughness
-    np.testing.assert_array_equal(back.freqs, mon.freqs)
+    np.testing.assert_array_equal(back.frequencies, mon.frequencies)
 
     smooth = _monitor()
     assert _monitor_from_dict(_monitor_to_dict(smooth)).roughness is None
@@ -203,7 +203,7 @@ def test_stale_result_file_is_rejected(tmp_path):
         f.attrs["n_completed"] = int(f.attrs["n_completed"]) - 1
 
     with pytest.raises(ValueError, match="wall_loss.h5 is at step"):
-        resume(p, excited=("port1", 0), total_time_steps=200, verbose=False)
+        resume(p, run=("port1", 0), total_time_steps=200, verbose=False)
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -247,7 +247,7 @@ def test_legacy_partial_file_resumes_bit_exact(tmp_path):
                 for key in raw[grp]:
                     raw[grp][key][...] = np.conj(raw[grp][key][()])
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=n_total, verbose=False)
     _assert_same_fraction(proj.monitors["walls"].dissipated_fraction, ref_frac)
 
     with h5py.File(wl, "r") as f:

@@ -101,7 +101,7 @@ def test_material_carried_roughness_reaches_the_walls():
     cu = Material.lossy_metal("copper", sigma=SIGMA_CU, roughness=ROUGH)
     mesh = Mesh.from_grid(
         grid,
-        regions=[(Material.air(), (0, 0, 0, A, B, D))],
+        regions=[(Material.air(), ((0, 0, 0), (A, B, D)))],
         background=cu,
     )
     res = AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False).run()
@@ -129,8 +129,8 @@ def test_plate_line_alpha_with_roughness():
         z=np.linspace(0, length, 61),
     )
     common = dict(normal="z", position=2e-3, sigma=SIGMA_CU, bc_faces=("ymin", "ymax"))
-    mon_smooth = MonitorWallLoss(freqs=freqs, name="smooth", **common)
-    mon_rough = MonitorWallLoss(freqs=freqs, name="rough", roughness=rough, **common)
+    mon_smooth = MonitorWallLoss(frequencies=freqs, name="smooth", **common)
+    mon_rough = MonitorWallLoss(frequencies=freqs, name="rough", roughness=rough, **common)
     ana = AnalysisScatteringTD(
         mesh=Mesh.from_grid(
             grid,

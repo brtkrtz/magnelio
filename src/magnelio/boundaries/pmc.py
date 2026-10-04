@@ -14,13 +14,13 @@ line — identical to the natural-BC wall of the 2D port mode solver and
 Consequently the runtime BC object performs no field surgery at all:
 it exists as the face-coverage marker for the solver's bbox audit and
 to keep the six-face BC dict explicit.  (The previous implementation
-zeroed tangential H on the first/last *cell-centre* layer, which put
+zeroed tangential H on the first/last *cell-center* layer, which put
 the TD wall Δ/2 *inside* — one full cell off both mode solvers, and
 measurably non-passive S-matrices as a consequence.)
 """
 
 # Design: PORT_MODES_PLAN.md WP-U0 (measured non-passive S-matrix of the old
-# cell-centre wall).
+# cell-center wall).
 
 from __future__ import annotations
 

@@ -100,7 +100,7 @@ def mirror_extend(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Extend one axis of a data array across a mirror plane.
 
-    Returns the extended cell-centre coordinates and the values with
+    Returns the extended cell-center coordinates and the values with
     the sign-weighted mirrored copy prepended (``at_low``) or appended.
     """
     reflected = 2.0 * spec.wall - coords[::-1]

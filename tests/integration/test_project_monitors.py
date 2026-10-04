@@ -101,13 +101,13 @@ def _ref_monitor_data():
     an = _tem_analysis()
     an.run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
     mon = an.monitors[0]
-    return {c: v.copy() for c, v in mon.recording.cell_centred(squeeze=True).items()}, mon.t.copy()
+    return {c: v.copy() for c, v in mon.recording.cell_centered(squeeze=True).items()}, mon.t.copy()
 
 
 def _assert_monitor_matches(reader_mon, ref_data, tag):
     assert set(reader_mon.components) == set(ref_data), f"{tag}: comps differ"
     for comp, ref in ref_data.items():
-        got = reader_mon.recording.cell_centred([comp], squeeze=True)[comp]
+        got = reader_mon.recording.cell_centered([comp], squeeze=True)[comp]
         assert got.shape == ref.shape, f"{tag} {comp}: shape {got.shape} != {ref.shape}"
         assert np.array_equal(got, ref), (
             f"{tag} {comp}: not bit-exact, max|Δ|={float(np.max(np.abs(got - ref))):.3e}"
@@ -161,7 +161,7 @@ def test_monitor_bit_exact_across_resume(tmp_path):
     partial = open_project(p).monitors["Eplane"]
     assert 0 < partial.t.size < ref_t.size
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
     rmon = proj.monitors["Eplane"]
     assert rmon.t.shape == ref_t.shape
     _assert_monitor_matches(rmon, ref_data, "resume")
@@ -233,11 +233,11 @@ def test_multi_run_monitor_selection(tmp_path):
     # at a time (DD-259 step 0).
     pv = pytest.importorskip("pyvista")
     pv.OFF_SCREEN = True
-    pl = m1.show(mode="none", size=(200, 150), t=m1.t[-1])
+    pl = m1.show(render_mode="none", size=(200, 150), t=m1.t[-1])
     sheet = pl.renderer.actors["field_cut"].mapper.dataset
     assert sheet.n_cells > 0
     np.testing.assert_allclose(
         sheet.cell_data["field"].max(),
-        np.sqrt(sum(a[-1] ** 2 for a in m1.recording.cell_centred(squeeze=True).values())).max(),
+        np.sqrt(sum(a[-1] ** 2 for a in m1.recording.cell_centered(squeeze=True).values())).max(),
     )
     pl.close()

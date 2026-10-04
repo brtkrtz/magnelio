@@ -153,7 +153,7 @@ class TestResolveExcitations:
             waveform=signals.WaveformGaussianModulated(f_min=2e9, f_max=8e9),
             amplitude=0.5,
             delay=1e-9,
-            phase=90.0,
+            phase_deg=90.0,
         )
         d = excitation_to_dict(exc)
         assert d["waveform"]["type"] == "WaveformGaussianModulated"

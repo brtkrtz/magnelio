@@ -87,7 +87,7 @@ class TestOperatorConstruction:
         lin = np.linspace(0.0, 2e-3, 3)
         mesh = Mesh.from_grid(
             GridLines(x=lin, y=lin, z=lin),
-            regions=[(_debye_mu(), (0.0, 0.0, 0.0, 1e-3, 1e-3, 1e-3))],
+            regions=[(_debye_mu(), ((0.0, 0.0, 0.0), (1e-3, 1e-3, 1e-3)))],
             boundary_conditions=_BC_OPEN,
         )
         op = DispersionOperator.from_mesh(mesh, DT, side="H")
@@ -260,8 +260,8 @@ class TestCheckpointRewind:
         mesh = Mesh.from_grid(
             _grid(),
             regions=[
-                (both, (0.0, 0.0, 0.0, 3e-3, 6e-3, 6e-3)),
-                (_debye_mu("real_mu_poles"), (3e-3, 0.0, 0.0, 6e-3, 6e-3, 6e-3)),
+                (both, ((0.0, 0.0, 0.0), (3e-3, 6e-3, 6e-3))),
+                (_debye_mu("real_mu_poles"), ((3e-3, 0.0, 0.0), (6e-3, 6e-3, 6e-3))),
             ],
             boundary_conditions=_BC_OPEN,
         )

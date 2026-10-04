@@ -69,8 +69,8 @@ elbow and compares its volume with profile area times spine length.
 
 `Solid.face(near=..., normal=..., surface_type=...)`, `edge(...)` and
 `vertex(...)` now return owner-bound references. Keep enduring selections by
-calling `tag_face`, `tag_edge` or `tag_vertex` before placement, then retrieve
-the name from the placed owner. `faces`, `edges`, `tag_faces` and `tag_edges`
+calling `tagged_face`, `tagged_edge` or `tagged_vertex` before placement, then retrieve
+the name from the placed owner. `faces`, `edges`, `tagged_faces` and `tagged_edges`
 are deliberate set operations. Numeric kernel indices are not supported.
 
 References have no independent transform methods. Detach a face with
@@ -136,7 +136,7 @@ tangent; it determines left/right and is carried without added tangent twist.
 from magnelio import geo
 
 body = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3,
-                    height=6e-3, material="pec").tag_face("port", normal="x")
+                    height=6e-3, material="pec").tagged_face("port", normal="x")
 body = body.rotated("z", 22.5)
 face = body.face("port")
 spine = (geo.Path.from_face(face, up="z")

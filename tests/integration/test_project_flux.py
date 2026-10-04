@@ -134,7 +134,7 @@ def test_flux_bit_exact_across_resume(tmp_path):
     partial = open_project(p).monitors["flux_z"]
     assert 0 < partial.t.size < ref_t.size
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
     rmon = proj.monitors["flux_z"]
     assert rmon.t.shape == ref_t.shape
     assert np.array_equal(rmon.t, ref_t), (

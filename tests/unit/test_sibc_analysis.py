@@ -99,7 +99,7 @@ class TestValidation:
         metal = Material.lossy_metal("cu", sigma=5.8e7)
         mesh = Mesh.from_grid(
             _plate_grid(),
-            regions=[(metal, (3e-3, 2e-3, 10e-3, 7e-3, 3e-3, 20e-3))],
+            regions=[(metal, ((3e-3, 2e-3, 10e-3), (7e-3, 3e-3, 20e-3)))],
             boundary_conditions={
                 "xmin": "PMC",
                 "xmax": "PMC",
@@ -129,8 +129,8 @@ class TestSpecBuild:
         spec = ana._sibc_spec()
         assert sorted(s.tag for s in spec.surfaces) == ["ymax", "ymin"]
         fit = spec.fits["ymin"]
-        assert fit.f_lo == pytest.approx(float(ana.f_axis[0]))
-        assert fit.f_hi == pytest.approx(10e9)
+        assert fit.f_min == pytest.approx(float(ana.f_axis[0]))
+        assert fit.f_max == pytest.approx(10e9)
         assert fit.sigma == SIG
 
     def test_spec_is_cached(self):
@@ -139,7 +139,7 @@ class TestSpecBuild:
 
     def test_wire_wall_monitors_sets_spec(self):
         mon = MonitorWallLoss(
-            freqs=np.linspace(2e9, 10e9, 5),
+            frequencies=np.linspace(2e9, 10e9, 5),
             normal="z",
             position=2e-3,
             sigma=SIG,
@@ -155,7 +155,7 @@ class TestSpecBuild:
 
     def test_perturbative_leaves_monitors_untouched(self):
         mon = MonitorWallLoss(
-            freqs=np.linspace(2e9, 10e9, 5),
+            frequencies=np.linspace(2e9, 10e9, 5),
             normal="z",
             position=2e-3,
             sigma=SIG,
@@ -200,8 +200,8 @@ class TestMonitorSIBCAccounting:
             sigma=SIG,
             mu=1.0,
             roughness=None,
-            f_lo=1e9,
-            f_hi=1e10,
+            f_min=1e9,
+            f_max=1e10,
             c0=c0,
             branches=tuple(branches),
             rel_err_re=0.0,
@@ -224,7 +224,7 @@ class TestMonitorSIBCAccounting:
         spec, mesh = self._spec_and_mesh()
         freqs = np.array([2e9, 5e9, 1e10])
         mon = MonitorWallLoss(
-            freqs=freqs,
+            frequencies=freqs,
             normal="z",
             position=2e-3,
             sibc=spec,
@@ -255,7 +255,7 @@ class TestMonitorSIBCAccounting:
         perturbative monitor (WP-D5 contract)."""
         spec, mesh = self._spec_and_mesh()
         mon = MonitorWallLoss(
-            freqs=np.array([2e9, 1e10]),
+            frequencies=np.array([2e9, 1e10]),
             normal="z",
             position=2e-3,
             sibc=spec,
@@ -280,7 +280,7 @@ class TestMonitorSIBCAccounting:
         spec, mesh = self._spec_and_mesh()
         broken = SIBCSpec(surfaces=spec.surfaces, fits={"ymin": spec.fits["ymin"]})
         mon = MonitorWallLoss(
-            freqs=np.array([2e9]),
+            frequencies=np.array([2e9]),
             normal="z",
             position=2e-3,
             sibc=broken,

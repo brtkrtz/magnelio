@@ -66,8 +66,8 @@ class TestAddPort:
                 PortSpecRectWG(
                     name="p1",
                     plane="zmin",
-                    width_a=22.86e-3,
-                    height_b=10.16e-3,
+                    width=22.86e-3,
+                    height=10.16e-3,
                 )
             )
 

@@ -330,7 +330,7 @@ def test_t6_resume_with_wire_bit_exact(tmp_path):
     )
     assert open_project(p).runs["feed_mode0"].n_steps == n1
 
-    proj = resume(p, excited=("feed", 0), total_time_steps=n_total, verbose=False)
+    proj = resume(p, run=("feed", 0), total_time_steps=n_total, verbose=False)
     gv, gi = proj.signals[("feed", 0)][("feed", 0)]
     np.testing.assert_array_equal(rv, gv.values)
     np.testing.assert_array_equal(ri, gi.values)

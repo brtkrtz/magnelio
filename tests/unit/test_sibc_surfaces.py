@@ -47,7 +47,7 @@ def _brick_mesh():
     pec = Material.lossy_metal("cu", sigma=5.8e7)
     return Mesh.from_grid(
         _grid(),
-        regions=[(pec, (2 * D, 2 * D, 1 * D, 6 * D, 5 * D, 3 * D))],
+        regions=[(pec, ((2 * D, 2 * D, 1 * D), (6 * D, 5 * D, 3 * D)))],
         boundary_conditions=_BC_OPEN,
     )
 
@@ -95,7 +95,7 @@ class TestStaircaseSolids:
         # brick spans x-cells 1..3, y-cells 1..3, z-cells 1..2
         mesh = Mesh.from_grid(
             grid,
-            regions=[(pec, (1e-3, 1e-3, 1 * D, 7e-3, 5.5e-3, 3 * D))],
+            regions=[(pec, ((1e-3, 1e-3, 1 * D), (7e-3, 5.5e-3, 3 * D)))],
             boundary_conditions=_BC_OPEN,
         )
         surf = enumerate_sibc_surfaces(mesh)[0]
@@ -117,8 +117,8 @@ class TestStaircaseSolids:
         mesh = Mesh.from_grid(
             GridLines(x=np.arange(9) * D, y=np.arange(7) * D, z=np.arange(8) * D),
             regions=[
-                (pec, (0.0, 0.0, 1 * D, 8 * D, 6 * D, 3 * D)),
-                (pec, (0.0, 0.0, 4 * D, 8 * D, 6 * D, 6 * D)),
+                (pec, ((0.0, 0.0, 1 * D), (8 * D, 6 * D, 3 * D))),
+                (pec, ((0.0, 0.0, 4 * D), (8 * D, 6 * D, 6 * D))),
             ],
             boundary_conditions=_BC_OPEN,
         )
@@ -141,8 +141,8 @@ class TestStaircaseSolids:
         mesh = Mesh.from_grid(
             GridLines(x=np.arange(9) * D, y=np.arange(7) * D, z=np.arange(8) * D),
             regions=[
-                (m1, (0.0, 0.0, 1 * D, 8 * D, 6 * D, 3 * D)),
-                (m2, (0.0, 0.0, 4 * D, 8 * D, 6 * D, 6 * D)),
+                (m1, ((0.0, 0.0, 1 * D), (8 * D, 6 * D, 3 * D))),
+                (m2, ((0.0, 0.0, 4 * D), (8 * D, 6 * D, 6 * D))),
             ],
             boundary_conditions=_BC_OPEN,
         )
@@ -163,8 +163,8 @@ class TestStaircaseSolids:
         mesh = Mesh.from_grid(
             _grid(),
             regions=[
-                (m1, (0.0, 0.0, 0.0, 4 * D, 6 * D, 2 * D)),
-                (m2, (4 * D, 0.0, 0.0, 8 * D, 6 * D, 2 * D)),
+                (m1, ((0.0, 0.0, 0.0), (4 * D, 6 * D, 2 * D))),
+                (m2, ((4 * D, 0.0, 0.0), (8 * D, 6 * D, 2 * D))),
             ],
             boundary_conditions=_BC_OPEN,
         )
@@ -208,7 +208,7 @@ class TestBoundaryWalls:
         pec = Material.pec()
         mesh = Mesh.from_grid(
             _grid(),
-            regions=[(pec, (2 * D, 2 * D, 0.0, 6 * D, 5 * D, 2 * D))],
+            regions=[(pec, ((2 * D, 2 * D, 0.0), (6 * D, 5 * D, 2 * D)))],
             boundary_conditions=_BC_OPEN,
         )
         surfs = enumerate_sibc_surfaces(mesh, bc_pec_faces=("zmin",))
@@ -246,7 +246,7 @@ class TestResolution:
         pec = Material.pec()
         mesh = Mesh.from_grid(
             _grid(),
-            regions=[(pec, (2 * D, 2 * D, 1 * D, 6 * D, 5 * D, 3 * D))],
+            regions=[(pec, ((2 * D, 2 * D, 1 * D), (6 * D, 5 * D, 3 * D)))],
             boundary_conditions=_BC_OPEN,
         )
         surfs = enumerate_sibc_surfaces(mesh)

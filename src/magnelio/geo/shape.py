@@ -693,7 +693,7 @@ class Solid(Shape):
     accept only ``Solid`` operands.
     """
 
-    def imprint(self, cutter):
+    def imprinted(self, cutter):
         """Split this body's boundary faces along a cutter's intersection.
 
         The receiver keeps its volume and material. Only its boundary
@@ -753,7 +753,7 @@ class Solid(Shape):
             self, "face", name, near=near, normal=normal, surface_type=surface_type, plural=False
         )
 
-    def tag_face(self, name, *, near=None, normal=None, surface_type=None):
+    def tagged_face(self, name, *, near=None, normal=None, surface_type=None):
         """Register an immutable named face selection.
 
         Parameters
@@ -815,7 +815,7 @@ class Solid(Shape):
             self, "face", name, near=near, normal=normal, surface_type=surface_type, plural=True
         )
 
-    def tag_faces(self, name, *, near=None, normal=None, surface_type=None):
+    def tagged_faces(self, name, *, near=None, normal=None, surface_type=None):
         """Register an immutable named set of faces.
 
         Parameters
@@ -873,7 +873,7 @@ class Solid(Shape):
 
         return select(self, "edge", name, near=near, curve_type=curve_type, plural=False)
 
-    def tag_edge(self, name, *, near=None, curve_type=None):
+    def tagged_edge(self, name, *, near=None, curve_type=None):
         """Register an immutable named edge selection.
 
         Parameters
@@ -925,7 +925,7 @@ class Solid(Shape):
 
         return select(self, "edge", name, near=near, curve_type=curve_type, plural=True)
 
-    def tag_edges(self, name, *, near=None, curve_type=None):
+    def tagged_edges(self, name, *, near=None, curve_type=None):
         """Register an immutable named set of edges.
 
         Parameters
@@ -976,7 +976,7 @@ class Solid(Shape):
 
         return select(self, "vertex", name, near=near, plural=False)
 
-    def tag_vertex(self, name, *, near=None):
+    def tagged_vertex(self, name, *, near=None):
         """Register an immutable named vertex selection.
 
         Parameters

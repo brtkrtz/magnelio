@@ -202,7 +202,7 @@ class Profile(Sheet):
         Parameters
         ----------
         center : tuple of float
-            World centre [meters].
+            World center [meters].
         size : tuple of float
             Positive width and height [meters].
         normal : str or sequence of float, optional
@@ -254,7 +254,7 @@ class Profile(Sheet):
         Parameters
         ----------
         center : tuple of float
-            World centre [meters].
+            World center [meters].
         radius : float
             Positive radius [meters].
         normal : str or sequence of float, optional

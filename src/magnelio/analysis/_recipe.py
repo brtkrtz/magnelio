@@ -139,7 +139,7 @@ def _waveform_to_dict(wf) -> dict | None:
         return {
             "type": "WaveformSine",
             "f": float(wf.f),
-            "phase": float(wf.phase),
+            "phase": float(wf.phase_deg),
             "rise_time": None if wf.rise_time is None else float(wf.rise_time),
         }
     if isinstance(wf, WaveformStep):
@@ -191,7 +191,7 @@ def _waveform_from_dict(d: dict | None):
     if t == "WaveformSine":
         return WaveformSine(
             f=float(d["f"]),
-            phase=float(d.get("phase", 0.0)),
+            phase_deg=float(d.get("phase", 0.0)),
             rise_time=None if d.get("rise_time") is None else float(d["rise_time"]),
         )
     if t == "WaveformStep":
@@ -231,7 +231,7 @@ def excitation_to_dict(exc) -> dict:
         "waveform": _waveform_to_dict(exc.waveform),
         "amplitude": float(exc.amplitude),
         "delay": float(exc.delay),
-        "phase": float(exc.phase),
+        "phase": float(exc.phase_deg),
     }
 
 
@@ -245,7 +245,7 @@ def excitation_from_dict(d: dict):
         waveform=_waveform_from_dict(d.get("waveform")),
         amplitude=float(d.get("amplitude", 1.0)),
         delay=float(d.get("delay", 0.0)),
-        phase=float(d.get("phase", 0.0)),
+        phase_deg=float(d.get("phase", 0.0)),
     )
 
 
@@ -295,10 +295,10 @@ def _spec_to_dict(spec) -> dict:
         )
     elif isinstance(spec, PortSpecRectWG):
         d.update(
-            width_a=float(spec.width_a),
-            height_b=float(spec.height_b),
+            width_a=float(spec.width),
+            height_b=float(spec.height),
             epsilon_r=float(spec.epsilon_r),
-            center=_to_json(spec.center),
+            center=_to_json(spec.origin),
         )
     elif isinstance(spec, PortSpecNumerical):
         d.update(
@@ -368,10 +368,10 @@ def _spec_from_dict(d: dict):
         return PortSpecRectWG(
             name=d["name"],
             plane=plane,
-            width_a=float(d["width_a"]),
-            height_b=float(d["height_b"]),
+            width=float(d["width_a"]),
+            height=float(d["height_b"]),
             epsilon_r=float(d["epsilon_r"]),
-            center=_to_tuple(d["center"]),
+            origin=_to_tuple(d["center"]),
             n_modes=int(d["n_modes"]),
         )
     if t == "PortSpecNumerical":
@@ -491,7 +491,7 @@ def _monitor_to_dict(mon) -> dict:
         return {
             "type": "MonitorFieldFrequency",
             "corners": _corners_to_json(mon.corners),
-            "freqs": [float(fr) for fr in mon.freqs],
+            "freqs": [float(fr) for fr in mon.frequencies],
             "fields": list(mon.fields),
             "name": mon.name,
         }
@@ -503,7 +503,7 @@ def _monitor_to_dict(mon) -> dict:
 
         return {
             "type": "MonitorWallLoss",
-            "freqs": [float(fr) for fr in mon.freqs],
+            "freqs": [float(fr) for fr in mon.frequencies],
             "normal": mon.normal,
             "position": _num_to_json(mon.position),
             "sigma": None if mon.sigma is None else float(mon.sigma),
@@ -517,7 +517,7 @@ def _monitor_to_dict(mon) -> dict:
     if isinstance(mon, MonitorFarFieldFrequency):
         return {
             "type": "MonitorFarFieldFrequency",
-            "freqs": [float(fr) for fr in mon.freqs],
+            "freqs": [float(fr) for fr in mon.frequencies],
             "margin_cells": int(mon.margin_cells),
             "name": mon.name,
         }
@@ -559,7 +559,7 @@ def _monitor_from_dict(d: dict):
     if d["type"] == "MonitorFieldFrequency":
         return MonitorFieldFrequency(
             corners=_corners_from_json(d["corners"]),
-            freqs=[float(fr) for fr in d["freqs"]],
+            frequencies=[float(fr) for fr in d["freqs"]],
             fields=list(d["fields"]),
             name=d["name"],
         )
@@ -568,7 +568,7 @@ def _monitor_from_dict(d: dict):
         from magnelio.monitors.wall_loss import MonitorWallLoss  # noqa: PLC0415
 
         return MonitorWallLoss(
-            freqs=[float(fr) for fr in d["freqs"]],  # __post_init__ asarrays
+            frequencies=[float(fr) for fr in d["freqs"]],  # __post_init__ asarrays
             normal=str(d["normal"]),
             position=float(_num_from_json(d["position"])),
             sigma=None if d["sigma"] is None else float(d["sigma"]),
@@ -581,7 +581,7 @@ def _monitor_from_dict(d: dict):
         from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
         return MonitorFarFieldFrequency(
-            freqs=[float(fr) for fr in d["freqs"]],
+            frequencies=[float(fr) for fr in d["freqs"]],
             margin_cells=int(d.get("margin_cells", 3)),
             name=d["name"],
         )

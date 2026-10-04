@@ -42,8 +42,8 @@ from magnelio.ports._modal.factory import (
         PortSpecRectWG(
             name="p_rect",
             plane=BoxFace.X_MIN,
-            width_a=22.86e-3,
-            height_b=10.16e-3,
+            width=22.86e-3,
+            height=10.16e-3,
             n_modes=2,
         ),
         PortSpecCoax(

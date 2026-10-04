@@ -115,7 +115,7 @@ def test_coverage_tiles_are_the_geometric_pec_share(coax):
     j0 = _cell(g, "y", 0.125e-3)
     assert fraction[i, j0] == pytest.approx(0.91, abs=0.02)
     # cell straddling the outer rim is partly PEC background,
-    # a cell well inside the annulus is free, the pin centre is full
+    # a cell well inside the annulus is free, the pin center is full
     assert 0.0 < fraction[_cell(g, "x", -1.95e-3), _cell(g, "y", 1.58e-3)] < 1.0
     assert fraction[_cell(g, "x", 1.5e-3), _cell(g, "y", 0.0)] == 0.0
     assert fraction[_cell(g, "x", 0.1e-3), _cell(g, "y", 0.1e-3)] == 1.0

@@ -74,7 +74,7 @@ def _tem_analysis(project=None):
     analysis.monitors = (
         MonitorFieldFrequency(
             corners=((None, None, 0.0), (None, None, 0.0)),
-            freqs=FREQS,
+            frequencies=FREQS,
             fields=["E"],
             name="EHfreq",
         ),
@@ -87,14 +87,14 @@ def _ref_freq_data():
     an = _tem_analysis()
     an.run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
     mon = an.monitors[0]
-    return {c: v.copy() for c, v in mon.spectrum.cell_centred(squeeze=True).items()}
+    return {c: v.copy() for c, v in mon.spectrum.cell_centered(squeeze=True).items()}
 
 
 def _assert_freq_matches(reader_mon, ref_data, tag):
     assert set(reader_mon.components) == set(ref_data), f"{tag}: comps differ"
-    assert np.array_equal(reader_mon.f, FREQS), f"{tag}: freq axis differs"
+    assert np.array_equal(reader_mon.f_axis, FREQS), f"{tag}: freq axis differs"
     for comp, ref in ref_data.items():
-        got = reader_mon.spectrum.cell_centred([comp], squeeze=True)[comp]
+        got = reader_mon.spectrum.cell_centered([comp], squeeze=True)[comp]
         assert got.shape == ref.shape, f"{tag} {comp}: shape {got.shape} != {ref.shape}"
         assert np.array_equal(got, ref), (
             f"{tag} {comp}: not bit-exact, max|Δ|={float(np.max(np.abs(got - ref))):.3e}"
@@ -126,7 +126,7 @@ def test_streamed_freq_matches_in_ram(tmp_path):
     # accumulators — whose data still matches, so .plot() works off-store.
     hyd = rmon._hydrate()
     for comp, ref in ref_data.items():
-        assert np.array_equal(hyd.spectrum.cell_centred([comp], squeeze=True)[comp], ref), (
+        assert np.array_equal(hyd.spectrum.cell_centered([comp], squeeze=True)[comp], ref), (
             f"hydrate {comp}"
         )
     assert hyd._region is not None and hyd._region.ndim == 2
@@ -150,11 +150,11 @@ def test_freq_partial_then_bit_exact_across_resume(tmp_path):
     )
     # A partial DFT is already readable — same shape, but not yet the full sum.
     partial = open_project(p).monitors["EHfreq"]
-    pz = partial.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"]
+    pz = partial.spectrum.cell_centered(["Ez"], squeeze=True)["Ez"]
     assert pz.shape == ref_data["Ez"].shape
     assert not np.array_equal(pz, ref_data["Ez"]), "partial DFT should differ from the finished one"
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
     _assert_freq_matches(proj.monitors["EHfreq"], ref_data, "resume")
 
 
@@ -186,7 +186,7 @@ def test_interval_survives_the_store_round_trip(tmp_path):
     an.monitors = (
         MonitorFieldFrequency(
             corners=((None, None, 0.0), (None, None, 0.0)),
-            freqs=FREQS,
+            frequencies=FREQS,
             fields=["E"],
             interval=interval,
             name="EHfreq",
@@ -206,7 +206,7 @@ def test_interval_survives_the_store_round_trip(tmp_path):
     # to the PEC plane the monitor sits on, so it holds only roundoff.
     ref = _ref_freq_data()
     comp = max(ref, key=lambda c: float(np.max(np.abs(ref[c]))))
-    got = mon.spectrum.cell_centred([comp], squeeze=True)[comp]
+    got = mon.spectrum.cell_centered([comp], squeeze=True)[comp]
     scale = float(np.max(np.abs(ref[comp])))
     assert not np.array_equal(got, ref[comp])
     assert float(np.max(np.abs(got - ref[comp]))) < 1e-2 * scale
@@ -273,7 +273,7 @@ def test_legacy_partial_file_resumes_bit_exact(tmp_path):
     ff = p / "runs" / "port1_mode0" / "fields_freq.h5"
     _demodernise_freq_file(ff)
 
-    proj = resume(p, excited=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
+    proj = resume(p, run=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
     _assert_freq_matches(proj.monitors["EHfreq"], ref_data, "legacy resume")
 
     # The finished run rewrote the file, so it is stamped again.

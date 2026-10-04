@@ -5,12 +5,12 @@ Analysis setup constructs material operators and estimates a stable time
 step before allocating the fields. Temporary setup arrays can exceed the
 memory held during time integration.
 
-`AnalysisTD.estimate()` and `AnalysisScatteringTD.estimate()` report
+`AnalysisTD.estimate_memory()` and `AnalysisScatteringTD.estimate_memory()` report
 allocation budgets without building material matrices, solving ports,
 computing a CFL eigenvalue, attaching monitors or creating project files:
 
 ```python
-estimate = analysis.estimate(excited=["input"])
+estimate = analysis.estimate_memory(excited=["input"])
 print(estimate)
 ```
 
@@ -77,8 +77,8 @@ capped at one snapshot per step.
 Supply the same explicit limits intended for the run:
 
 ```python
-estimate = analysis.estimate(total_time_steps=200_000)
-estimate = analysis.estimate(max_time_steps=500_000)
+estimate = analysis.estimate_memory(total_time_steps=200_000)
+estimate = analysis.estimate_memory(max_time_steps=500_000)
 ```
 
 The automatic runtime cap depends on prepared ports and waveforms. The
@@ -87,7 +87,7 @@ duration requires the step to account for rounding and the monitor's
 half-step acceptance window:
 
 ```python
-estimate = analysis.estimate(t_end=20e-9, dt=1e-12)
+estimate = analysis.estimate_memory(t_end=20e-9, dt=1e-12)
 ```
 
 `dt=` is an assumed scenario, not a solver override. If omitted, a cached
@@ -106,3 +106,8 @@ excluding geometry, mesh files, port signals, checkpoints and HDF5 overhead.
 Frequency monitors hold one complex128 array per recorded component and
 frequency, independently of run length and field precision. They continue
 to need those accumulators in RAM on a project-backed run.
+
+The returned `MemoryEstimate.n_runs` counts sequential runs; collections of
+actual runs remain `runs`. The method is `estimate_memory()` on both
+`AnalysisTD` and `AnalysisScatteringTD`. Its `dt`, `backend` and `t_end`
+assumptions describe an estimate scenario and do not configure a later run.

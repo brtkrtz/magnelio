@@ -83,7 +83,7 @@ Three rules follow from the waveforms:
   the decay criteria are switched off.
 - Frequency-domain monitors keep their raw transient bins.  With
   several drives there is no single reference spectrum to divide out,
-  so `result.renormalize(name)` names the excitation the monitors
+  so `result.normalize_to_excitation(name)` names the excitation the monitors
   should refer to; the scattering analysis does this for you with the
   excited channel's waveform.
 
@@ -315,7 +315,7 @@ averaged until a picture asks for it:
 
 - **`FieldState`** — one snapshot: the six components at their own
   positions (`component`, `positions`), at arbitrary points (`at`),
-  averaged onto cell centres (`cell_centred`), sliced (`plot`), in 3D
+  averaged onto cell centres (`cell_centered`), sliced (`plot`), in 3D
   (`show`), continued across the model's symmetry planes
   (`mirrored`), and written back into a run as an initial field.
   Eigenmodes hand one out per mode.
@@ -325,7 +325,7 @@ averaged until a picture asks for it:
   `FieldState`s, `component(name)` the whole stack; a frame becomes
   the start of a new run (`SourceFieldInitial.from_recording`).
 - **`FieldSpectrum`** — complex frames, one per frequency:
-  `at_frequency(f)` is the complex pattern, `snapshot(f, phase=…)` its
+  `at_frequency(f)` is the complex pattern, `snapshot(f, phase_deg=…)` its
   real field at an instant.
 
 Both series may hold a subset of the six components (`components`);
@@ -429,7 +429,7 @@ A field monitor records the *grid quantities on the Yee positions* of
 its region — a copy of the solver's own samples, nothing averaged — and
 hands them out as a `FieldRecording` (`monitor.recording`) or, for the
 running transform, a `FieldSpectrum` (`monitor.spectrum`); a
-cell-centred array is one call away (`recording.cell_centred(...)`),
+cell-centred array is one call away (`recording.cell_centered(...)`),
 but nothing is averaged until asked for.  The recording's
 `times` are the instants of the electric field, `times_h` those of the
 magnetic one, half a step later.  A project store keeps the same
@@ -441,7 +441,7 @@ it through the recorded volume — see [the viewer chapter](viewer.md).
 
 A plotted field plane is one *layer* of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
-title is the cell-centre coordinate the request snapped to.  Geometry
+title is the cell-center coordinate the request snapped to.  Geometry
 overlays follow the same rule: thin wires, discrete ports and lumped
 elements are drawn when they lie inside the displayed layer, so a wire
 declared on the grid nodes half a cell away still appears in the
@@ -508,7 +508,7 @@ time monitor (`<monitor>/t_0000.vtr`, …) or per frequency of a
 frequency monitor (`f_0000.vtr`, …), collected by a `<monitor>.pvd`
 whose axis is the frame's electric instant, or its frequency.  The
 files hold *cell data*: the recorded components averaged onto the
-cell centres at export time — the numbers `recording.cell_centred()`
+cell centres at export time — the numbers `recording.cell_centered()`
 returns — and the vectors `E` and `H` where a group was recorded
 whole.  ParaView reads plain VTK and never touches the staggered
 frames in `results.h5` or `fields_freq.h5`.  The copy takes about as
@@ -601,3 +601,22 @@ filter — the generated script shims that for `paraview --script` and
 for the bake, but a state file opened on such a build cannot be
 helped, since ParaView's own filter preamble runs before any script of
 ours.  Use `paraview --script=` there, or a newer ParaView.
+
+## Coordinates, sampled axes and phase inputs
+
+Requested frequency samples on monitors are `frequencies`; returned sampled
+spectral axes are `f_axis`, including `FieldSpectrum` and `Signal1D`.
+Eigenmode results retain `frequencies` for their physical eigenfrequencies.
+Use `frame` for a recording index and `t` or `f` for a physical frame choice;
+conflicting selectors fail. Degree-valued excitation, sine-wave and display
+inputs are `phase_deg`, with the same sign and delay convention as before.
+
+`normalize_to_excitation(signal)` changes a frequency monitor's response
+reference and can replace it later. `is_normalized_to_excitation` reports
+that state. Raw bins and `spectrum_raw` retain their original values.
+Networks separately use `renormalize(z_ref)` to produce a new S-matrix.
+
+A surface record's `normal_positions` holds layer coordinates in metres.
+`ComponentRecord.at(..., position=...)` and
+`FaceRecord.resample(..., position=...)` interpolate at that coordinate;
+`normal` remains an axis or vector in APIs that describe orientation.

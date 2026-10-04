@@ -619,7 +619,7 @@ class TestWallLossFullModel:
 
         mesh = Mesh.from_geometry(_layered_model(0.0, decl), CONTROL, F_MAX)
         mon = MonitorWallLoss(
-            freqs=[10e9],
+            frequencies=[10e9],
             normal=normal,
             position=position,
             sigma=5.8e7,

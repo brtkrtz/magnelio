@@ -136,7 +136,7 @@ def test_inhomogeneous_two_conductor_resolves_to_qtem():
     diel = Material.from_isotropic("diel", epsilon=4.0)
     mesh = Mesh.from_grid(
         grid,
-        regions=[(diel, (-5e-3, -2.5e-3, -10e-3, 5e-3, 0.0, 10e-3))],
+        regions=[(diel, ((-5e-3, -2.5e-3, -10e-3), (5e-3, 0.0, 10e-3)))],
     )
     analysis = AnalysisScatteringTD(
         mesh=mesh.with_boundary_conditions(
@@ -193,7 +193,7 @@ def test_port_analytical_maps_to_closed_form_specs():
     )
     spec = resolve_declarative_port(rect, mesh)
     assert isinstance(spec, PortSpecRectWG)
-    assert (spec.width_a, spec.height_b) == (WR90_A, WR90_B)
+    assert (spec.width, spec.height) == (WR90_A, WR90_B)
 
 
 def test_declarative_validation():

@@ -1,4 +1,4 @@
-"""``Project.monitor()``: a widget panel a background thread keeps current."""
+"""``Project.watch_panel()``: a widget panel a background thread keeps current."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ def _finished_project(tmp_path):
 def test_panel_shows_the_table_and_a_picture_and_stops(tmp_path):
     ipywidgets = pytest.importorskip("ipywidgets")
     proj = _finished_project(tmp_path)
-    panel = proj.monitor(interval=0.05)
+    panel = proj.watch_panel(interval=0.05)
     assert isinstance(panel, ipywidgets.VBox)
     table, picture = panel.children
     assert isinstance(table, ipywidgets.HTML)
@@ -44,13 +44,13 @@ def test_panel_shows_the_table_and_a_picture_and_stops(tmp_path):
 def test_rejects_a_bad_interval(tmp_path):
     pytest.importorskip("ipywidgets")
     with pytest.raises(ValueError, match="interval"):
-        _finished_project(tmp_path).monitor(interval=0.0)
+        _finished_project(tmp_path).watch_panel(interval=0.0)
 
 
 def test_names_the_extra_when_ipywidgets_is_missing(tmp_path, monkeypatch):
     monkeypatch.setitem(sys.modules, "ipywidgets", None)
     with pytest.raises(ImportError, match=r"magnelio\[jupyter\]"):
-        _finished_project(tmp_path).monitor()
+        _finished_project(tmp_path).watch_panel()
 
 
 class TestFollow:

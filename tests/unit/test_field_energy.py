@@ -362,7 +362,7 @@ class TestMonitorsCarryTheOperators:
         mon = MonitorFieldFrequency(
             name="f",
             corners=((None, None, 2e-3), (None, None, 2e-3)),
-            freqs=[1e9],
+            frequencies=[1e9],
             fields=["E", "H"],
         )
         mon.attach(mesh)
@@ -373,7 +373,7 @@ class TestMonitorsCarryTheOperators:
         twin = MonitorFieldFrequency(
             name="f",
             corners=((None, None, 2e-3), (None, None, 2e-3)),
-            freqs=[1e9],
+            frequencies=[1e9],
             fields=["E", "H"],
         )
         twin.attach(mesh)

@@ -9,9 +9,29 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- Public API names now distinguish physical frequency in Hz, excitation
+  normalization, rectangular corner origins, field frames and eigenmodes,
+  renderer options, stored-run selection and per-run counts. Immutable
+  geometry operations use `tagged_*` and `imprinted`. The
+  `migration-api-naming` guide lists every breaking mapping; existing
+  supported projects retain their coordinates, units and checkpoint meaning.
+- Sampled spectral axes use `f_axis`, requested recording samples use
+  `frequencies`, degree-valued phase inputs use `phase_deg`, and cell-centered
+  field access uses US spelling. Memory estimates use `estimate_memory`
+  and `n_runs`; material grid regions accept two 3D corners.
+
+### Removed
+
+- Geometry's deprecated `plot` aliases and the surface-current
+  `current_through` integral. Use `show` for interactive geometry and read
+  the local surface-current vector or magnitude for current distributions.
+
+
 ### Added
 
-- Time-domain analyses provide `estimate()` allocation budgets before
+- Time-domain analyses provide `estimate_memory()` allocation budgets before
   operator construction, including phase peaks, CPU/GPU scenarios and
   time/frequency field-monitor storage. Unknown recording horizons and
   unmodelled auxiliary allocations are reported explicitly. The memory

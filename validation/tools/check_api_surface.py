@@ -53,6 +53,31 @@ EXPECTED_CORE = frozenset(
 )
 
 
+# Deliberately reachable plumbing, excluded from the curated API (DD-117).
+SOFT_PRIVATE = frozenset(
+    {
+        ("magnelio.analysis", "ScatteringResultMixin"),
+        ("magnelio.geo", "operand"),
+        ("magnelio.monitors", "MonitorRegion"),
+        ("magnelio.post", "destaggered_power_waves"),
+        *(
+            ("magnelio.ports", name)
+            for name in (
+                "PortOperatorLumped",
+                "build_lumped_port",
+                "PortOperatorBandDTBC",
+                "PortOperatorModal",
+                "PortPlane",
+                "build_band_dtbc_port",
+                "build_modal_port",
+                "Port",
+                "PortSignalRecorder",
+            )
+        ),
+    }
+)
+
+
 def _public_namespaces() -> list[types.ModuleType]:
     """Top-level package plus every non-underscore direct subpackage/module."""
     namespaces = [magnelio]
@@ -107,7 +132,7 @@ def main() -> int:
             if mod is not magnelio and attr in magnelio.__all__:
                 continue
             origin = getattr(obj, "__module__", "") or ""
-            if origin == mod.__name__ or (mod is magnelio and origin.startswith("magnelio")):
+            if origin.startswith("magnelio") and (mod.__name__, attr) not in SOFT_PRIVATE:
                 problems.append(
                     f"{mod.__name__}: leaked public attribute {attr!r} (not in __all__)"
                 )

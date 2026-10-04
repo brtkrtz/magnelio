@@ -83,7 +83,7 @@ class MonitorRegion:
         Cell-index slices (stop-exclusive) into cell-centred arrays of shape
         ``(Nx, Ny, Nz)``.
     xc, yc, zc : np.ndarray
-        Cell-centre coordinates within the region.
+        Cell-center coordinates within the region.
     ndim : int
         Effective dimensionality (0, 1, 2, or 3).
     """
@@ -98,7 +98,7 @@ class MonitorRegion:
 
 
 def _cell_centres(nodes: np.ndarray) -> np.ndarray:
-    """Cell-centre coordinates from node positions."""
+    """Cell-center coordinates from node positions."""
     return 0.5 * (nodes[:-1] + nodes[1:])
 
 
@@ -180,7 +180,7 @@ def _corners_from_array(arr) -> tuple[tuple[float, float, float], tuple[float, f
 
 
 def resolve_region(corners, grid: GridLines) -> MonitorRegion:
-    """Snap a corner-box specification to cell-centre indices.
+    """Snap a corner-box specification to cell-center indices.
 
     Parameters
     ----------
@@ -253,13 +253,13 @@ class PlaneView:
     Attributes
     ----------
     free : list[tuple[int, np.ndarray]]
-        The two in-plane axes as ``(axis_index, cell_centres)`` pairs,
+        The two in-plane axes as ``(axis_index, cell_centers)`` pairs,
         in ascending axis order.
     normal_idx : int
         Axis index (0/1/2) of the plane normal.
     normal_pos : float
         Position of the plane along the normal axis [m] (snapped to
-        the nearest cell centre for 3D regions).
+        the nearest cell center for 3D regions).
     slice_index : int or None
         Index to take along ``normal_idx`` in the (unsqueezed) spatial
         data arrays; ``None`` for 2D regions whose arrays are already
@@ -287,7 +287,7 @@ def resolve_plane_view(region: MonitorRegion, normal: str | None, position: floa
     For a 2D region the plane is fixed by the region itself; *normal*
     (if given) is validated against it and *position* is ignored.  For
     a 3D region *normal* selects the slice axis and *position* [m] is
-    snapped to the nearest cell-centre plane.
+    snapped to the nearest cell-center plane.
     """
     coords = [region.xc, region.yc, region.zc]
 

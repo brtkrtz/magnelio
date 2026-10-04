@@ -123,7 +123,7 @@ class TestRectImpedances:
     def test_te10_z_wave_propagating(self):
         modes = _wr90().solve(n_modes=1, f_calc=10e9)
         omega = 2 * math.pi * 10e9
-        z = modes[0].z_wave(omega)
+        z = modes[0].z_wave(f=(omega) / (2.0 * math.pi))
         # Z_TE = ωμ/β where β = √(ω² - ω_c²)/c (for ε_r=1)
         omega_c = modes[0].omega_c
         beta = math.sqrt(omega**2 - omega_c**2) / C0
@@ -134,7 +134,7 @@ class TestRectImpedances:
     def test_evanescent_te10_below_cutoff(self):
         modes = _wr90().solve(n_modes=1, f_calc=10e9)
         # TE10 cutoff ~6.56 GHz; query at 5 GHz is evanescent
-        z = modes[0].z_wave(2 * math.pi * 5e9)
+        z = modes[0].z_wave(f=(2 * math.pi * 5e9) / (2.0 * math.pi))
         assert z.real == pytest.approx(0.0, abs=1e-12)
         assert z.imag > 0.0
 

@@ -67,7 +67,7 @@ class TestPortDrive:
         td = general.run(excitations=["p1"], energy_stop_db=40.0)
 
         assert isinstance(td, TDResult)
-        assert td.n_steps == s_res.n_actual_steps
+        assert td.n_steps == s_res.max_run_steps
         assert td.stop_reason == s_res.settings.stop_reason
         assert td.settings.excitations == (("p1", 0),)
         for chan, (v, i) in s_res.signals[("p1", 0)].items():
@@ -150,7 +150,7 @@ class TestSourceDrive:
         assert drive.values.max() == pytest.approx(2.0, rel=2e-3)
         assert isinstance(res.excitations[0].waveform, signals.WaveformGaussian)
         assert res.monitors["probe"] is probe
-        ex = np.asarray(probe.recording.cell_centred(["Ex"], squeeze=True)["Ex"])
+        ex = np.asarray(probe.recording.cell_centered(["Ex"], squeeze=True)["Ex"])
         assert np.max(np.abs(ex)) > 1e-3
         assert res.energy_trace is not None
 

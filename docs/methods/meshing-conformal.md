@@ -252,7 +252,7 @@ as hairlines, absorber cells hatched, the exact section outline on top
   the colour of its material, blended towards conductor grey by that
   share.  A round conductor is a round disc here.
 - `fill="material"` — the classification: the material whose volume
-  contains the cell centre.  This is the staircase *baseline* that the
+  contains the cell center.  This is the staircase *baseline* that the
   sub-cell values override on every cut cell, not the accuracy of the
   discretisation; thin sheets do not appear in it.
 - `fill="conformal"` — the permittivity $\bar\varepsilon$ the electric

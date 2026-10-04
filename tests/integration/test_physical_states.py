@@ -75,14 +75,14 @@ def test_absolute_fields_per_1w_cw(grid_fn):
     independence + absolute scale in one gate)."""
     mon = MonitorFieldFrequency(
         corners=((W / 2, B / 2, L / 2), (W / 2, B / 2, L / 2)),
-        freqs=F_GATE,
+        frequencies=F_GATE,
         fields=["Ey", "Hx"],
         name="pt",
     )
     res, zline = _run_plate(grid_fn(), [mon])
-    mon.renormalize(res.reference_signal)
+    mon.normalize_to_excitation(res.reference_signal)
 
-    cc = mon.spectrum.cell_centred(["Ey", "Hx"])
+    cc = mon.spectrum.cell_centered(["Ey", "Hx"])
     ey = float(np.abs(np.asarray(cc["Ey"]).reshape(-1)[0]))
     hx = float(np.abs(np.asarray(cc["Hx"]).reshape(-1)[0]))
     # The magnetic walls sit half an outer x-cell beyond the outermost
@@ -123,16 +123,16 @@ def test_grid_independence_absolute_values():
     for tag, grid_fn in (("u", _grid_uniform), ("g", _grid_graded_y)):
         mon = MonitorFieldFrequency(
             corners=((W / 2, B / 2, L / 2), (W / 2, B / 2, L / 2)),
-            freqs=F_GATE,
+            frequencies=F_GATE,
             fields=["Ey"],
             name="pt",
         )
         flux = MonitorFluxTime(normal="z", position=L / 2, name="fluxz")
         res, _ = _run_plate(grid_fn(), [mon, flux])
-        mon.renormalize(res.reference_signal)
+        mon.normalize_to_excitation(res.reference_signal)
         a1 = res.a("p1")
         vals[tag] = (
-            float(np.abs(np.asarray(mon.spectrum.cell_centred(["Ey"])["Ey"]).reshape(-1)[0])),
+            float(np.abs(np.asarray(mon.spectrum.cell_centered(["Ey"])["Ey"]).reshape(-1)[0])),
             float(np.trapezoid(flux.power, flux.t)) / float(np.trapezoid(a1.values**2, a1.t)),
         )
 
@@ -169,7 +169,7 @@ def test_modal_state_scale_pinned_at_source():
         3e9,
     )
     dm = op.discrete_modes[0]
-    z = float(dm.mode.z_modal(2 * np.pi * 3e9).real)
+    z = float(dm.mode.z_modal(f=(2 * np.pi * 3e9) / (2.0 * np.pi)).real)
     src = float(op._source_scale[0])
 
     prof = dm.e_v_profile
@@ -265,5 +265,5 @@ def test_plane_wave_amplitude_is_physical():
     )
     solver.run()
 
-    peak = float(np.max(np.abs(mon.recording.cell_centred(["Ex"])["Ex"])))
+    peak = float(np.max(np.abs(mon.recording.cell_centered(["Ex"])["Ex"])))
     assert abs(peak - 1.0) < 0.05, f"plane-wave monitor peak {peak:.4f} V/m, want 1 V/m"

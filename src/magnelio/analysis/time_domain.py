@@ -184,7 +184,7 @@ def _port_stage(name: str, index: int, total: int) -> str:
 class _LumpedModeStub:
     """Mode-shaped stub for ``PortOperatorLumped`` in compute_s_parameters.
 
-    ``compute_s_parameters`` only ever calls ``mode.z_modal(omega)`` on
+    ``compute_s_parameters`` only ever calls ``mode.z_modal(f=...)`` on
     the per-port Mode list to evaluate the reference impedance for
     power-wave decomposition.  A lumped port has a frequency-
     independent Thévenin impedance, so this stub returns ``Z0`` for any
@@ -194,8 +194,8 @@ class _LumpedModeStub:
 
     z0: float
 
-    def z_modal(self, omega: float) -> complex:
-        del omega
+    def z_modal(self, *, f: float) -> complex:
+        del f
         return complex(self.z0)
 
     @property
@@ -265,7 +265,7 @@ def _power_wave_signal(
         raise ValueError(
             f"mode index {mode} out of range for port {port!r} with {len(modes)} mode(s)",
         )
-    Z = complex(modes[mode].z_modal(2.0 * math.pi * float(f_ref)))
+    Z = complex(modes[mode].z_modal(f=(2.0 * math.pi * float(f_ref)) / (2.0 * math.pi)))
     if abs(Z.imag) > 1e-9 * abs(Z):
         raise ValueError(
             f"z_modal({f_ref:.4g} Hz) = {Z:.4g} is not real "
@@ -348,7 +348,7 @@ class TDResult:
         The run's monitors by name, holding their recorded data.
         Frequency-domain monitors keep the *raw* transient bins: with
         several waveforms in one run there is no single reference
-        spectrum to divide out, so :meth:`renormalize` is your call.
+        spectrum to divide out, so :meth:`normalize_to_excitation` is your call.
     port_modes, port_normal_dx, port_line_params : dict or None
         The port records behind :meth:`a` / :meth:`b`.
     settings : RunSettings or None
@@ -429,7 +429,7 @@ class TDResult:
             The channel.
         f_ref : float, optional
             Frequency [Hz] at which the modal reference impedance is
-            evaluated; default the centre of the excitations' band.
+            evaluated; default the center of the excitations' band.
         destagger : bool, default True
             Use the port's certified discrete line parameters for the
             V/I half-cell alignment (the S-parameter convention).
@@ -460,7 +460,7 @@ class TDResult:
             destagger,
         )
 
-    def renormalize(self, name: str, mode: int = 0) -> None:
+    def normalize_to_excitation(self, name: str, mode: int = 0) -> None:
         """Divide the frequency-domain monitors by one excitation's spectrum.
 
         Turns the raw transient bins of every ``MonitorFieldFrequency``
@@ -806,7 +806,7 @@ class AnalysisTD(_AnalysisBase):
             )
         self._check_excitable()
 
-    def estimate(
+    def estimate_memory(
         self,
         *,
         excited=None,
@@ -1389,10 +1389,10 @@ class AnalysisTD(_AnalysisBase):
                             f"Excitation({exc.source!r}): source {exc.source!r} is an "
                             f"initial field and takes no waveform",
                         )
-                    if exc.delay != 0.0 or exc.phase != 0.0:
+                    if exc.delay != 0.0 or exc.phase_deg != 0.0:
                         raise ValueError(
                             f"Excitation({exc.source!r}): an initial field cannot be "
-                            f"delayed or phased (got delay={exc.delay!r}, phase={exc.phase!r})",
+                            f"delayed or phased (got delay={exc.delay!r}, phase={exc.phase_deg!r})",
                         )
                     fn = _impulse_drive(exc.amplitude)
                     src.set_excitation(None, amplitude=exc.amplitude)
@@ -1743,7 +1743,7 @@ class AnalysisTD(_AnalysisBase):
             port_line_params=prepared.port_line_params,
             settings=self._run_settings(
                 dt=dt,
-                n_actual_steps=n_actual,
+                n_steps=n_actual,
                 accuracy=accuracy,
                 energy_stop_db=energy_stop_db,
                 port_signal_stop_db=port_signal_stop_db,

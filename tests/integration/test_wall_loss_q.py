@@ -87,7 +87,7 @@ def test_te101_q_material_walls_match_bc_walls():
     cu = Material.lossy_metal("copper", sigma=SIGMA_CU)
     mesh = Mesh.from_grid(
         grid_mat,
-        regions=[(Material.air(), (0, 0, 0, A, B, D))],
+        regions=[(Material.air(), ((0, 0, 0), (A, B, D)))],
         background=cu,
     )
     res = AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False).run()

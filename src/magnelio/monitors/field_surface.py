@@ -9,7 +9,7 @@ source in a second model.
 
 Sampling follows the shared Huygens convention
 (:mod:`magnelio.monitors._huygens`): the tangential fields come from the
-cell-centre interpolation of the two cell layers adjacent to each node
+cell-center interpolation of the two cell layers adjacent to each node
 plane, so all four tangential components of a face live on the same
 points and the surface stays exactly closed.
 
@@ -204,7 +204,7 @@ class MonitorFieldSurface:
         # where its Yee positions are and which layer(s) to take.  E is
         # needed on the node plane, H half a cell outside it — by the
         # spacing of the grid that later replays the recording, so both
-        # adjacent cell-centre layers are kept.
+        # adjacent cell-center layers are kept.
         self._plan = {}
         for bf in self._faces:
             nn = bf.slab[bf.axis].stop - 1
@@ -353,7 +353,7 @@ class MonitorFieldSurface:
                 components[comp] = ComponentRecord(
                     c1=np.asarray(c1, dtype=float),
                     c2=np.asarray(c2, dtype=float),
-                    normals=normals,
+                    normal_positions=normals,
                     values=np.stack(arrays, axis=0),
                 )
             faces[bf.name] = FaceRecord(

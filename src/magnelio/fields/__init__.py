@@ -19,8 +19,10 @@ fields on a closed box over time, written by
 from magnelio.fields.series import FieldRecording, FieldSpectrum
 from magnelio.fields.state import FieldState
 from magnelio.fields.surface import ComponentRecord, FaceRecord, SurfaceRecording
+from magnelio.post._surface_current import SurfaceCurrent
 
 __all__ = [
+    "SurfaceCurrent",
     "ComponentRecord",
     "FaceRecord",
     "FieldRecording",

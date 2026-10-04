@@ -82,7 +82,7 @@ class MonitorMemoryEstimate:
 
 @dataclass(frozen=True)
 class MemoryEstimate:
-    """Structured storage budget returned by a TD analysis's ``estimate``.
+    """Structured storage budget returned by a TD analysis's ``estimate_memory``.
 
     Attributes
     ----------
@@ -92,8 +92,8 @@ class MemoryEstimate:
         Six field arrays and six update/energy diagonals in solver precision.
     backend, precision : str
         Backend scenario and resolved scalar dtype.
-    runs : int
-        Sequential runs. Solver storage is reused; disk recordings scale
+    n_runs : int
+        Sequential n_runs. Solver storage is reused; disk recordings scale
         with this count.
     phases : tuple of MemoryPhase
         Simultaneous host and device budgets by phase, not summed phases.
@@ -108,7 +108,7 @@ class MemoryEstimate:
     coefficients_bytes: int
     backend: str
     precision: str
-    runs: int
+    n_runs: int
     phases: tuple[MemoryPhase, ...]
     monitors: tuple[MonitorMemoryEstimate, ...]
     notes: tuple[str, ...]
@@ -130,10 +130,10 @@ class MemoryEstimate:
 
     @property
     def monitor_disk_bytes(self) -> int | None:
-        """Raw field-monitor payload for all runs, excluding other project files."""
+        """Raw field-monitor payload for all n_runs, excluding other project files."""
         if any(m.disk_bytes is None for m in self.monitors):
             return None
-        return self.runs * sum(m.disk_bytes for m in self.monitors)
+        return self.n_runs * sum(m.disk_bytes for m in self.monitors)
 
     def __str__(self) -> str:
         def span(lo, hi):
@@ -144,7 +144,7 @@ class MemoryEstimate:
             return f"{format_bytes(lo)} - {format_bytes(hi)}"
 
         lines = [
-            f"Memory estimate | {self.backend} | {self.precision} | {self.runs} run(s)",
+            f"Memory estimate | {self.backend} | {self.precision} | {self.n_runs} run(s)",
             f"  mesh already held: {format_bytes(self.mesh_bytes)}",
             f"  fields: {format_bytes(self.fields_bytes)}; "
             f"coefficients: {format_bytes(self.coefficients_bytes)}",
@@ -178,7 +178,7 @@ class MemoryEstimate:
                 )
         disk = self.monitor_disk_bytes
         lines.append(
-            "  field-monitor disk payload, all runs: "
+            "  field-monitor disk payload, all n_runs: "
             + ("unknown" if disk is None else format_bytes(disk))
         )
         lines.extend(f"  Note: {note}" for note in self.notes)
@@ -243,7 +243,7 @@ def _monitor_budget(mon, grid, itemsize, steps, dt, horizon, streamed):
     operators = sum(math.prod(s) for s in _yee_shapes(grid.Nx, grid.Ny, grid.Nz).values()) * 8
     if isinstance(mon, MonitorFieldFrequency):
         frame = samples * 16  # DFT bins always complex128
-        count = len(mon.freqs)
+        count = len(mon.frequencies)
         payload = frame * count
         # DFT update and normalisation materialise complex products.
         return MonitorMemoryEstimate(
@@ -329,10 +329,10 @@ def estimate_td(analysis, *, excited, total_time_steps, max_time_steps, t_end, d
     if resolver is None:
         if excited is not None:
             raise ValueError("excited= is only supported by AnalysisScatteringTD")
-        runs = 1
+        n_runs = 1
     else:
-        runs = len(resolver(excited))
-    if runs < 1:
+        n_runs = len(resolver(excited))
+    if n_runs < 1:
         raise ValueError("at least one run is required")
     shapes = _yee_shapes(mesh.Nx, mesh.Ny, mesh.Nz)
     ne = sum(math.prod(s) for c, s in shapes.items() if c.startswith("E"))
@@ -475,7 +475,7 @@ def estimate_td(analysis, *, excited, total_time_steps, max_time_steps, t_end, d
                 ),
             ]
         )
-    if analysis.project is None and runs > 1:
+    if analysis.project is None and n_runs > 1:
         notes.append("Prior run results retained in RAM are unbudgeted; per-run phases shown.")
         phases[-1] = MemoryPhase(
             phases[-1].name,
@@ -498,7 +498,7 @@ def estimate_td(analysis, *, excited, total_time_steps, max_time_steps, t_end, d
         coefficients,
         scenario,
         real.name,
-        runs,
+        n_runs,
         tuple(phases),
         tuple(monitors),
         tuple(notes),

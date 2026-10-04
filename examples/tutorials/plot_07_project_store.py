@@ -85,7 +85,7 @@ mesh = mio.Mesh.from_geometry(
 # solver writes into it continuously.
 
 volume = monitors.MonitorFieldFrequency(
-    freqs=[10.0e9],
+    frequencies=[10.0e9],
     fields=["E", "H"],
     interval=1.0 / (12 * f_max),
     name="volume_pattern",
@@ -104,7 +104,7 @@ analysis = mio.AnalysisScatteringTD(
 
 # %%
 # Check the allocation budget before launching the runs
-# ----------------------------------------------------
+# -----------------------------------------------------
 #
 # The estimate constructs no solver operators and writes no project files.
 # Its phases include the mesh already held in RAM. The volume DFT monitor
@@ -112,7 +112,7 @@ analysis = mio.AnalysisScatteringTD(
 # saved to disk. Unknown port costs leave the overall upper budget open.
 # See :doc:`/methods/memory-planning` for finite time-recording budgets.
 
-print(analysis.estimate(excited=["port3", "port4"]))
+print(analysis.estimate_memory(excited=["port3", "port4"]))
 
 result = analysis.run(excited=["port3", "port4"], port_signal_stop_db=50.0)
 print(type(result).__name__, "->", result.status)
@@ -225,7 +225,7 @@ mon_e.show(
     position=0.0,
     geometry=model,
     mesh=mesh,
-    phase=90.0,
+    phase_deg=90.0,
     volume="isosurface",
 )
 
@@ -245,9 +245,7 @@ mon_e.show(
 s13_before = result_loaded.S("port1", "port3")
 n_before = result_loaded.runs["port3_mode0"].n_steps
 
-result_resumed = mio.resume(
-    proj_dir, excited="port3", total_time_steps=n_before + 2000, verbose=False
-)
+result_resumed = mio.resume(proj_dir, run="port3", total_time_steps=n_before + 2000, verbose=False)
 
 s13_after = result_resumed.S("port1", "port3")
 print(f"steps: {n_before} -> {n_before + 2000}")
@@ -267,7 +265,7 @@ print(f"max |dS13| from 2000 extra steps: {np.abs(s13_after - s13_before).max():
 # ParaView as a ready-made session — an export you ask for, since the
 # VTK copy of a monitor takes about as much disk as the monitor itself:
 
-result_resumed.export_paraview(excited="port3")
+result_resumed.export_paraview(run="port3")
 run_dir = os.path.join(proj_dir, "runs", "port3_mode0")
 for name in sorted(os.listdir(run_dir)):
     if "paraview" in name and os.path.isfile(os.path.join(run_dir, name)):
@@ -278,7 +276,7 @@ for name in sorted(os.listdir(run_dir)):
 # frequency, collected by a ``.pvd`` whose axis is the frequency (for
 # a time monitor, the instant).  They hold cell data — the staggered
 # frames of ``fields_freq.h5`` averaged onto the cell centres at export
-# time, the same numbers ``spectrum.cell_centred()`` returns — so
+# time, the same numbers ``spectrum.cell_centered()`` returns — so
 # ParaView reads plain VTK files and never opens the store itself.
 # ``paraview.pvsm`` is a double-clickable state file (baked when
 # ``pvpython`` is on the path): geometry as translucent solids, and per
