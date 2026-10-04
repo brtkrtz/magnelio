@@ -19,6 +19,13 @@ dedicated DD keep their record here.
 **Five entries are open as of 2026-09-08: KB-023, KB-038, KB-043,
 KB-046 and KB-047.**  Everything else is struck through and resolved.
 
+## KB-048: ~~An absorbed material plane can send a straight coax TEM port to Mur~~ — Resolved (2026-10-03)
+
+The longitudinal series pass mistook a changing PEC free area for dielectric
+contrast at two curved-wall edges. DD-277 separates the two, routes those
+edges through the line-solid classifier, and restores the HESR coax port's
+exact DTBC certificate. Full diagnosis and measurement are in DD-277.
+
 ## KB-047: `integrate_E` silently returns the real part of a complex field — Open (2026-09-08)
 
 **What was measured.**  `circuit.integrate_E` accumulates each sample as

@@ -202,8 +202,8 @@ class EdgeMaterialData:
         E-edge PEC mask in the canonical ``Mesh.pec_mask_edges`` layout.
         Set True for category 3 edges, for short curved-PEC edges
         (f_L < eta) that the enlarged-cell technique borrows out, and
-        for tangential-surface edges re-masked by the DD-053
-        consistency rule (both endpoints on the same conductor).
+        for tangential-surface edges re-masked by the DD-053/276
+        consistency rule (a masked detour around an adjacent grid face).
     enlarged_cell_donor : np.ndarray, dtype int64, shape ``(n_E_total,)``
         Flat E-edge index of the neighbour edge that absorbs the
         borrowed area, or ``-1`` if no borrowing.
@@ -345,9 +345,9 @@ def _masked_component_labels(
 ) -> np.ndarray:
     """Connected-component label per node in the masked-edge graph.
 
-    Nodes not touched by any masked edge are singleton components, so
-    ``labels[a] == labels[b]`` for a two-endpoint edge holds exactly
-    when both endpoints sit on the *same* conductor.
+    Nodes not touched by any masked edge are singleton components.
+    A component can join distant conductor surfaces through a bond;
+    equal labels do not prove that an edge lies on a local PEC surface.
     """
     import scipy.sparse as sp  # noqa: PLC0415
     from scipy.sparse.csgraph import connected_components  # noqa: PLC0415
@@ -360,6 +360,47 @@ def _masked_component_labels(
     )
     _, labels = connected_components(graph, directed=False)
     return labels
+
+
+def _local_masked_face_bypass(masked_flat: np.ndarray, grid: GridLines) -> np.ndarray:
+    """Find free edges bypassed by three masked edges of one primal face.
+
+    A remote connection between two conductors is not evidence that an
+    edge across their local air gap lies on a conducting surface.  A
+    masked detour around an adjacent face provides the local evidence
+    needed for tangential-surface re-masking.
+    """
+    nx, ny, nz = grid.Nx, grid.Ny, grid.Nz
+    n_ex = nx * (ny + 1) * (nz + 1)
+    n_ey = (nx + 1) * ny * (nz + 1)
+    ex = masked_flat[:n_ex].reshape(nx, ny + 1, nz + 1)
+    ey = masked_flat[n_ex : n_ex + n_ey].reshape(nx + 1, ny, nz + 1)
+    ez = masked_flat[n_ex + n_ey :].reshape(nx + 1, ny + 1, nz)
+    bx = np.zeros_like(ex)
+    by = np.zeros_like(ey)
+    bz = np.zeros_like(ez)
+
+    xy_ex = ey[:-1] & ey[1:]
+    bx[:, 1:] |= xy_ex & ex[:, :-1]
+    bx[:, :-1] |= xy_ex & ex[:, 1:]
+    xy_ey = ex[:, :-1] & ex[:, 1:]
+    by[1:] |= xy_ey & ey[:-1]
+    by[:-1] |= xy_ey & ey[1:]
+
+    xz_ex = ez[:-1] & ez[1:]
+    bx[:, :, 1:] |= xz_ex & ex[:, :, :-1]
+    bx[:, :, :-1] |= xz_ex & ex[:, :, 1:]
+    xz_ez = ex[:, :, :-1] & ex[:, :, 1:]
+    bz[1:] |= xz_ez & ez[:-1]
+    bz[:-1] |= xz_ez & ez[1:]
+
+    yz_ey = ez[:, :-1] & ez[:, 1:]
+    by[:, :, 1:] |= yz_ey & ey[:, :, :-1]
+    by[:, :, :-1] |= yz_ey & ey[:, :, 1:]
+    yz_ez = ey[:, :, :-1] & ey[:, :, 1:]
+    bz[:, 1:] |= yz_ez & ez[:, :-1]
+    bz[:, :-1] |= yz_ez & ez[:, 1:]
+    return np.concatenate((bx.ravel(), by.ravel(), bz.ravel())) & ~masked_flat
 
 
 def _bbox_face_edges(grid: GridLines, n_Ex: int, n_Ey: int, n_Ez: int) -> np.ndarray:
@@ -581,11 +622,14 @@ def _apply_longitudinal_eps(
     Per crossing edge the pass sections the dual face at each
     *segment* midpoint (segments = edge span split by the absorbed
     planes) through the same OCC backend as the conformal pass, then
-    combines: ``ε̄ = L / Σ (L_seg / ε_seg)``; σ analogously (any
-    σ_seg = 0 short-circuits to 0, the exact DC series limit).
-    PEC-adjacent edges are skipped — the line-solid f_L path owns
-    them.  Mutates ``conf_eps`` / ``conf_sigma`` / ``conf_f_area``
-    in place.
+    combines the intrinsic free-area dielectric values in series, then
+    applies the edge midpoint's free-area fraction.  Otherwise a curved
+    conductor grazing one segment looks like a dielectric contrast.
+    σ uses the same area convention (any σ_seg = 0 gives zero series
+    conductivity).  Staircase PEC-adjacent edges are skipped; any
+    additional PEC overlap found here joins the line-solid f_L pass.
+    Mutates ``conf_eps`` / ``conf_sigma`` / ``conf_f_area`` and
+    ``pec_adj_flat`` in place.
     """
     from magnelio.geo._filling import (  # noqa: PLC0415
         SECTION_DEFLECTION_FRACTION,
@@ -626,6 +670,7 @@ def _apply_longitudinal_eps(
     axis_parts: list[np.ndarray] = []
     edge_parts: list[np.ndarray] = []
     len_parts: list[np.ndarray] = []
+    midpoint_parts: list[np.ndarray] = []
 
     axis_data = {
         "x": (0, x, xm),
@@ -683,12 +728,14 @@ def _apply_longitudinal_eps(
             axis_parts.append(np.full(n_edge * n_seg, ax_idx, dtype=np.int32))
             edge_parts.append(np.repeat(flat, n_seg))
             len_parts.append(np.tile(seg_lens, n_edge))
+            midpoint_parts.append(np.full(n_edge, 0.5 * (nodes[c] + nodes[c + 1])))
 
     if not spec_parts:
         return
 
     face_specs = np.concatenate(spec_parts, axis=0)
     face_axes = np.concatenate(axis_parts)
+    pec_areas = np.zeros(len(face_specs), dtype=np.float64)
     eps_vals = compute_face_material_areas(
         shapes_with_material,
         material_library,
@@ -698,6 +745,7 @@ def _apply_longitudinal_eps(
         deflection=deflection,
         nudge=nudge,
         section_cache=section_cache,
+        pec_area_out=pec_areas,
         scale=scale,
     )
     sigma_vals = compute_face_material_areas(
@@ -723,25 +771,72 @@ def _apply_longitudinal_eps(
     starts = np.concatenate(([0], starts))
     counts = np.diff(np.append(starts, seg_edge_arr.size))
     edges = seg_edge_arr[starts]
+    edge_midpoints = np.concatenate(midpoint_parts)
     L = _run_sums(seg_len_arr, starts, counts)
 
-    eps_bad = np.isnan(eps_vals) | (eps_vals <= 0)
+    face_areas = (face_specs[:, 3] - face_specs[:, 1]) * (face_specs[:, 4] - face_specs[:, 2])
+    free_frac = 1.0 - np.clip(pec_areas / face_areas, 0.0, 1.0)
+    # A curved PEC wall can reach a segment without a staircase PEC
+    # neighbour.  Its edge still needs the geometric line-solid check.
+    pec_touched = np.logical_or.reduceat(pec_areas > 0.0, starts)
+    pec_adj_flat[edges[pec_touched]] = True
+
+    # The conformal pass only visits staircase-boundary cells.  A
+    # sub-cell curved wall can therefore leave the original midpoint
+    # data absent, even though a segment section detects real PEC.
+    # Recover that midpoint through the same section backend before
+    # combining intrinsic material contrast with its free area.
+    missing = pec_touched & (np.isnan(conf_eps[edges]) | np.isnan(conf_f_area[edges]))
+    if missing.any():
+        mid_specs = face_specs[starts[missing]].copy()
+        mid_specs[:, 0] = edge_midpoints[missing]
+        mid_axes = face_axes[starts[missing]]
+        mid_pec = np.zeros(len(mid_specs), dtype=np.float64)
+        mid_eps = compute_face_material_areas(
+            shapes_with_material,
+            material_library,
+            mid_specs,
+            mid_axes,
+            prop="epsilon",
+            deflection=deflection,
+            nudge=nudge,
+            section_cache=section_cache,
+            pec_area_out=mid_pec,
+            scale=scale,
+        )
+        mid_sigma = compute_face_material_areas(
+            shapes_with_material,
+            material_library,
+            mid_specs,
+            mid_axes,
+            prop="sigma",
+            deflection=deflection,
+            nudge=nudge,
+            section_cache=section_cache,
+            scale=scale,
+        )
+        mid_area = (mid_specs[:, 3] - mid_specs[:, 1]) * (mid_specs[:, 4] - mid_specs[:, 2])
+        conf_eps[edges[missing]] = mid_eps
+        conf_sigma[edges[missing]] = mid_sigma
+        conf_f_area[edges[missing]] = 1.0 - np.clip(mid_pec / mid_area, 0.0, 1.0)
+
+    eps_bad = np.isnan(eps_vals) | (eps_vals <= 0) | (free_frac <= 0)
     eps_ok = ~np.logical_or.reduceat(eps_bad, starts)
     if not eps_ok.any():
         return  # incomplete sectioning everywhere — leave the edges as-is
-    eps_safe = np.where(eps_bad, 1.0, eps_vals)
-    eps_series = L / _run_sums(seg_len_arr / eps_safe, starts, counts)
+    eps_free = np.divide(eps_vals, free_frac, out=np.ones_like(eps_vals), where=~eps_bad)
+    eps_series = L / _run_sums(seg_len_arr / eps_free, starts, counts)
 
-    sig_bad = np.isnan(sigma_vals) | (sigma_vals <= 0)
+    sig_bad = np.isnan(sigma_vals) | (sigma_vals <= 0) | (free_frac <= 0)
     sig_ok = ~np.logical_or.reduceat(sig_bad, starts)
-    sig_safe = np.where(sig_bad, 1.0, sigma_vals)
-    sig_series = np.where(sig_ok, L / _run_sums(seg_len_arr / sig_safe, starts, counts), 0.0)
+    sig_free = np.divide(sigma_vals, free_frac, out=np.ones_like(sigma_vals), where=~sig_bad)
+    sig_series = np.where(sig_ok, L / _run_sums(seg_len_arr / sig_free, starts, counts), 0.0)
 
     sel = edges[eps_ok]
-    conf_eps[sel] = eps_series[eps_ok]
-    conf_sigma[sel] = sig_series[eps_ok]
     f_nan = np.isnan(conf_f_area[sel])
     conf_f_area[sel[f_nan]] = 1.0
+    conf_eps[sel] = eps_series[eps_ok] * conf_f_area[sel]
+    conf_sigma[sel] = sig_series[eps_ok] * conf_f_area[sel]
 
 
 def _run_sums(values: np.ndarray, starts: np.ndarray, counts: np.ndarray) -> np.ndarray:
@@ -1040,8 +1135,8 @@ def compute_subcell_data(
         pec_mask[2, ez_sel - n_Ex - n_Ey] = False
 
     # ---- Step 6b: tangential-surface re-masking (DD-053) ---------------
-    # An unmasked E edge whose two endpoint nodes are connected through
-    # the masked-edge graph runs tangentially along a PEC surface.  The
+    # An unmasked E edge with a masked detour around an adjacent primal
+    # face runs tangentially along a PEC surface.  The
     # 2D mode solvers put both endpoints into the same Dirichlet
     # conductor group (the edge voltage is identically zero in every
     # mode), while the un-masked 3D edge would evolve a surface-
@@ -1051,11 +1146,8 @@ def compute_subcell_data(
     # (validation/coax_pair_consistent_mu_spike.py).  Applying
     # the PEC surface condition on these edges makes the 3D update and
     # the mode solvers see the same conductor (the DD-050 line).  The
-    # connected-COMPONENT check (rather than mere conductor adjacency)
-    # spares edges that bridge different conductors across a resolved
-    # gap — those legitimately carry voltage.  One pass reaches the
-    # fixed point: re-masked edges connect only nodes that were already
-    # in the same component.
+    # local-face check spares air-gap edges between conductors joined
+    # elsewhere, such as an inductive pickup loop bonded to its housing.
     masked_flat = np.concatenate(
         [
             pec_mask[0, :n_Ex],
@@ -1064,14 +1156,7 @@ def compute_subcell_data(
         ]
     )
     if masked_flat.any():
-        node_a, node_b = _edge_endpoint_nodes(grid)
-        labels = _masked_component_labels(
-            node_a,
-            node_b,
-            masked_flat,
-            (Nx + 1) * (Ny + 1) * (Nz + 1),
-        )
-        tangential = ~masked_flat & (labels[node_a] == labels[node_b])
+        tangential = _local_masked_face_bypass(masked_flat, grid)
         tang_idx = np.nonzero(tangential)[0]
         if len(tang_idx) > 0:
             category[tang_idx] = CAT_INTERIOR_PEC

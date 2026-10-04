@@ -6,6 +6,7 @@ ConformalData / DeyMittraData test surface in test_conformal.py.
 """
 
 import numpy as np
+import pytest
 
 from magnelio.geo._subcell import (
     EdgeMaterialData,
@@ -109,6 +110,49 @@ class TestComputeSubcellData:
         assert np.all(np.isnan(em.L_free))
         assert np.all(em.enlarged_cell_donor == -1)
         assert not em.pec_mask.any()
+
+    @pytest.mark.parametrize(
+        ("y_nodes", "expected_f_area", "line_crosses_pec"),
+        [
+            ([0.2, 0.4, 0.6, 0.8, 1.0], 1.0, False),
+            ([0.2, 0.35, 0.55, 0.75, 1.0], 1.0, True),
+            ([0.0, 0.2, 0.4, 0.6, 0.8], None, True),
+        ],
+    )
+    def test_absorbed_plane_near_curved_pec_preserves_air_and_line_fraction(
+        self, y_nodes, expected_f_area, line_crosses_pec
+    ):
+        from magnelio.geo.primitives import Cylinder
+
+        grid = GridLines(
+            np.array([0.0, 1.0, 2.0]),
+            np.array(y_nodes),
+            np.array([0.2, 0.4, 0.8, 1.0]),
+        )
+        pec = Material.pec()
+        wall = Cylinder(origin=(0, 0, 0), axis="x", height=2.0, radius=0.7, material=pec)
+        em = compute_subcell_data(
+            grid,
+            np.zeros((grid.Nx, grid.Ny, grid.Nz), dtype=np.int32),
+            {0: Material.air(), 1: pec},
+            [(wall, 1)],
+            pec_solid=wall._occ_shape(),
+            eta=0.4,
+            absorbed_planes={"z": [0.5]},
+        )
+        n_ex = grid.Nx * (grid.Ny + 1) * (grid.Nz + 1)
+        n_ey = (grid.Nx + 1) * grid.Ny * (grid.Nz + 1)
+        edge = n_ex + n_ey + (grid.Ny + 1) * grid.Nz + 2 * grid.Nz + 1
+        assert em.category[edge] == 2
+        assert em.eps_avg[edge] == pytest.approx(em.f_A[edge], rel=1e-12)
+        if expected_f_area is not None:
+            assert em.f_A[edge] == expected_f_area
+        else:
+            assert 0.0 < em.f_A[edge] < 1.0
+        if line_crosses_pec:
+            assert em.L_free[edge] < grid.dz[1]
+        else:
+            assert em.L_free[edge] == pytest.approx(grid.dz[1])
 
     def test_full_pec_domain_cat3(self):
         """Domain entirely filled with PEC: every edge masked."""

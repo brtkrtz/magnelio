@@ -2299,6 +2299,11 @@ exists (genuinely 3D contours), the wrong LC partner on a line.
    conductor.  Side fix: enlarged-cell donors can no longer be
    masked edges (previously donated mass onto interior-PEC neighbours
    silently vanished).
+
+   **Correction (DD-276):** The connected-component criterion is
+   superseded. A remote bond can make the two sides of a local air gap
+   one component; the rule then masks the gap itself. The local-face
+   bypass criterion retains surface masking without this false short.
 3. **LC-consistent M_μ coupling** (mesher step 4b,
    ``couple_face_material_pairs``) — per H face, the two spanning
    axes are candidate ladder directions with the co-located E edges
@@ -14203,7 +14208,7 @@ the first probe: the dual-face `eps_avg` had been proposed as the
 default, but on the coax it shows the pin as a plus shape one node
 larger than the geometry — not a bug: the in-plane edges cutting the
 pin have `f_L ≈ 0.27 < η = 0.4`, are masked and lent out, and the
-DD-053 tangential rule (both endpoints in the same masked component)
+DD-053 tangential rule (now local-face bounded by DD-276)
 then re-masks the normal edges around them although the conformal
 pass had measured `ε̄ = 1.65, f_L = 1` there.  Correct for the field
 normal to the cut, irrelevant for TEM, misleading as a default.  The
@@ -23347,3 +23352,77 @@ Methods/API prose, Tutorial 14 and `tests/unit/test_import_cad.py` cover the
 contract. The final acceptance audit is recorded in
 `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record);
 WP6.2 remains cancelled.
+
+---
+
+## DD-276 — Tangential PEC masking needs a local surface path
+
+**Date:** 2026-10-02. **Status:** Implemented; corrects the masking criterion
+of DD-053 without changing its LC-consistent pair coupling.
+
+**Failure.** DD-053 treated every free E edge whose endpoint nodes belonged
+to the same global masked-edge component as tangential to a conductor. That
+is false for an inductive loop bonded to its housing: the central conductor
+and the housing are deliberately one component, while the feed between them
+still has a local air gap. The global rule masked an E edge lying wholly in
+that air gap, creating a second, unintended short near the feed transition.
+The exact CAD classifier called the edge air; bypassing only step 6b left
+it free. The private measurement is
+`investigations/hesr-mesh-short/MEASUREMENTS.md` (internal record); the
+developer's model is `userscripts/hesr/hesr.ipynb` (internal worksheet).
+
+**Decision.** Re-mask a free edge only when its two endpoints have a masked
+three-edge detour around one adjacent primal face. This is local evidence
+that the edge runs along a PEC surface. A bond elsewhere in the model is
+irrelevant. One pass uses the post-conformal mask as its input, preserving
+DD-053's treatment of a curved, translation-invariant coaxial surface.
+The operation is vectorised over the three edge orientations and linear
+in the edge count; it replaces the global sparse connected-component pass.
+
+**Checks.** A synthetic remote-bond graph has connected endpoints but no
+local face detour, and gains a detour only when a masked face side is added.
+The existing round-coax mask and its S-parameter/impedance gate pass. On a
+two-cell replica of the inductive-loop model at 0.35, 0.50 and 0.75 mm
+cell-size floors, the air edge stays free and the inner/outer masked
+networks are disconnected within the feed-transition region. The full
+17-cell TD run remains to be remeasured; the mesh result alone
+establishes removal of the false bond.
+
+---
+
+## DD-277 — Absorbed-plane series permittivity separates dielectric and PEC area
+
+**Date:** 2026-10-03. **Status:** Implemented; resolves KB-048 and refines
+the DD-060 longitudinal correction without removing it.
+
+**Failure.** The series pass sections every E edge crossing a floor-absorbed
+material plane. Its section ε̄ includes the PEC-covered area as zero, but the
+harmonic sum treated ε̄ as the dielectric value over the entire dual face.
+Two z edges beside the curved outer conductor of a straight air-filled
+coax therefore acquired ε̄ = 0.983426 while their midpoint free-area
+fraction remained 1. The first interior E mass ceased to match the port
+boundary's E/H pair, and the x1 TEM mode fell to Mur: weighted pair spread
+1.763027e-3 against the 2e-6 DTBC gate. The feed slabs themselves agreed
+to 4.25e-12. Source: `investigations/hesr-port-chain/MEASUREMENTS.md`
+(internal dossier).
+
+**Decision.** Ask the existing area-section backend for the PEC area of
+each segment. Apply the length-weighted harmonic mean to the intrinsic
+dielectric ε̄/f_A (and σ̄/f_A), then multiply by the edge midpoint's f_A.
+An all-PEC or incomplete segment does not create a guessed series value.
+Any PEC overlap found in a segment enters the geometric line-solid f_L
+classification, even without a staircase PEC neighbour. Where the old
+conformal boundary-cell selection did not visit that edge, obtain its
+midpoint ε̄, σ̄ and f_A from the same section backend. Thus a genuine
+absorbed dielectric stack still uses the DD-060 series correction, while
+a curved conductor is handled by the PEC edge category and line fraction.
+Only edges crossing absorbed planes pay the extra section work.
+
+**Checks.** `tests/unit/test_subcell_pipeline.py` covers three curved-wall
+positions: a graze of the dual face alone, a crossing of the primal line,
+and a partly covered midpoint. `tests/unit/test_mesh.py` retains the
+one-plane and two-plane dielectric series gates. The round-coax modal
+and port-power integration tests pass. On the original HESR three-cell
+mesh (89 × 89 × 129, 0.5 mm floor), both offending interior edges now
+have ε̄/f_A = 1; x1 is `dtbc` with pair spread 1.877480e-14. This is a
+port-operator measurement; no full TD response was run.
