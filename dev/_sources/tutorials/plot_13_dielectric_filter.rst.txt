@@ -310,19 +310,19 @@ Always check how many modes actually came back.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.5 s)
+      mesh | materials | done (1.1 s)
       mesh | conformal cells
-      mesh | conformal cells | done (6.4 s)
+      mesh | conformal cells | done (4.4 s)
       mesh | PEC masks
-      mesh | 28 x 28 x 9 cells (7.9 s total)
+      mesh | 28 x 28 x 9 = 7,056 cells | 2.2 MiB (5.5 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (2.0 s)
+      mesh | materials | done (1.4 s)
       mesh | conformal cells
-      mesh | conformal cells | done (8.8 s)
+      mesh | conformal cells | done (6.1 s)
       mesh | PEC masks
-      mesh | 35 x 35 x 12 cells (10.8 s total)
+      mesh | 35 x 35 x 12 = 14,700 cells | 4.5 MiB (7.5 s total)
     coarse (  7056 cells):  f0 = 2.7275 GHz
     fine   ( 14700 cells):  f0 = 2.7262 GHz
     next mode is at 4.85 GHz — the band is clear
@@ -458,7 +458,7 @@ Sweeping the window
     k_values, f_centres = np.array([coupling_of(w) for w in windows]).T
 
     for w, k, fc in zip(windows, k_values, f_centres):
-        print(f"window {w * 1e3:4.1f} mm ->  k = {k:.5f},  centre {fc / 1e9:.4f} GHz")
+        print(f"window {w * 1e3:4.1f} mm ->  k = {k:.5f},  center {fc / 1e9:.4f} GHz")
 
 
 
@@ -471,39 +471,39 @@ Sweeping the window
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (5.0 s)
+      mesh | materials | done (3.5 s)
       mesh | conformal cells
-      mesh | conformal cells | done (16.8 s)
+      mesh | conformal cells | done (11.7 s)
       mesh | PEC masks
-      mesh | 78 x 28 x 9 cells (21.8 s total)
+      mesh | 78 x 28 x 9 = 19,656 cells | 6.1 MiB (15.2 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (5.1 s)
+      mesh | materials | done (3.5 s)
       mesh | conformal cells
-      mesh | conformal cells | done (21.6 s)
+      mesh | conformal cells | done (15.1 s)
       mesh | PEC masks
-      mesh | 78 x 44 x 9 cells (26.7 s total)
+      mesh | 78 x 44 x 9 = 30,888 cells | 9.6 MiB (18.7 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (5.1 s)
+      mesh | materials | done (3.5 s)
       mesh | conformal cells
-      mesh | conformal cells | done (16.7 s)
+      mesh | conformal cells | done (11.7 s)
       mesh | PEC masks
-      mesh | 78 x 28 x 9 cells (21.9 s total)
+      mesh | 78 x 28 x 9 = 19,656 cells | 6.1 MiB (15.2 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (5.1 s)
+      mesh | materials | done (3.5 s)
       mesh | conformal cells
-      mesh | conformal cells | done (20.3 s)
+      mesh | conformal cells | done (14.1 s)
       mesh | PEC masks
-      mesh | 78 x 46 x 9 cells (25.4 s total)
-    window  4.0 mm ->  k = 0.00801,  centre 3.0285 GHz
-    window  6.0 mm ->  k = 0.03102,  centre 2.9615 GHz
-    window  8.0 mm ->  k = 0.06525,  centre 2.8893 GHz
-    window 10.0 mm ->  k = 0.10561,  centre 2.8137 GHz
+      mesh | 78 x 46 x 9 = 32,292 cells | 10 MiB (17.7 s total)
+    window  4.0 mm ->  k = 0.00801,  center 3.0285 GHz
+    window  6.0 mm ->  k = 0.03102,  center 2.9615 GHz
+    window  8.0 mm ->  k = 0.06525,  center 2.8893 GHz
+    window 10.0 mm ->  k = 0.10561,  center 2.8137 GHz
 
 
 
@@ -562,11 +562,11 @@ the pair's frequency is a fraction of the passband.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (6.2 s)
+      mesh | materials | done (4.3 s)
       mesh | conformal cells
-      mesh | conformal cells | done (26.4 s)
+      mesh | conformal cells | done (18.5 s)
       mesh | PEC masks
-      mesh | 96 x 52 x 12 cells (32.6 s total)
+      mesh | 96 x 52 x 12 = 59,904 cells | 18 MiB (22.8 s total)
     window 6.0 mm, coarse grid:  k = 0.03102, f = 2.9615 GHz
     window 6.0 mm, fine grid:    k = 0.03125, f = 2.9609 GHz
     k moves 0.7 %, f moves 0.0 %
@@ -643,7 +643,7 @@ rectangular window smears the phase slope.
 
 Here it cannot be taken for granted.  The structure is lossless
 apart from the port, and the puck's higher modes do not couple to an
-off-centre pin at all — they ring indefinitely and hold the stored
+off-center pin at all — they ring indefinitely and hold the stored
 energy far above the level the energy stop criterion waits for.  The
 port-signal criterion does not step in either: it watches
 modal-port envelopes and stands down on a lumped-only run.  So the
@@ -726,29 +726,29 @@ either number alone.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (2.2 s)
+      mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (11.0 s)
+      mesh | conformal cells | done (7.7 s)
       mesh | PEC masks
-      mesh | 56 x 40 x 13 cells (13.3 s total)
+      mesh | 56 x 40 x 13 = 29,120 cells | 8.9 MiB (9.3 s total)
     probe at 6.0 mm:  f0 = 3.1092 GHz,  Qe = 14.3 (group delay) / 14.0 (ring-down)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (2.2 s)
+      mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (11.0 s)
+      mesh | conformal cells | done (7.6 s)
       mesh | PEC masks
-      mesh | 57 x 40 x 13 cells (13.3 s total)
+      mesh | 57 x 40 x 13 = 29,640 cells | 9.1 MiB (9.2 s total)
     probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (2.2 s)
+      mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (11.0 s)
+      mesh | conformal cells | done (7.7 s)
       mesh | PEC masks
-      mesh | 59 x 40 x 13 cells (13.3 s total)
+      mesh | 59 x 40 x 13 = 30,680 cells | 9.4 MiB (9.3 s total)
     probe at 8.0 mm:  f0 = 3.0137 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
 
 
@@ -785,7 +785,7 @@ is real.
     print(f"\nprobe radius for Qe = {QE_TARGET:.1f}: {R_PROBE * 1e3:.2f} mm")
 
     # The probe also loads the resonator, so the frequency the filter will
-    # centre on is the loaded one at this radius — not the bare puck's.
+    # center on is the loaded one at this radius — not the bare puck's.
     F0_LOADED = float(np.interp(R_PROBE, radii, f_probe))
     print(f"loaded resonator at that radius: {F0_LOADED / 1e9:.4f} GHz")
 
@@ -883,15 +883,15 @@ full run and add nothing.
     # also produces a ParaView session (see "Looking inside" below).  A
     # monitor needs its frequencies before the run, so the band is
     # predicted up front from what the design already knows: the loaded
-    # resonator's frequency as the centre, half the design bandwidth to
+    # resonator's frequency as the center, half the design bandwidth to
     # either side — values the S-parameter evaluation afterwards
     # confirms.  ``interval`` is what makes a volume monitor affordable,
     # and it is sized from the *band edge* rather than from the monitor's
     # own frequency — see there.
     F_TOP = 3.4e9
-    POLES = F0_LOADED * np.array([1 - FBW / 2, 1.0, 1 + FBW / 2])  # lower edge, centre, upper
+    POLES = F0_LOADED * np.array([1 - FBW / 2, 1.0, 1 + FBW / 2])  # lower edge, center, upper
     pattern = monitors.MonitorFieldFrequency(
-        freqs=POLES,
+        frequencies=POLES,
         fields=["E", "H"],
         interval=1.0 / (20 * F_TOP),
         name="volume_pattern",
@@ -922,11 +922,11 @@ full run and add nothing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (4.5 s)
+      mesh | materials | done (3.2 s)
       mesh | conformal cells
-      mesh | conformal cells | done (21.7 s)
+      mesh | conformal cells | done (15.1 s)
       mesh | PEC masks
-      mesh | 90 x 40 x 13 cells (26.2 s total)
+      mesh | 90 x 40 x 13 = 46,800 cells | 14 MiB (18.2 s total)
     grid: 90 x 40 x 13 = 46800 cells
 
 
@@ -977,7 +977,7 @@ would make this filter look more than twice too wide.
     in_band = (band >= f_lo) & (band <= f_hi)
     deviation = np.abs(s21 - reference)[in_band]
 
-    print(f"band centre     {f_centre / 1e9:.4f} GHz   (loaded resonator {F0_LOADED / 1e9:.4f} GHz)")
+    print(f"band center     {f_centre / 1e9:.4f} GHz   (loaded resonator {F0_LOADED / 1e9:.4f} GHz)")
     print(f"ripple bandwidth {100 * fbw_achieved:.2f} %      (target {100 * FBW:.2f} %)")
     print(f"worst in-band insertion loss {-s21[in_band].min():.3f} dB")
     print(f"deviation from the synthesised response: max {deviation.max():.2f} dB")
@@ -990,7 +990,7 @@ would make this filter look more than twice too wide.
 
  .. code-block:: none
 
-    band centre     3.0190 GHz   (loaded resonator 3.0201 GHz)
+    band center     3.0190 GHz   (loaded resonator 3.0201 GHz)
     ripple bandwidth 2.16 %      (target 2.00 %)
     worst in-band insertion loss 0.067 dB
     deviation from the synthesised response: max 0.02 dB
@@ -1096,11 +1096,11 @@ housing and compare the phases.
 
 
     spectrum = pattern.spectrum
-    x_cells = spectrum.cell_centres[0]
+    x_cells = spectrum.cell_centers[0]
     left, right = x_cells < 0.0, x_cells >= 0.0
     print("  f [GHz]   phase L    phase R   difference")
-    for i, f in enumerate(spectrum.frequencies):
-        ez = spectrum.cell_centred(["Ez"], frame=i, squeeze=True)["Ez"]
+    for i, f in enumerate(spectrum.f_axis):
+        ez = spectrum.cell_centered(["Ez"], frame=i, squeeze=True)["Ez"]
         phi_l = np.degrees(np.angle(ez[left].sum()))
         phi_r = np.degrees(np.angle(ez[right].sum()))
         delta = (phi_r - phi_l + 180.0) % 360.0 - 180.0
@@ -1177,7 +1177,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (7 minutes 50.424 seconds)
+   **Total running time of the script:** (6 minutes 7.514 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:

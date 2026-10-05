@@ -134,3 +134,12 @@ unconditional dissipation identity is in-house.
 The conformal booking of SIBC faces (which faces carry the damping
 term and with which geometric weight $G_f = A_f/l^2_{\text{dual}}$)
 reuses the DD-087 conformal wall-area machinery.
+
+## Surface-current quantities
+
+`fields.SurfaceCurrent` carries the wall-current vector `J_s`, its local
+magnitude, patch positions, normal vectors and areas. Use `select` and `show`
+to inspect a conductor. `power_loss` independently integrates the dissipated
+power. The removed `current_through` area integral had units A·m and did not
+measure conductor current in A; no integrated-magnitude replacement is
+provided. `post.WallLossQ` is the returned wall-loss quality-factor type.

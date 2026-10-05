@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -685,7 +699,7 @@ one — for this cross-section the lowest box mode comes in near
 <section id="half-the-model-is-enough">
 <h2>Half the model is enough<a class="headerlink" href="#half-the-model-is-enough" title="Link to this heading">#</a></h2>
 <p>The cross-section is mirror-symmetric about the vertical plane
-through the trace centre, and so is the mode we want: the field
+through the trace center, and so is the mode we want: the field
 pushes straight down from trace to ground, so the transverse field
 component <em>across</em> that plane vanishes on it, and the magnetic field
 threads through it at right angles.  That is exactly a <strong>magnetic
@@ -699,7 +713,7 @@ switching the symmetry off later means deleting one argument, not
 rebuilding the model.  Half the cells means half the memory and
 roughly half the run time, and it costs nothing in accuracy — if
 anything the opposite, because the domain now ends exactly at the
-trace centre, so the discretisation is symmetric about it by
+trace center, so the discretisation is symmetric about it by
 construction rather than by luck.</p>
 <p>What symmetry does cost is <em>modes</em>.  A magnetic wall keeps only the
 fields that are symmetric about it, so any resonance of the box that
@@ -740,7 +754,7 @@ structure and the excitation must both respect it.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 13 x 23 x 52 cells
+  mesh | 13 x 23 x 52 = 15,548 cells | 4.8 MiB
 grid: 13 x 23 x 52 cells
 </pre></div>
 </div>
@@ -882,7 +896,7 @@ between levels falls below <code class="docutils literal notranslate"><span clas
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 13 x 23 x 6 cells
+  mesh | 13 x 23 x 6 = 1,794 cells | 611 KiB
   setup | material matrices
   setup | CFL eigenvalue
   setup | port 'port1'
@@ -893,7 +907,7 @@ between levels falls below <code class="docutils literal notranslate"><span clas
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 26 x 46 x 6 cells
+  mesh | 26 x 46 x 6 = 7,176 cells | 2.3 MiB
   setup | material matrices
   setup | CFL eigenvalue
   setup | port 'port1'
@@ -904,10 +918,10 @@ between levels falls below <code class="docutils literal notranslate"><span clas
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 52 x 92 x 6 cells
+  mesh | 52 x 92 x 6 = 28,704 cells | 9.1 MiB
   setup | material matrices
   setup | CFL eigenvalue
-  setup | CFL eigenvalue | done (1.4 s)
+  setup | CFL eigenvalue | done (1.2 s)
   setup | port 'port1'
   refine | level 2: 4784 plane cells, z_line = 50.1695  Δ +2.792 %
 Port 'port1' — z_line of mode 0 under port-plane refinement (not converged at tol 1.0e-03)
@@ -980,8 +994,8 @@ the mode accumulates φ = −β L, so β — and with it
 ε_eff = (c₀ β / ω)² — can be read off per frequency and laid over
 the port’s curve:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">f_axis</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-analysis sphx-glr-backref-type-py-property reference internal" href="../api/analysis.html#magnelio.analysis.ScatteringTDResult.f_axis" title="magnelio.analysis.ScatteringTDResult.f_axis"><span class="n">result</span><span class="o">.</span><span class="n">f_axis</span></a><span class="w">
-</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">phase</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.unwrap.html#numpy.unwrap" title="numpy.unwrap"><span class="n">np</span><span class="o">.</span><span class="n">unwrap</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.angle.html#numpy.angle" title="numpy.angle"><span class="n">np</span><span class="o">.</span><span class="n">angle</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s21</span></a><span class="p">)</span><span class="p">)</span><span class="w">
-</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">eps_eff_td</span></a> <span class="o">=</span> <span class="p">(</span><span class="n">C0</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">phase</span></a><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data reference external" href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">f_axis</span></a> <span class="o">*</span> <span class="n">L</span><span class="p">)</span><span class="p">)</span> <span class="o">*</span><span class="o">*</span> <span class="mi">2</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">phase_rad</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.unwrap.html#numpy.unwrap" title="numpy.unwrap"><span class="n">np</span><span class="o">.</span><span class="n">unwrap</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.angle.html#numpy.angle" title="numpy.angle"><span class="n">np</span><span class="o">.</span><span class="n">angle</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s21</span></a><span class="p">)</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">eps_eff_td</span></a> <span class="o">=</span> <span class="p">(</span><span class="n">C0</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">phase_rad</span></a><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data reference external" href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">f_axis</span></a> <span class="o">*</span> <span class="n">L</span><span class="p">)</span><span class="p">)</span> <span class="o">*</span><span class="o">*</span> <span class="mi">2</span><span class="w">
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">sel</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">f_axis</span></a> <span class="o">&gt;</span><span class="o">=</span> <span class="mf">1.0e9</span>  <span class="c1"># phase-derived values are 0/0-noisy near DC</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">)</span><span class="p">)</span><span class="w">
@@ -1054,7 +1068,7 @@ reference impedance behind every S-parameter.  The next tutorial
 bends this line around corners and builds a real component out of
 it — a Wilkinson power divider, including its lumped isolation
 resistor.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 6.880 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.384 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-09-microstrip-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ece9595c24bada77761a617e20b4f479/plot_09_microstrip_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_09_microstrip_line.ipynb</span></code></a></p>

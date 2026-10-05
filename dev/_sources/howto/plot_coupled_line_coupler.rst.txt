@@ -26,7 +26,7 @@ form a directional coupler: a fraction of the power entering one
 line leaves the *near* end of the other, and — ideally — nothing
 leaves its far end.  The classic single-section design has two knobs,
 the gap between the lines and their width, and one number to hit: the
-coupling at the centre frequency.  This guide sets a **−10 dB** coupler
+coupling at the center frequency.  This guide sets a **−10 dB** coupler
 at 5 GHz on a 0.813 mm substrate and reads the result off a four-port
 S-parameter run.
 
@@ -91,7 +91,7 @@ needs the ``min_cell_size`` floor set below.
     t_cu = 35e-6  # copper thickness
     h_box = 5.0e-3  # shield height above the ground plane
     z0 = 50.0  # system impedance
-    f0 = 5.0e9  # centre frequency
+    f0 = 5.0e9  # center frequency
     f_min, f_max = 2.0e9, 8.0e9
     coupling_db = -10.0  # target coupling at f0
 
@@ -216,25 +216,25 @@ the loop below takes a few seconds per gap.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 20 x 111 x 34 cells
+      mesh | 20 x 111 x 34 = 75,480 cells | 23 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 20 x 112 x 34 cells
+      mesh | 20 x 112 x 34 = 76,160 cells | 23 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 20 x 112 x 34 cells
+      mesh | 20 x 112 x 34 = 76,160 cells | 23 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 20 x 112 x 34 cells
+      mesh | 20 x 112 x 34 = 76,160 cells | 23 MiB
     s = 0.15 mm: Z_even =  68.8 ohm, Z_odd =  31.7 ohm, sqrt(Ze Zo) =  46.7 ohm, C =  -8.64 dB
     s = 0.20 mm: Z_even =  68.0 ohm, Z_odd =  35.3 ohm, sqrt(Ze Zo) =  49.0 ohm, C = -10.00 dB
     s = 0.25 mm: Z_even =  67.3 ohm, Z_odd =  37.3 ohm, sqrt(Ze Zo) =  50.1 ohm, C = -10.85 dB
@@ -337,7 +337,7 @@ solver sees them:
     fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.4))
     for ax, mode in zip(axes, report.modes):
         mode.plot(
-            field="E",
+            component="E",
             ax=ax,
             title=f"{mode.name}: ε_eff = {mode.epsilon_eff:.3f}",
             geometry=section_model,
@@ -362,7 +362,7 @@ solver sees them:
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 20 x 112 x 34 cells
+      mesh | 20 x 112 x 34 = 76,160 cells | 23 MiB
 
 
 
@@ -374,7 +374,7 @@ The coupler
 
 Each line is one path: from its port on the box wall, straight in,
 a 90° arc onto the coupled section, along it, an arc back out and
-straight to the second port (given only a centre, ``arc_to`` draws
+straight to the second port (given only a center, ``arc_to`` draws
 the shorter of the two arcs — the quarter turn, on either line).
 ``traced`` widens the centreline into copper of thickness ``t_cu``
 on top of the substrate; ``caps="flat"`` ends the tracks square on
@@ -521,9 +521,8 @@ coupled section is solved on the grid it was dimensioned on.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (0.6 s)
       mesh | PEC masks
-      mesh | 138 x 104 x 34 cells (0.8 s total)
+      mesh | 138 x 104 x 34 = 487,968 cells | 144 MiB (0.6 s total)
     grid: 138 x 104 x 34 cells
 
 
@@ -655,7 +654,7 @@ chapter of the methods section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 20.784 seconds)
+   **Total running time of the script:** (1 minutes 5.899 seconds)
 
 
 .. _sphx_glr_download_howto_plot_coupled_line_coupler.py:

@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -784,7 +798,7 @@ azimuth <em>angle</em> (and continues over the back half at
 <dd><p>∮ U dΩ over the physical sphere.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Total radiated power [W]</p>
+<dd class="field-odd"><p>Total radiated power [<a class="reference internal" href="#magnelio.post.WallLossQ.W" title="magnelio.post.WallLossQ.W">W</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1250,6 +1264,90 @@ extension filled in.</p></li>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.post.WallLossQ">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">WallLossQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P_loss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_tag</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.WallLossQ" title="Link to this definition">#</a></dt>
+<dd><p>Wall-loss Q of one eigenmode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frequency</strong> (<em>float</em>)</p></li>
+<li><p><strong>Q</strong> (<em>float</em>)</p></li>
+<li><p><strong>P_loss</strong> (<em>float</em>)</p></li>
+<li><p><strong>W</strong> (<em>float</em>)</p></li>
+<li><p><strong>per_tag</strong> (<em>dict</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.WallLossQ.frequency">
+<span class="sig-name descname"><span class="pre">frequency</span></span><a class="headerlink" href="#magnelio.post.WallLossQ.frequency" title="Link to this definition">#</a></dt>
+<dd><p>Mode frequency [Hz].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.WallLossQ.Q">
+<span class="sig-name descname"><span class="pre">Q</span></span><a class="headerlink" href="#magnelio.post.WallLossQ.Q" title="Link to this definition">#</a></dt>
+<dd><p>Total wall-loss quality factor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.WallLossQ.P_loss">
+<span class="sig-name descname"><span class="pre">P_loss</span></span><a class="headerlink" href="#magnelio.post.WallLossQ.P_loss" title="Link to this definition">#</a></dt>
+<dd><p>Total wall loss [W] at the mode’s stored amplitude.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.WallLossQ.W">
+<span class="sig-name descname"><span class="pre">W</span></span><a class="headerlink" href="#magnelio.post.WallLossQ.W" title="Link to this definition">#</a></dt>
+<dd><p>Time-averaged stored energy [J] at the mode’s stored amplitude.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.WallLossQ.per_tag">
+<span class="sig-name descname"><span class="pre">per_tag</span></span><a class="headerlink" href="#magnelio.post.WallLossQ.per_tag" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">tag</span> <span class="pre">-&gt;</span> <span class="pre">P_loss</span></code> breakdown [W]; tags are material ids (solids)
+and face names (PEC boundary walls).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.post.WallLossQ.Q_of">
+<span class="sig-name descname"><span class="pre">Q_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.WallLossQ.Q_of" title="Link to this definition">#</a></dt>
+<dd><p>Partial Q of one wall tag (losses of the others switched off).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.post.compute_band_s_parameters">
 <span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">compute_band_s_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recorder_signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ports</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_3d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_reference_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'track'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.compute_band_s_parameters" title="Link to this definition">#</a></dt>
@@ -1478,7 +1576,7 @@ same patches; carried on the result for the closure check.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>result</strong> (<a class="reference internal" href="solver.html#magnelio.solver.EigenmodeResult" title="magnelio.solver.EigenmodeResult"><em>EigenmodeResult</em></a>) – A lossless eigenmode solution (fields + mesh).  PEC domain
+<li><p><strong>result</strong> (<a class="reference internal" href="analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.analysis.EigenmodeResult"><em>EigenmodeResult</em></a>) – A lossless eigenmode solution (fields + mesh).  PEC domain
 walls are read from <code class="docutils literal notranslate"><span class="pre">solver_info['boundary_conditions']</span></code>
 (omitted faces default to PEC, the solver convention).</p></li>
 <li><p><strong>mode</strong> (<em>int</em>) – Mode index into <code class="docutils literal notranslate"><span class="pre">result.modes</span></code>.</p></li>
@@ -1492,7 +1590,7 @@ applies to; lossy-metal solids always use their own.  <code class="docutils lite
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>WallLossQ</p>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.post.WallLossQ" title="magnelio.post.WallLossQ">WallLossQ</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1583,6 +1681,15 @@ applies to; lossy-metal solids always use their own.  <code class="docutils lite
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.to_touchstone"><code class="docutils literal notranslate"><span class="pre">SParameterResult.to_touchstone()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.is_complete"><code class="docutils literal notranslate"><span class="pre">SParameterResult.is_complete</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.port_names"><code class="docutils literal notranslate"><span class="pre">SParameterResult.port_names</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.WallLossQ"><code class="docutils literal notranslate"><span class="pre">WallLossQ</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.WallLossQ.frequency"><code class="docutils literal notranslate"><span class="pre">WallLossQ.frequency</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.WallLossQ.Q"><code class="docutils literal notranslate"><span class="pre">WallLossQ.Q</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.WallLossQ.P_loss"><code class="docutils literal notranslate"><span class="pre">WallLossQ.P_loss</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.WallLossQ.W"><code class="docutils literal notranslate"><span class="pre">WallLossQ.W</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.WallLossQ.per_tag"><code class="docutils literal notranslate"><span class="pre">WallLossQ.per_tag</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.WallLossQ.Q_of"><code class="docutils literal notranslate"><span class="pre">WallLossQ.Q_of()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.compute_band_s_parameters"><code class="docutils literal notranslate"><span class="pre">compute_band_s_parameters()</span></code></a></li>

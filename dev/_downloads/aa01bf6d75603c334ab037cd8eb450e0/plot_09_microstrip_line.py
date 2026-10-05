@@ -101,7 +101,7 @@ print(f"design width: {w_strip * 1e3:.3f} mm -> {z_formula:.2f} Ohm, eps_eff {ep
 # ------------------------
 #
 # The cross-section is mirror-symmetric about the vertical plane
-# through the trace centre, and so is the mode we want: the field
+# through the trace center, and so is the mode we want: the field
 # pushes straight down from trace to ground, so the transverse field
 # component *across* that plane vanishes on it, and the magnetic field
 # threads through it at right angles.  That is exactly a **magnetic
@@ -118,7 +118,7 @@ print(f"design width: {w_strip * 1e3:.3f} mm -> {z_formula:.2f} Ohm, eps_eff {ep
 # rebuilding the model.  Half the cells means half the memory and
 # roughly half the run time, and it costs nothing in accuracy — if
 # anything the opposite, because the domain now ends exactly at the
-# trace centre, so the discretisation is symmetric about it by
+# trace center, so the discretisation is symmetric about it by
 # construction rather than by luck.
 #
 # What symmetry does cost is *modes*.  A magnetic wall keeps only the
@@ -347,8 +347,8 @@ print(f"|S11|: max {20 * np.log10(np.abs(s11).max()):.1f} dB")
 # the port's curve:
 
 f_axis = result.f_axis
-phase = np.unwrap(np.angle(s21))
-eps_eff_td = (C0 * (-phase) / (2 * np.pi * f_axis * L)) ** 2
+phase_rad = np.unwrap(np.angle(s21))
+eps_eff_td = (C0 * (-phase_rad) / (2 * np.pi * f_axis * L)) ** 2
 
 sel = f_axis >= 1.0e9  # phase-derived values are 0/0-noisy near DC
 fig, ax = plt.subplots(figsize=(7, 4.2))

@@ -92,7 +92,7 @@ fig, ax = plots.plot_cross_section(
 # then retrieve the same physical face in its new position.
 
 shield = geo.Cylinder(axis="x", radius=2e-3, inner_radius=1e-3, height=6e-3, material="pec")
-shield = shield.tag_face("port", near=(6e-3, 1.5e-3, 0), normal="x")
+shield = shield.tagged_face("port", near=(6e-3, 1.5e-3, 0), normal="x")
 shield = shield.rotated("z", 22.5)
 end = shield.face("port")
 assert len(end.edges) == 2
@@ -109,7 +109,7 @@ fig, ax = plots.plot_cross_section(
 ax.axvline(20, color="0.5", linestyle="--")
 
 # A deliberate face set can keep both successors of a split.
-cap = geo.Brick(size=(4e-3, 4e-3, 2e-3), material="pec").tag_faces("cap", normal="z")
+cap = geo.Brick(size=(4e-3, 4e-3, 2e-3), material="pec").tagged_faces("cap", normal="z")
 slot = geo.Brick(origin=(1.8e-3, -1e-3, -1e-3), size=(0.4e-3, 6e-3, 4e-3))
 assert len((cap - slot).faces("cap")) == 2
 
@@ -119,7 +119,7 @@ assert len((cap - slot).faces("cap")) == 2
 # Each placed copy owns its own face. A reusable placement can move an
 # entire mixed component without replacing the face name.
 
-shell = geo.Brick(size=(2e-3, 1e-3, 1e-3), material="pec").tag_face("contact", normal="z")
+shell = geo.Brick(size=(2e-3, 1e-3, 1e-3), material="pec").tagged_face("contact", normal="z")
 datum = geo.Curve.line((0, 0, 0), (2e-3, 0, 0))
 named_component = geo.Group(shell, datum)
 placed_copies = [geo.Translation((5e-3 * i, 0, 0)) @ named_component for i in range(3)]
@@ -235,7 +235,7 @@ fig.tight_layout()
 
 host = geo.Brick(size=(2e-3,) * 3, material="pec")
 tool = geo.Brick(origin=(1.8e-3, 0.5e-3, 0.5e-3), size=(0.4e-3, 1e-3, 1e-3))
-marked = host.imprint(tool).tag_face("contact", near=(2e-3, 1e-3, 1e-3), normal="x")
+marked = host.imprinted(tool).tagged_face("contact", near=(2e-3, 1e-3, 1e-3), normal="x")
 dielectric = geo.Brick(origin=(0.5e-3,) * 3, size=(1e-3,) * 3, material="air")
 assembly = geo.insert(marked, dielectric, priorities=(0, 1))
 fig, axes = plt.subplots(1, 2, figsize=(9, 4))
@@ -385,13 +385,13 @@ fig, ax = plots.plot_cross_section([small, smooth, large], "y", 0, title="Tangen
 # Eligible rectangular faces specify EM consumers directly. Port and
 # field monitor now share the selected plane and window.
 
-source = geo.Brick(size=(2e-3, 3e-3, 4e-3), material="air").tag_face("output", normal="z")
+source = geo.Brick(size=(2e-3, 3e-3, 4e-3), material="air").tagged_face("output", normal="z")
 placed = geo.Translation((5e-3, 0, 0)) @ source
 model = GeometryModel(background="pec").add(placed)
 face = placed.face("output")
 port = ports.PortWaveguide.from_face(face, model=model, name="output")
 recording = monitors.MonitorFieldFrequency.from_face(
-    face, freqs=[10e9], fields=["Ex", "Ey"], name="output_fields"
+    face, frequencies=[10e9], fields=["Ex", "Ey"], name="output_fields"
 )
 assert port.corners == recording.corners
 fig, ax = plt.subplots(figsize=(5, 4))

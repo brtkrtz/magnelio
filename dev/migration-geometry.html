@@ -60,7 +60,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Upgrading from 0.7.x" href="migration-0.8.html" />
-    <link rel="prev" title="Implementation engineering (non-method)" href="methods/implementation.html" />
+    <link rel="prev" title="API naming migration" href="migration-api-naming.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -173,9 +173,9 @@
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#" aria-current="page">
-    Upgrading geometry construction
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#" aria-current="page">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -642,8 +656,8 @@ elbow and compares its volume with profile area times spine length.</p>
 <h2>Owned topology<a class="headerlink" href="#owned-topology" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">Solid.face(near=...,</span> <span class="pre">normal=...,</span> <span class="pre">surface_type=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">edge(...)</span></code> and
 <code class="docutils literal notranslate"><span class="pre">vertex(...)</span></code> now return owner-bound references. Keep enduring selections by
-calling <code class="docutils literal notranslate"><span class="pre">tag_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_edge</span></code> or <code class="docutils literal notranslate"><span class="pre">tag_vertex</span></code> before placement, then retrieve
-the name from the placed owner. <code class="docutils literal notranslate"><span class="pre">faces</span></code>, <code class="docutils literal notranslate"><span class="pre">edges</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_faces</span></code> and <code class="docutils literal notranslate"><span class="pre">tag_edges</span></code>
+calling <code class="docutils literal notranslate"><span class="pre">tagged_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_edge</span></code> or <code class="docutils literal notranslate"><span class="pre">tagged_vertex</span></code> before placement, then retrieve
+the name from the placed owner. <code class="docutils literal notranslate"><span class="pre">faces</span></code>, <code class="docutils literal notranslate"><span class="pre">edges</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_faces</span></code> and <code class="docutils literal notranslate"><span class="pre">tagged_edges</span></code>
 are deliberate set operations. Numeric kernel indices are not supported.</p>
 <p>References have no independent transform methods. Detach a face with
 <code class="docutils literal notranslate"><span class="pre">face.detached()</span></code> or an edge with <code class="docutils literal notranslate"><span class="pre">edge.as_curve()</span></code> when standalone geometry
@@ -718,7 +732,7 @@ tangent; it determines left/right and is carried without added tangent twist.</p
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
 
 <span class="n">body</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span> <span class="n">inner_radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
-                    <span class="n">height</span><span class="o">=</span><span class="mf">6e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)</span>
+                    <span class="n">height</span><span class="o">=</span><span class="mf">6e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">tagged_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)</span>
 <span class="n">body</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">22.5</span><span class="p">)</span>
 <span class="n">face</span> <span class="o">=</span> <span class="n">body</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">)</span>
 <span class="n">spine</span> <span class="o">=</span> <span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">from_face</span><span class="p">(</span><span class="n">face</span><span class="p">,</span> <span class="n">up</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
@@ -748,12 +762,12 @@ orientation. Tutorial 14 executes the oblique coax bend to the domain plane.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="methods/implementation.html"
+       href="migration-api-naming.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Implementation engineering (non-method)</p>
+        <p class="prev-next-title">API naming migration</p>
       </div>
     </a>
     <a class="right-next"

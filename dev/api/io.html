@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -659,12 +673,6 @@ iteration, <code class="docutils literal notranslate"><span class="pre">len</spa
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.io.LoadedGeometry.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.LoadedGeometry.plot" title="Link to this definition">#</a></dt>
-<dd><p>Interactive 3D view — same wrapper as <code class="docutils literal notranslate"><span class="pre">GeometryModel.plot</span></code>.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.LoadedGeometry.plot_cross_section">
 <span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.LoadedGeometry.plot_cross_section" title="Link to this definition">#</a></dt>
 <dd><p>2D cross-section — same wrapper as
@@ -677,6 +685,12 @@ iteration, <code class="docutils literal notranslate"><span class="pre">len</spa
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.LoadedGeometry.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.LoadedGeometry.show" title="Link to this definition">#</a></dt>
+<dd><p>Interactive 3D view — same wrapper as <code class="docutils literal notranslate"><span class="pre">GeometryModel.show</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -716,7 +730,7 @@ and the same reader.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.checkpoint_state">
-<span class="sig-name descname"><span class="pre">checkpoint_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.checkpoint_state" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">checkpoint_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.checkpoint_state" title="Link to this definition">#</a></dt>
 <dd><p>Load a run’s resume checkpoint (<code class="docutils literal notranslate"><span class="pre">state_dict</span></code>), or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <p>Returns the solver state persisted at the last periodic / final
 / graceful-abort checkpoint as a <a class="reference internal" href="#magnelio.io.CheckpointState" title="magnelio.io.CheckpointState"><code class="xref py py-class docutils literal notranslate"><span class="pre">CheckpointState</span></code></a> — a
@@ -728,7 +742,7 @@ interval).  <code class="docutils literal notranslate"><span class="pre">resume(
 entry is the step the checkpoint corresponds to.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>excited</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>run</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#magnelio.io.CheckpointState" title="magnelio.io.project.CheckpointState"><em>CheckpointState</em></a> | None</p>
@@ -795,21 +809,21 @@ exports.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.energy_trace">
-<span class="sig-name descname"><span class="pre">energy_trace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.energy_trace" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">energy_trace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.energy_trace" title="Link to this definition">#</a></dt>
 <dd><p>Stored <code class="docutils literal notranslate"><span class="pre">(step,</span> <span class="pre">time,</span> <span class="pre">energy)</span></code> trace of a run [structured array].</p>
 <p>The same as <code class="docutils literal notranslate"><span class="pre">project.runs[name].energy_trace</span></code>; this form takes
 a scattering run’s excited pair and may omit the selector on a
 one-run project.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>excited</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>run</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.export_paraview">
-<span class="sig-name descname"><span class="pre">export_paraview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bake_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pvpython</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.export_paraview" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">export_paraview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bake_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pvpython</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.export_paraview" title="Link to this definition">#</a></dt>
 <dd><p>Write the ready-to-open ParaView session for one run.</p>
 <p>The only place the ParaView artefacts are written: a run’s
 close, a resume and the eigenmode solver write none of them.
@@ -823,7 +837,7 @@ Call it again after a resume; the set is regenerated.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>excited</strong> (<em>str</em><em> or </em><em>tuple</em><em>, </em><em>optional</em>) – Selects the run: a port name, or a <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">mode)</span></code> pair.
+<li><p><strong>run</strong> (<em>str</em><em> or </em><em>tuple</em><em>, </em><em>optional</em>) – Selects the run: a port name, or a <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">mode)</span></code> pair.
 May be omitted when the project holds one run.</p></li>
 <li><p><strong>glyph_percentile</strong> (<em>float</em><em>, </em><em>default 98.0</em>) – Percentile of the field-vector magnitude used as the glyph
 clip cap (edge singularities would otherwise dictate the
@@ -932,7 +946,7 @@ that draws into the fresh axes it is given:</p>
 picture is one window redrawn in place; without one (a log, a
 headless run) only the table is shown.</p>
 <p>For a panel that keeps moving while you work in other cells,
-see <a class="reference internal" href="#magnelio.io.Project.monitor" title="magnelio.io.Project.monitor"><code class="xref py py-meth docutils literal notranslate"><span class="pre">monitor()</span></code></a>.</p>
+see <a class="reference internal" href="#magnelio.io.Project.watch_panel" title="magnelio.io.Project.watch_panel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">watch_panel()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -948,30 +962,8 @@ notebook is recognised on its own.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.io.Project.monitor">
-<span class="sig-name descname"><span class="pre">monitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'time'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.monitor" title="Link to this definition">#</a></dt>
-<dd><p>A live panel for a notebook: the run table above the energy plot.</p>
-<p>Returns an <code class="docutils literal notranslate"><span class="pre">ipywidgets</span></code> box that a background thread refreshes
-every <code class="docutils literal notranslate"><span class="pre">interval</span></code> seconds — the project summary with its run
-table as HTML, and every run’s stored energy in dB below the
-peak as a picture — until the project is finished.  Leave it
-as the last expression of a cell; the cell returns at once and
-the panel keeps moving.  <code class="docutils literal notranslate"><span class="pre">panel.stop()</span></code> ends the refresh
-early.  Needs the <code class="docutils literal notranslate"><span class="pre">jupyter</span></code> extra (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span>
-<span class="pre">'magnelio[jupyter]'</span></code>).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>interval</strong> (<em>float</em><em>, </em><em>default 2.0</em>) – Seconds between refreshes.</p></li>
-<li><p><strong>x</strong> (<em>{&quot;time&quot;</em><em>, </em><em>&quot;step&quot;}</em><em>, </em><em>default &quot;time&quot;</em>) – Horizontal axis of the energy plot.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.monitors_for">
-<span class="sig-name descname"><span class="pre">monitors_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.monitors_for" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">monitors_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.monitors_for" title="Link to this definition">#</a></dt>
 <dd><p>Lazy monitor readers for one run, keyed by monitor name.</p>
 <p>Resolves each monitor kind by name into its matching lazy reader —
 <code class="xref py py-class docutils literal notranslate"><span class="pre">_LoadedFieldMonitor</span></code> (MonitorFieldTime snapshots) and
@@ -980,11 +972,11 @@ run’s <code class="docutils literal notranslate"><span class="pre">results.h5<
 (MonitorFieldFrequency DFT) from <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code> and
 <code class="xref py py-class docutils literal notranslate"><span class="pre">_LoadedMonitorWallLoss</span></code> (per-tag dissipated fractions) from
 <code class="docutils literal notranslate"><span class="pre">wall_loss.h5</span></code>.  The user only knows the name, not the kind or
-the file.  <code class="docutils literal notranslate"><span class="pre">excited</span></code> selects the run; it may be omitted
+the file.  <code class="docutils literal notranslate"><span class="pre">run</span></code> selects the run; it may be omitted
 when the project holds one run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>excited</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>run</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>dict</p>
@@ -1249,18 +1241,18 @@ untouched.  It answers <code class="docutils literal notranslate"><span class="p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.result">
-<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.result" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.result" title="Link to this definition">#</a></dt>
 <dd><p>One run as a <a class="reference internal" href="analysis.html#magnelio.analysis.TDResult" title="magnelio.analysis.TDResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">TDResult</span></code></a>.</p>
 <p>Rebuilds the in-RAM result object of the run from the store:
 the recorded port signals, the sampled excitations, the energy
-trace and lazy readers for the run’s monitors.  <code class="docutils literal notranslate"><span class="pre">name</span></code> is
+trace and lazy readers for the run’s monitors.  <code class="docutils literal notranslate"><span class="pre">run</span></code> is
 the run name (<code class="docutils literal notranslate"><span class="pre">run_1</span></code>, or the <code class="docutils literal notranslate"><span class="pre">name=</span></code> given to
 <a class="reference internal" href="core.html#magnelio.AnalysisTD.run" title="magnelio.AnalysisTD.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a>); a scattering channel run may
 be named by its excited pair.  May be omitted when the project
 holds one run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>run</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1354,7 +1346,7 @@ displays nothing, in a notebook as anywhere else — only the
 last expression of a cell is shown.  For the ready-made
 display that replaces itself at every change, see
 <a class="reference internal" href="#magnelio.io.Project.follow" title="magnelio.io.Project.follow"><code class="xref py py-meth docutils literal notranslate"><span class="pre">follow()</span></code></a>; for a panel that keeps moving while other
-cells run, <a class="reference internal" href="#magnelio.io.Project.monitor" title="magnelio.io.Project.monitor"><code class="xref py py-meth docutils literal notranslate"><span class="pre">monitor()</span></code></a>.</p>
+cells run, <a class="reference internal" href="#magnelio.io.Project.watch_panel" title="magnelio.io.Project.watch_panel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">watch_panel()</span></code></a>.</p>
 <p>With <code class="docutils literal notranslate"><span class="pre">on_change</span></code> the loop runs here: the callable is called
 with the project at every change, and the project is returned
 when the loop ends:</p>
@@ -1378,6 +1370,28 @@ itself with it.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>generator, or <a class="reference internal" href="#magnelio.io.Project" title="magnelio.io.Project">Project</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.watch_panel">
+<span class="sig-name descname"><span class="pre">watch_panel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'time'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.watch_panel" title="Link to this definition">#</a></dt>
+<dd><p>A live panel for a notebook: the run table above the energy plot.</p>
+<p>Returns an <code class="docutils literal notranslate"><span class="pre">ipywidgets</span></code> box that a background thread refreshes
+every <code class="docutils literal notranslate"><span class="pre">interval</span></code> seconds — the project summary with its run
+table as HTML, and every run’s stored energy in dB below the
+peak as a picture — until the project is finished.  Leave it
+as the last expression of a cell; the cell returns at once and
+the panel keeps moving.  <code class="docutils literal notranslate"><span class="pre">panel.stop()</span></code> ends the refresh
+early.  Needs the <code class="docutils literal notranslate"><span class="pre">jupyter</span></code> extra (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span>
+<span class="pre">'magnelio[jupyter]'</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interval</strong> (<em>float</em><em>, </em><em>default 2.0</em>) – Seconds between refreshes.</p></li>
+<li><p><strong>x</strong> (<em>{&quot;time&quot;</em><em>, </em><em>&quot;step&quot;}</em><em>, </em><em>default &quot;time&quot;</em>) – Horizontal axis of the energy plot.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1435,6 +1449,12 @@ successor identity raises TopologyEvolutionError.</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="magnelio.io.Project.max_run_steps">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">max_run_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#magnelio.io.Project.max_run_steps" title="Link to this definition">#</a></dt>
+<dd><p>Longest stored run in solver steps (not a sum).</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="magnelio.io.Project.mesh">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">mesh</span></span><a class="headerlink" href="#magnelio.io.Project.mesh" title="Link to this definition">#</a></dt>
 <dd><p>The reconstructed <a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.mesh.mesher.Mesh"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mesh</span></code></a> (lazy).</p>
@@ -1462,6 +1482,12 @@ frequency and wall-loss monitors by name (see <a class="reference internal" href
 With more
 than one run the monitor name alone is ambiguous — use
 <a class="reference internal" href="#magnelio.io.Project.monitors_for" title="magnelio.io.Project.monitors_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">monitors_for()</span></code></a> with the excited pair.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.io.Project.n_steps_by_run">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">n_steps_by_run</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#magnelio.io.Project.n_steps_by_run" title="Link to this definition">#</a></dt>
+<dd><p>Solver steps per stored excitation or general run.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -2200,7 +2226,7 @@ insertion; sheets still need physical thickness to be meshable.</p>
 <dd><p>Read a BREP compound file back into an ordered list of shapes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – A <code class="docutils literal notranslate"><span class="pre">.brep</span></code> file written by <a class="reference internal" href="#magnelio.io.write_brep" title="magnelio.io.write_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">write_brep()</span></code></a>.</p>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – A metre-space <code class="docutils literal notranslate"><span class="pre">.brep</span></code> file written by <a class="reference internal" href="#magnelio.io.write_brep" title="magnelio.io.write_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">write_brep()</span></code></a>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The compound’s direct children, in write order.</p>
@@ -2221,7 +2247,7 @@ insertion; sheets still need physical thickness to be meshable.</p>
 <li><p><strong>shapes</strong> (<em>list</em>) – Geometry shape objects (each exposing <code class="docutils literal notranslate"><span class="pre">_occ_shape()</span></code>) or raw
 <code class="docutils literal notranslate"><span class="pre">TopoDS_Shape</span></code> instances.  The write order is preserved and
 recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep" title="magnelio.io.read_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_brep()</span></code></a>.</p></li>
-<li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – Output <code class="docutils literal notranslate"><span class="pre">.brep</span></code> file.</p></li>
+<li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – Output <code class="docutils literal notranslate"><span class="pre">.brep</span></code> file in metres; no exchange-unit conversion.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -2287,8 +2313,8 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.LoadedGeometry"><code class="docutils literal notranslate"><span class="pre">LoadedGeometry</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.LoadedGeometry.plot"><code class="docutils literal notranslate"><span class="pre">LoadedGeometry.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.LoadedGeometry.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">LoadedGeometry.plot_cross_section()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.LoadedGeometry.show"><code class="docutils literal notranslate"><span class="pre">LoadedGeometry.show()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project"><code class="docutils literal notranslate"><span class="pre">Project</span></code></a><ul class="nav section-nav flex-column">
@@ -2302,7 +2328,6 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.export_paraview"><code class="docutils literal notranslate"><span class="pre">Project.export_paraview()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.export_paraview_eigenmodes"><code class="docutils literal notranslate"><span class="pre">Project.export_paraview_eigenmodes()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.follow"><code class="docutils literal notranslate"><span class="pre">Project.follow()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.monitor"><code class="docutils literal notranslate"><span class="pre">Project.monitor()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.monitors_for"><code class="docutils literal notranslate"><span class="pre">Project.monitors_for()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.phase"><code class="docutils literal notranslate"><span class="pre">Project.phase()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_balance"><code class="docutils literal notranslate"><span class="pre">Project.plot_balance()</span></code></a></li>
@@ -2317,6 +2342,7 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.to_skrf"><code class="docutils literal notranslate"><span class="pre">Project.to_skrf()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.to_touchstone"><code class="docutils literal notranslate"><span class="pre">Project.to_touchstone()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.watch"><code class="docutils literal notranslate"><span class="pre">Project.watch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.watch_panel"><code class="docutils literal notranslate"><span class="pre">Project.watch_panel()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.channels"><code class="docutils literal notranslate"><span class="pre">Project.channels</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.eigenmodes"><code class="docutils literal notranslate"><span class="pre">Project.eigenmodes</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.elapsed"><code class="docutils literal notranslate"><span class="pre">Project.elapsed</span></code></a></li>
@@ -2325,9 +2351,11 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.finished"><code class="docutils literal notranslate"><span class="pre">Project.finished</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.geometry"><code class="docutils literal notranslate"><span class="pre">Project.geometry</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.grid"><code class="docutils literal notranslate"><span class="pre">Project.grid</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.max_run_steps"><code class="docutils literal notranslate"><span class="pre">Project.max_run_steps</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.mesh"><code class="docutils literal notranslate"><span class="pre">Project.mesh</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.meta"><code class="docutils literal notranslate"><span class="pre">Project.meta</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.monitors"><code class="docutils literal notranslate"><span class="pre">Project.monitors</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.n_steps_by_run"><code class="docutils literal notranslate"><span class="pre">Project.n_steps_by_run</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.params"><code class="docutils literal notranslate"><span class="pre">Project.params</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.reference_signal"><code class="docutils literal notranslate"><span class="pre">Project.reference_signal</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.runs"><code class="docutils literal notranslate"><span class="pre">Project.runs</span></code></a></li>

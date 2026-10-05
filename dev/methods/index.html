@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -381,6 +388,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -525,6 +539,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -592,8 +607,8 @@ into Magnelio, in the order a simulation passes through them: spatial
 discretisation, geometry and board input, mesh generation and conformal
 geometry, boundary conditions, port models, lumped circuit elements, dispersive
 materials, conductor losses, sources and monitors, far-field
-computation, and the eigenmode solver.  Four final chapters cover
-numerical precision, the progress a run reports, the 3D viewer and
+computation, and the eigenmode solver. Five final chapters cover
+numerical precision, memory planning, the progress a run reports, the 3D viewer and
 implementation-level engineering (backends, kernel dispatch) that are
 not themselves research methods.</p>
 <p>Every method that originates in published research carries a citation;
@@ -627,6 +642,7 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="geometry.html#from-a-map-to-a-reflector-parametric-surfaces">From a map to a reflector: parametric surfaces</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geometry.html#selected-faces-for-ports-and-field-recordings">Selected faces for ports and field recordings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geometry.html#what-the-mesher-sees">What the mesher sees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geometry.html#owner-operations-and-explicit-grid-regions">Owner operations and explicit grid regions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a><ul>
@@ -638,6 +654,7 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="cad-import.html#healing">Healing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cad-import.html#exporting-selected-geometry">Exporting selected geometry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cad-import.html#limits">Limits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#raw-brep-versus-cad-exchange">Raw BREP versus CAD exchange</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a><ul>
@@ -669,6 +686,7 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="ports.html#exact-discrete-transparent-boundary-conditions-dtbc">Exact discrete transparent boundary conditions (DTBC)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ports.html#excitation-and-recording">Excitation and recording</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ports.html#s-parameters">S-parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ports.html#quantity-and-anchor-vocabulary">Quantity and anchor vocabulary</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a><ul>
@@ -691,6 +709,7 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="conductor-losses.html#the-surface-current">The surface current</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conductor-losses.html#surface-roughness">Surface roughness</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conductor-losses.html#broadband-time-domain-sibc">Broadband time-domain SIBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conductor-losses.html#surface-current-quantities">Surface-current quantities</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a><ul>
@@ -705,6 +724,7 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="sources-monitors.html#signal-processing">Signal processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sources-monitors.html#project-store-checkpointing-resume">Project store, checkpointing, resume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sources-monitors.html#paraview-export">ParaView export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sources-monitors.html#coordinates-sampled-axes-and-phase-inputs">Coordinates, sampled axes and phase inputs</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="projects-and-runs.html">Projects and runs</a><ul>
@@ -714,6 +734,7 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="projects-and-runs.html#time">Time</a></li>
 <li class="toctree-l2"><a class="reference internal" href="projects-and-runs.html#checkpoints-and-resume">Checkpoints and resume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="projects-and-runs.html#what-prints">What prints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="projects-and-runs.html#selecting-a-run-and-reading-its-count">Selecting a run and reading its count</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a><ul>
@@ -739,6 +760,11 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="precision.html#choosing">Choosing</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="memory-planning.html#phase-budgets">Phase budgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory-planning.html#time-monitor-recordings">Time monitor recordings</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="progress-output.html#the-switch">The switch</a></li>
 <li class="toctree-l2"><a class="reference internal" href="progress-output.html#what-the-phases-mean">What the phases mean</a></li>
@@ -748,12 +774,14 @@ in-house derivations are marked as such in the text.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="viewer.html#what-is-drawn">What is drawn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewer.html#setting-the-initial-camera">Setting the initial camera</a></li>
 <li class="toctree-l2"><a class="reference internal" href="viewer.html#the-cutting-plane">The cutting plane</a></li>
 <li class="toctree-l2"><a class="reference internal" href="viewer.html#fields-on-the-cut">Fields on the cut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="viewer.html#fields-in-the-volume">Fields in the volume</a></li>
 <li class="toctree-l2"><a class="reference internal" href="viewer.html#rendering-modes">Rendering modes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="viewer.html#requirements">Requirements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="viewer.html#limitations">Limitations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewer.html#renderer-and-physical-selection">Renderer and physical selection</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a><ul>

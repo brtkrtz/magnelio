@@ -126,7 +126,7 @@ circle.
 
 
     def tangent_gap(theta):
-        """Distance of the circle centre from the ellipse's tangent line, minus R_ARC."""
+        """Distance of the circle center from the ellipse's tangent line, minus R_ARC."""
         p, t = on_ellipse(theta), ellipse_tangent(theta)
         normal = (t[1], -t[0])
         return (c_eq[0] - p[0]) * normal[0] + (c_eq[1] - p[1]) * normal[1] - R_ARC
@@ -168,7 +168,7 @@ the ellipse, the wall and the equator arc to the mid-plane, then
 retraces the same three segments mirrored for the second half of the
 cell.  Two details from tutorial 14 apply:
 
-- each arc names its centre and a ``normal`` to fix which way round
+- each arc names its center and a ``normal`` to fix which way round
   it goes; on the way *back* the turning sense reverses, so the
   equator arcs take ``normal=(0, -1, 0)`` where the iris arcs take
   ``"y"``;
@@ -282,9 +282,9 @@ is the magnetic one (tutorial 09).
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (2.5 s)
+      mesh | conformal cells | done (1.9 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (2.7 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (2.0 s total)
     grid: 26 x 26 x 30 cells
 
 
@@ -335,17 +335,16 @@ nothing periodic about them:
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (2.1 s)
+      mesh | conformal cells | done (1.5 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (2.3 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.6 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (0.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (2.5 s)
+      mesh | conformal cells | done (1.8 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (3.1 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (2.2 s total)
     electric walls on the iris planes (0-mode):  1.2774 GHz
     magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 
@@ -371,14 +370,14 @@ without anything to configure.
 
 
     phases = np.linspace(0.0, 180.0, 7)
-    freqs = []
+    frequencies = []
     for deg in phases:
         result = mio.AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False, phase_advance_deg=deg)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            freqs.append(result.run().frequencies[0])
-        print(f"phase advance {deg:5.1f} deg: {freqs[-1] / 1e9:.4f} GHz")
-    freqs = np.array(freqs)
+            frequencies.append(result.run().frequencies[0])
+        print(f"phase advance {deg:5.1f} deg: {frequencies[-1] / 1e9:.4f} GHz")
+    frequencies = np.array(frequencies)
 
 
 
@@ -424,13 +423,13 @@ published values are 1.300 GHz for the :math:`\pi`-mode and
 
     phi = np.radians(phases)
     design = np.column_stack([np.ones_like(phi), -np.cos(phi)])
-    coef, *_ = np.linalg.lstsq(design, freqs**2, rcond=None)
+    coef, *_ = np.linalg.lstsq(design, frequencies**2, rcond=None)
     f_half = math.sqrt(coef[0])
     k_cell = coef[1] / coef[0]
     phi_fine = np.linspace(0.0, math.pi, 181)
     f_fit = f_half * np.sqrt(1.0 - k_cell * np.cos(phi_fine))
 
-    print(f"pi-mode:              {freqs[-1] / 1e9:.4f} GHz (design 1.3000 GHz)")
+    print(f"pi-mode:              {frequencies[-1] / 1e9:.4f} GHz (design 1.3000 GHz)")
     print(f"cell-to-cell coupling: {100 * k_cell:.2f} % (published 1.87 %)")
 
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
@@ -440,7 +439,7 @@ published values are 1.300 GHz for the :math:`\pi`-mode and
         color="0.6",
         label="$f_{\\pi/2}\\sqrt{1 - k\\cos\\varphi}$ fit",
     )
-    ax.plot(phases, freqs / 1e9, "o", label="periodic eigenmode solves")
+    ax.plot(phases, frequencies / 1e9, "o", label="periodic eigenmode solves")
     ax.plot(
         [0.0, 180.0],
         [f_0_walls / 1e9, f_pi_walls / 1e9],
@@ -605,7 +604,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 51.793 seconds)
+   **Total running time of the script:** (3 minutes 13.155 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

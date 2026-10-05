@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -902,7 +916,7 @@ depth — the roughness scale only matters relative to it).</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.materials.SurfaceImpedanceFit">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">SurfaceImpedanceFit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_hi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_err_re</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_err_cplx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.SurfaceImpedanceFit" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">SurfaceImpedanceFit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_err_re</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_err_cplx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.SurfaceImpedanceFit" title="Link to this definition">#</a></dt>
 <dd><p>Passive rational surface impedance <code class="docutils literal notranslate"><span class="pre">c0</span> <span class="pre">+</span> <span class="pre">sum</span> <span class="pre">c_p</span> <span class="pre">s/(s+b_p)</span></code>.</p>
 <p>Frozen (joins <code class="docutils literal notranslate"><span class="pre">Material</span></code> equality and the store the way the
 roughness models do); built by <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p>
@@ -912,8 +926,8 @@ roughness models do); built by <a class="reference internal" href="#magnelio.mat
 <li><p><strong>sigma</strong> (<em>float</em>) – Conductivity [S/m] of the fitted conductor.</p></li>
 <li><p><strong>mu</strong> (<em>float</em>) – Relative permeability.</p></li>
 <li><p><strong>roughness</strong> (<a class="reference internal" href="#magnelio.materials.SurfaceRoughness" title="magnelio.materials.SurfaceRoughness"><em>SurfaceRoughness</em></a><em> or </em><em>None</em>) – Roughness model whose causal completion this fit carries.</p></li>
-<li><p><strong>f_lo</strong> (<em>float</em>) – Working band [Hz]; accuracy statements hold on this band.</p></li>
-<li><p><strong>f_hi</strong> (<em>float</em>) – Working band [Hz]; accuracy statements hold on this band.</p></li>
+<li><p><strong>f_min</strong> (<em>float</em>) – Working band [Hz]; accuracy statements hold on this band.</p></li>
+<li><p><strong>f_max</strong> (<em>float</em>) – Working band [Hz]; accuracy statements hold on this band.</p></li>
 <li><p><strong>c0</strong> (<em>float</em>) – Instantaneous (high-frequency) resistance term [Ohm].</p></li>
 <li><p><strong>branches</strong> (<em>tuple</em><em> of </em><em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – <code class="docutils literal notranslate"><span class="pre">(b_p</span> <span class="pre">[rad/s],</span> <span class="pre">c_p</span> <span class="pre">[Ohm])</span></code> ladder branches, all positive.</p></li>
 <li><p><strong>rel_err_re</strong> (<em>float</em>) – Achieved max relative deviation of <code class="docutils literal notranslate"><span class="pre">Re</span> <span class="pre">Z</span></code> from the target
@@ -972,7 +986,7 @@ depth — the roughness scale only matters relative to it).</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.materials.fit_surface_impedance">
-<span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">fit_surface_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_hi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_branches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.fit_surface_impedance" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">fit_surface_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_branches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.fit_surface_impedance" title="Link to this definition">#</a></dt>
 <dd><p>Fit a passive Foster ladder to a conductor’s surface impedance.</p>
 <p>The branch count is chosen by an acceptance loop: the smallest
 ladder whose <code class="docutils literal notranslate"><span class="pre">Re</span> <span class="pre">Z</span></code> matches the target surface resistance within
@@ -985,8 +999,8 @@ is returned; failure to reach <code class="docutils literal notranslate"><span c
 <li><p><strong>mu</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative permeability of the conductor.</p></li>
 <li><p><strong>roughness</strong> (<a class="reference internal" href="#magnelio.materials.SurfaceRoughness" title="magnelio.materials.SurfaceRoughness"><em>SurfaceRoughness</em></a><em>, </em><em>optional</em>) – Roughness model; its real factor <code class="docutils literal notranslate"><span class="pre">K(f)</span></code> is causally completed
 via <code class="xref py py-func docutils literal notranslate"><span class="pre">kk_reactance()</span></code> on the roughness excess.</p></li>
-<li><p><strong>f_lo</strong> (<em>float</em><em>, </em><em>optional</em>) – Working band [Hz].</p></li>
-<li><p><strong>f_hi</strong> (<em>float</em><em>, </em><em>optional</em>) – Working band [Hz].</p></li>
+<li><p><strong>f_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Working band [Hz].</p></li>
+<li><p><strong>f_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Working band [Hz].</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Acceptance bound on the band’s <code class="docutils literal notranslate"><span class="pre">Re</span> <span class="pre">Z</span></code> relative error.</p></li>
 <li><p><strong>guard</strong> (<em>float</em><em>, </em><em>optional</em>) – Pole-placement guard factor beyond the band (measured default;
 the top branches need room above the band to carry the sqrt
@@ -1005,7 +1019,7 @@ growth).</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.materials.fit_wall_impedances">
-<span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">fit_wall_impedances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resolved</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_hi</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_branches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.fit_wall_impedances" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">fit_wall_impedances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resolved</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_branches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.fit_wall_impedances" title="Link to this definition">#</a></dt>
 <dd><p>Fit one surface impedance per wall tag, sharing identical fits.</p>
 <p>Completes the wall-tag resolution: takes the conductor properties
 of <code class="docutils literal notranslate"><span class="pre">mesh.surfaces.resolve_wall_conductors</span></code> and returns
@@ -1019,8 +1033,8 @@ acceptance loop runs once per distinct conductor, not once per tag.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>resolved</strong> (<em>dict</em>) – <code class="docutils literal notranslate"><span class="pre">tag</span> <span class="pre">-&gt;</span> <span class="pre">(sigma,</span> <span class="pre">mu,</span> <span class="pre">roughness)</span></code> per
 <code class="docutils literal notranslate"><span class="pre">resolve_wall_conductors</span></code>.</p></li>
-<li><p><strong>f_lo</strong> (<em>float</em>) – Working band [Hz] passed to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
-<li><p><strong>f_hi</strong> (<em>float</em>) – Working band [Hz] passed to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
+<li><p><strong>f_min</strong> (<em>float</em>) – Working band [Hz] passed to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
+<li><p><strong>f_max</strong> (<em>float</em>) – Working band [Hz] passed to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
 <li><p><strong>tol</strong> (<em>optional</em>) – Forwarded to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
 <li><p><strong>guard</strong> (<em>optional</em>) – Forwarded to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
 <li><p><strong>max_branches</strong> (<em>optional</em>) – Forwarded to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>

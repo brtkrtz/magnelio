@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -679,9 +693,8 @@ this modest resolution.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (0.5 s)
   mesh | PEC masks
-  mesh | 30 x 30 x 30 cells (0.6 s total)
+  mesh | 30 x 30 x 30 = 27,000 cells | 8.2 MiB
 grid: 30 x 30 x 30 cells
 </pre></div>
 </div>
@@ -691,7 +704,7 @@ grid: 30 x 30 x 30 cells
 <p><code class="docutils literal notranslate"><span class="pre">n_modes</span></code> asks for the eight lowest physical modes — the two
 complete degenerate clusters.  The result carries the resonant
 frequencies and the full 3D field pattern of every mode.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-solver sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/solver.html#magnelio.solver.EigenmodeResult" title="magnelio.solver.EigenmodeResult"><span class="n">result</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisEigenmode" title="magnelio.AnalysisEigenmode"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="p">)</span><span class="w">
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-solver-eigenmode_result sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.solver.eigenmode_result.EigenmodeResult"><span class="n">result</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisEigenmode" title="magnelio.AnalysisEigenmode"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="p">)</span><span class="w">
 </span><span class="w">
 </span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">fi</span></a> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">result</span><span class="o">.</span><span class="n">frequencies</span></a><span class="p">)</span><span class="p">:</span><span class="w">
 </span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">mode </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">fi</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
@@ -740,7 +753,7 @@ shape.  Passing the geometry model overlays its cross-section: the
 dashed circle is the cavity wall, sliced from the actual model:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">)</span><span class="p">)</span><span class="w">
 </span><span class="k">for</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="p">)</span><span class="p">:</span><span class="w">
-</span>    <a class="sphx-glr-backref-module-magnelio-solver sphx-glr-backref-type-py-method reference internal" href="../api/solver.html#magnelio.solver.EigenmodeResult.plot" title="magnelio.solver.EigenmodeResult.plot"><span class="n">result</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio-solver-eigenmode_result sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.solver.eigenmode_result.EigenmodeResult"><span class="n">result</span></a><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="w">
 </span>        <span class="n">mode</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">color</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="o">=</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="w">
 </span>    <span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
@@ -762,7 +775,7 @@ the blank node lines of the pattern — a sign structure the ⊙/⊗
 markers resolve and a magnitude plot would hide:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">)</span><span class="p">)</span><span class="w">
 </span><span class="k">for</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">H</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">)</span><span class="p">:</span><span class="w">
-</span>    <a class="sphx-glr-backref-module-magnelio-solver sphx-glr-backref-type-py-method reference internal" href="../api/solver.html#magnelio.solver.EigenmodeResult.plot" title="magnelio.solver.EigenmodeResult.plot"><span class="n">result</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio-solver-eigenmode_result sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.solver.eigenmode_result.EigenmodeResult"><span class="n">result</span></a><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="w">
 </span>        <span class="n">mode</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="w">
 </span>        <span class="n">component</span><span class="o">=</span><span class="n">comp</span><span class="p">,</span><span class="w">
 </span>        <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">x</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
@@ -785,7 +798,7 @@ discretisation fingerprint), and mode field plots on slice planes
 through the cavity.  The next tutorials turn to the toolbox around
 the solvers — starting with field monitors, which record fields
 <em>during</em> a driven simulation.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 31.039 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 25.528 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-05-eigenmode-sphere-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/58d5022b9d63b83aed3b5a4b7ebb5b07/plot_05_eigenmode_sphere.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_05_eigenmode_sphere.ipynb</span></code></a></p>

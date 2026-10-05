@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -716,11 +730,11 @@ itself, and the ground plane is handled for it (more below).</p>
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">nearfield</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span></a><span class="p">(</span><span class="w">
 </span>    <span class="n">corners</span><span class="o">=</span><span class="p">(</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">)</span><span class="p">,</span><span class="w">
-</span>    <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span><span class="w">
+</span>    <span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span><span class="w">
 </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span><span class="w">
 </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">nearfield</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
 </span><span class="p">)</span><span class="w">
-</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">farfield</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">farfield</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">farfield</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">farfield</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">analysis</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span></a><span class="p">(</span><span class="w">
 </span>    <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span><span class="w">
@@ -736,7 +750,7 @@ itself, and the ground plane is handled for it (more below).</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 46 x 46 x 48 cells
+  mesh | 46 x 46 x 48 = 101,568 cells | 30 MiB
 grid: 46 x 46 x 48 cells
 </pre></div>
 </div>
@@ -821,7 +835,7 @@ resonances of the box instead of showing one clean antenna dip.</p>
 </span><span class="c1"># as a number: the spectrum is in V/m per √W of incident power, and a</span><span class="w">
 </span><span class="c1"># scale tied to the pattern's own peak keeps this plot honest no matter</span><span class="w">
 </span><span class="c1"># what the drive level or the structure is.</span><span class="w">
-</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/post.html#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult"><span class="n">pattern</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">nearfield</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centred</span></a><span class="p">(</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/post.html#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult"><span class="n">pattern</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">nearfield</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centered</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">e_peak</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span><span class="o">*</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/post.html#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult"><span class="n">pattern</span><span class="o">.</span><span class="n">values</span></a><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="p">)</span><span class="w">
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">11.5</span><span class="p">,</span> <span class="mf">4.6</span><span class="p">)</span><span class="p">)</span><span class="w">
@@ -900,7 +914,7 @@ returns to antennas with a dipole computed as a half model on a
 symmetry plane, 3D pattern included.  The next tutorials leave the
 wire world and move to printed circuits: microstrip lines and the
 components built from them.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 14.746 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 11.123 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-08-open-boundary-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/b718b63296483895102268247dded24c/plot_08_open_boundary.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_08_open_boundary.ipynb</span></code></a></p>

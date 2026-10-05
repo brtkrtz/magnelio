@@ -209,13 +209,13 @@ resolution parameter.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 36 cells
+      mesh | 14 x 14 x 36 = 7,056 cells | 2.2 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 38 cells
+      mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
     coax line impedance on this grid: 47.31 Ohm
     --- coax, naive start values ---
     worst |S11| in band :  -19.5 dB
@@ -268,21 +268,21 @@ reactance is what reflects at the top of the band.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 37 cells
+      mesh | 14 x 14 x 37 = 7,252 cells | 2.3 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 38 cells
+      mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 39 cells
+      mesh | 14 x 14 x 39 = 7,644 cells | 2.4 MiB
 
-    <matplotlib.legend.Legend object at 0x7f24d0de8d90>
+    <matplotlib.legend.Legend object at 0x7f645c77c750>
 
 
 
@@ -332,31 +332,31 @@ whole band; hold that thought for the microstrip section.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 38 cells
+      mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
     coax, gap start at 0·gap: max |phase error|  28.97 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 36 cells
+      mesh | 14 x 14 x 36 = 7,056 cells | 2.2 MiB
     coax, gap start at -1·gap: max |phase error|  17.40 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 34 cells
+      mesh | 14 x 14 x 34 = 6,664 cells | 2.1 MiB
     coax, gap start at -2·gap: max |phase error|   5.83 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 32 cells
+      mesh | 14 x 14 x 32 = 6,272 cells | 2.0 MiB
     coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-    <matplotlib.legend.Legend object at 0x7f24cdfe5390>
+    <matplotlib.legend.Legend object at 0x7f645a30dad0>
 
 
 
@@ -407,9 +407,9 @@ mismatch.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 38 cells
+      mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
 
-    <matplotlib.legend.Legend object at 0x7f24d0b08d90>
+    <matplotlib.legend.Legend object at 0x7f645cf255d0>
 
 
 
@@ -512,13 +512,13 @@ they would in a real layout.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 16 cells
+      mesh | 24 x 23 x 16 = 8,832 cells | 2.7 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 22 cells
+      mesh | 24 x 23 x 22 = 12,144 cells | 3.7 MiB
     microstrip line impedance on this grid: 50.23 Ohm
     --- microstrip, trace end at the reference plane ---
     worst |S11| in band :  -14.4 dB
@@ -573,31 +573,31 @@ of the band that matters most in your application.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 22 cells
+      mesh | 24 x 23 x 22 = 12,144 cells | 3.7 MiB
     microstrip, trace end at 0.0·h_sub: max |phase error|  23.73 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 21 cells
+      mesh | 24 x 23 x 21 = 11,592 cells | 3.6 MiB
     microstrip, trace end at -0.5·h_sub: max |phase error|  10.59 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 20 cells
+      mesh | 24 x 23 x 20 = 11,040 cells | 3.4 MiB
     microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 19 cells
+      mesh | 24 x 23 x 19 = 10,488 cells | 3.2 MiB
     microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
 
-    <matplotlib.legend.Legend object at 0x7f24cf230d90>
+    <matplotlib.legend.Legend object at 0x7f645bb9f610>
 
 
 
@@ -607,7 +607,7 @@ Coplanar waveguide
 ------------------
 
 The CPW termination is, once the model exploits the pair's
-symmetry, *the coax picture again*: the centre strip stops an **end
+symmetry, *the coax picture again*: the center strip stops an **end
 gap** short of the ground metallisation behind it — one boolean cut
 shapes strip, slots, end gap and closing ground plate in a single
 stroke — and the lumped port bridges the gap longitudinally, on the
@@ -627,7 +627,7 @@ impedance.
 .. code-block:: Python
 
 
-    w_cpw = 0.7e-3  # centre strip width
+    w_cpw = 0.7e-3  # center strip width
     s_cpw = 0.05e-3  # slot width
     h_cpw = 0.508e-3  # substrate height
     t_cpw = 17e-6  # metallisation thickness
@@ -728,19 +728,19 @@ impedance.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 9 cells
+      mesh | 23 x 31 x 9 = 6,417 cells | 2.0 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
     CPW line impedance on this grid: 42.22 Ohm
     --- CPW, naive start values ---
     worst |S11| in band :  -26.6 dB
@@ -808,88 +808,88 @@ reference plane on this structure.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 31 cells
+      mesh | 23 x 31 x 31 = 22,103 cells | 6.7 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 31 cells
+      mesh | 23 x 31 x 31 = 22,103 cells | 6.7 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 25 cells
+      mesh | 23 x 31 x 25 = 17,825 cells | 5.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 25 cells
+      mesh | 23 x 31 x 25 = 17,825 cells | 5.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
     CPW, gap start at +0·s: max |phase error|  21.35 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 34 cells
+      mesh | 23 x 31 x 34 = 24,242 cells | 7.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 34 cells
+      mesh | 23 x 31 x 34 = 24,242 cells | 7.4 MiB
     CPW, gap start at +8·s: max |phase error|  11.02 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 35 cells
+      mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 35 cells
+      mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
     CPW, gap start at +16·s: max |phase error|   0.74 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 35 cells
+      mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 35 cells
+      mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
     CPW, gap start at +24·s: max |phase error|   9.60 deg
 
 
@@ -934,15 +934,15 @@ catalogue value leaves a visible broadband pedestal.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 31 x 33 cells
+      mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
 
-    <matplotlib.legend.Legend object at 0x7f24d0786c10>
+    <matplotlib.legend.Legend object at 0x7f645b5da890>
 
 
 
@@ -963,7 +963,7 @@ Across all three line types the same three-part picture:
   waveguide-port solve, not the catalogue number.
 
 Symmetry is the CPW's friend: the magnetic wall through the strip
-centre is what lets a single edge chain terminate the even mode the
+center is what lets a single edge chain terminate the even mode the
 way the coax pin gap does.  And keep the test fixture itself above
 suspicion — its shield (if any) single-mode over the band, its
 resolution the resolution of the production model.
@@ -1006,7 +1006,7 @@ quantities of your production model, run, and read the scoreboard.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 2.883 seconds)
+   **Total running time of the script:** (0 minutes 46.056 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_investigations.py:

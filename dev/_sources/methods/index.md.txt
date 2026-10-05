@@ -5,8 +5,8 @@ into Magnelio, in the order a simulation passes through them: spatial
 discretisation, geometry and board input, mesh generation and conformal
 geometry, boundary conditions, port models, lumped circuit elements, dispersive
 materials, conductor losses, sources and monitors, far-field
-computation, and the eigenmode solver.  Four final chapters cover
-numerical precision, the progress a run reports, the 3D viewer and
+computation, and the eigenmode solver. Five final chapters cover
+numerical precision, memory planning, the progress a run reports, the 3D viewer and
 implementation-level engineering (backends, kernel dispatch) that are
 not themselves research methods.
 
@@ -31,6 +31,7 @@ projects-and-runs
 far-field
 eigenmode-analysis
 precision
+memory-planning
 progress-output
 viewer
 implementation

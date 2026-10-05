@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -381,6 +388,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -525,6 +539,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -670,6 +685,12 @@ counts as conductor, as the kernel’s classifier would have it.</p>
 </section>
 <section id="graded-cartesian-mesh">
 <h2>Graded Cartesian mesh<a class="headerlink" href="#graded-cartesian-mesh" title="Link to this heading">#</a></h2>
+<p>The final meshing progress line reports the three grid dimensions, total
+cell count and memory held by the mesh’s NumPy buffers. Shared buffers are
+counted once; units are binary (<code class="docutils literal notranslate"><span class="pre">GiB</span> <span class="pre">=</span> <span class="pre">2³⁰</span> <span class="pre">bytes</span></code>). This is the completed
+mesh’s array storage, excluding CAD objects, Python-object overhead and
+temporary meshing allocations. Analysis setup and time integration need
+additional memory.</p>
 <p>The mesh generator (<code class="docutils literal notranslate"><span class="pre">mesh/mesher.py</span></code>) produces a graded (non-uniform)
 Cartesian tensor-product grid: geometry-derived fixpoints (“anchors”,
 plane clustering, DD-059…DD-062) plus feature-based two-scale
@@ -825,7 +846,7 @@ the primal faces of the node plane nearest to the cut; each cell in
 the colour of its material, blended towards conductor grey by that
 share.  A round conductor is a round disc here.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fill=&quot;material&quot;</span></code> — the classification: the material whose volume
-contains the cell centre.  This is the staircase <em>baseline</em> that the
+contains the cell center.  This is the staircase <em>baseline</em> that the
 sub-cell values override on every cut cell, not the accuracy of the
 discretisation; thin sheets do not appear in it.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fill=&quot;conformal&quot;</span></code> — the permittivity <span class="math notranslate nohighlight">\(\bar\varepsilon\)</span> the electric

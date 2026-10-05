@@ -108,7 +108,7 @@ band-limited 8.2–12.4 GHz excitation.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 48 x 32 x 24 cells
+      mesh | 48 x 32 x 24 = 36,864 cells | 11 MiB
 
 
 
@@ -139,13 +139,13 @@ temporary folder so this page can build anywhere; in real work you
 would pick a permanent location on fast local storage, because the
 solver writes into it continuously.
 
-.. GENERATED FROM PYTHON SOURCE LINES 86-108
+.. GENERATED FROM PYTHON SOURCE LINES 86-105
 
 .. code-block:: Python
 
 
     volume = monitors.MonitorFieldFrequency(
-        freqs=[10.0e9],
+        frequencies=[10.0e9],
         fields=["E", "H"],
         interval=1.0 / (12 * f_max),
         name="volume_pattern",
@@ -162,6 +162,31 @@ solver writes into it continuously.
         verbose=False,
     )
 
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 106-114
+
+Check the allocation budget before launching the runs
+-----------------------------------------------------
+
+The estimate constructs no solver operators and writes no project files.
+Its phases include the mesh already held in RAM. The volume DFT monitor
+needs its complex accumulators in RAM even though its finished bins are
+saved to disk. Unknown port costs leave the overall upper budget open.
+See :doc:`/methods/memory-planning` for finite time-recording budgets.
+
+.. GENERATED FROM PYTHON SOURCE LINES 114-120
+
+.. code-block:: Python
+
+
+    print(analysis.estimate_memory(excited=["port3", "port4"]))
+
     result = analysis.run(excited=["port3", "port4"], port_signal_stop_db=50.0)
     print(type(result).__name__, "->", result.status)
 
@@ -173,12 +198,29 @@ solver writes into it continuously.
 
  .. code-block:: none
 
+    Memory estimate | numpy | float32 | 2 run(s)
+      mesh already held: 11 MiB
+      fields: 905 KiB; coefficients: 2.7 MiB
+      material matrices: RAM 13 MiB - 32 MiB
+      CFL setup: RAM 39 MiB - 75 MiB
+      port/element setup: RAM >= 13 MiB (upper unknown)
+      solver setup: RAM >= 20 MiB (upper unknown)
+      time integration: RAM >= 20 MiB (upper unknown)
+      monitor volume_pattern: 3.5 MiB/bin | bins <= 1 | recording/run 3.5 MiB
+        RAM 3.5 MiB - 12 MiB | disk/run 3.5 MiB
+      field-monitor disk payload, all n_runs: 7.1 MiB
+      Note: Auto backend is unresolved: CPU scenario shown; pass backend='cupy' for GPU.
+      Note: CFL step unknown: time-to-step counts remain unresolved; dt= supplies a scenario.
+      Note: Automatic step cap depends on prepared ports/waveforms and is not solved here.
+      Note: Port/element modes, factorisation, convolution histories and signal records are unbudgeted.
+      Note: Ranges budget current allocation paths, not measured RSS or guaranteed process limits.
+      Note: CAD/native objects, Python metadata, allocator pools and checkpoint/I/O workspaces are excluded.
     Project -> done
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-114
+.. GENERATED FROM PYTHON SOURCE LINES 121-126
 
 ``run()`` on a project returns not an in-RAM result but a *reader*
 over the directory it just wrote.  Both excitations now live on disk
@@ -186,7 +228,7 @@ as separate named runs — including, unlike in the previous tutorial,
 both sets of monitor data.  A look at the files shows where
 everything went (sizes in kB):
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-122
+.. GENERATED FROM PYTHON SOURCE LINES 126-134
 
 .. code-block:: Python
 
@@ -220,7 +262,7 @@ everything went (sizes in kB):
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-138
+.. GENERATED FROM PYTHON SOURCE LINES 135-150
 
 ``project.json`` carries the run registry and the reconstruction
 recipe, ``mesh.h5`` and ``geometry.brep`` the exact model, and each
@@ -238,7 +280,7 @@ separation the store exists for: a cluster job computes, your
 laptop evaluates.  S-parameters are derived on read from the stored
 signals, with the accessors you already know:
 
-.. GENERATED FROM PYTHON SOURCE LINES 138-148
+.. GENERATED FROM PYTHON SOURCE LINES 150-160
 
 .. code-block:: Python
 
@@ -271,7 +313,7 @@ signals, with the accessors you already know:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 149-168
+.. GENERATED FROM PYTHON SOURCE LINES 161-180
 
 Watching a run: the energy trace
 --------------------------------
@@ -293,7 +335,7 @@ the run live, without touching the job that is computing; the
 how-to *Watching a simulation that is still running* shows the
 loop, and the live panel for a notebook.
 
-.. GENERATED FROM PYTHON SOURCE LINES 168-175
+.. GENERATED FROM PYTHON SOURCE LINES 180-187
 
 .. code-block:: Python
 
@@ -322,7 +364,7 @@ loop, and the live panel for a notebook.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 176-184
+.. GENERATED FROM PYTHON SOURCE LINES 188-196
 
 The monitor data of *every* run is preserved — where the previous
 tutorial had to harvest its in-RAM monitors between two ``run()``
@@ -333,7 +375,7 @@ stored pattern is a full 3D volume, the slice plane is chosen at
 mid-height cut, the E-arm drive on the vertical cut, both from data
 recorded in the same simulation:
 
-.. GENERATED FROM PYTHON SOURCE LINES 184-197
+.. GENERATED FROM PYTHON SOURCE LINES 196-209
 
 .. code-block:: Python
 
@@ -362,7 +404,7 @@ recorded in the same simulation:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 198-209
+.. GENERATED FROM PYTHON SOURCE LINES 210-221
 
 The volume can also be opened in the 3D viewer.  ``show`` lays the
 field on the viewer's cutting plane — here the E-arm drive, cut
@@ -376,7 +418,7 @@ slider moves the surface, and the *Show* menu swaps the arrows on
 the cut for arrows on a lattice through the volume; a documentation
 build shows the frame the call asks for.
 
-.. GENERATED FROM PYTHON SOURCE LINES 209-220
+.. GENERATED FROM PYTHON SOURCE LINES 221-232
 
 .. code-block:: Python
 
@@ -387,7 +429,7 @@ build shows the frame the call asks for.
         position=0.0,
         geometry=model,
         mesh=mesh,
-        phase=90.0,
+        phase_deg=90.0,
         volume="isosurface",
     )
 
@@ -425,7 +467,7 @@ build shows the frame the call asks for.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 221-232
+.. GENERATED FROM PYTHON SOURCE LINES 233-244
 
 Running longer: resume
 ----------------------
@@ -439,7 +481,7 @@ interrupted job, a stop criterion chosen too shallow, and the
 convergence question "would more ring-down change my S-parameters?".
 Here we ask the third one, extending the H-arm run by 2000 steps:
 
-.. GENERATED FROM PYTHON SOURCE LINES 232-244
+.. GENERATED FROM PYTHON SOURCE LINES 244-254
 
 .. code-block:: Python
 
@@ -447,9 +489,7 @@ Here we ask the third one, extending the H-arm run by 2000 steps:
     s13_before = result_loaded.S("port1", "port3")
     n_before = result_loaded.runs["port3_mode0"].n_steps
 
-    result_resumed = mio.resume(
-        proj_dir, excited="port3", total_time_steps=n_before + 2000, verbose=False
-    )
+    result_resumed = mio.resume(proj_dir, run="port3", total_time_steps=n_before + 2000, verbose=False)
 
     s13_after = result_resumed.S("port1", "port3")
     print(f"steps: {n_before} -> {n_before + 2000}")
@@ -469,7 +509,7 @@ Here we ask the third one, extending the H-arm run by 2000 steps:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 245-257
+.. GENERATED FROM PYTHON SOURCE LINES 255-267
 
 The change is far below any engineering tolerance — the original
 stop criterion was deep enough, and finding that out cost two
@@ -484,12 +524,12 @@ volume invites the ones you don't.  A project run can be handed to
 ParaView as a ready-made session — an export you ask for, since the
 VTK copy of a monitor takes about as much disk as the monitor itself:
 
-.. GENERATED FROM PYTHON SOURCE LINES 257-264
+.. GENERATED FROM PYTHON SOURCE LINES 267-274
 
 .. code-block:: Python
 
 
-    result_resumed.export_paraview(excited="port3")
+    result_resumed.export_paraview(run="port3")
     run_dir = os.path.join(proj_dir, "runs", "port3_mode0")
     for name in sorted(os.listdir(run_dir)):
         if "paraview" in name and os.path.isfile(os.path.join(run_dir, name)):
@@ -509,13 +549,13 @@ VTK copy of a monitor takes about as much disk as the monitor itself:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 265-311
+.. GENERATED FROM PYTHON SOURCE LINES 275-321
 
 The data went to ``paraview/``: one ``.vtr`` file per monitor
 frequency, collected by a ``.pvd`` whose axis is the frequency (for
 a time monitor, the instant).  They hold cell data — the staggered
 frames of ``fields_freq.h5`` averaged onto the cell centres at export
-time, the same numbers ``spectrum.cell_centred()`` returns — so
+time, the same numbers ``spectrum.cell_centered()`` returns — so
 ParaView reads plain VTK files and never opens the store itself.
 ``paraview.pvsm`` is a double-clickable state file (baked when
 ``pvpython`` is on the path): geometry as translucent solids, and per
@@ -561,7 +601,7 @@ them the first antenna.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 20.253 seconds)
+   **Total running time of the script:** (0 minutes 15.359 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_07_project_store.py:

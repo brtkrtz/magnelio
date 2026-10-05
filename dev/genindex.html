@@ -171,8 +171,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -184,6 +184,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -537,6 +551,7 @@
  | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
@@ -627,12 +642,16 @@
 </li>
       <li><a href="api/geo.html#magnelio.geo.Path.arc_to">arc_to() (magnelio.geo.Path method)</a>
 </li>
-      <li><a href="api/geo.html#magnelio.geo.FaceRef.area">area (magnelio.geo.FaceRef property)</a>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.area">area (magnelio.fields.SurfaceCurrent property)</a>
 
       <ul>
+        <li><a href="api/geo.html#magnelio.geo.FaceRef.area">(magnelio.geo.FaceRef property)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.Profile.area">(magnelio.geo.Profile property)</a>
 </li>
       </ul></li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.areas">areas (magnelio.fields.SurfaceCurrent attribute)</a>
+</li>
       <li><a href="api/geo.html#magnelio.geo.EdgeRef.as_curve">as_curve() (magnelio.geo.EdgeRef method)</a>
 </li>
       <li><a href="api/mesh.html#magnelio.mesh.GridPlanes.as_dict">as_dict() (magnelio.mesh.GridPlanes method)</a>
@@ -699,6 +718,8 @@
 </li>
       <li><a href="api/ports.html#magnelio.ports.BboxLateralConductor">BboxLateralConductor (class in magnelio.ports)</a>
 </li>
+      <li><a href="api/geo.html#magnelio.geo.Bend">Bend (class in magnelio.geo)</a>
+</li>
       <li><a href="api/ports.html#magnelio.ports.PortDispersionReport.beta">beta (magnelio.ports.PortDispersionReport property)</a>
 </li>
       <li><a href="api/geo.html#magnelio.geo.Profile.boundary">boundary() (magnelio.geo.Profile method)</a>
@@ -733,6 +754,8 @@
         <li><a href="api/geo.html#magnelio.geo.FaceSetRef.bounding_box">(magnelio.geo.FaceSetRef method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Group.bounding_box">(magnelio.geo.Group method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.bounding_box">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.bounding_box">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -773,6 +796,10 @@
 </li>
       <li><a href="api/geo.html#magnelio.geo.Brick">Brick (class in magnelio.geo)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate.bytes_per_second">bytes_per_second (magnelio.analysis.MonitorMemoryEstimate attribute)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate.bytes_per_snapshot">bytes_per_snapshot (magnelio.analysis.MonitorMemoryEstimate attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -781,11 +808,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/materials.html#magnelio.materials.Huray.cannonball">cannonball() (magnelio.materials.Huray class method)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.FieldState.cell_centred">cell_centred() (magnelio.fields.FieldState method)</a>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.cell_centered">cell_centered() (magnelio.fields.FieldState method)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.FieldState.cell_centres">cell_centres (magnelio.fields.FieldState property)</a>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.cell_centers">cell_centers (magnelio.fields.FieldState property)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.centre">centre (magnelio.fields.SurfaceRecording property)</a>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.center">center (magnelio.fields.SurfaceRecording property)</a>
 </li>
       <li><a href="api/geo.html#magnelio.geo.FaceRef.centroid">centroid (magnelio.geo.FaceRef property)</a>
 </li>
@@ -803,6 +830,8 @@
         <li><a href="api/geo.html#magnelio.geo.Cylinder.chamfered">(magnelio.geo.Cylinder method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Difference.chamfered">(magnelio.geo.Difference method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.chamfered">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.chamfered">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -883,8 +912,12 @@
 </li>
       <li><a href="api/plots.html#magnelio.plots.configure_viewer">configure_viewer() (in module magnelio.plots)</a>
 </li>
-      <li><a href="api/core.html#magnelio.MeshControl.conformal">conformal (magnelio.MeshControl attribute)</a>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.conformal">conformal (magnelio.fields.SurfaceCurrent attribute)</a>
+
+      <ul>
+        <li><a href="api/core.html#magnelio.MeshControl.conformal">(magnelio.MeshControl attribute)</a>
 </li>
+      </ul></li>
       <li><a href="api/ports.html#magnelio.ports.PortRefinementReport.converged">converged (magnelio.ports.PortRefinementReport attribute)</a>
 </li>
       <li><a href="api/solver.html#magnelio.solver.courant_dt">courant_dt() (in module magnelio.solver)</a>
@@ -947,14 +980,16 @@
 </li>
       <li><a href="api/post.html#magnelio.post.FarFieldResult.directivity">directivity (magnelio.post.FarFieldResult property)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate.disk_bytes">disk_bytes (magnelio.analysis.MonitorMemoryEstimate attribute)</a>
+</li>
       <li><a href="api/core.html#magnelio.Material.dispersion">dispersion (magnelio.Material attribute)</a>
 </li>
       <li><a href="api/ports.html#magnelio.ports.PortReport.dispersion">dispersion() (magnelio.ports.PortReport method)</a>
 </li>
-      <li><a href="api/core.html#magnelio.Material.dispersion_mu">dispersion_mu (magnelio.Material attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/core.html#magnelio.Material.dispersion_mu">dispersion_mu (magnelio.Material attribute)</a>
+</li>
       <li><a href="api/materials.html#magnelio.materials.DispersionModel">DispersionModel (class in magnelio.materials)</a>
 </li>
       <li><a href="api/core.html#magnelio.Material.dispersive">dispersive() (magnelio.Material class method)</a>
@@ -1053,7 +1088,7 @@
 </li>
       <li><a href="api/core.html#magnelio.Excitation.effective_delay">effective_delay() (magnelio.Excitation method)</a>
 </li>
-      <li><a href="api/solver.html#magnelio.solver.EigenmodeResult">EigenmodeResult (class in magnelio.solver)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.EigenmodeResult">EigenmodeResult (class in magnelio.analysis)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.Project.eigenmodes">eigenmodes (magnelio.io.Project property)</a>
 </li>
@@ -1109,6 +1144,8 @@
         <li><a href="api/ports.html#magnelio.ports.PortDispersionReport.epsilon_eff">(magnelio.ports.PortDispersionReport attribute)</a>
 </li>
       </ul></li>
+      <li><a href="api/core.html#magnelio.AnalysisTD.estimate_memory">estimate_memory() (magnelio.AnalysisTD method)</a>
+</li>
       <li><a href="api/ports.html#magnelio.ports.PortRefinementReport.estimated_error">estimated_error (magnelio.ports.PortRefinementReport property)</a>
 </li>
       <li><a href="api/materials.html#magnelio.materials.DispersionModel.evaluate">evaluate() (magnelio.materials.DispersionModel method)</a>
@@ -1166,6 +1203,8 @@
 </li>
         <li><a href="api/geo.html#magnelio.geo.FaceRef.extruded">(magnelio.geo.FaceRef method)</a>
 </li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.extruded">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.extruded">(magnelio.geo.ImportedSolid method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Intersection.extruded">(magnelio.geo.Intersection method)</a>
@@ -1199,20 +1238,8 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.f">f (magnelio.fields.FieldSpectrum property)</a>
-
-      <ul>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.f">(magnelio.monitors.MonitorFarFieldFrequency property)</a>
+      <li><a href="api/post.html#magnelio.post.FarFieldResult.f">f (magnelio.post.FarFieldResult attribute)</a>
 </li>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.f">(magnelio.monitors.MonitorFieldFrequency property)</a>
-</li>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorWallLoss.f">(magnelio.monitors.MonitorWallLoss property)</a>
-</li>
-        <li><a href="api/post.html#magnelio.post.FarFieldResult.f">(magnelio.post.FarFieldResult attribute)</a>
-</li>
-        <li><a href="api/signals.html#magnelio.signals.Signal1D.f">(magnelio.signals.Signal1D property)</a>
-</li>
-      </ul></li>
       <li><a href="api/analysis.html#magnelio.analysis.ScatteringResult.f_axis">f_axis (magnelio.analysis.ScatteringResult property)</a>
 
       <ul>
@@ -1220,11 +1247,21 @@
 </li>
         <li><a href="api/core.html#magnelio.AnalysisScatteringTD.f_axis">(magnelio.AnalysisScatteringTD property)</a>
 </li>
+        <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.f_axis">(magnelio.fields.FieldSpectrum property)</a>
+</li>
         <li><a href="api/io.html#magnelio.io.Project.f_axis">(magnelio.io.Project property)</a>
+</li>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.f_axis">(magnelio.monitors.MonitorFarFieldFrequency property)</a>
+</li>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.f_axis">(magnelio.monitors.MonitorFieldFrequency property)</a>
+</li>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorWallLoss.f_axis">(magnelio.monitors.MonitorWallLoss property)</a>
 </li>
         <li><a href="api/ports.html#magnelio.ports.PortDispersionReport.f_axis">(magnelio.ports.PortDispersionReport attribute)</a>
 </li>
         <li><a href="api/post.html#magnelio.post.SParameterResult.f_axis">(magnelio.post.SParameterResult attribute)</a>
+</li>
+        <li><a href="api/signals.html#magnelio.signals.Signal1D.f_axis">(magnelio.signals.Signal1D property)</a>
 </li>
       </ul></li>
       <li><a href="api/signals.html#magnelio.signals.WaveformGaussianModulated.f_center">f_center (magnelio.signals.WaveformGaussianModulated property)</a>
@@ -1309,7 +1346,7 @@
 </li>
       <li><a href="api/mesh.html#magnelio.mesh.GridPlanes.feature_gap">feature_gap (magnelio.mesh.GridPlanes attribute)</a>
 </li>
-      <li><a href="api/solver.html#magnelio.solver.EigenmodeResult.field">field() (magnelio.solver.EigenmodeResult method)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.EigenmodeResult.field">field() (magnelio.analysis.EigenmodeResult method)</a>
 </li>
       <li><a href="api/fields.html#magnelio.fields.FieldRecording">FieldRecording (class in magnelio.fields)</a>
 </li>
@@ -1327,6 +1364,8 @@
         <li><a href="api/geo.html#magnelio.geo.Cylinder.filleted">(magnelio.geo.Cylinder method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Difference.filleted">(magnelio.geo.Difference method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.filleted">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.filleted">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -1385,7 +1424,7 @@
 </li>
       <li><a href="api/geo.html#magnelio.geo.Path.forward">forward() (magnelio.geo.Path method)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.frequencies">frequencies (magnelio.fields.FieldSpectrum property)</a>
+      <li><a href="api/post.html#magnelio.post.WallLossQ.frequency">frequency (magnelio.post.WallLossQ attribute)</a>
 </li>
       <li><a href="api/sources.html#magnelio.sources.SourceFieldInitial.from_arrays">from_arrays() (magnelio.sources.SourceFieldInitial class method)</a>
 </li>
@@ -1551,30 +1590,32 @@
 </li>
       <li><a href="api/io.html#magnelio.io.import_step">import_step() (in module magnelio.io)</a>
 </li>
+      <li><a href="api/geo.html#magnelio.geo.ImportedSheet">ImportedSheet (class in magnelio.geo)</a>
+</li>
       <li><a href="api/geo.html#magnelio.geo.ImportedSolid">ImportedSolid (class in magnelio.geo)</a>
 </li>
-      <li><a href="api/geo.html#magnelio.geo.Brick.imprint">imprint() (magnelio.geo.Brick method)</a>
+      <li><a href="api/geo.html#magnelio.geo.Brick.imprinted">imprinted() (magnelio.geo.Brick method)</a>
 
       <ul>
-        <li><a href="api/geo.html#magnelio.geo.Cone.imprint">(magnelio.geo.Cone method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cone.imprinted">(magnelio.geo.Cone method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Cylinder.imprint">(magnelio.geo.Cylinder method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cylinder.imprinted">(magnelio.geo.Cylinder method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Difference.imprint">(magnelio.geo.Difference method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Difference.imprinted">(magnelio.geo.Difference method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.imprint">(magnelio.geo.ImportedSolid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.imprinted">(magnelio.geo.ImportedSolid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Intersection.imprint">(magnelio.geo.Intersection method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Intersection.imprinted">(magnelio.geo.Intersection method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Loft.imprint">(magnelio.geo.Loft method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Loft.imprinted">(magnelio.geo.Loft method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Solid.imprint">(magnelio.geo.Solid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Solid.imprinted">(magnelio.geo.Solid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Sphere.imprint">(magnelio.geo.Sphere method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Sphere.imprinted">(magnelio.geo.Sphere method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Torus.imprint">(magnelio.geo.Torus method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Torus.imprinted">(magnelio.geo.Torus method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Union.imprint">(magnelio.geo.Union method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Union.imprinted">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
       <li><a href="api/sources.html#magnelio.sources.SourcePlaneWave.incident_E">incident_E() (magnelio.sources.SourcePlaneWave method)</a>
@@ -1641,16 +1682,16 @@
 </li>
       <li><a href="api/mesh.html#magnelio.mesh.BoxFace.is_max">is_max (magnelio.mesh.BoxFace property)</a>
 </li>
+      <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.is_normalized_to_excitation">is_normalized_to_excitation (magnelio.monitors.MonitorFarFieldFrequency property)</a>
+
+      <ul>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.is_normalized_to_excitation">(magnelio.monitors.MonitorFieldFrequency property)</a>
+</li>
+      </ul></li>
       <li><a href="api/core.html#magnelio.Material.is_pec">is_pec (magnelio.Material attribute)</a>
 </li>
       <li><a href="api/geo.html#magnelio.geo.FaceRef.is_planar">is_planar (magnelio.geo.FaceRef property)</a>
 </li>
-      <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.is_renormalized">is_renormalized (magnelio.monitors.MonitorFarFieldFrequency property)</a>
-
-      <ul>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.is_renormalized">(magnelio.monitors.MonitorFieldFrequency property)</a>
-</li>
-      </ul></li>
       <li><a href="api/io.html#magnelio.io.CheckpointState.items">items() (magnelio.io.CheckpointState method)</a>
 </li>
   </ul></td>
@@ -1669,10 +1710,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/io.html#magnelio.io.CheckpointState.keys">keys() (magnelio.io.CheckpointState method)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate.kind">kind (magnelio.analysis.MonitorMemoryEstimate attribute)</a>
+
+      <ul>
+        <li><a href="api/mesh.html#magnelio.mesh.PlaneSource.kind">(magnelio.mesh.PlaneSource attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/mesh.html#magnelio.mesh.PlaneSource.kind">kind (magnelio.mesh.PlaneSource attribute)</a>
-</li>
       <li><a href="api/mesh.html#magnelio.mesh.PlaneRecord.kinds">kinds (magnelio.mesh.PlaneRecord property)</a>
 </li>
   </ul></td>
@@ -1682,6 +1727,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/mesh.html#magnelio.mesh.PlaneSource.label">label (magnelio.mesh.PlaneSource attribute)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.labels">labels (magnelio.fields.SurfaceCurrent attribute)</a>
 </li>
       <li><a href="api/circuit.html#magnelio.circuit.EdgePath.length">length (magnelio.circuit.EdgePath property)</a>
 
@@ -1739,6 +1786,8 @@
         <li><a href="api/geo.html#magnelio.geo.Difference.lofted">(magnelio.geo.Difference method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.FaceRef.lofted">(magnelio.geo.FaceRef method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.lofted">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.lofted">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -1894,6 +1943,8 @@
         <li><a href="api/sources.html#module-magnelio.sources">module</a>
 </li>
       </ul></li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.magnitude">magnitude() (magnelio.fields.SurfaceCurrent method)</a>
+</li>
       <li><a href="api/io.html#magnelio.io.ProjectStore.mark_analysis_finished">mark_analysis_finished() (magnelio.io.ProjectStore method)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.ProjectStore.mark_analysis_started">mark_analysis_started() (magnelio.io.ProjectStore method)</a>
@@ -1916,13 +1967,29 @@
 </li>
       <li><a href="api/core.html#magnelio.MeshControl.max_edge_refinement">max_edge_refinement (magnelio.MeshControl attribute)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.ScatteringResult.max_run_steps">max_run_steps (magnelio.analysis.ScatteringResult property)</a>
+
+      <ul>
+        <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.max_run_steps">(magnelio.analysis.ScatteringTDResult attribute)</a>
+</li>
+        <li><a href="api/io.html#magnelio.io.Project.max_run_steps">(magnelio.io.Project property)</a>
+</li>
+      </ul></li>
+      <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate.max_snapshots">max_snapshots (magnelio.analysis.MonitorMemoryEstimate attribute)</a>
+</li>
       <li><a href="api/geo.html#magnelio.geo.Group.members">members() (magnelio.geo.Group method)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate">MemoryEstimate (class in magnelio.analysis)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryPhase">MemoryPhase (class in magnelio.analysis)</a>
 </li>
       <li><a href="api/post.html#magnelio.post.SParameterResult.merge">merge() (magnelio.post.SParameterResult class method)</a>
 </li>
       <li><a href="api/core.html#magnelio.Mesh">Mesh (class in magnelio)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.Project.mesh">mesh (magnelio.io.Project property)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.mesh_bytes">mesh_bytes (magnelio.analysis.MemoryEstimate attribute)</a>
 </li>
       <li><a href="api/core.html#magnelio.MeshControl">MeshControl (class in magnelio)</a>
 </li>
@@ -1935,6 +2002,10 @@
       <li><a href="api/core.html#magnelio.MeshControl.min_feature_gap">min_feature_gap (magnelio.MeshControl attribute)</a>
 </li>
       <li><a href="api/core.html#magnelio.MeshControl.min_nodes_per_wavelength">min_nodes_per_wavelength (magnelio.MeshControl attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.minimum_peak_ram_bytes">minimum_peak_ram_bytes (magnelio.analysis.MemoryEstimate property)</a>
 </li>
       <li><a href="api/geo.html#magnelio.geo.Mirror">Mirror (class in magnelio.geo)</a>
 </li>
@@ -1952,6 +2023,8 @@
         <li><a href="api/geo.html#magnelio.geo.Difference.mirrored">(magnelio.geo.Difference method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Group.mirrored">(magnelio.geo.Group method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.mirrored">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.mirrored">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -1976,8 +2049,6 @@
         <li><a href="api/geo.html#magnelio.geo.Union.mirrored">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ports.html#magnelio.ports.Mode">Mode (class in magnelio.ports)</a>
 </li>
       <li><a href="api/core.html#magnelio.Excitation.mode">mode (magnelio.Excitation attribute)</a>
@@ -2033,7 +2104,7 @@
         <li><a href="api/sources.html#module-magnelio.sources">magnelio.sources</a>
 </li>
       </ul></li>
-      <li><a href="api/io.html#magnelio.io.Project.monitor">monitor() (magnelio.io.Project method)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.monitor_disk_bytes">monitor_disk_bytes (magnelio.analysis.MemoryEstimate property)</a>
 </li>
       <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency">MonitorFarFieldFrequency (class in magnelio.monitors)</a>
 </li>
@@ -2045,9 +2116,13 @@
 </li>
       <li><a href="api/monitors.html#magnelio.monitors.MonitorFluxTime">MonitorFluxTime (class in magnelio.monitors)</a>
 </li>
-      <li><a href="api/analysis.html#magnelio.analysis.TDResult.monitors">monitors (magnelio.analysis.TDResult attribute)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate">MonitorMemoryEstimate (class in magnelio.analysis)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.monitors">monitors (magnelio.analysis.MemoryEstimate attribute)</a>
 
       <ul>
+        <li><a href="api/analysis.html#magnelio.analysis.TDResult.monitors">(magnelio.analysis.TDResult attribute)</a>
+</li>
         <li><a href="api/core.html#magnelio.AnalysisTD.monitors">(magnelio.AnalysisTD attribute)</a>
 </li>
         <li><a href="api/io.html#magnelio.io.Project.monitors">(magnelio.io.Project property)</a>
@@ -2069,8 +2144,6 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.n_actual_steps">n_actual_steps (magnelio.analysis.ScatteringTDResult attribute)</a>
-</li>
       <li><a href="api/mesh.html#magnelio.mesh.GridLines.n_cells">n_cells (magnelio.mesh.GridLines property)</a>
 </li>
       <li><a href="api/ports.html#magnelio.ports.RefinementLevel.n_cells_3d">n_cells_3d (magnelio.ports.RefinementLevel attribute)</a>
@@ -2081,13 +2154,15 @@
 </li>
       <li><a href="api/core.html#magnelio.AnalysisScatteringTD.n_freq">n_freq (magnelio.AnalysisScatteringTD attribute)</a>
 </li>
-      <li><a href="api/core.html#magnelio.AnalysisEigenmode.n_modes">n_modes (magnelio.AnalysisEigenmode attribute)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.EigenmodeResult.n_modes">n_modes (magnelio.analysis.EigenmodeResult property)</a>
 
       <ul>
-        <li><a href="api/solver.html#magnelio.solver.EigenmodeResult.n_modes">(magnelio.solver.EigenmodeResult property)</a>
+        <li><a href="api/core.html#magnelio.AnalysisEigenmode.n_modes">(magnelio.AnalysisEigenmode attribute)</a>
 </li>
       </ul></li>
       <li><a href="api/mesh.html#magnelio.mesh.GridPlanes.n_nodes">n_nodes (magnelio.mesh.GridPlanes attribute)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.n_runs">n_runs (magnelio.analysis.MemoryEstimate attribute)</a>
 </li>
       <li><a href="api/analysis.html#magnelio.analysis.TDResult.n_steps">n_steps (magnelio.analysis.TDResult attribute)</a>
 
@@ -2095,9 +2170,21 @@
         <li><a href="api/io.html#magnelio.io.Run.n_steps">(magnelio.io.Run property)</a>
 </li>
       </ul></li>
-      <li><a href="api/analysis.html#magnelio.analysis.TDResult.name">name (magnelio.analysis.TDResult attribute)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.ScatteringResult.n_steps_by_run">n_steps_by_run (magnelio.analysis.ScatteringResult property)</a>
 
       <ul>
+        <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.n_steps_by_run">(magnelio.analysis.ScatteringTDResult attribute)</a>
+</li>
+        <li><a href="api/io.html#magnelio.io.Project.n_steps_by_run">(magnelio.io.Project property)</a>
+</li>
+      </ul></li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryPhase.name">name (magnelio.analysis.MemoryPhase attribute)</a>
+
+      <ul>
+        <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate.name">(magnelio.analysis.MonitorMemoryEstimate attribute)</a>
+</li>
+        <li><a href="api/analysis.html#magnelio.analysis.TDResult.name">(magnelio.analysis.TDResult attribute)</a>
+</li>
         <li><a href="api/fields.html#magnelio.fields.FaceRecord.name">(magnelio.fields.FaceRecord attribute)</a>
 </li>
         <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.name">(magnelio.fields.SurfaceRecording attribute)</a>
@@ -2121,7 +2208,19 @@
 </li>
       <li><a href="api/mesh.html#magnelio.mesh.BoxFace.normal_axis">normal_axis (magnelio.mesh.BoxFace property)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.ComponentRecord.normals">normals (magnelio.fields.ComponentRecord attribute)</a>
+      <li><a href="api/fields.html#magnelio.fields.ComponentRecord.normal_positions">normal_positions (magnelio.fields.ComponentRecord attribute)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.TDResult.normalize_to_excitation">normalize_to_excitation() (magnelio.analysis.TDResult method)</a>
+
+      <ul>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.normalize_to_excitation">(magnelio.monitors.MonitorFarFieldFrequency method)</a>
+</li>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.normalize_to_excitation">(magnelio.monitors.MonitorFieldFrequency method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.normals">normals (magnelio.fields.SurfaceCurrent attribute)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.notes">notes (magnelio.analysis.MemoryEstimate attribute)</a>
 </li>
       <li><a href="api/post.html#magnelio.post.ntff_transform">ntff_transform() (in module magnelio.post)</a>
 </li>
@@ -2152,6 +2251,8 @@
       <li><a href="api/geo.html#magnelio.geo.Curve.offset">offset() (magnelio.geo.Curve method)</a>
 
       <ul>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.offset">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.Profile.offset">(magnelio.geo.Profile method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Sheet.offset">(magnelio.geo.Sheet method)</a>
@@ -2177,6 +2278,8 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/post.html#magnelio.post.WallLossQ.P_loss">P_loss (magnelio.post.WallLossQ attribute)</a>
+</li>
       <li><a href="api/post.html#magnelio.post.FarFieldResult.P_rad">P_rad (magnelio.post.FarFieldResult property)</a>
 </li>
       <li><a href="api/circuit.html#magnelio.circuit.ParallelRLC">ParallelRLC (class in magnelio.circuit)</a>
@@ -2197,6 +2300,8 @@
         <li><a href="api/geo.html#magnelio.geo.Cylinder.partition">(magnelio.geo.Cylinder method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Difference.partition">(magnelio.geo.Difference method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.partition">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.partition">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -2225,15 +2330,19 @@
 </li>
       <li><a href="api/io.html#magnelio.io.Run.path">path (magnelio.io.Run property)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.peak_ram_bytes">peak_ram_bytes (magnelio.analysis.MemoryEstimate property)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.peak_vram_bytes">peak_vram_bytes (magnelio.analysis.MemoryEstimate property)</a>
+</li>
       <li><a href="api/core.html#magnelio.Material.pec">pec() (magnelio.Material class method)</a>
 </li>
       <li><a href="api/core.html#magnelio.Mesh.pec_mask_edges">pec_mask_edges (magnelio.Mesh attribute)</a>
 </li>
       <li><a href="api/boundaries.html#magnelio.boundaries.PECBoundary">PECBoundary (class in magnelio.boundaries)</a>
 </li>
-      <li><a href="api/boundaries.html#magnelio.boundaries.PeriodicBoundary">PeriodicBoundary (class in magnelio.boundaries)</a>
+      <li><a href="api/post.html#magnelio.post.WallLossQ.per_tag">per_tag (magnelio.post.WallLossQ attribute)</a>
 </li>
-      <li><a href="api/core.html#magnelio.Excitation.phase">phase (magnelio.Excitation attribute)</a>
+      <li><a href="api/boundaries.html#magnelio.boundaries.PeriodicBoundary">PeriodicBoundary (class in magnelio.boundaries)</a>
 </li>
       <li><a href="api/analysis.html#magnelio.analysis.ScatteringResult.phase">phase() (magnelio.analysis.ScatteringResult method)</a>
 
@@ -2244,6 +2353,10 @@
 </li>
       </ul></li>
       <li><a href="api/core.html#magnelio.AnalysisEigenmode.phase_advance_deg">phase_advance_deg (magnelio.AnalysisEigenmode attribute)</a>
+</li>
+      <li><a href="api/core.html#magnelio.Excitation.phase_deg">phase_deg (magnelio.Excitation attribute)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.MemoryEstimate.phases">phases (magnelio.analysis.MemoryEstimate attribute)</a>
 </li>
       <li><a href="api/post.html#magnelio.post.FarFieldResult.physical_mask">physical_mask (magnelio.post.FarFieldResult attribute)</a>
 </li>
@@ -2259,16 +2372,14 @@
 </li>
       <li><a href="api/mesh.html#magnelio.mesh.PlaneSource">PlaneSource (class in magnelio.mesh)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.FieldRecording.plot">plot() (magnelio.fields.FieldRecording method)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.EigenmodeResult.plot">plot() (magnelio.analysis.EigenmodeResult method)</a>
 
       <ul>
+        <li><a href="api/fields.html#magnelio.fields.FieldRecording.plot">(magnelio.fields.FieldRecording method)</a>
+</li>
         <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.plot">(magnelio.fields.FieldSpectrum method)</a>
 </li>
         <li><a href="api/fields.html#magnelio.fields.FieldState.plot">(magnelio.fields.FieldState method)</a>
-</li>
-        <li><a href="api/core.html#magnelio.GeometryModel.plot">(magnelio.GeometryModel method)</a>
-</li>
-        <li><a href="api/io.html#magnelio.io.LoadedGeometry.plot">(magnelio.io.LoadedGeometry method)</a>
 </li>
         <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.plot">(magnelio.monitors.MonitorFieldFrequency method)</a>
 </li>
@@ -2281,8 +2392,6 @@
         <li><a href="api/ports.html#magnelio.ports.PortDispersionReport.plot">(magnelio.ports.PortDispersionReport method)</a>
 </li>
         <li><a href="api/signals.html#magnelio.signals.Waveform.plot">(magnelio.signals.Waveform method)</a>
-</li>
-        <li><a href="api/solver.html#magnelio.solver.EigenmodeResult.plot">(magnelio.solver.EigenmodeResult method)</a>
 </li>
       </ul></li>
       <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.plot_3d">plot_3d() (magnelio.monitors.MonitorFarFieldFrequency method)</a>
@@ -2451,14 +2560,20 @@
 </li>
       <li><a href="api/mesh.html#magnelio.mesh.PlaneRecord.position">position (magnelio.mesh.PlaneRecord attribute)</a>
 </li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.positions">positions (magnelio.fields.SurfaceCurrent attribute)</a>
+</li>
       <li><a href="api/fields.html#magnelio.fields.FieldState.positions">positions() (magnelio.fields.FieldState method)</a>
 </li>
       <li><a href="api/monitors.html#magnelio.monitors.MonitorFluxTime.power">power (magnelio.monitors.MonitorFluxTime property)</a>
 </li>
       <li><a href="api/post.html#magnelio.post.FarFieldResult.power_balance">power_balance (magnelio.post.FarFieldResult property)</a>
 </li>
-      <li><a href="api/monitors.html#magnelio.monitors.MonitorWallLoss.power_loss">power_loss() (magnelio.monitors.MonitorWallLoss method)</a>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.power_loss">power_loss() (magnelio.fields.SurfaceCurrent method)</a>
+
+      <ul>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorWallLoss.power_loss">(magnelio.monitors.MonitorWallLoss method)</a>
 </li>
+      </ul></li>
       <li><a href="api/ports.html#magnelio.ports.PortOperatorReport.power_wave_full_scale">power_wave_full_scale (magnelio.ports.PortOperatorReport property)</a>
 </li>
       <li><a href="api/fields.html#magnelio.fields.FieldState.poynting">poynting() (magnelio.fields.FieldState method)</a>
@@ -2470,6 +2585,18 @@
       <li><a href="api/geo.html#magnelio.geo.Curve.projected_onto">projected_onto() (magnelio.geo.Curve method)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.ProjectStore">ProjectStore (class in magnelio.io)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/post.html#magnelio.post.WallLossQ.Q">Q (magnelio.post.WallLossQ attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/post.html#magnelio.post.WallLossQ.Q_of">Q_of() (magnelio.post.WallLossQ method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2513,6 +2640,8 @@
 </li>
       <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldSurface.recording">recording() (magnelio.monitors.MonitorFieldSurface method)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.MonitorMemoryEstimate.recording_bytes">recording_bytes (magnelio.analysis.MonitorMemoryEstimate attribute)</a>
+</li>
       <li><a href="api/mesh.html#magnelio.mesh.GridPlanes.records">records() (magnelio.mesh.GridPlanes method)</a>
 </li>
       <li><a href="api/geo.html#magnelio.geo.Profile.rectangle">rectangle() (magnelio.geo.Profile class method)</a>
@@ -2548,13 +2677,7 @@
       <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.renormalize">renormalize() (magnelio.analysis.ScatteringTDResult method)</a>
 
       <ul>
-        <li><a href="api/analysis.html#magnelio.analysis.TDResult.renormalize">(magnelio.analysis.TDResult method)</a>
-</li>
         <li><a href="api/io.html#magnelio.io.Project.renormalize">(magnelio.io.Project method)</a>
-</li>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.renormalize">(magnelio.monitors.MonitorFarFieldFrequency method)</a>
-</li>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.renormalize">(magnelio.monitors.MonitorFieldFrequency method)</a>
 </li>
         <li><a href="api/post.html#magnelio.post.SParameterResult.renormalize">(magnelio.post.SParameterResult method)</a>
 </li>
@@ -2610,6 +2733,8 @@
 </li>
         <li><a href="api/geo.html#magnelio.geo.FaceRef.revolved">(magnelio.geo.FaceRef method)</a>
 </li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.revolved">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.revolved">(magnelio.geo.ImportedSolid method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Intersection.revolved">(magnelio.geo.Intersection method)</a>
@@ -2645,6 +2770,8 @@
         <li><a href="api/geo.html#magnelio.geo.Difference.rotated">(magnelio.geo.Difference method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Group.rotated">(magnelio.geo.Group method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.rotated">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.rotated">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -2732,6 +2859,8 @@
 </li>
         <li><a href="api/geo.html#magnelio.geo.Group.scaled">(magnelio.geo.Group method)</a>
 </li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.scaled">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.scaled">(magnelio.geo.ImportedSolid method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Intersection.scaled">(magnelio.geo.Intersection method)</a>
@@ -2770,6 +2899,8 @@
 </li>
         <li><a href="api/geo.html#magnelio.geo.Difference.section">(magnelio.geo.Difference method)</a>
 </li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.section">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.section">(magnelio.geo.ImportedSolid method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Intersection.section">(magnelio.geo.Intersection method)</a>
@@ -2793,6 +2924,8 @@
         <li><a href="api/geo.html#magnelio.geo.Union.section">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.select">select() (magnelio.fields.SurfaceCurrent method)</a>
+</li>
       <li><a href="api/circuit.html#magnelio.circuit.SeriesRLC">SeriesRLC (class in magnelio.circuit)</a>
 </li>
       <li><a href="api/sources.html#magnelio.sources.SourceFieldInitial.set_excitation">set_excitation() (magnelio.sources.SourceFieldInitial method)</a>
@@ -2838,6 +2971,8 @@
 </li>
         <li><a href="api/geo.html#magnelio.geo.Difference.shelled">(magnelio.geo.Difference method)</a>
 </li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.shelled">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.shelled">(magnelio.geo.ImportedSolid method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Intersection.shelled">(magnelio.geo.Intersection method)</a>
@@ -2861,16 +2996,20 @@
         <li><a href="api/geo.html#magnelio.geo.Union.shelled">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
-      <li><a href="api/fields.html#magnelio.fields.FieldState.show">show() (magnelio.fields.FieldState method)</a>
+      <li><a href="api/analysis.html#magnelio.analysis.EigenmodeResult.show">show() (magnelio.analysis.EigenmodeResult method)</a>
 
       <ul>
+        <li><a href="api/fields.html#magnelio.fields.FieldState.show">(magnelio.fields.FieldState method)</a>
+</li>
+        <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.show">(magnelio.fields.SurfaceCurrent method)</a>
+</li>
         <li><a href="api/core.html#magnelio.GeometryModel.show">(magnelio.GeometryModel method)</a>
+</li>
+        <li><a href="api/io.html#magnelio.io.LoadedGeometry.show">(magnelio.io.LoadedGeometry method)</a>
 </li>
         <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.show">(magnelio.monitors.MonitorFieldFrequency method)</a>
 </li>
         <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldTime.show">(magnelio.monitors.MonitorFieldTime method)</a>
-</li>
-        <li><a href="api/solver.html#magnelio.solver.EigenmodeResult.show">(magnelio.solver.EigenmodeResult method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -3011,6 +3150,8 @@
 </li>
       <li><a href="api/post.html#magnelio.post.FarFieldResult.surface_power">surface_power (magnelio.post.FarFieldResult attribute)</a>
 </li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent">SurfaceCurrent (class in magnelio.fields)</a>
+</li>
       <li><a href="api/materials.html#magnelio.materials.SurfaceImpedanceFit">SurfaceImpedanceFit (class in magnelio.materials)</a>
 </li>
       <li><a href="api/fields.html#magnelio.fields.SurfaceRecording">SurfaceRecording (class in magnelio.fields)</a>
@@ -3029,6 +3170,8 @@
         <li><a href="api/geo.html#magnelio.geo.Difference.swept">(magnelio.geo.Difference method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.FaceRef.swept">(magnelio.geo.FaceRef method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.swept">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.swept">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -3077,134 +3220,136 @@
         <li><a href="api/signals.html#magnelio.signals.WaveformGaussianModulated.t_end">(magnelio.signals.WaveformGaussianModulated property)</a>
 </li>
       </ul></li>
-      <li><a href="api/geo.html#magnelio.geo.Brick.tag_edge">tag_edge() (magnelio.geo.Brick method)</a>
+      <li><a href="api/geo.html#magnelio.geo.Brick.tagged_edge">tagged_edge() (magnelio.geo.Brick method)</a>
 
       <ul>
-        <li><a href="api/geo.html#magnelio.geo.Cone.tag_edge">(magnelio.geo.Cone method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cone.tagged_edge">(magnelio.geo.Cone method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Cylinder.tag_edge">(magnelio.geo.Cylinder method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cylinder.tagged_edge">(magnelio.geo.Cylinder method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Difference.tag_edge">(magnelio.geo.Difference method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Difference.tagged_edge">(magnelio.geo.Difference method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tag_edge">(magnelio.geo.ImportedSolid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tagged_edge">(magnelio.geo.ImportedSolid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Intersection.tag_edge">(magnelio.geo.Intersection method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Intersection.tagged_edge">(magnelio.geo.Intersection method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Loft.tag_edge">(magnelio.geo.Loft method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Loft.tagged_edge">(magnelio.geo.Loft method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Solid.tag_edge">(magnelio.geo.Solid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Solid.tagged_edge">(magnelio.geo.Solid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Sphere.tag_edge">(magnelio.geo.Sphere method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Sphere.tagged_edge">(magnelio.geo.Sphere method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Torus.tag_edge">(magnelio.geo.Torus method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Torus.tagged_edge">(magnelio.geo.Torus method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Union.tag_edge">(magnelio.geo.Union method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Union.tagged_edge">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
-      <li><a href="api/geo.html#magnelio.geo.Brick.tag_edges">tag_edges() (magnelio.geo.Brick method)</a>
+      <li><a href="api/geo.html#magnelio.geo.Brick.tagged_edges">tagged_edges() (magnelio.geo.Brick method)</a>
 
       <ul>
-        <li><a href="api/geo.html#magnelio.geo.Cone.tag_edges">(magnelio.geo.Cone method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cone.tagged_edges">(magnelio.geo.Cone method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Cylinder.tag_edges">(magnelio.geo.Cylinder method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cylinder.tagged_edges">(magnelio.geo.Cylinder method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Difference.tag_edges">(magnelio.geo.Difference method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Difference.tagged_edges">(magnelio.geo.Difference method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tag_edges">(magnelio.geo.ImportedSolid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tagged_edges">(magnelio.geo.ImportedSolid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Intersection.tag_edges">(magnelio.geo.Intersection method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Intersection.tagged_edges">(magnelio.geo.Intersection method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Loft.tag_edges">(magnelio.geo.Loft method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Loft.tagged_edges">(magnelio.geo.Loft method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Solid.tag_edges">(magnelio.geo.Solid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Solid.tagged_edges">(magnelio.geo.Solid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Sphere.tag_edges">(magnelio.geo.Sphere method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Sphere.tagged_edges">(magnelio.geo.Sphere method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Torus.tag_edges">(magnelio.geo.Torus method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Torus.tagged_edges">(magnelio.geo.Torus method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Union.tag_edges">(magnelio.geo.Union method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Union.tagged_edges">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
-      <li><a href="api/geo.html#magnelio.geo.Brick.tag_face">tag_face() (magnelio.geo.Brick method)</a>
+      <li><a href="api/geo.html#magnelio.geo.Brick.tagged_face">tagged_face() (magnelio.geo.Brick method)</a>
 
       <ul>
-        <li><a href="api/geo.html#magnelio.geo.Cone.tag_face">(magnelio.geo.Cone method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cone.tagged_face">(magnelio.geo.Cone method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Cylinder.tag_face">(magnelio.geo.Cylinder method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cylinder.tagged_face">(magnelio.geo.Cylinder method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Difference.tag_face">(magnelio.geo.Difference method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Difference.tagged_face">(magnelio.geo.Difference method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tag_face">(magnelio.geo.ImportedSolid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tagged_face">(magnelio.geo.ImportedSolid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Intersection.tag_face">(magnelio.geo.Intersection method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Intersection.tagged_face">(magnelio.geo.Intersection method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Loft.tag_face">(magnelio.geo.Loft method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Loft.tagged_face">(magnelio.geo.Loft method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Solid.tag_face">(magnelio.geo.Solid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Solid.tagged_face">(magnelio.geo.Solid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Sphere.tag_face">(magnelio.geo.Sphere method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Sphere.tagged_face">(magnelio.geo.Sphere method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Torus.tag_face">(magnelio.geo.Torus method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Torus.tagged_face">(magnelio.geo.Torus method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Union.tag_face">(magnelio.geo.Union method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Union.tagged_face">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
-      <li><a href="api/geo.html#magnelio.geo.Brick.tag_faces">tag_faces() (magnelio.geo.Brick method)</a>
+      <li><a href="api/geo.html#magnelio.geo.Brick.tagged_faces">tagged_faces() (magnelio.geo.Brick method)</a>
 
       <ul>
-        <li><a href="api/geo.html#magnelio.geo.Cone.tag_faces">(magnelio.geo.Cone method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cone.tagged_faces">(magnelio.geo.Cone method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Cylinder.tag_faces">(magnelio.geo.Cylinder method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cylinder.tagged_faces">(magnelio.geo.Cylinder method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Difference.tag_faces">(magnelio.geo.Difference method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Difference.tagged_faces">(magnelio.geo.Difference method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tag_faces">(magnelio.geo.ImportedSolid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tagged_faces">(magnelio.geo.ImportedSolid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Intersection.tag_faces">(magnelio.geo.Intersection method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Intersection.tagged_faces">(magnelio.geo.Intersection method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Loft.tag_faces">(magnelio.geo.Loft method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Loft.tagged_faces">(magnelio.geo.Loft method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Solid.tag_faces">(magnelio.geo.Solid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Solid.tagged_faces">(magnelio.geo.Solid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Sphere.tag_faces">(magnelio.geo.Sphere method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Sphere.tagged_faces">(magnelio.geo.Sphere method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Torus.tag_faces">(magnelio.geo.Torus method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Torus.tagged_faces">(magnelio.geo.Torus method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Union.tag_faces">(magnelio.geo.Union method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Union.tagged_faces">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
-      <li><a href="api/geo.html#magnelio.geo.Brick.tag_vertex">tag_vertex() (magnelio.geo.Brick method)</a>
+      <li><a href="api/geo.html#magnelio.geo.Brick.tagged_vertex">tagged_vertex() (magnelio.geo.Brick method)</a>
 
       <ul>
-        <li><a href="api/geo.html#magnelio.geo.Cone.tag_vertex">(magnelio.geo.Cone method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cone.tagged_vertex">(magnelio.geo.Cone method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Cylinder.tag_vertex">(magnelio.geo.Cylinder method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Cylinder.tagged_vertex">(magnelio.geo.Cylinder method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Difference.tag_vertex">(magnelio.geo.Difference method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Difference.tagged_vertex">(magnelio.geo.Difference method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tag_vertex">(magnelio.geo.ImportedSolid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSolid.tagged_vertex">(magnelio.geo.ImportedSolid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Intersection.tag_vertex">(magnelio.geo.Intersection method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Intersection.tagged_vertex">(magnelio.geo.Intersection method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Loft.tag_vertex">(magnelio.geo.Loft method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Loft.tagged_vertex">(magnelio.geo.Loft method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Solid.tag_vertex">(magnelio.geo.Solid method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Solid.tagged_vertex">(magnelio.geo.Solid method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Sphere.tag_vertex">(magnelio.geo.Sphere method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Sphere.tagged_vertex">(magnelio.geo.Sphere method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Torus.tag_vertex">(magnelio.geo.Torus method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Torus.tagged_vertex">(magnelio.geo.Torus method)</a>
 </li>
-        <li><a href="api/geo.html#magnelio.geo.Union.tag_vertex">(magnelio.geo.Union method)</a>
+        <li><a href="api/geo.html#magnelio.geo.Union.tagged_vertex">(magnelio.geo.Union method)</a>
 </li>
       </ul></li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.tags">tags (magnelio.fields.SurfaceCurrent attribute)</a>
+</li>
       <li><a href="api/geo.html#magnelio.geo.Path.tangent">tangent (magnelio.geo.Path property)</a>
 </li>
       <li><a href="api/fields.html#magnelio.fields.FaceRecord.tangent_axes">tangent_axes (magnelio.fields.FaceRecord attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ports.html#magnelio.ports.PortRefinementReport.target">target (magnelio.ports.PortRefinementReport attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/analysis.html#magnelio.analysis.TDResult">TDResult (class in magnelio.analysis)</a>
 </li>
       <li><a href="api/ports.html#magnelio.ports.ModeReport.termination">termination (magnelio.ports.ModeReport attribute)</a>
@@ -3221,6 +3366,8 @@
         <li><a href="api/geo.html#magnelio.geo.Difference.thickened">(magnelio.geo.Difference method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.FaceRef.thickened">(magnelio.geo.FaceRef method)</a>
+</li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.thickened">(magnelio.geo.ImportedSheet method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.thickened">(magnelio.geo.ImportedSolid method)</a>
 </li>
@@ -3310,6 +3457,8 @@
 </li>
         <li><a href="api/geo.html#magnelio.geo.Group.translated">(magnelio.geo.Group method)</a>
 </li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.translated">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.translated">(magnelio.geo.ImportedSolid method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Intersection.translated">(magnelio.geo.Intersection method)</a>
@@ -3388,8 +3537,14 @@
 </li>
       </ul></li>
       <li><a href="api/fields.html#magnelio.fields.ComponentRecord.values">values (magnelio.fields.ComponentRecord attribute)</a>
+
+      <ul>
+        <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.values">(magnelio.fields.SurfaceCurrent attribute)</a>
 </li>
+      </ul></li>
       <li><a href="api/io.html#magnelio.io.CheckpointState.values">values() (magnelio.io.CheckpointState method)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceCurrent.vector">vector() (magnelio.fields.SurfaceCurrent method)</a>
 </li>
       <li><a href="api/geo.html#magnelio.geo.Brick.vertex">vertex() (magnelio.geo.Brick method)</a>
 
@@ -3440,6 +3595,8 @@
 </li>
         <li><a href="api/geo.html#magnelio.geo.Group.volume">(magnelio.geo.Group method)</a>
 </li>
+        <li><a href="api/geo.html#magnelio.geo.ImportedSheet.volume">(magnelio.geo.ImportedSheet method)</a>
+</li>
         <li><a href="api/geo.html#magnelio.geo.ImportedSolid.volume">(magnelio.geo.ImportedSolid method)</a>
 </li>
         <li><a href="api/geo.html#magnelio.geo.Intersection.volume">(magnelio.geo.Intersection method)</a>
@@ -3469,6 +3626,8 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/post.html#magnelio.post.WallLossQ.W">W (magnelio.post.WallLossQ attribute)</a>
+</li>
       <li><a href="api/post.html#magnelio.post.wall_loss_Q">wall_loss_Q() (in module magnelio.post)</a>
 </li>
       <li><a href="api/core.html#magnelio.AnalysisTD.wall_model">wall_model (magnelio.AnalysisTD attribute)</a>
@@ -3481,7 +3640,11 @@
 </li>
       <li><a href="api/ports.html#magnelio.ports.WallConductor">WallConductor (class in magnelio.ports)</a>
 </li>
+      <li><a href="api/post.html#magnelio.post.WallLossQ">WallLossQ (class in magnelio.post)</a>
+</li>
       <li><a href="api/io.html#magnelio.io.Project.watch">watch() (magnelio.io.Project method)</a>
+</li>
+      <li><a href="api/io.html#magnelio.io.Project.watch_panel">watch_panel() (magnelio.io.Project method)</a>
 </li>
       <li><a href="api/signals.html#magnelio.signals.Waveform">Waveform (class in magnelio.signals)</a>
 </li>
@@ -3497,10 +3660,10 @@
 </li>
       <li><a href="api/signals.html#magnelio.signals.WaveformGaussianModulated">WaveformGaussianModulated (class in magnelio.signals)</a>
 </li>
-      <li><a href="api/signals.html#magnelio.signals.WaveformSine">WaveformSine (class in magnelio.signals)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/signals.html#magnelio.signals.WaveformSine">WaveformSine (class in magnelio.signals)</a>
+</li>
       <li><a href="api/signals.html#magnelio.signals.WaveformStep">WaveformStep (class in magnelio.signals)</a>
 </li>
       <li><a href="api/signals.html#magnelio.signals.WaveformTable">WaveformTable (class in magnelio.signals)</a>
@@ -3527,6 +3690,8 @@
         <li><a href="api/geo.html#magnelio.geo.TopologySelectionError.with_traceback">(magnelio.geo.TopologySelectionError method)</a>
 </li>
       </ul></li>
+      <li><a href="api/geo.html#magnelio.geo.Wrap">Wrap (class in magnelio.geo)</a>
+</li>
       <li><a href="api/io.html#magnelio.io.write_brep">write_brep() (in module magnelio.io)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.ProjectStore.write_eigenmodes">write_eigenmodes() (magnelio.io.ProjectStore method)</a>

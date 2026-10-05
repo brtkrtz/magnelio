@@ -151,7 +151,7 @@ Half the model is enough
 ------------------------
 
 The cross-section is mirror-symmetric about the vertical plane
-through the trace centre, and so is the mode we want: the field
+through the trace center, and so is the mode we want: the field
 pushes straight down from trace to ground, so the transverse field
 component *across* that plane vanishes on it, and the magnetic field
 threads through it at right angles.  That is exactly a **magnetic
@@ -168,7 +168,7 @@ switching the symmetry off later means deleting one argument, not
 rebuilding the model.  Half the cells means half the memory and
 roughly half the run time, and it costs nothing in accuracy — if
 anything the opposite, because the domain now ends exactly at the
-trace centre, so the discretisation is symmetric about it by
+trace center, so the discretisation is symmetric about it by
 construction rather than by luck.
 
 What symmetry does cost is *modes*.  A magnetic wall keeps only the
@@ -229,7 +229,7 @@ structure and the excitation must both respect it.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 13 x 23 x 52 cells
+      mesh | 13 x 23 x 52 = 15,548 cells | 4.8 MiB
     grid: 13 x 23 x 52 cells
 
 
@@ -458,7 +458,7 @@ between levels falls below ``tol``:
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 13 x 23 x 6 cells
+      mesh | 13 x 23 x 6 = 1,794 cells | 611 KiB
       setup | material matrices
       setup | CFL eigenvalue
       setup | port 'port1'
@@ -469,7 +469,7 @@ between levels falls below ``tol``:
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 26 x 46 x 6 cells
+      mesh | 26 x 46 x 6 = 7,176 cells | 2.3 MiB
       setup | material matrices
       setup | CFL eigenvalue
       setup | port 'port1'
@@ -480,10 +480,10 @@ between levels falls below ``tol``:
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 52 x 92 x 6 cells
+      mesh | 52 x 92 x 6 = 28,704 cells | 9.1 MiB
       setup | material matrices
       setup | CFL eigenvalue
-      setup | CFL eigenvalue | done (1.4 s)
+      setup | CFL eigenvalue | done (1.2 s)
       setup | port 'port1'
       refine | level 2: 4784 plane cells, z_line = 50.1695  Δ +2.792 %
     Port 'port1' — z_line of mode 0 under port-plane refinement (not converged at tol 1.0e-03)
@@ -592,8 +592,8 @@ the port's curve:
 
 
     f_axis = result.f_axis
-    phase = np.unwrap(np.angle(s21))
-    eps_eff_td = (C0 * (-phase) / (2 * np.pi * f_axis * L)) ** 2
+    phase_rad = np.unwrap(np.angle(s21))
+    eps_eff_td = (C0 * (-phase_rad) / (2 * np.pi * f_axis * L)) ** 2
 
     sel = f_axis >= 1.0e9  # phase-derived values are 0/0-noisy near DC
     fig, ax = plt.subplots(figsize=(7, 4.2))
@@ -707,7 +707,7 @@ resistor.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 6.880 seconds)
+   **Total running time of the script:** (0 minutes 5.384 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_09_microstrip_line.py:

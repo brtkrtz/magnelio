@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -740,43 +754,43 @@ below is that rule.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 11 x 17 x 15 cells
-   8    2805    0.7 s
+  mesh | 11 x 17 x 15 = 2,805 cells | 923 KiB
+   8    2805    0.5 s
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 15 x 21 x 22 cells
-  12    6930    1.3 s     0.1289     0.0216
+  mesh | 15 x 21 x 22 = 6,930 cells | 2.2 MiB
+  12    6930    0.9 s     0.1289     0.0216
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 16 x 24 x 27 cells
-  16   10368    1.9 s     0.0431     0.0114
+  mesh | 16 x 24 x 27 = 10,368 cells | 3.2 MiB
+  16   10368    1.4 s     0.0431     0.0114
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 21 x 27 x 42 cells
-  24   23814    4.0 s     0.0458     0.0129
+  mesh | 21 x 27 x 42 = 23,814 cells | 7.2 MiB
+  24   23814    3.1 s     0.0458     0.0129
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 25 x 31 x 54 cells
-  32   41850    7.5 s     0.0158     0.0036  ok
+  mesh | 25 x 31 x 54 = 41,850 cells | 13 MiB
+  32   41850    6.0 s     0.0158     0.0036  ok
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 32 x 38 x 81 cells
-  48   98496   27.4 s     0.0164     0.0050  ok
+  mesh | 32 x 38 x 81 = 98,496 cells | 29 MiB
+  48   98496   22.7 s     0.0164     0.0050  ok
 converged: mnpw 32 (ΔS &lt; 0.02 on this rung and the next)
 </pre></div>
 </div>
@@ -889,36 +903,36 @@ mnpw   f0 [GHz]   cells   time   change    error
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 12 x 12 x 4 cells
-  12    11.4057      576    0.1 s            -0.60 %
+  mesh | 12 x 12 x 4 = 576 cells | 209 KiB
+  12    11.4057      576    0.0 s            -0.60 %
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 15 x 15 x 5 cells
+  mesh | 15 x 15 x 5 = 1,125 cells | 392 KiB
   16    11.2897     1125    0.1 s   1.02 %   -1.61 %
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 23 x 23 x 7 cells
-  24    11.3901     3703    0.4 s   0.89 %   -0.73 %  ok
+  mesh | 23 x 23 x 7 = 3,703 cells | 1.2 MiB
+  24    11.3901     3703    0.3 s   0.89 %   -0.73 %  ok
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 30 x 30 x 9 cells
-  32    11.4487     8100    2.2 s   0.51 %   -0.22 %  ok
+  mesh | 30 x 30 x 9 = 8,100 cells | 2.6 MiB
+  32    11.4487     8100    1.9 s   0.51 %   -0.22 %  ok
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 45 x 45 x 14 cells
-  48    11.4889    28350   41.1 s   0.35 %   +0.13 %  ok
+  mesh | 45 x 45 x 14 = 28,350 cells | 8.7 MiB
+  48    11.4889    28350   34.1 s   0.35 %   +0.13 %  ok
 converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
 </pre></div>
 </div>
@@ -996,7 +1010,7 @@ resolution, then add the features back.  The mechanism is explained
 under <a class="reference internal" href="../methods/meshing-conformal.html"><span class="doc">Mesh generation and conformal geometry</span></a>.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 27.126 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 11.229 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-mesh-convergence-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/54afa4040a53bfa87fc500f6dd90c432/plot_mesh_convergence.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_mesh_convergence.ipynb</span></code></a></p>

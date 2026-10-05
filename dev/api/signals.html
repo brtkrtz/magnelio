@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -645,8 +659,8 @@ eliminates that floor down to floating-point precision.</p></li>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="magnelio.signals.Signal1D.f">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.signals.Signal1D.f" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.signals.Signal1D.f_axis">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f_axis</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.signals.Signal1D.f_axis" title="Link to this definition">#</a></dt>
 <dd><p>Frequency axis [Hz].</p>
 </dd></dl>
 
@@ -813,7 +827,7 @@ integrated numerically.  Continuous-wave forms (<code class="docutils literal no
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformGaussianModulated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated" title="Link to this definition">#</a></dt>
-<dd><p>Gaussian envelope on a carrier at the band centre, unit peak.</p>
+<dd><p>Gaussian envelope on a carrier at the band center, unit peak.</p>
 <p>The band-limited pulse for TE/TM modes and any drive whose lower
 band edge matters: the envelope’s sigma follows the passband
 <code class="docutils literal notranslate"><span class="pre">f_max</span> <span class="pre">−</span> <span class="pre">f_min</span></code>, so almost no energy leaks below <code class="docutils literal notranslate"><span class="pre">f_min</span></code>.  The
@@ -848,7 +862,7 @@ integrated numerically.  Continuous-wave forms (<code class="docutils literal no
 <dl class="py property">
 <dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated.f_center">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f_center</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated.f_center" title="Link to this definition">#</a></dt>
-<dd><p>the centre of <code class="docutils literal notranslate"><span class="pre">[f_min,</span> <span class="pre">f_max]</span></code>.</p>
+<dd><p>the center of <code class="docutils literal notranslate"><span class="pre">[f_min,</span> <span class="pre">f_max]</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Carrier frequency [<a class="reference internal" href="fields.html#magnelio.fields.FieldState.Hz" title="magnelio.fields.FieldState.Hz">Hz</a>]</p>
@@ -866,8 +880,8 @@ integrated numerically.  Continuous-wave forms (<code class="docutils literal no
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.signals.WaveformSine">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformSine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rise_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformSine" title="Link to this definition">#</a></dt>
-<dd><p>Continuous-wave sinusoid <code class="docutils literal notranslate"><span class="pre">sin(2π</span> <span class="pre">f</span> <span class="pre">t</span> <span class="pre">+</span> <span class="pre">phase)</span></code>, unit amplitude.</p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformSine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_deg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rise_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformSine" title="Link to this definition">#</a></dt>
+<dd><p>Continuous-wave sinusoid <code class="docutils literal notranslate"><span class="pre">sin(2π</span> <span class="pre">f</span> <span class="pre">t</span> <span class="pre">+</span> <span class="pre">phase_deg)</span></code>, unit amplitude.</p>
 <p>A single-frequency drive; zero for <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">&lt;</span> <span class="pre">0</span></code>.  Its duration is
 infinite (<code class="docutils literal notranslate"><span class="pre">t_end</span> <span class="pre">=</span> <span class="pre">inf</span></code>), so a run driven by it needs an explicit
 duration and cannot stop on energy decay.  With <code class="docutils literal notranslate"><span class="pre">rise_time</span></code> the
@@ -877,7 +891,7 @@ switch-on from exciting the whole band.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>f</strong> (<em>float</em>) – Frequency [Hz].</p></li>
-<li><p><strong>phase</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Phase [degrees].</p></li>
+<li><p><strong>phase_deg</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Phase [degrees].</p></li>
 <li><p><strong>rise_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Length of the raised-cosine switch-on [s].  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default)
 switches on hard at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>.</p></li>
 </ul>
@@ -979,7 +993,7 @@ explicitly when the table is short or noisy.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Signal1D"><code class="docutils literal notranslate"><span class="pre">Signal1D</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Signal1D.at_frequencies"><code class="docutils literal notranslate"><span class="pre">Signal1D.at_frequencies()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Signal1D.f"><code class="docutils literal notranslate"><span class="pre">Signal1D.f</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Signal1D.f_axis"><code class="docutils literal notranslate"><span class="pre">Signal1D.f_axis</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Signal1D.spectrum"><code class="docutils literal notranslate"><span class="pre">Signal1D.spectrum</span></code></a></li>
 </ul>
 </li>

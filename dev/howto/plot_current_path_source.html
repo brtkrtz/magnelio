@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -628,7 +642,7 @@ that reached the grid is the current that was asked for.</p>
 </span><span class="k">def</span><span class="w"> </span><span class="nf">radiate</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="p">:</span><span class="w">
 </span><span class="w">    </span><span class="sd">&quot;&quot;&quot;One transient run; returns the far-field pattern at ``F0``.&quot;&quot;&quot;</span><span class="w">
 </span>    <span class="n">mesh</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.Mesh.from_geometry" title="magnelio.Mesh.from_geometry"><span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.MeshControl" title="magnelio.MeshControl"><span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span></a><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">)</span><span class="w">
-</span>    <a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/post.html#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult"><span class="n">pattern</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">pattern</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">F0</span><span class="p">]</span><span class="p">,</span> <span class="n">margin_cells</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/post.html#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult"><span class="n">pattern</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">pattern</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="n">F0</span><span class="p">]</span><span class="p">,</span> <span class="n">margin_cells</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="w">
 </span>    <span class="n">result</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisTD" title="magnelio.AnalysisTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisTD</span></a><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">[</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/post.html#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult"><span class="n">pattern</span></a><span class="p">]</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="w">
 </span>        <span class="n">excitations</span><span class="o">=</span><span class="p">[</span><span class="w">
 </span>            <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.Excitation" title="magnelio.Excitation"><span class="n">mio</span><span class="o">.</span><span class="n">Excitation</span></a><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">waveform</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio-signals sphx-glr-backref-type-py-class reference internal" href="../api/signals.html#magnelio.signals.WaveformGaussian" title="magnelio.signals.WaveformGaussian"><span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussian</span></a><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">)</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span><span class="w">
@@ -636,7 +650,7 @@ that reached the grid is the current that was asked for.</p>
 </span>        <span class="n">t_end</span><span class="o">=</span><span class="mf">2000e-12</span><span class="p">,</span><span class="w">
 </span>        <span class="n">energy_stop_db</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span><span class="w">
 </span>    <span class="p">)</span><span class="w">
-</span>    <span class="n">result</span><span class="o">.</span><span class="n">renormalize</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w">
+</span>    <span class="n">result</span><span class="o">.</span><span class="n">normalize_to_excitation</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w">
 </span>    <span class="k">return</span> <a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/post.html#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult"><span class="n">pattern</span><span class="o">.</span><span class="n">result</span></a><span class="p">(</span><span class="n">F0</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <section id="a-filament-in-free-space">
@@ -656,7 +670,7 @@ mesh | grid lines
 mesh | materials
 mesh | conformal cells
 mesh | PEC masks
-mesh | 92 x 92 x 96 cells
+mesh | 92 x 92 x 96 = 812,544 cells | 237 MiB
 </pre></div>
 </div>
 <p>The Hertzian dipole radiates <span class="math notranslate nohighlight">\(\eta_0 (k I L)^2 / 6\pi\)</span> and has
@@ -698,7 +712,7 @@ masked below the plane and the horizon directivity doubles.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 92 x 92 x 49 cells
+  mesh | 92 x 92 x 49 = 414,736 cells | 122 MiB
 ground plane: P_rad / monopole  0.960   (target 1.00 +- 0.05)
 ground plane: peak directivity  3.135   (3.00, see below)
 </pre></div>
@@ -780,7 +794,7 @@ the path in that half and let the symmetry wall supply its image.</p></li>
 </ul>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 34.612 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 12.464 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-current-path-source-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/91d55e6409f4dc1250dd08c55ac2d62f/plot_current_path_source.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_current_path_source.ipynb</span></code></a></p>

@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -590,113 +604,6 @@
   <section class="tex2jax_ignore mathjax_ignore" id="module-magnelio.solver">
 <span id="magnelio-solver"></span><h1><code class="docutils literal notranslate"><span class="pre">magnelio.solver</span></code><a class="headerlink" href="#module-magnelio.solver" title="Link to this heading">#</a></h1>
 <p>Solver components — the FIT time-domain engine and eigenmode results.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.solver.</span></span><span class="sig-name descname"><span class="pre">EigenmodeResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequencies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.EigenmodeResult" title="Link to this definition">#</a></dt>
-<dd><p>Result of a 3D cavity eigenmode analysis.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>frequencies</strong> (<em>np.ndarray</em>) – Resonant frequencies [Hz], shape <code class="docutils literal notranslate"><span class="pre">(n_modes,)</span></code>, ascending.</p></li>
-<li><p><strong>modes</strong> (<em>list</em><em>[</em><em>FieldArrays</em><em>]</em>) – One FieldArrays per mode with E and H fields on the Yee grid.
-Field amplitudes are normalised so that <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p></li>
-<li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – Reference mesh (grid, material library).</p></li>
-<li><p><strong>solver_info</strong> (<em>dict</em>) – Metadata: solver backend, number of iterations, residuals, etc.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.field">
-<span class="sig-name descname"><span class="pre">field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.field" title="Link to this definition">#</a></dt>
-<dd><p>The mode’s field pattern as a <a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a>.</p>
-<p>The eigenvector is normalised to <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>, i.e. to a
-peak stored electric energy of 0.5 J; the physical amplitude
-follows from that, the spatial pattern is the physical content.
-A Bloch mode with a phase advance other than 0 or 180 degrees is
-complex.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mode</strong> (<em>int</em>) – Mode index (ascending in frequency).</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.plot" title="Link to this definition">#</a></dt>
-<dd><p>Plot a mode’s field pattern on a slice plane through the cavity.</p>
-<p>The staggered Yee-grid components are interpolated onto cell
-centres and rendered on the plane selected by <em>normal</em> and
-<em>position</em> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">magnelio.fields.FieldState.plot()</span></code></a>).  Mode
-fields are normalised eigenvectors, so the amplitudes are in
-arbitrary units; the spatial pattern is the physical content.
-A complex mode (Bloch phase advance other than 0 or 180
-degrees) is drawn as the real snapshot at the instant of
-maximum field energy on the slice — the global phase of an
-eigenvector is arbitrary, and this choice makes the picture
-independent of it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mode</strong> (<em>int</em>) – Mode index (ascending in frequency).</p></li>
-<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for the vector plot / vector magnitude.
-<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hy&quot;</span></code>, … for a single component (scalar only).</p></li>
-<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em>) – Normal axis of the slice plane.</p></li>
-<li><p><strong>position</strong> (<em>float</em>) – Slice-plane position along <em>normal</em> [m]; snapped to the
-nearest cell-centre plane.</p></li>
-<li><p><strong>plot_type</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;color&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>.</p></li>
-<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.2)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>scale_mm</strong> (<em>bool</em>) – Axis coordinates in mm instead of m.</p></li>
-<li><p><strong>cmap</strong> (<em>str</em><em> or </em><em>None</em>) – Colourmap (None = auto-select).</p></li>
-<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em>, </em><em>optional</em>) – Geometry for a cross-section overlay of the slice plane.</p></li>
-<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes.</p></li>
-<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
-<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
-<li><p><strong>density</strong> (<em>int</em>) – Target arrows per axis (vector mode).</p></li>
-<li><p><strong>normalize_arrows</strong> (<em>bool</em>) – Unit-length arrows, colour = magnitude (vector mode).</p></li>
-<li><p><strong>threshold</strong> (<em>float</em>) – Suppress arrows below this fraction of peak (vector mode).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
-<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>)</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.show">
-<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.show" title="Link to this definition">#</a></dt>
-<dd><p>Interactive 3D view of the modes on a cutting plane.</p>
-<p>The geometry viewer with a mode’s field laid on its cut and a
-slider over the modes (each labelled with its index and
-eigenfrequency), the position slider walking the layer through
-the cavity; a complex Bloch mode is shown at the instant of its
-maximum energy, with a phase slider to turn it.  The result’s
-own mesh cuts the metal out of the sheet and names the symmetry
-planes the field is continued across, so the view shows the
-whole cavity.  See <a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the
-arguments — <code class="docutils literal notranslate"><span class="pre">frame=</span></code> picks the mode shown first, the plane
-(<cite>normal</cite>, <cite>position</cite>), <cite>geometry</cite>, the rendering <cite>mode</cite> and
-the rest.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code>, or one component such as <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.n_modes">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">n_modes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.n_modes" title="Link to this definition">#</a></dt>
-<dd><p>Number of physical modes found.</p>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.solver.FITTimeDomainSolver">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.solver.</span></span><span class="sig-name descname"><span class="pre">FITTimeDomainSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_min_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_check_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sibc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.FITTimeDomainSolver" title="Link to this definition">#</a></dt>
@@ -949,13 +856,6 @@ Built from the mesh when omitted.</p></li>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.field"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.field()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.plot"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.plot()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.show"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.show()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.n_modes"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.n_modes</span></code></a></li>
-</ul>
-</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.FITTimeDomainSolver"><code class="docutils literal notranslate"><span class="pre">FITTimeDomainSolver</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.FITTimeDomainSolver.load_state_dict"><code class="docutils literal notranslate"><span class="pre">FITTimeDomainSolver.load_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.FITTimeDomainSolver.request_stop"><code class="docutils literal notranslate"><span class="pre">FITTimeDomainSolver.request_stop()</span></code></a></li>

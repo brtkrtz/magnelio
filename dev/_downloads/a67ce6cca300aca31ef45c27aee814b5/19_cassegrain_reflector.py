@@ -57,10 +57,10 @@ measured run.
 # frequency                     10 GHz
 # focal length :math:`F`        180 mm
 # aperture diameter :math:`D`   240 mm (8 λ)
-# aperture centre offset        150 mm
+# aperture center offset        150 mm
 # subreflector diameter         70 mm
 # subreflector before focus     50 mm
-# feed phase centre :math:`P`   (−20, 0, 40) mm
+# feed phase center :math:`P`   (−20, 0, 40) mm
 # ============================  ==========
 
 import numpy as np
@@ -72,10 +72,10 @@ f0 = 10.0e9
 wavelength = 3.0e8 / f0
 focal = 0.18  # paraboloid focal length
 diameter = 0.24  # aperture diameter
-offset = 0.15  # aperture centre, off the paraboloid axis
+offset = 0.15  # aperture center, off the paraboloid axis
 d_sub = 0.07  # subreflector diameter
 s_from_focus = 0.05  # subreflector on the central ray, this far before the focus
-p_feed = np.array([-0.02, 0.0, 0.04])  # feed phase centre
+p_feed = np.array([-0.02, 0.0, 0.04])  # feed phase center
 t_shell = 5.0e-3  # reflector shell thickness — two cells or more
 
 focus = np.array([0.0, 0.0, focal])
@@ -106,7 +106,7 @@ print(f"magnification M = {(c_h / a_h + 1) / (c_h / a_h - 1):.2f}")
 #
 # The dish is the paraboloid :math:`z = (x^2 + y^2)/4F` over a circular
 # aperture centred at ``offset``.  Parametrising the map in **polar
-# coordinates about the aperture centre** — radius and angle, not
+# coordinates about the aperture center** — radius and angle, not
 # :math:`x` and :math:`y` — makes the rim of the patch an exact circle
 # without any trimming afterwards.  The sheet is sampled on a 32 × 64
 # grid and interpolated; the extrusion along −z gives it a thickness.
@@ -336,7 +336,7 @@ print(analysis.solve_ports()["feed"])
 # and the normalisation refers to the incident power the TE10 port
 # launched at each frequency.
 
-farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
+farfield = monitors.MonitorFarFieldFrequency(frequencies=[f0], name="farfield")
 analysis = mio.AnalysisScatteringTD(mesh=mesh, f_min=8.5e9, monitors=(farfield,), verbose=False)
 f_axis = np.linspace(8.5e9, 11.5e9, 31)
 result = analysis.run(f_axis=f_axis, excited=["feed"])

@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -381,6 +388,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -525,6 +539,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -639,8 +654,8 @@ the CAD kernel is called.</p>
 <p><code class="docutils literal notranslate"><span class="pre">Curve.line(start,</span> <span class="pre">end)</span></code> builds an exact straight segment. <code class="docutils literal notranslate"><span class="pre">Curve.circle</span></code>
 and <code class="docutils literal notranslate"><span class="pre">Curve.ellipse</span></code> build closed analytic wires, retaining their exact
 conic geometry through rotations and mirrors. They do not approximate the
-boundary with a polygon. Circles take a world centre, radius and plane
-normal. Ellipses take a world centre, two semi-axis lengths, a normal and
+boundary with a polygon. Circles take a world center, radius and plane
+normal. Ellipses take a world center, two semi-axis lengths, a normal and
 <code class="docutils literal notranslate"><span class="pre">major_axis</span></code>: the direction of the first semi-axis, projected into the
 plane. Either semi-axis may be larger. <code class="docutils literal notranslate"><span class="pre">curve.length</span></code> reads the CAD length.
 Arcs, elliptical arcs, splines, helices and <code class="docutils literal notranslate"><span class="pre">joined()</span></code> remain available;
@@ -717,7 +732,7 @@ the domain plane without reconstructing its annular profile:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
 
 <span class="n">coax</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span> <span class="n">inner_radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
-                    <span class="n">height</span><span class="o">=</span><span class="mf">6e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)</span>
+                    <span class="n">height</span><span class="o">=</span><span class="mf">6e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">tagged_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)</span>
 <span class="n">coax</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">22.5</span><span class="p">)</span>
 <span class="n">port</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">)</span>
 <span class="n">route</span> <span class="o">=</span> <span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">from_face</span><span class="p">(</span><span class="n">port</span><span class="p">,</span> <span class="n">up</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
@@ -779,14 +794,14 @@ or edges; with <code class="docutils literal notranslate"><span class="pre">near
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span>
 
 <span class="n">coax</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span> <span class="n">inner_radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
-<span class="n">coax</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">near</span><span class="o">=</span><span class="p">(</span><span class="mf">1.5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">coax</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">tagged_face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">,</span> <span class="n">near</span><span class="o">=</span><span class="p">(</span><span class="mf">1.5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
 <span class="n">coax</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">22.5</span><span class="p">)</span>
 <span class="n">port</span> <span class="o">=</span> <span class="n">coax</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"port"</span><span class="p">)</span>
 <span class="n">extension</span> <span class="o">=</span> <span class="n">port</span><span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="mf">1e-3</span> <span class="o">*</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">port</span><span class="o">.</span><span class="n">normal</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>Names are non-empty strings, unique per topology kind on their owner.
-<code class="docutils literal notranslate"><span class="pre">tag_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_edge</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_vertex</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_faces</span></code> and <code class="docutils literal notranslate"><span class="pre">tag_edges</span></code> return a new
+<code class="docutils literal notranslate"><span class="pre">tagged_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_edge</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_vertex</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_faces</span></code> and <code class="docutils literal notranslate"><span class="pre">tagged_edges</span></code> return a new
 owner; the input stays unchanged. Named lookup cannot be combined with
 semantic constraints. Retrieve a singular tag with the singular selector
 and a set tag with the plural selector.</p>
@@ -815,7 +830,7 @@ unprovable successors and singular names that split raise
 falls back to the nearest face. When a split is intentional, register a set
 before performing it:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">block</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">2e-3</span><span class="p">,</span> <span class="mf">2e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
-<span class="n">block</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">tag_faces</span><span class="p">(</span><span class="s2">"cap"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">block</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">tagged_faces</span><span class="p">(</span><span class="s2">"cap"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
 <span class="n">slot</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">0.2e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">))</span>
 <span class="n">split</span> <span class="o">=</span> <span class="n">block</span> <span class="o">-</span> <span class="n">slot</span>
 <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">faces</span><span class="p">(</span><span class="s2">"cap"</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span>
@@ -1105,7 +1120,7 @@ component, filled annulus and an oblique sheet cutter.</p>
 </section>
 <section id="imprint-and-insert">
 <h2>Imprint and insert<a class="headerlink" href="#imprint-and-insert" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">receiver.imprint(cutter)</span></code> splits only the receiver Solid’s boundary faces at
+<p><code class="docutils literal notranslate"><span class="pre">receiver.imprinted(cutter)</span></code> splits only the receiver Solid’s boundary faces at
 their intersections with a Solid or Sheet cutter. The returned Solid keeps the
 receiver’s volume, material and placement; the cutter is untouched. This is a
 directed operation: call it on the body whose faces you need to select. An
@@ -1133,7 +1148,7 @@ material-less void represents removed geometry. Inputs stay unchanged.</p>
 <span class="n">housing</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
 <span class="n">window</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">1.8e-3</span><span class="p">,</span> <span class="mf">0.5e-3</span><span class="p">,</span> <span class="mf">0.5e-3</span><span class="p">),</span>
                    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">0.4e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">))</span>
-<span class="n">housing</span> <span class="o">=</span> <span class="n">housing</span><span class="o">.</span><span class="n">imprint</span><span class="p">(</span><span class="n">window</span><span class="p">)</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span>
+<span class="n">housing</span> <span class="o">=</span> <span class="n">housing</span><span class="o">.</span><span class="n">imprinted</span><span class="p">(</span><span class="n">window</span><span class="p">)</span><span class="o">.</span><span class="n">tagged_face</span><span class="p">(</span>
     <span class="s2">"contact"</span><span class="p">,</span> <span class="n">near</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">)</span>
 <span class="n">dielectric</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5e-3</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span>
                        <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
@@ -1451,7 +1466,7 @@ column-vector points, so the rightmost operation happens first:</p>
 </div>
 <p>This is equivalent to rotating each value and then translating it.  <code class="docutils literal notranslate"><span class="pre">Mirror</span></code>
 reflects across <code class="docutils literal notranslate"><span class="pre">point</span> <span class="pre">·</span> <span class="pre">normal</span> <span class="pre">==</span> <span class="pre">position</span></code>; <code class="docutils literal notranslate"><span class="pre">Scale</span></code> is uniform about its
-centre. <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">&#64;</span> <span class="pre">geometry</span></code> always produces one placement and has no
+center. <code class="docutils literal notranslate"><span class="pre">Transform</span> <span class="pre">&#64;</span> <span class="pre">geometry</span></code> always produces one placement and has no
 array or aggregation options. Geometry does not right-apply a transform, and <code class="docutils literal notranslate"><span class="pre">+</span> <span class="pre">vector</span></code> is not a
 translation: <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code> and <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> remain solid Boolean operators.</p>
 <section id="place-a-reusable-component">
@@ -1462,7 +1477,7 @@ each placement distributes to its leaves and keeps the nesting, names and
 materials. For example, a metal shell and a dielectric insert can share a
 datum curve in one authoring component:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">shell</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"shell"</span><span class="p">)</span>
-<span class="n">shell</span> <span class="o">=</span> <span class="n">shell</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"contact"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">shell</span> <span class="o">=</span> <span class="n">shell</span><span class="o">.</span><span class="n">tagged_face</span><span class="p">(</span><span class="s2">"contact"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
 <span class="n">insert</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5e-3</span><span class="p">,</span> <span class="mf">0.25e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
                    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">0.5e-3</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"insert"</span><span class="p">)</span>
 <span class="n">datum</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Curve</span><span class="o">.</span><span class="n">line</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">"datum"</span><span class="p">)</span>
@@ -1561,7 +1576,7 @@ two parameters — a paraboloid <span class="math notranslate nohighlight">\(z =
 numerically shaped reflector given as a table — and the parameter
 domain is the designer’s choice: a reflector rim comes out as an exact
 circle when the dish is parametrised in polar coordinates about the
-aperture centre, with no trimming step.  A parameter row that collapses
+aperture center, with no trimming step.  A parameter row that collapses
 onto a single point (the pole of such a parametrisation) is allowed;
 the surface closes there.</p>
 <p>The interpolant is exact at the samples and follows the map to within
@@ -1597,12 +1612,12 @@ same declarations as giving the world-coordinate rectangle explicitly.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">ports</span>
 
 <span class="n">guide</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">2e-3</span><span class="p">,</span> <span class="mf">3e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
-<span class="n">guide</span> <span class="o">=</span> <span class="n">guide</span><span class="o">.</span><span class="n">tag_face</span><span class="p">(</span><span class="s2">"output"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
+<span class="n">guide</span> <span class="o">=</span> <span class="n">guide</span><span class="o">.</span><span class="n">tagged_face</span><span class="p">(</span><span class="s2">"output"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
 <span class="n">end</span> <span class="o">=</span> <span class="n">guide</span><span class="o">.</span><span class="n">face</span><span class="p">(</span><span class="s2">"output"</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="o">.</span><span class="n">from_face</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"output"</span><span class="p">))</span>
 <span class="n">probe</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span><span class="o">.</span><span class="n">from_face</span><span class="p">(</span>
-    <span class="n">end</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">10e9</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"Ex"</span><span class="p">,</span> <span class="s2">"Ey"</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"output_fields"</span>
+    <span class="n">end</span><span class="p">,</span> <span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">10e9</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"Ex"</span><span class="p">,</span> <span class="s2">"Ey"</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"output_fields"</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1642,6 +1657,18 @@ thick on every axis of its bounding box and is classified cell by cell
 like any other body.  Give reflector shells a thickness of two cells or
 more so that the conformal classifier resolves the metal on both faces
 — for a perfect conductor the thickness has no electromagnetic effect.</p>
+</section>
+<section id="owner-operations-and-explicit-grid-regions">
+<h2>Owner operations and explicit grid regions<a class="headerlink" href="#owner-operations-and-explicit-grid-regions" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">tagged_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_faces</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_edge</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_edges</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_vertex</span></code>
+and <code class="docutils literal notranslate"><span class="pre">imprinted</span></code> return immutable owners with named topology and history.
+Keep the returned owner; model <code class="docutils literal notranslate"><span class="pre">add*</span></code> operations still mutate their container.
+<code class="docutils literal notranslate"><span class="pre">Path.forward</span></code> and <code class="docutils literal notranslate"><span class="pre">section</span></code> retain their documented names.</p>
+<p>For a material distribution on an explicit grid, use
+<code class="docutils literal notranslate"><span class="pre">Mesh.from_grid(grid,</span> <span class="pre">regions=[(material,</span> <span class="pre">((x0,</span> <span class="pre">y0,</span> <span class="pre">z0),</span> <span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">z1)))])</span></code>.
+The two finite 3D corners enclose an axis-aligned volume; corner order does
+not matter. Assignment tests cell centers and later regions overwrite earlier
+ones. The grid remains unchanged.</p>
 </section>
 </section>
 
@@ -1722,6 +1749,7 @@ more so that the conformal classifier resolves the metal on both faces
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-a-map-to-a-reflector-parametric-surfaces">From a map to a reflector: parametric surfaces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#selected-faces-for-ports-and-field-recordings">Selected faces for ports and field recordings</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-mesher-sees">What the mesher sees</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#owner-operations-and-explicit-grid-regions">Owner operations and explicit grid regions</a></li>
 </ul>
   </nav></div>
 

@@ -83,7 +83,7 @@ def probes():
 
 def trace(monitor):
     """One scalar time trace out of a small probe box."""
-    values = monitor.recording.cell_centred(["Ex"])["Ex"]
+    values = monitor.recording.cell_centered(["Ex"])["Ex"]
     return values.reshape(values.shape[0], -1).mean(axis=1)
 
 

@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -715,11 +729,11 @@ cap the cell size at 1/16 of the plate spacing.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (17.0 s)
+  mesh | materials | done (13.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (7.1 s)
+  mesh | conformal cells | done (5.5 s)
   mesh | PEC masks
-  mesh | 32 x 16 x 64 cells (24.4 s total)
+  mesh | 32 x 16 x 64 = 32,768 cells | 10.0 MiB (19.3 s total)
 grid: 32 x 16 x 64 cells
 </pre></div>
 </div>
@@ -771,7 +785,7 @@ textbook formula.</p>
   [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω  ε_eff = 1.000  termination = dtbc (chain floor &lt;= -329 dB)
 Z_L (port solver):  188.3652 Ohm
 Z_L (eta0 * b/a) :  188.3652 Ohm
-relative deviation: 1.11e-16
+relative deviation: 2.22e-16
 </pre></div>
 </div>
 <p>The two agree to machine precision: the uniform TEM field of this
@@ -781,7 +795,7 @@ resolution instead — one of the reasons to look at port reports
 before trusting a result.)</p>
 <p>The transverse mode profile confirms what a TEM plate mode should
 look like — a uniform vertical E field:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">TEM mode, transverse E</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">TEM mode, transverse E</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_01_parallel_plate_003.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_003.png" alt="TEM mode, transverse E" class = "sphx-glr-single-img"/></section>
 <section id="run-and-s-parameters">
@@ -808,7 +822,7 @@ run stops on its own once the port signals have decayed.</p>
 </span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">max |S11| in band: </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s11_db</span></a><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="p">)</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_01_parallel_plate_004.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_004.png" alt="Parallel-plate line, 20 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -125.3 dB
+<img src="../_images/sphx_glr_plot_01_parallel_plate_004.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_004.png" alt="Parallel-plate line, 20 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -124.8 dB
 </pre></div>
 </div>
 <p>A matched, lossless, uniform line transmits everything: <code class="docutils literal notranslate"><span class="pre">|S21|</span></code>
@@ -846,7 +860,7 @@ before the run, and validate against known results where they
 exist.  The next tutorial builds a real three-dimensional structure
 (a coaxial line) from solids and boolean operations, with a port
 spec matched to its cross-section.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 33.992 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 28.447 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-01-parallel-plate-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/669effd58f485a0c27678f09024dad99/plot_01_parallel_plate.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_01_parallel_plate.ipynb</span></code></a></p>

@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -381,6 +388,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -525,6 +539,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -1004,7 +1019,7 @@ below its cut-on is <code class="docutils literal notranslate"><span class="pre"
 power, so it counts as zero rather than poisoning the sum.</p>
 <p><code class="docutils literal notranslate"><span class="pre">plot_smith()</span></code> traces the reflection channels on a Smith chart, where
 the impedance is readable off the circles of constant normalised
-resistance and reactance and a matched frequency sits at the centre.
+resistance and reactance and a matched frequency sits at the center.
 The chart holds against <strong>one</strong> normalisation.  A dispersive
 waveguide mode’s reference impedance moves with frequency, so its
 circles hold nowhere in particular; call <code class="docutils literal notranslate"><span class="pre">renormalize(50)</span></code> first, and
@@ -1284,6 +1299,19 @@ path given without an extension gets the matching one, so
 <code class="docutils literal notranslate"><span class="pre">to_touchstone(&quot;wr90&quot;)</span></code> writes <code class="docutils literal notranslate"><span class="pre">wr90.s2p</span></code>.</p>
 </section>
 </section>
+<section id="quantity-and-anchor-vocabulary">
+<h2>Quantity and anchor vocabulary<a class="headerlink" href="#quantity-and-anchor-vocabulary" title="Link to this heading">#</a></h2>
+<p>Both <code class="docutils literal notranslate"><span class="pre">ModeReport</span></code> and <code class="docutils literal notranslate"><span class="pre">Mode</span></code> evaluate <code class="docutils literal notranslate"><span class="pre">gamma</span></code>, <code class="docutils literal notranslate"><span class="pre">z_wave</span></code> and <code class="docutils literal notranslate"><span class="pre">z_modal</span></code> at a
+frequency in Hz. A <code class="docutils literal notranslate"><span class="pre">Mode</span></code> requires <code class="docutils literal notranslate"><span class="pre">f=</span></code> explicitly; its <code class="docutils literal notranslate"><span class="pre">omega_c</span></code> cutoff
+remains in rad/s. <code class="docutils literal notranslate"><span class="pre">ModeReport.plot(component=&quot;E&quot;)</span></code> draws the existing
+transverse E profile; <code class="docutils literal notranslate"><span class="pre">component=&quot;H&quot;</span></code> draws H.</p>
+<p>Rectangular analytical declarations use <code class="docutils literal notranslate"><span class="pre">origin</span></code>, the minimum tangential
+corner, with <code class="docutils literal notranslate"><span class="pre">width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code> in ascending global tangential-axis order.
+<code class="docutils literal notranslate"><span class="pre">PortAnalytical</span></code> accepts a world 3D point; <code class="docutils literal notranslate"><span class="pre">PortSpecRectWG</span></code> accepts the two
+coordinates in that tangential order. Coax declarations use <code class="docutils literal notranslate"><span class="pre">center</span></code> for the
+axis. Passing a wrong-family anchor is rejected. The anchor names do not
+change placements on minimum or maximum domain faces.</p>
+</section>
 </section>
 
 
@@ -1362,6 +1390,7 @@ path given without an extension gets the matching one, so
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-touchstone-export-covers-dd-184">What a Touchstone export covers (DD-184)</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantity-and-anchor-vocabulary">Quantity and anchor vocabulary</a></li>
 </ul>
   </nav></div>
 

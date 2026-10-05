@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -633,7 +647,7 @@ set below.</p>
 </span><span class="n">t_au</span> <span class="o">=</span> <span class="mf">5e-6</span>  <span class="c1"># metallisation thickness</span><span class="w">
 </span><span class="n">h_box</span> <span class="o">=</span> <span class="mf">2.0e-3</span>  <span class="c1"># shield height above the ground plane</span><span class="w">
 </span><span class="n">z0</span> <span class="o">=</span> <span class="mf">50.0</span>  <span class="c1"># system impedance</span><span class="w">
-</span><span class="n">f0</span> <span class="o">=</span> <span class="mf">10.0e9</span>  <span class="c1"># centre frequency</span><span class="w">
+</span><span class="n">f0</span> <span class="o">=</span> <span class="mf">10.0e9</span>  <span class="c1"># center frequency</span><span class="w">
 </span><span class="n">f_min</span><span class="p">,</span> <span class="n">f_max</span> <span class="o">=</span> <span class="mf">6.0e9</span><span class="p">,</span> <span class="mf">14.0e9</span><span class="w">
 </span><span class="n">coupling_db</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.0</span>  <span class="c1"># target coupling at f0</span><span class="w">
 </span><span class="n">k_fingers</span> <span class="o">=</span> <span class="mi">4</span><span class="w">
@@ -741,97 +755,97 @@ well under a second each.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 55 x 26 cells
+  mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 55 x 26 cells
+  mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 56 x 26 cells
+  mesh | 5 x 56 x 26 = 7,280 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 57 x 26 cells
+  mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 55 x 26 cells
+  mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 55 x 26 cells
+  mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 56 x 26 cells
+  mesh | 5 x 56 x 26 = 7,280 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 57 x 26 cells
+  mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 57 x 26 cells
+  mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 57 x 26 cells
+  mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 58 x 26 cells
+  mesh | 5 x 58 x 26 = 7,540 cells | 2.5 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 59 x 26 cells
+  mesh | 5 x 59 x 26 = 7,670 cells | 2.5 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 57 x 26 cells
+  mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 57 x 26 cells
+  mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 58 x 26 cells
+  mesh | 5 x 58 x 26 = 7,540 cells | 2.5 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 5 x 59 x 26 cells
+  mesh | 5 x 59 x 26 = 7,670 cells | 2.5 MiB
 w =  12 um, s =  20 um: Z_even =  181.7, Z_odd =  49.0 ohm, ratio 3.71, mean  94.4 ohm
 w =  12 um, s =  25 um: Z_even =  177.7, Z_odd =  52.7 ohm, ratio 3.37, mean  96.8 ohm
 w =  12 um, s =  30 um: Z_even =  174.7, Z_odd =  56.6 ohm, ratio 3.08, mean  99.5 ohm
@@ -1025,9 +1039,8 @@ on top.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (0.5 s)
   mesh | PEC masks
-  mesh | 119 x 57 x 33 cells (0.8 s total)
+  mesh | 119 x 57 x 33 = 223,839 cells | 66 MiB (0.6 s total)
 grid: 119 x 57 x 33 = 0.22 M cells
 
 (-0.25, 0.25)
@@ -1112,7 +1125,7 @@ theirs, and the knob for both is the finger length.  The leads are
 short and not de-embedded: the result’s de-embedding removes the
 propagation of a <em>uniform</em> quasi-TEM feed, dispersion included, and
 the lead-to-finger joint is not one.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 25.875 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 48.972 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-lange-coupler-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/7db2fa7e7353b00f45bd8d35788a71db/plot_lange_coupler.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_lange_coupler.ipynb</span></code></a></p>

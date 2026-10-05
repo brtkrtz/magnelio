@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -653,7 +667,7 @@ axis along <span class="math notranslate nohighlight">\(z\)</span>, vertex at th
 <tr class="row-even"><td><p>aperture diameter <span class="math notranslate nohighlight">\(D\)</span></p></td>
 <td><p>240 mm (8 λ)</p></td>
 </tr>
-<tr class="row-odd"><td><p>aperture centre offset</p></td>
+<tr class="row-odd"><td><p>aperture center offset</p></td>
 <td><p>150 mm</p></td>
 </tr>
 <tr class="row-even"><td><p>subreflector diameter</p></td>
@@ -662,7 +676,7 @@ axis along <span class="math notranslate nohighlight">\(z\)</span>, vertex at th
 <tr class="row-odd"><td><p>subreflector before focus</p></td>
 <td><p>50 mm</p></td>
 </tr>
-<tr class="row-even"><td><p>feed phase centre <span class="math notranslate nohighlight">\(P\)</span></p></td>
+<tr class="row-even"><td><p>feed phase center <span class="math notranslate nohighlight">\(P\)</span></p></td>
 <td><p>(−20, 0, 40) mm</p></td>
 </tr>
 </tbody>
@@ -677,10 +691,10 @@ axis along <span class="math notranslate nohighlight">\(z\)</span>, vertex at th
 </span><span class="n">wavelength</span> <span class="o">=</span> <span class="mf">3.0e8</span> <span class="o">/</span> <span class="n">f0</span><span class="w">
 </span><span class="n">focal</span> <span class="o">=</span> <span class="mf">0.18</span>  <span class="c1"># paraboloid focal length</span><span class="w">
 </span><span class="n">diameter</span> <span class="o">=</span> <span class="mf">0.24</span>  <span class="c1"># aperture diameter</span><span class="w">
-</span><span class="n">offset</span> <span class="o">=</span> <span class="mf">0.15</span>  <span class="c1"># aperture centre, off the paraboloid axis</span><span class="w">
+</span><span class="n">offset</span> <span class="o">=</span> <span class="mf">0.15</span>  <span class="c1"># aperture center, off the paraboloid axis</span><span class="w">
 </span><span class="n">d_sub</span> <span class="o">=</span> <span class="mf">0.07</span>  <span class="c1"># subreflector diameter</span><span class="w">
 </span><span class="n">s_from_focus</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># subreflector on the central ray, this far before the focus</span><span class="w">
-</span><span class="n">p_feed</span> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span><span class="p">[</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">]</span><span class="p">)</span>  <span class="c1"># feed phase centre</span><span class="w">
+</span><span class="n">p_feed</span> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span><span class="p">[</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">]</span><span class="p">)</span>  <span class="c1"># feed phase center</span><span class="w">
 </span><span class="n">t_shell</span> <span class="o">=</span> <span class="mf">5.0e-3</span>  <span class="c1"># reflector shell thickness — two cells or more</span><span class="w">
 </span><span class="w">
 </span><span class="n">focus</span> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">focal</span><span class="p">]</span><span class="p">)</span><span class="w">
@@ -708,7 +722,7 @@ reflector designer quotes.</p>
 <h2>The main reflector<a class="headerlink" href="#the-main-reflector" title="Link to this heading">#</a></h2>
 <p>The dish is the paraboloid <span class="math notranslate nohighlight">\(z = (x^2 + y^2)/4F\)</span> over a circular
 aperture centred at <code class="docutils literal notranslate"><span class="pre">offset</span></code>.  Parametrising the map in <strong>polar
-coordinates about the aperture centre</strong> — radius and angle, not
+coordinates about the aperture center</strong> — radius and angle, not
 <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> — makes the rim of the patch an exact circle
 without any trimming afterwards.  The sheet is sampled on a 32 × 64
 grid and interpolated; the extrusion along −z gives it a thickness.</p>
@@ -917,7 +931,7 @@ that the feed crosses its box: the <code class="docutils literal notranslate"><s
 absorber interface, the neck’s interior is left out of the surface,
 and the normalisation refers to the incident power the TE10 port
 launched at each frequency.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="n">farfield</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">farfield</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="n">farfield</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">farfield</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="n">analysis</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span></a><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="mf">8.5e9</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">farfield</span><span class="p">,</span><span class="p">)</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="w">
 </span><span class="n">f_axis</span> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="mf">8.5e9</span><span class="p">,</span> <span class="mf">11.5e9</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span><span class="w">
 </span><span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">f_axis</span><span class="o">=</span><span class="n">f_axis</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">feed</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">)</span><span class="w">

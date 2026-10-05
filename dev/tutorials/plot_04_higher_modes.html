@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -666,7 +680,7 @@ only TEM.)</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 22 x 22 x 54 cells
+  mesh | 22 x 22 x 54 = 26,136 cells | 7.9 MiB
 grid: 22 x 22 x 54 cells
 </pre></div>
 </div>
@@ -682,8 +696,8 @@ UserWarning: Modal port 'port2': modes 'TE_num00' (fc = 34.4956 GHz) and 'TE_num
 Port 'port1' — 3 mode(s)
   z_line = 51.04 Ω (on this grid)
   f_cutoff = 34.4956 GHz (on this grid)
-  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -315 dB)
-  [1] TE_num00     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -315 dB)
+  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -317 dB)
+  [1] TE_num00     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -316 dB)
   [2] TE_num01     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -314 dB)
 </pre></div>
 </div>
@@ -702,7 +716,7 @@ field, and the two TE11 polarisations (<cite>geometry=model</cite> overlays
 the conductor cross-section on each):</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">)</span><span class="p">)</span><span class="w">
 </span><span class="k">for</span> <span class="n">m</span><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">)</span><span class="p">:</span><span class="w">
-</span>    <a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="o">=</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="p">,</span> <span class="n">title</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">)</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="o">=</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="p">,</span> <span class="n">title</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_04_higher_modes_001.png" srcset="../_images/sphx_glr_plot_04_higher_modes_001.png" alt="TEM_lap00, TE_num00, TE_num01" class = "sphx-glr-single-img"/></section>
@@ -734,7 +748,7 @@ exists above its cut-off:</p>
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="kc">True</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_04_higher_modes_002.png" srcset="../_images/sphx_glr_plot_04_higher_modes_002.png" alt="Transmission: TEM everywhere, TE11 only above cut-off" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f24d1109790&gt;
+<img src="../_images/sphx_glr_plot_04_higher_modes_002.png" srcset="../_images/sphx_glr_plot_04_higher_modes_002.png" alt="Transmission: TEM everywhere, TE11 only above cut-off" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f645e03d010&gt;
 </pre></div>
 </div>
 <p>Below its cut-off the TE11 wave is evanescent — nothing arrives at
@@ -767,7 +781,7 @@ non-degenerate modes, and on this uniform line it is absent:</p>
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">p21</span></a> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-analysis sphx-glr-backref-type-py-method reference internal" href="../api/analysis.html#magnelio.analysis.ScatteringTDResult.S" title="magnelio.analysis.ScatteringTDResult.S"><span class="n">result</span><span class="o">.</span><span class="n">S</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port2</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mode_out</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">mode_in</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="p">[</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">band</span></a><span class="p">]</span><span class="p">)</span> <span class="o">*</span><span class="o">*</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">TE11 power balance: min sum |S|^2 = </span><span class="si">{</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">p11</span></a><span class="w"> </span><span class="o">+</span><span class="w"> </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">p21</span></a><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>worst TE11 -&gt; TEM conversion above cut-off: -173.4 dB
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>worst TE11 -&gt; TEM conversion above cut-off: -163.8 dB
 TE11 power balance: min sum |S|^2 = 0.9996
 </pre></div>
 </div>
@@ -821,7 +835,7 @@ degenerate pairs and what is (and is not) invariant about them, and
 the waveguide dispersion as an analytical anchor.  The next tutorial
 leaves driven problems altogether and computes the <em>eigenmodes</em> of a
 closed cavity.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 11.250 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 7.951 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-04-higher-modes-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/fd041f631a6de46771d068c734665f91/plot_04_higher_modes.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_04_higher_modes.ipynb</span></code></a></p>

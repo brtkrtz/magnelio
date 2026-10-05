@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -379,6 +386,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -523,6 +537,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -656,6 +671,40 @@ other editor REPLs whose kernels cannot identify their frontend.</p>
 <p>Lengths are shown in millimetres (<code class="docutils literal notranslate"><span class="pre">scale_mm=False</span></code> for metres).  The
 projection is parallel, as in engineering drawings.</p>
 </section>
+<section id="setting-the-initial-camera">
+<h2>Setting the initial camera<a class="headerlink" href="#setting-the-initial-camera" title="Link to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">camera=&quot;iso&quot;</span></code> for the default isometric view, or <code class="docutils literal notranslate"><span class="pre">&quot;xy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xz&quot;</span></code>
+or <code class="docutils literal notranslate"><span class="pre">&quot;yz&quot;</span></code> to look at one of the coordinate planes. The same camera
+options work on geometry and field <code class="docutils literal notranslate"><span class="pre">show()</span></code> calls:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xy"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xz"</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">"xy"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For an oblique view, pass three vectors: the camera position, the point
+it looks towards, and the direction that should point up in the image.
+The up vector is dimensionless and must not be parallel to the viewing
+direction. The example looks towards the origin with z pointing up:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="p">[(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>The first two vectors use <strong>display coordinates</strong>: millimetres by
+default, or metres with <code class="docutils literal notranslate"><span class="pre">scale_mm=False</span></code>. This is different from a
+cutting-plane position, which always uses metres. The equivalent view
+in metre coordinates is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span>
+    <span class="n">camera</span><span class="o">=</span><span class="p">[(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span>
+    <span class="n">scale_mm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The viewer fits the scene into the window automatically after setting
+the camera. A custom camera therefore sets its initial viewing direction
+and up vector; its exact position, focal point and zoom are adjusted
+to show the scene. Use the viewer’s camera controls to pan or zoom after
+opening it. <code class="docutils literal notranslate"><span class="pre">size=(900,</span> <span class="pre">600)</span></code> sets the view size in pixels, and
+<code class="docutils literal notranslate"><span class="pre">target=&quot;browser&quot;</span></code> opens it in the browser.</p>
+</section>
 <section id="the-cutting-plane">
 <h2>The cutting plane<a class="headerlink" href="#the-cutting-plane" title="Link to this heading">#</a></h2>
 <p>The cut is <strong>axis-aligned</strong>: a normal (<code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> or <code class="docutils literal notranslate"><span class="pre">z</span></code>), a position
@@ -703,9 +752,9 @@ position slider walks that layer through the recorded volume.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>                                   <span class="c1"># |E| with arrows, mid-plane of the region</span>
 <span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>     <span class="c1"># one signed component, diverging colours</span>
 <span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span>          <span class="c1"># with the solids; metal cut out of the sheet</span>
-<span class="n">pattern</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>                 <span class="c1"># a frequency monitor at a phase</span>
+<span class="n">pattern</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">,</span> <span class="n">phase_deg</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>                 <span class="c1"># a frequency monitor at a phase</span>
 <span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>                  <span class="c1"># an eigenmode result: a slider over the modes</span>
-<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">frame</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">"cone"</span><span class="p">)</span>                <span class="c1"># starting at mode 2, cones instead of arrows</span>
+<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">"cone"</span><span class="p">)</span>                <span class="c1"># starting at mode 2, cones instead of arrows</span>
 </pre></div>
 </div>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -791,7 +840,7 @@ are interpolated to the grid nodes before the surfaces are contoured,
 so a surface is as fine as the grid.  Volume rendering with an opacity
 ramp is not offered: the browser renderer takes only uniform image
 data, and a graded grid resampled onto one would lose its resolution.</p>
-<p>One thing the picture is not: a plane.  Every value is the cell-centre
+<p>One thing the picture is not: a plane.  Every value is the cell-center
 average of the staggered components in one layer of cells, the same
 convention as the 2D slice plots.</p>
 <p>A monitor read back from a project store (<code class="docutils literal notranslate"><span class="pre">project.monitors[...]</span></code>)
@@ -800,12 +849,12 @@ slider moves, so a volume monitor of any size opens at once.</p>
 </section>
 <section id="rendering-modes">
 <h2>Rendering modes<a class="headerlink" href="#rendering-modes" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">target</span></code> chooses where the viewer appears; <code class="docutils literal notranslate"><span class="pre">mode</span></code> chooses where its
+<p><code class="docutils literal notranslate"><span class="pre">target</span></code> chooses where the viewer appears; <code class="docutils literal notranslate"><span class="pre">render_mode</span></code> chooses where its
 picture is rendered.  The browser and inline targets offer the same Magnelio
 toolbar.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
-<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">mode</span></code></p></th>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">render_mode</span></code></p></th>
 <th class="head"><p>Where the picture is rendered</p></th>
 <th class="head"><p>When to use it</p></th>
 </tr>
@@ -882,6 +931,19 @@ volume — not as a volume rendering; the
 camera the view opened with.</p></li>
 </ul>
 </section>
+<section id="renderer-and-physical-selection">
+<h2>Renderer and physical selection<a class="headerlink" href="#renderer-and-physical-selection" title="Link to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">render_mode</span></code> for <code class="docutils literal notranslate"><span class="pre">&quot;client&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;server&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;trame&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;static&quot;</span></code> or
+<code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code>. <code class="docutils literal notranslate"><span class="pre">mode</span></code> selects a physical eigenmode through <code class="docutils literal notranslate"><span class="pre">field</span></code>, <code class="docutils literal notranslate"><span class="pre">plot</span></code> and
+<code class="docutils literal notranslate"><span class="pre">show</span></code>; for example, <code class="docutils literal notranslate"><span class="pre">result.show(mode=2,</span> <span class="pre">render_mode=&quot;none&quot;)</span></code> builds the
+scene for eigenmode 2. Time/frequency recordings instead use <code class="docutils literal notranslate"><span class="pre">frame</span></code> for an
+index or <code class="docutils literal notranslate"><span class="pre">t</span></code>/<code class="docutils literal notranslate"><span class="pre">f</span></code> for a physical value. Choose exactly one selector.
+Degree-valued field-picture phases use <code class="docutils literal notranslate"><span class="pre">phase_deg</span></code>.</p>
+<p>Both a model and a project’s loaded geometry use <code class="docutils literal notranslate"><span class="pre">show()</span></code> for interactive
+3D. Their <code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code> remains a matplotlib picture. The camera,
+units and notebook/browser/native destination rules above also apply to
+loaded geometry.</p>
+</section>
 </section>
 
 
@@ -932,12 +994,14 @@ camera the view opened with.</p></li>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-is-drawn">What is drawn</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-initial-camera">Setting the initial camera</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-cutting-plane">The cutting plane</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-on-the-cut">Fields on the cut</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-in-the-volume">Fields in the volume</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rendering-modes">Rendering modes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements">Requirements</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitations">Limitations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#renderer-and-physical-selection">Renderer and physical selection</a></li>
 </ul>
   </nav></div>
 

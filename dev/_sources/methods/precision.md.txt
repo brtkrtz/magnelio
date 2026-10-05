@@ -119,7 +119,7 @@ double over the whole band:
 |---|---|
 | max ⏐ΔS₁₁⏐ (linear) | 5.6 · 10⁻⁷ |
 | max ⏐ΔS₂₁⏐ (linear) | 7.7 · 10⁻⁷ |
-| ⏐S₂₁⏐ at band centre | identical to four decimals in dB |
+| ⏐S₂₁⏐ at band center | identical to four decimals in dB |
 
 For comparison, the *discretisation* error of the same run — the
 deviation of the computed insertion loss from the closed-form value —

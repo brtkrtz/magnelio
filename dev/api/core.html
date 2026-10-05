@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -680,7 +694,7 @@ no time-marching state, so it is a one-shot result — the
 streaming/resume machinery does not apply.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="solver.html#magnelio.solver.EigenmodeResult" title="magnelio.solver.EigenmodeResult">EigenmodeResult</a> or <a class="reference internal" href="io.html#magnelio.io.Project" title="magnelio.io.Project">Project</a></p>
+<dd class="field-even"><p><a class="reference internal" href="analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.analysis.EigenmodeResult">EigenmodeResult</a> or <a class="reference internal" href="io.html#magnelio.io.Project" title="magnelio.io.Project">Project</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1134,6 +1148,50 @@ the monitor write-through streams.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.AnalysisTD.estimate_memory">
+<span class="sig-name descname"><span class="pre">estimate_memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.AnalysisTD.estimate_memory" title="Link to this definition">#</a></dt>
+<dd><p>Budget memory without constructing operators or starting a run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>excited</strong> (<em>iterable</em><em>, </em><em>optional</em>) – Scattering channels, with the same meaning as <code class="docutils literal notranslate"><span class="pre">run(excited=)</span></code>.
+Not used by the general TD analysis.</p></li>
+<li><p><strong>total_time_steps</strong> (<em>int</em><em>, </em><em>optional</em>) – Upper bound on steps in each run, as in <code class="docutils literal notranslate"><span class="pre">run</span></code>.</p></li>
+<li><p><strong>max_time_steps</strong> (<em>int</em><em>, </em><em>None</em><em> or </em><em>&quot;auto&quot;</em><em>, </em><em>default &quot;auto&quot;</em>) – Explicit runtime cap when no fixed length is supplied. The
+automatic cap is left unresolved because it requires port
+and waveform preparation. Early stop criteria can only
+reduce the actual recording below the reported bounds.</p></li>
+<li><p><strong>t_end</strong> (<em>float</em><em>, </em><em>optional</em>) – Physical duration [s], mutually exclusive with steps. For
+<code class="docutils literal notranslate"><span class="pre">AnalysisTD</span></code> this matches <code class="docutils literal notranslate"><span class="pre">run(t_end=)</span></code>; on a scattering
+analysis it is an estimate scenario, not a run parameter.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>optional</em>) – Assumed step [s] for converting duration and monitor schedules.
+Uses the cached normal-accuracy CFL step if available; never
+computes a new CFL eigenvalue. An assumed step does not set
+the solver’s actual step.</p></li>
+<li><p><strong>backend</strong> (<em>{&quot;auto&quot;</em><em>, </em><em>&quot;numpy&quot;</em><em>, </em><em>&quot;cupy&quot;}</em><em>, </em><em>optional</em>) – Backend scenario. Default: analysis setting. Unresolved
+<code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> reports a CPU scenario without initialising CUDA.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Structured phase and monitor budgets in bytes. <code class="docutils literal notranslate"><span class="pre">print</span></code> the
+result for binary storage units (GiB, MiB, KiB). Missing contributions and
+unknown recording horizons are explicit; phase peaks include
+the existing mesh and must not be added together.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="analysis.html#magnelio.analysis.MemoryEstimate" title="magnelio.analysis.MemoryEstimate">MemoryEstimate</a></p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This is an allocation budget, not a prediction of process RSS.
+Field monitors are accounted for at their staggered sample shapes;
+time recordings report bytes per frame and schedule growth, with
+finite totals when possible. Project-backed recordings stream to
+disk with bounded RAM buffers. Port/source auxiliary state and
+other monitor types currently leave the overall upper budget open.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.AnalysisTD.run">
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excitations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">70.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.AnalysisTD.run" title="Link to this definition">#</a></dt>
 <dd><p>March once with every excitation applied simultaneously.</p>
@@ -1442,7 +1500,7 @@ polynomial profiles.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.Excitation">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">Excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waveform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.Excitation" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">Excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waveform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_deg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.Excitation" title="Link to this definition">#</a></dt>
 <dd><p>One port channel or model source, bound to a waveform and a weight.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1458,10 +1516,10 @@ port mode’s cut-off frequency.</p></li>
 (incident power wave) for ports, <code class="docutils literal notranslate"><span class="pre">V/m</span></code> for a plane wave; each
 source publishes it as <code class="docutils literal notranslate"><span class="pre">amplitude_unit</span></code>.</p></li>
 <li><p><strong>delay</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Time offset [s] of the waveform; must not be negative.</p></li>
-<li><p><strong>phase</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Phase [degrees].  On a carrier waveform (one with <code class="docutils literal notranslate"><span class="pre">f_center</span></code>)
-it is applied as a delay of <code class="docutils literal notranslate"><span class="pre">phase</span> <span class="pre">/</span> <span class="pre">(360</span> <span class="pre">·</span> <span class="pre">f_center)</span></code>; on a
+<li><p><strong>phase_deg</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Phase [degrees].  On a carrier waveform (one with <code class="docutils literal notranslate"><span class="pre">f_center</span></code>)
+it is applied as a delay of <code class="docutils literal notranslate"><span class="pre">phase_deg</span> <span class="pre">/</span> <span class="pre">(360</span> <span class="pre">·</span> <span class="pre">f_center)</span></code>; on a
 baseband waveform it is rejected, because a baseband pulse has
-no phase.  Two modes of one port at 90° make a circularly
+no phase_deg.  Two modes of one port at 90° make a circularly
 polarised feed.</p></li>
 </ul>
 </dd>
@@ -1494,8 +1552,8 @@ returned as is.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.Excitation.effective_delay">
 <span class="sig-name descname"><span class="pre">effective_delay</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.Excitation.effective_delay" title="Link to this definition">#</a></dt>
-<dd><p>The delay [s] including the phase, <code class="docutils literal notranslate"><span class="pre">delay</span> <span class="pre">+</span> <span class="pre">phase</span> <span class="pre">/</span> <span class="pre">(360</span> <span class="pre">·</span> <span class="pre">f_center)</span></code>.</p>
-<p>Raises when a phase is set without a waveform to take it from.</p>
+<dd><p>The delay [s] including the phase_deg, <code class="docutils literal notranslate"><span class="pre">delay</span> <span class="pre">+</span> <span class="pre">phase_deg</span> <span class="pre">/</span> <span class="pre">(360</span> <span class="pre">·</span> <span class="pre">f_center)</span></code>.</p>
+<p>Raises when a phase_deg is set without a waveform to take it from.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
@@ -1519,8 +1577,8 @@ returned as is.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.Excitation.phase">
-<span class="sig-name descname"><span class="pre">phase</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#magnelio.Excitation.phase" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.Excitation.phase_deg">
+<span class="sig-name descname"><span class="pre">phase_deg</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#magnelio.Excitation.phase_deg" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -1716,14 +1774,6 @@ ports, elements and sources of this model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.GeometryModel.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.GeometryModel.plot" title="Link to this definition">#</a></dt>
-<dd><p>Deprecated alias of <a class="reference internal" href="#magnelio.GeometryModel.show" title="magnelio.GeometryModel.show"><code class="xref py py-meth docutils literal notranslate"><span class="pre">show()</span></code></a>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">plot</span></code> draws into matplotlib everywhere else in magnelio;
-the interactive 3D view is <code class="docutils literal notranslate"><span class="pre">show</span></code>.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.GeometryModel.plot_cross_section">
 <span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.GeometryModel.plot_cross_section" title="Link to this definition">#</a></dt>
 <dd><p>Plot a 2D cross-section at an axis-aligned plane.</p>
@@ -1766,9 +1816,29 @@ and a second toolbar row.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mesh</strong> (<a class="reference internal" href="#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a><em>, </em><em>optional</em>) – Show this mesh’s grid with the geometry: the grid cells —
 coloured by assigned material — on the cutting plane.</p></li>
-<li><p><strong>**kwargs</strong> – Forwarded (<code class="docutils literal notranslate"><span class="pre">cut</span></code>, <code class="docutils literal notranslate"><span class="pre">flip</span></code>, <code class="docutils literal notranslate"><span class="pre">show_ports</span></code>, <code class="docutils literal notranslate"><span class="pre">show_wires</span></code>,
-<code class="docutils literal notranslate"><span class="pre">show_grid</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>, <code class="docutils literal notranslate"><span class="pre">target</span></code>, <code class="docutils literal notranslate"><span class="pre">size</span></code>, <code class="docutils literal notranslate"><span class="pre">render_edges</span></code>,
-<code class="docutils literal notranslate"><span class="pre">edge_color</span></code>, <code class="docutils literal notranslate"><span class="pre">quality</span></code>, <code class="docutils literal notranslate"><span class="pre">scale_mm</span></code>, <code class="docutils literal notranslate"><span class="pre">camera</span></code>).</p></li>
+<li><p><strong>**kwargs</strong> – <p>Viewer options forwarded to
+<a class="reference internal" href="plots.html#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_geometry()</span></code></a>. Common options:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">camera=&quot;iso&quot;</span></code> (default), <code class="docutils literal notranslate"><span class="pre">&quot;xy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xz&quot;</span></code> or
+<code class="docutils literal notranslate"><span class="pre">&quot;yz&quot;</span></code> selects the initial view. A custom camera is
+<code class="docutils literal notranslate"><span class="pre">[position,</span> <span class="pre">focal_point,</span> <span class="pre">view_up]</span></code>, each a three-vector.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cut=(&quot;y&quot;,</span> <span class="pre">0.0)</span></code> opens a section at y = 0 m;
+<code class="docutils literal notranslate"><span class="pre">flip=True</span></code> removes the other side.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">target=&quot;browser&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;inline&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;native&quot;</span></code>
+selects the display destination; the default is automatic.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode=&quot;client&quot;</span></code> renders in the browser, <code class="docutils literal notranslate"><span class="pre">&quot;server&quot;</span></code>
+streams kernel-rendered images, <code class="docutils literal notranslate"><span class="pre">&quot;static&quot;</span></code> shows a
+screenshot, and <code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> returns a plotter without
+displaying it. <code class="docutils literal notranslate"><span class="pre">&quot;trame&quot;</span></code> offers a client/server toggle.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">size=(900,</span> <span class="pre">600)</span></code> sets the view size in pixels;
+<code class="docutils literal notranslate"><span class="pre">scale_mm=False</span></code> displays metres instead of millimetres.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">show_ports</span></code>, <code class="docutils literal notranslate"><span class="pre">show_wires</span></code>, <code class="docutils literal notranslate"><span class="pre">show_grid</span></code> and
+<code class="docutils literal notranslate"><span class="pre">show_labels</span></code> control the initial visibility of those
+groups. <code class="docutils literal notranslate"><span class="pre">render_edges=True</span></code> draws tessellation edges,
+<code class="docutils literal notranslate"><span class="pre">edge_color</span></code> sets their colour, and <code class="docutils literal notranslate"><span class="pre">quality</span></code> controls
+tessellation fineness (default 1.0).</p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1779,6 +1849,28 @@ displayed and <code class="docutils literal notranslate"><span class="pre">None<
 <dd class="field-odd"><p>pyvista.Plotter or None</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>A custom camera’s position and focal point use display coordinates:
+millimetres by default, metres with <code class="docutils literal notranslate"><span class="pre">scale_mm=False</span></code>. <code class="docutils literal notranslate"><span class="pre">view_up</span></code>
+is a dimensionless vector pointing towards the top of the image;
+it must not be parallel to the viewing direction. The viewer fits
+the scene automatically, preserving the viewing direction and up
+vector but adjusting the position, focal point and zoom. Cutting
+plane positions always use metres, independently of display units.</p>
+<p class="rubric">Examples</p>
+<p>Look at the xy plane, or open a cut in the xz view:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xy"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xz"</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Choose an oblique direction with z pointing up. The first two
+vectors below are in millimetres; the scene is fitted automatically:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">camera</span><span class="o">=</span><span class="p">[(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span>
+<span class="gp">... </span>    <span class="n">target</span><span class="o">=</span><span class="s2">"browser"</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -2181,7 +2273,7 @@ regions are specified as axis-aligned bounding boxes (AABB).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.GridLines"><em>GridLines</em></a>) – Pre-built <a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.grid.GridLines"><code class="xref py py-class docutils literal notranslate"><span class="pre">GridLines</span></code></a>.</p></li>
-<li><p><strong>regions</strong> (<em>list</em><em>[</em><em>tuple</em><em>[</em><em>'Material'</em><em>, </em><em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em><em>]</em><em>] </em><em>| </em><em>None</em>) – List of <code class="docutils literal notranslate"><span class="pre">(material,</span> <span class="pre">(xmin,</span> <span class="pre">ymin,</span> <span class="pre">zmin,</span> <span class="pre">xmax,</span> <span class="pre">ymax,</span> <span class="pre">zmax))</span></code>
+<li><p><strong>regions</strong> (<em>list</em><em>[</em><em>tuple</em><em>[</em><em>'Material'</em><em>, </em><em>tuple</em><em>[</em><em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em><em>, </em><em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em><em>]</em><em>]</em><em>] </em><em>| </em><em>None</em>) – List of <code class="docutils literal notranslate"><span class="pre">(material,</span> <span class="pre">((xmin,</span> <span class="pre">ymin,</span> <span class="pre">zmin),</span> <span class="pre">(xmax,</span> <span class="pre">ymax,</span> <span class="pre">zmax)))</span></code>
 tuples. Regions are applied in order; later entries overwrite
 earlier ones where they overlap.</p></li>
 <li><p><strong>background</strong> (<a class="reference internal" href="#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> | </em><em>None</em>) – Material to fill all cells not covered by any region.
@@ -2217,7 +2309,7 @@ extend it for CPML or pull a PMC line in.</p></li>
     <span class="n">z</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="n">fr4</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"FR4"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">4.4</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">))</span>
-<span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[(</span><span class="n">fr4</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">1.6e-3</span><span class="p">))])</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[(</span><span class="n">fr4</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">10e-3</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">1.6e-3</span><span class="p">)))])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2682,7 +2774,7 @@ in later work packages, by an <code class="docutils literal notranslate"><span c
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.resume">
-<span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">resume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.resume" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">resume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.resume" title="Link to this definition">#</a></dt>
 <dd><p>Continue a time-domain run in a project store from its checkpoint.</p>
 <p>Opens <code class="docutils literal notranslate"><span class="pre">project</span></code> (a path or an already-open
 <a class="reference internal" href="io.html#magnelio.io.Project" title="magnelio.io.project.Project"><code class="xref py py-class docutils literal notranslate"><span class="pre">Project</span></code></a>), rebuilds the run’s operators
@@ -2697,7 +2789,7 @@ deterministically-built line.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>project</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a><em> or </em><a class="reference internal" href="io.html#magnelio.io.Project" title="magnelio.io.Project"><em>Project</em></a>) – The project directory (or an open reader) to continue.</p></li>
-<li><p><strong>excited</strong> (<em>str</em><em> or </em><em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Which run to resume: a scattering run by its excited
+<li><p><strong>run</strong> (<em>str</em><em> or </em><em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Which run to resume: a scattering run by its run
 <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code> pair, an <code class="docutils literal notranslate"><span class="pre">AnalysisTD</span></code> run by its name.  May
 be omitted when the project holds exactly one run.</p></li>
 <li><p><strong>energy_stop_db</strong> (<em>float</em><em>, </em><em>optional</em>) – New stop threshold, dB below the <em>original</em> peak energy.  Default
@@ -2835,6 +2927,7 @@ silently.</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisTD"><code class="docutils literal notranslate"><span class="pre">AnalysisTD</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisTD.from_project"><code class="docutils literal notranslate"><span class="pre">AnalysisTD.from_project()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisTD.estimate_memory"><code class="docutils literal notranslate"><span class="pre">AnalysisTD.estimate_memory()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisTD.run"><code class="docutils literal notranslate"><span class="pre">AnalysisTD.run()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisTD.solve_ports"><code class="docutils literal notranslate"><span class="pre">AnalysisTD.solve_ports()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisTD.boundary_conditions"><code class="docutils literal notranslate"><span class="pre">AnalysisTD.boundary_conditions</span></code></a></li>
@@ -2871,7 +2964,7 @@ silently.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Excitation.amplitude"><code class="docutils literal notranslate"><span class="pre">Excitation.amplitude</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Excitation.delay"><code class="docutils literal notranslate"><span class="pre">Excitation.delay</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Excitation.mode"><code class="docutils literal notranslate"><span class="pre">Excitation.mode</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Excitation.phase"><code class="docutils literal notranslate"><span class="pre">Excitation.phase</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Excitation.phase_deg"><code class="docutils literal notranslate"><span class="pre">Excitation.phase_deg</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Excitation.source"><code class="docutils literal notranslate"><span class="pre">Excitation.source</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Excitation.waveform"><code class="docutils literal notranslate"><span class="pre">Excitation.waveform</span></code></a></li>
 </ul>
@@ -2882,7 +2975,6 @@ silently.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.GeometryModel.add_port"><code class="docutils literal notranslate"><span class="pre">GeometryModel.add_port()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.GeometryModel.add_source"><code class="docutils literal notranslate"><span class="pre">GeometryModel.add_source()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.GeometryModel.bounding_box"><code class="docutils literal notranslate"><span class="pre">GeometryModel.bounding_box()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.GeometryModel.plot"><code class="docutils literal notranslate"><span class="pre">GeometryModel.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.GeometryModel.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">GeometryModel.plot_cross_section()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.GeometryModel.show"><code class="docutils literal notranslate"><span class="pre">GeometryModel.show()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.GeometryModel.validate"><code class="docutils literal notranslate"><span class="pre">GeometryModel.validate()</span></code></a></li>

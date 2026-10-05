@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -381,6 +388,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -525,6 +539,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -716,6 +731,15 @@ unconditional dissipation identity is in-house.</p>
 term and with which geometric weight <span class="math notranslate nohighlight">\(G_f = A_f/l^2_{\text{dual}}\)</span>)
 reuses the DD-087 conformal wall-area machinery.</p>
 </section>
+<section id="surface-current-quantities">
+<h2>Surface-current quantities<a class="headerlink" href="#surface-current-quantities" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">fields.SurfaceCurrent</span></code> carries the wall-current vector <code class="docutils literal notranslate"><span class="pre">J_s</span></code>, its local
+magnitude, patch positions, normal vectors and areas. Use <code class="docutils literal notranslate"><span class="pre">select</span></code> and <code class="docutils literal notranslate"><span class="pre">show</span></code>
+to inspect a conductor. <code class="docutils literal notranslate"><span class="pre">power_loss</span></code> independently integrates the dissipated
+power. The removed <code class="docutils literal notranslate"><span class="pre">current_through</span></code> area integral had units A·m and did not
+measure conductor current in A; no integrated-magnitude replacement is
+provided. <code class="docutils literal notranslate"><span class="pre">post.WallLossQ</span></code> is the returned wall-loss quality-factor type.</p>
+</section>
 </section>
 
 
@@ -769,6 +793,7 @@ reuses the DD-087 conformal wall-area machinery.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-surface-current">The surface current</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#surface-roughness">Surface roughness</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#broadband-time-domain-sibc">Broadband time-domain SIBC</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#surface-current-quantities">Surface-current quantities</a></li>
 </ul>
   </nav></div>
 

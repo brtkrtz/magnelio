@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -661,7 +675,7 @@ the incident wave does not.</p>
 </span><span class="w">
 </span><span class="k">def</span><span class="w"> </span><span class="nf">trace</span><span class="p">(</span><span class="n">monitor</span><span class="p">)</span><span class="p">:</span><span class="w">
 </span><span class="w">    </span><span class="sd">&quot;&quot;&quot;One scalar time trace out of a small probe box.&quot;&quot;&quot;</span><span class="w">
-</span>    <span class="n">values</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">recording</span><span class="o">.</span><span class="n">cell_centred</span><span class="p">(</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ex</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ex</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
+</span>    <span class="n">values</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">recording</span><span class="o">.</span><span class="n">cell_centered</span><span class="p">(</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ex</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ex</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
 </span>    <span class="k">return</span> <span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 </section>
@@ -696,7 +710,7 @@ keeps them as a time series.  <code class="docutils literal notranslate"><span c
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 56 x 56 x 56 cells
+  mesh | 56 x 56 x 56 = 175,616 cells | 52 MiB
 SurfaceRecording(name='scatterer', faces=6, samples=50, duration=4.075e-10 s)
 sample interval    7.56 ps over 408 ps
 </pre></div>
@@ -721,7 +735,7 @@ mesh | grid lines
 mesh | materials
 mesh | conformal cells
 mesh | PEC masks
-mesh | 40 x 40 x 40 cells
+mesh | 40 x 40 x 40 = 64,000 cells | 28 MiB
 </pre></div>
 </div>
 </section>
@@ -813,7 +827,7 @@ the run ends.</p></li>
 </ul>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 15.637 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 13.178 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-field-source-reuse-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/7bfe52ed3cfb450d0830677de50b73ef/plot_field_source_reuse.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_field_source_reuse.ipynb</span></code></a></p>

@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -379,6 +386,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -523,6 +537,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -662,7 +677,7 @@ is where the physics enters the model.</p>
 <section id="solids-and-free-sheets">
 <h2>Solids and free sheets<a class="headerlink" href="#solids-and-free-sheets" title="Link to this heading">#</a></h2>
 <p>Free faces and faces of open shells import as independent
-<code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSheet</span></code> members. Faces that bound a solid
+<a class="reference internal" href="../api/geo.html#magnelio.geo.ImportedSheet" title="magnelio.geo.ImportedSheet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSheet</span></code></a> members. Faces that bound a solid
 remain part of that solid and are never duplicated as free sheets. A
 shell with several faces becomes several sheet members, so each can be
 given a separate thickness. Free curves and points are skipped with a
@@ -732,7 +747,7 @@ instances by their world positions or give them unique CAD names.</p>
 <h2>Colours<a class="headerlink" href="#colours" title="Link to this heading">#</a></h2>
 <p>A colour read from a STEP file is display information and nothing
 else: it selects the hue an imported solid is drawn with in
-<a class="reference internal" href="../api/core.html#magnelio.GeometryModel.plot" title="magnelio.GeometryModel.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code></a> and in the ParaView export, and
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code> and in the ParaView export, and
 it survives that solid’s project store round-trip. An imported sheet
 retains its CAD colour while it is a sheet; thickening it creates a new
 solid. Colour never touches the physics,
@@ -797,6 +812,16 @@ than STEP and BREP (IGES, mesh formats) are not supported. Sheet
 materials have no thin-sheet mesh law; give a sheet resolved thickness
 before meshing.</p>
 </section>
+<section id="raw-brep-versus-cad-exchange">
+<h2>Raw BREP versus CAD exchange<a class="headerlink" href="#raw-brep-versus-cad-exchange" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">read_brep(path)</span></code> reads an ordered list of OpenCascade shapes in metres;
+<code class="docutils literal notranslate"><span class="pre">write_brep(shapes,</span> <span class="pre">path)</span></code> writes that sequence in its given order. This raw
+pair carries no material or named-topology metadata. The CAD-exchange pair
+<code class="docutils literal notranslate"><span class="pre">import_brep(path,</span> <span class="pre">units=...)</span></code> / <code class="docutils literal notranslate"><span class="pre">export_brep(path,</span> <span class="pre">geometry,</span> <span class="pre">units=...)</span></code>
+works with Magnelio geometry and explicit exchange units. Use that pair for
+user CAD workflows. The raw writer’s <code class="docutils literal notranslate"><span class="pre">shapes,</span> <span class="pre">path</span></code> and CAD export’s
+<code class="docutils literal notranslate"><span class="pre">path,</span> <span class="pre">geometry</span></code> argument order are deliberate exceptions.</p>
+</section>
 </section>
 
 
@@ -854,6 +879,7 @@ before meshing.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#healing">Healing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exporting-selected-geometry">Exporting selected geometry</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limits">Limits</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#raw-brep-versus-cad-exchange">Raw BREP versus CAD exchange</a></li>
 </ul>
   </nav></div>
 

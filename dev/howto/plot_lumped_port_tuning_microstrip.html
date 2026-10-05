@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -694,20 +708,20 @@ behind the trace end as they would in a real layout.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 24 x 23 x 16 cells
+  mesh | 24 x 23 x 16 = 8,832 cells | 2.7 MiB
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 24 x 23 x 22 cells
+  mesh | 24 x 23 x 22 = 12,144 cells | 3.7 MiB
 line impedance on this grid: 50.23 Ohm
 </pre></div>
 </div>
 </section>
 <section id="the-test-fixture">
 <h2>The test fixture<a class="headerlink" href="#the-test-fixture" title="Link to this heading">#</a></h2>
-<p>A cut along the propagation direction, through the trace centre:
+<p>A cut along the propagation direction, through the trace center:
 the waveguide port on the left, the trace ending at
 <code class="docutils literal notranslate"><span class="pre">end_position</span></code> relative to the reference plane, the vertical
 lumped port from the trace end down to the ground plane, and the
@@ -765,7 +779,7 @@ is) and the port impedance into the target model once the numbers
 meet your spec.  Background and sweeps:
 <a class="reference internal" href="plot_lumped_port_investigations.html"><span class="doc">Lumped ports: investigations</span></a>.  When the cross-section,
 resolution or band changes, run this page again.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 3.208 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 2.358 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-lumped-port-tuning-microstrip-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/925041e73c2f651e5fe5eca3b0cb29bf/plot_lumped_port_tuning_microstrip.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_lumped_port_tuning_microstrip.ipynb</span></code></a></p>

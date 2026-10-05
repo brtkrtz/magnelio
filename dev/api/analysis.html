@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -596,7 +610,7 @@ against either. Four of its accessors (<code class="docutils literal notranslate
 <code class="docutils literal notranslate"><span class="pre">to_touchstone</span></code>, <code class="docutils literal notranslate"><span class="pre">to_skrf</span></code>) are shared verbatim between the two and are
 listed on each class below through inheritance.  <code class="docutils literal notranslate"><span class="pre">TDResult</span></code> is what
 the general time-domain analysis returns — the recorded signals of one
-march — and what <code class="docutils literal notranslate"><span class="pre">Project.result(name)</span></code> rebuilds for any stored run.</p>
+march — and what <code class="docutils literal notranslate"><span class="pre">Project.result(run)</span></code> rebuilds for any stored run.</p>
 <p id="module-magnelio.analysis">Analysis workflows — the high-level problem-class API.</p>
 <p>Each <code class="docutils literal notranslate"><span class="pre">Analysis*</span></code> class solves a specific physical question in one
 <code class="docutils literal notranslate"><span class="pre">run()</span></code> call:</p>
@@ -612,8 +626,403 @@ one channel per time-domain run.</p></li>
 </dd>
 </dl>
 <dl class="py class">
+<dt class="sig sig-object py" id="magnelio.analysis.EigenmodeResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">EigenmodeResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frequencies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.EigenmodeResult" title="Link to this definition">#</a></dt>
+<dd><p>Result of a 3D cavity eigenmode analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frequencies</strong> (<em>np.ndarray</em>) – Resonant frequencies [Hz], shape <code class="docutils literal notranslate"><span class="pre">(n_modes,)</span></code>, ascending.</p></li>
+<li><p><strong>modes</strong> (<em>list</em><em>[</em><em>FieldArrays</em><em>]</em>) – One FieldArrays per mode with E and H fields on the Yee grid.
+Field amplitudes are normalised so that <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p></li>
+<li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – Reference mesh (grid, material library).</p></li>
+<li><p><strong>solver_info</strong> (<em>dict</em>) – Metadata: solver backend, number of iterations, residuals, etc.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.EigenmodeResult.field">
+<span class="sig-name descname"><span class="pre">field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.EigenmodeResult.field" title="Link to this definition">#</a></dt>
+<dd><p>The mode’s field pattern as a <a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a>.</p>
+<p>The eigenvector is normalised to <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>, i.e. to a
+peak stored electric energy of 0.5 J; the physical amplitude
+follows from that, the spatial pattern is the physical content.
+A Bloch mode with a phase advance other than 0 or 180 degrees is
+complex.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>int</em>) – Mode index (ascending in frequency).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.EigenmodeResult.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.EigenmodeResult.plot" title="Link to this definition">#</a></dt>
+<dd><p>Plot a mode’s field pattern on a slice plane through the cavity.</p>
+<p>The staggered Yee-grid components are interpolated onto cell
+centres and rendered on the plane selected by <em>normal</em> and
+<em>position</em> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">magnelio.fields.FieldState.plot()</span></code></a>).  Mode
+fields are normalised eigenvectors, so the amplitudes are in
+arbitrary units; the spatial pattern is the physical content.
+A complex mode (Bloch phase advance other than 0 or 180
+degrees) is drawn as the real snapshot at the instant of
+maximum field energy on the slice — the global phase of an
+eigenvector is arbitrary, and this choice makes the picture
+independent of it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>int</em>) – Mode index (ascending in frequency).</p></li>
+<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for the vector plot / vector magnitude.
+<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hy&quot;</span></code>, … for a single component (scalar only).</p></li>
+<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em>) – Normal axis of the slice plane.</p></li>
+<li><p><strong>position</strong> (<em>float</em>) – Slice-plane position along <em>normal</em> [m]; snapped to the
+nearest cell-center plane.</p></li>
+<li><p><strong>plot_type</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;color&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.2)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>scale_mm</strong> (<em>bool</em>) – Axis coordinates in mm instead of m.</p></li>
+<li><p><strong>cmap</strong> (<em>str</em><em> or </em><em>None</em>) – Colourmap (None = auto-select).</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em>, </em><em>optional</em>) – Geometry for a cross-section overlay of the slice plane.</p></li>
+<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes.</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
+<li><p><strong>density</strong> (<em>int</em>) – Target arrows per axis (vector mode).</p></li>
+<li><p><strong>normalize_arrows</strong> (<em>bool</em>) – Unit-length arrows, colour = magnitude (vector mode).</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Suppress arrows below this fraction of peak (vector mode).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.EigenmodeResult.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.EigenmodeResult.show" title="Link to this definition">#</a></dt>
+<dd><p>Interactive 3D view of the modes on a cutting plane.</p>
+<p>The geometry viewer with a mode’s field laid on its cut and a
+slider over the modes (each labelled with its index and
+eigenfrequency), the position slider walking the layer through
+the cavity; a complex Bloch mode is shown at the instant of its
+maximum energy, with a phase slider to turn it.  The result’s
+own mesh cuts the metal out of the sheet and names the symmetry
+planes the field is continued across, so the view shows the
+whole cavity.  See <a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the
+arguments — <code class="docutils literal notranslate"><span class="pre">mode=</span></code> picks the mode shown first, the plane
+(<cite>normal</cite>, <cite>position</cite>), <cite>geometry</cite>, the rendering <cite>render_mode</cite> and
+the rest.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code>, or one component such as <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.EigenmodeResult.n_modes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">n_modes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#magnelio.analysis.EigenmodeResult.n_modes" title="Link to this definition">#</a></dt>
+<dd><p>Number of physical modes found.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">MemoryEstimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coefficients_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_runs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phases</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate" title="Link to this definition">#</a></dt>
+<dd><p>Structured storage budget returned by a TD analysis’s <code class="docutils literal notranslate"><span class="pre">estimate_memory</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh_bytes</strong> (<em>int</em>)</p></li>
+<li><p><strong>fields_bytes</strong> (<em>int</em>)</p></li>
+<li><p><strong>coefficients_bytes</strong> (<em>int</em>)</p></li>
+<li><p><strong>backend</strong> (<em>str</em>)</p></li>
+<li><p><strong>precision</strong> (<em>str</em>)</p></li>
+<li><p><strong>n_runs</strong> (<em>int</em>)</p></li>
+<li><p><strong>phases</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.analysis.MemoryPhase" title="magnelio.analysis.memory.MemoryPhase"><em>MemoryPhase</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>monitors</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.analysis.MonitorMemoryEstimate" title="magnelio.analysis.memory.MonitorMemoryEstimate"><em>MonitorMemoryEstimate</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>notes</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.mesh_bytes">
+<span class="sig-name descname"><span class="pre">mesh_bytes</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.mesh_bytes" title="Link to this definition">#</a></dt>
+<dd><p>Distinct NumPy backing allocations already retained by the mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">fields_bytes,</span> <span class="pre">coefficients_bytes</span></span></dt>
+<dd><p>Six field arrays and six update/energy diagonals in solver precision.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">backend,</span> <span class="pre">precision</span></span></dt>
+<dd><p>Backend scenario and resolved scalar dtype.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.n_runs">
+<span class="sig-name descname"><span class="pre">n_runs</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.n_runs" title="Link to this definition">#</a></dt>
+<dd><p>Sequential n_runs. Solver storage is reused; disk recordings scale
+with this count.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.phases">
+<span class="sig-name descname"><span class="pre">phases</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.phases" title="Link to this definition">#</a></dt>
+<dd><p>Simultaneous host and device budgets by phase, not summed phases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="#magnelio.analysis.MemoryPhase" title="magnelio.analysis.MemoryPhase">MemoryPhase</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.monitors">
+<span class="sig-name descname"><span class="pre">monitors</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.monitors" title="Link to this definition">#</a></dt>
+<dd><p>Field monitor budgets per run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="#magnelio.analysis.MonitorMemoryEstimate" title="magnelio.analysis.MonitorMemoryEstimate">MonitorMemoryEstimate</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.notes">
+<span class="sig-name descname"><span class="pre">notes</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.notes" title="Link to this definition">#</a></dt>
+<dd><p>Assumptions, missing contributions and unresolved run limits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.minimum_peak_ram_bytes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">minimum_peak_ram_bytes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.minimum_peak_ram_bytes" title="Link to this definition">#</a></dt>
+<dd><p>Largest lower endpoint among the host phase budgets.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.monitor_disk_bytes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">monitor_disk_bytes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.monitor_disk_bytes" title="Link to this definition">#</a></dt>
+<dd><p>Raw field-monitor payload for all n_runs, excluding other project files.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.peak_ram_bytes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">peak_ram_bytes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.peak_ram_bytes" title="Link to this definition">#</a></dt>
+<dd><p>Estimated host peak, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when an upper budget is missing.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryEstimate.peak_vram_bytes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">peak_vram_bytes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.analysis.MemoryEstimate.peak_vram_bytes" title="Link to this definition">#</a></dt>
+<dd><p>Estimated device peak, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when a contribution is unknown.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryPhase">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">MemoryPhase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ram_lower_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ram_upper_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vram_lower_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vram_upper_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.MemoryPhase" title="Link to this definition">#</a></dt>
+<dd><p>Estimated simultaneous array storage for one execution phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>ram_lower_bytes</strong> (<em>int</em>)</p></li>
+<li><p><strong>ram_upper_bytes</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>vram_lower_bytes</strong> (<em>int</em>)</p></li>
+<li><p><strong>vram_upper_bytes</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MemoryPhase.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#magnelio.analysis.MemoryPhase.name" title="Link to this definition">#</a></dt>
+<dd><p>Execution phase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ram_lower_bytes,</span> <span class="pre">ram_upper_bytes</span></span></dt>
+<dd><p>Host-memory range, including the mesh. An absent upper endpoint
+means an unbounded recording or an unmodelled allocation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">vram_lower_bytes,</span> <span class="pre">vram_upper_bytes</span></span></dt>
+<dd><p>Device-memory range, independent of host RAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">MonitorMemoryEstimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bytes_per_snapshot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_snapshots</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recording_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ram_lower_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ram_upper_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disk_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bytes_per_second</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'time'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate" title="Link to this definition">#</a></dt>
+<dd><p>One field monitor’s recording and resident-storage budget.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>bytes_per_snapshot</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>max_snapshots</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>recording_bytes</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>ram_lower_bytes</strong> (<em>int</em>)</p></li>
+<li><p><strong>ram_upper_bytes</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>disk_bytes</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>bytes_per_second</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>kind</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate.name" title="Link to this definition">#</a></dt>
+<dd><p>Monitor name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate.bytes_per_snapshot">
+<span class="sig-name descname"><span class="pre">bytes_per_snapshot</span></span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate.bytes_per_snapshot" title="Link to this definition">#</a></dt>
+<dd><p>Raw Yee samples of the requested components, excluding metadata.
+Frequency monitors report one complex frequency bin instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate.max_snapshots">
+<span class="sig-name descname"><span class="pre">max_snapshots</span></span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate.max_snapshots" title="Link to this definition">#</a></dt>
+<dd><p>Upper bound on recorded frames, or number of frequency bins.
+Time schedules finer than a step are coalesced by the solver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate.recording_bytes">
+<span class="sig-name descname"><span class="pre">recording_bytes</span></span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate.recording_bytes" title="Link to this definition">#</a></dt>
+<dd><p>Upper bound on raw recording payload per run. <code class="docutils literal notranslate"><span class="pre">None</span></code> means
+the run horizon is unknown.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ram_lower_bytes,</span> <span class="pre">ram_upper_bytes</span></span></dt>
+<dd><p>Additional resident storage including buffering and operators.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate.disk_bytes">
+<span class="sig-name descname"><span class="pre">disk_bytes</span></span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate.disk_bytes" title="Link to this definition">#</a></dt>
+<dd><p>Raw recording payload per run with <code class="docutils literal notranslate"><span class="pre">project=</span></code>; zero otherwise.
+HDF5 metadata, checkpoints and compression are not included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate.bytes_per_second">
+<span class="sig-name descname"><span class="pre">bytes_per_second</span></span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate.bytes_per_second" title="Link to this definition">#</a></dt>
+<dd><p>Interval-form recording growth per simulated second. With a known
+step, the schedule rate is capped at one snapshot per time step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.MonitorMemoryEstimate.kind">
+<span class="sig-name descname"><span class="pre">kind</span></span><a class="headerlink" href="#magnelio.analysis.MonitorMemoryEstimate.kind" title="Link to this definition">#</a></dt>
+<dd><p>Recording type, distinguishing time frames from frequency bins.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{“time”, “frequency”, “unknown”}</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="magnelio.analysis.RunSettings">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">RunSettings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_actual_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_port_signal_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.RunSettings" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">RunSettings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_port_signal_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.RunSettings" title="Link to this definition">#</a></dt>
 <dd><p>Settings a finished run was produced with, readable off the result.</p>
 <p>All fields are optional: the in-RAM result fills what the analysis
 knew at run time; the store-backed reader fills what the project
@@ -625,7 +1034,7 @@ recorded (older stores may lack individual entries).</p>
 <li><p><strong>f_min</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>n_freq</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>dt</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>n_actual_steps</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>accuracy</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>energy_stop_db</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_signal_stop_db</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
@@ -746,6 +1155,18 @@ exports.</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.ScatteringResult.max_run_steps">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">max_run_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#magnelio.analysis.ScatteringResult.max_run_steps" title="Link to this definition">#</a></dt>
+<dd><p>Maximum solver-step count across the runs.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.ScatteringResult.n_steps_by_run">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">n_steps_by_run</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></span><a class="headerlink" href="#magnelio.analysis.ScatteringResult.n_steps_by_run" title="Link to this definition">#</a></dt>
+<dd><p>Solver steps keyed by existing excitation or run.</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="magnelio.analysis.ScatteringResult.settings">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">settings</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#magnelio.analysis.RunSettings" title="magnelio.analysis.result_interface.RunSettings"><span class="pre">RunSettings</span></a></span><a class="headerlink" href="#magnelio.analysis.ScatteringResult.settings" title="Link to this definition">#</a></dt>
 <dd><p>The <a class="reference internal" href="#magnelio.analysis.RunSettings" title="magnelio.analysis.RunSettings"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunSettings</span></code></a> this result was produced with.</p>
@@ -761,7 +1182,7 @@ exports.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.analysis.ScatteringTDResult">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">ScatteringTDResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_actual_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_source_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_dispersion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_reference_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finished</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elapsed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_traces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">ScatteringTDResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_run_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_source_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps_by_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_dispersion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_reference_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">started</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finished</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elapsed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_traces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult" title="Link to this definition">#</a></dt>
 <dd><p>Result of one <code class="xref py py-meth docutils literal notranslate"><span class="pre">AnalysisScatteringTD.run()</span></code> call.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -770,12 +1191,13 @@ exports.</p>
 <li><p><strong>signals</strong> (<em>dict</em>)</p></li>
 <li><p><strong>reference_signal</strong> (<a class="reference internal" href="signals.html#magnelio.signals.Signal1D" title="magnelio.signals.signal_1d.Signal1D"><em>Signal1D</em></a>)</p></li>
 <li><p><strong>dt</strong> (<em>float</em>)</p></li>
-<li><p><strong>n_actual_steps</strong> (<em>int</em>)</p></li>
+<li><p><strong>max_run_steps</strong> (<em>int</em>)</p></li>
 <li><p><strong>port_modes</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_normal_dx</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_line_params</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_model_used</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_source_used</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>n_steps_by_run</strong> (<em>dict</em>)</p></li>
 <li><p><strong>reference_signals</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>settings</strong> (<a class="reference internal" href="#magnelio.analysis.RunSettings" title="magnelio.analysis.result_interface.RunSettings"><em>RunSettings</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_dispersion</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
@@ -819,7 +1241,7 @@ are already trimmed to the actual leapfrog count via
 <span class="sig-name descname"><span class="pre">reference_signal</span></span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult.reference_signal" title="Link to this definition">#</a></dt>
 <dd><p>The excitation waveform sampled on the same time axis as the
 recorded signals.  Useful for monitor renormalisation
-(<code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.renormalize</span></code>) and for
+(<code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.normalize_to_excitation</span></code>) and for
 incident/reflected decomposition in time-domain plots.  On
 multi-excitation runs with auto-derived waveforms this is the
 waveform of the <em>longest</em> run — per-mode waveforms can differ
@@ -843,15 +1265,26 @@ waveform of the <em>longest</em> run — per-mode waveforms can differ
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.analysis.ScatteringTDResult.n_actual_steps">
-<span class="sig-name descname"><span class="pre">n_actual_steps</span></span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult.n_actual_steps" title="Link to this definition">#</a></dt>
-<dd><p>Number of leapfrog steps actually executed.  Equals
-<code class="docutils literal notranslate"><span class="pre">len(reference_signal.values)</span></code>; can be smaller than the
+<dt class="sig sig-object py" id="magnelio.analysis.ScatteringTDResult.max_run_steps">
+<span class="sig-name descname"><span class="pre">max_run_steps</span></span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult.max_run_steps" title="Link to this definition">#</a></dt>
+<dd><p>Maximum leapfrog count across the runs. Signal extrapolation
+can extend the records without changing this count. Can be smaller than the
 configured <code class="docutils literal notranslate"><span class="pre">total_time_steps</span></code> when <code class="docutils literal notranslate"><span class="pre">energy_stop_db</span></code>
 triggered an early termination.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.ScatteringTDResult.n_steps_by_run">
+<span class="sig-name descname"><span class="pre">n_steps_by_run</span></span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult.n_steps_by_run" title="Link to this definition">#</a></dt>
+<dd><p>Solver steps per excited <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code>, retained by derived results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1043,8 +1476,8 @@ derivative-of-pulse ghost, −22 dB at λ/20 meshes).</p>
 <li><p><strong>excited</strong> (<em>str</em><em> or </em><em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Which excitation run to read.  May be omitted when the
 result holds exactly one excitation.</p></li>
 <li><p><strong>f_ref</strong> (<em>float</em><em>, </em><em>optional</em>) – Frequency [Hz] at which the frozen reference impedance
-<code class="docutils literal notranslate"><span class="pre">Z</span> <span class="pre">=</span> <span class="pre">z_modal(2π·f_ref)</span></code> is evaluated.  Defaults to the
-centre of the result’s frequency axis.  With
+<code class="docutils literal notranslate"><span class="pre">Z</span> <span class="pre">=</span> <span class="pre">z_modal(f=f_ref)</span></code> is evaluated.  Defaults to the
+center of the result’s frequency axis.  With
 <code class="docutils literal notranslate"><span class="pre">destagger=False</span></code> this Z parameterises the whole
 decomposition; with <code class="docutils literal notranslate"><span class="pre">destagger=True</span></code> it only backs the
 out-of-band fallback bins (see
@@ -1647,7 +2080,7 @@ structured array with <code class="docutils literal notranslate"><span class="pr
 <dd><p>The run’s monitors by name, holding their recorded data.
 Frequency-domain monitors keep the <em>raw</em> transient bins: with
 several waveforms in one run there is no single reference
-spectrum to divide out, so <a class="reference internal" href="#magnelio.analysis.TDResult.renormalize" title="magnelio.analysis.TDResult.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a> is your call.</p>
+spectrum to divide out, so <a class="reference internal" href="#magnelio.analysis.TDResult.normalize_to_excitation" title="magnelio.analysis.TDResult.normalize_to_excitation"><code class="xref py py-meth docutils literal notranslate"><span class="pre">normalize_to_excitation()</span></code></a> is your call.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict[str, Monitor]</p>
@@ -1722,7 +2155,7 @@ store the sum over every march of the run, resumes included.</p>
 <li><p><strong>port</strong> (<em>str</em>) – The channel.</p></li>
 <li><p><strong>mode</strong> (<em>int</em>) – The channel.</p></li>
 <li><p><strong>f_ref</strong> (<em>float</em><em>, </em><em>optional</em>) – Frequency [Hz] at which the modal reference impedance is
-evaluated; default the centre of the excitations’ band.</p></li>
+evaluated; default the center of the excitations’ band.</p></li>
 <li><p><strong>destagger</strong> (<em>bool</em><em>, </em><em>default True</em>) – Use the port’s certified discrete line parameters for the
 V/I half-cell alignment (the S-parameter convention).</p></li>
 </ul>
@@ -1764,6 +2197,29 @@ V/I half-cell alignment (the S-parameter convention).</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.normalize_to_excitation">
+<span class="sig-name descname"><span class="pre">normalize_to_excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.normalize_to_excitation" title="Link to this definition">#</a></dt>
+<dd><p>Divide the frequency-domain monitors by one excitation’s spectrum.</p>
+<p>Turns the raw transient bins of every <code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency</span></code>
+and <code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code> into the response per unit of
+the named excitation — fields per 1 √W incident on a port, per
+1 V/m of an incident plane wave.  Meaningful when that
+excitation is the only one, or the only one with energy at the
+monitor frequencies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.analysis.TDResult.plot_energy">
 <span class="sig-name descname"><span class="pre">plot_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'time'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.plot_energy" title="Link to this definition">#</a></dt>
 <dd><p>Plot the stored energy in dB below its peak over the run.</p>
@@ -1799,29 +2255,6 @@ from ten dB below the criterion (<code class="docutils literal notranslate"><spa
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tuple</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="magnelio.analysis.TDResult.renormalize">
-<span class="sig-name descname"><span class="pre">renormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.renormalize" title="Link to this definition">#</a></dt>
-<dd><p>Divide the frequency-domain monitors by one excitation’s spectrum.</p>
-<p>Turns the raw transient bins of every <code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency</span></code>
-and <code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code> into the response per unit of
-the named excitation — fields per 1 √W incident on a port, per
-1 V/m of an incident plane wave.  Meaningful when that
-excitation is the only one, or the only one with energy at the
-monitor frequencies.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>)</p></li>
-<li><p><strong>mode</strong> (<em>int</em>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1907,6 +2340,39 @@ monitor frequencies.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.EigenmodeResult"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.EigenmodeResult.field"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.field()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.EigenmodeResult.plot"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.EigenmodeResult.show"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.show()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.EigenmodeResult.n_modes"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.n_modes</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.mesh_bytes"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.mesh_bytes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.n_runs"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.n_runs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.phases"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.phases</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.monitors"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.monitors</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.notes"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.notes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.minimum_peak_ram_bytes"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.minimum_peak_ram_bytes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.monitor_disk_bytes"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.monitor_disk_bytes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.peak_ram_bytes"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.peak_ram_bytes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryEstimate.peak_vram_bytes"><code class="docutils literal notranslate"><span class="pre">MemoryEstimate.peak_vram_bytes</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryPhase"><code class="docutils literal notranslate"><span class="pre">MemoryPhase</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MemoryPhase.name"><code class="docutils literal notranslate"><span class="pre">MemoryPhase.name</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate.name"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate.bytes_per_snapshot"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate.bytes_per_snapshot</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate.max_snapshots"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate.max_snapshots</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate.recording_bytes"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate.recording_bytes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate.disk_bytes"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate.disk_bytes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate.bytes_per_second"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate.bytes_per_second</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.MonitorMemoryEstimate.kind"><code class="docutils literal notranslate"><span class="pre">MonitorMemoryEstimate.kind</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.RunSettings"><code class="docutils literal notranslate"><span class="pre">RunSettings</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult"><code class="docutils literal notranslate"><span class="pre">ScatteringResult</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.S"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.S()</span></code></a></li>
@@ -1919,6 +2385,8 @@ monitor frequencies.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.excitations"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.excitations</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.f_axis"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.f_axis</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.finished"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.finished</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.max_run_steps"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.max_run_steps</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.n_steps_by_run"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.n_steps_by_run</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.settings"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.settings</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringResult.started"><code class="docutils literal notranslate"><span class="pre">ScatteringResult.started</span></code></a></li>
 </ul>
@@ -1928,7 +2396,8 @@ monitor frequencies.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.signals"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.signals</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.reference_signal"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.reference_signal</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.dt"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.dt</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.n_actual_steps"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.n_actual_steps</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.max_run_steps"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.max_run_steps</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.n_steps_by_run"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.n_steps_by_run</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.port_modes"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.port_modes</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.port_normal_dx"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.port_normal_dx</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.port_line_params"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.port_line_params</span></code></a></li>
@@ -1972,9 +2441,9 @@ monitor frequencies.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.a"><code class="docutils literal notranslate"><span class="pre">TDResult.a()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.b"><code class="docutils literal notranslate"><span class="pre">TDResult.b()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.excitation_signal"><code class="docutils literal notranslate"><span class="pre">TDResult.excitation_signal()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.normalize_to_excitation"><code class="docutils literal notranslate"><span class="pre">TDResult.normalize_to_excitation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.plot_energy"><code class="docutils literal notranslate"><span class="pre">TDResult.plot_energy()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.plot_signals"><code class="docutils literal notranslate"><span class="pre">TDResult.plot_signals()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.renormalize"><code class="docutils literal notranslate"><span class="pre">TDResult.renormalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.signal"><code class="docutils literal notranslate"><span class="pre">TDResult.signal()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.stop_reason"><code class="docutils literal notranslate"><span class="pre">TDResult.stop_reason</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.t"><code class="docutils literal notranslate"><span class="pre">TDResult.t</span></code></a></li>

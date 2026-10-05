@@ -440,7 +440,7 @@ power, so it counts as zero rather than poisoning the sum.
 
 `plot_smith()` traces the reflection channels on a Smith chart, where
 the impedance is readable off the circles of constant normalised
-resistance and reactance and a matched frequency sits at the centre.
+resistance and reactance and a matched frequency sits at the center.
 The chart holds against **one** normalisation.  A dispersive
 waveguide mode's reference impedance moves with frequency, so its
 circles hold nowhere in particular; call `renormalize(50)` first, and
@@ -737,3 +737,17 @@ has no field for it — so a `.s6p` holding two-port rows is not merely
 misnamed but unreadable; a mismatch raises rather than writes.  A
 path given without an extension gets the matching one, so
 `to_touchstone("wr90")` writes `wr90.s2p`.
+
+## Quantity and anchor vocabulary
+
+Both `ModeReport` and `Mode` evaluate `gamma`, `z_wave` and `z_modal` at a
+frequency in Hz. A `Mode` requires `f=` explicitly; its `omega_c` cutoff
+remains in rad/s. `ModeReport.plot(component="E")` draws the existing
+transverse E profile; `component="H"` draws H.
+
+Rectangular analytical declarations use `origin`, the minimum tangential
+corner, with `width` and `height` in ascending global tangential-axis order.
+`PortAnalytical` accepts a world 3D point; `PortSpecRectWG` accepts the two
+coordinates in that tangential order. Coax declarations use `center` for the
+axis. Passing a wrong-family anchor is rejected. The anchor names do not
+change placements on minimum or maximum domain faces.

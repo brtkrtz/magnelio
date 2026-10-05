@@ -176,8 +176,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -376,6 +383,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -842,79 +856,69 @@ once more without changing the mode.</p>
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 26 x 38 x 10 cells (0.7 s total)
+  mesh | 26 x 38 x 10 = 9,880 cells | 3.1 MiB (0.5 s total)
   mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0232202 m, would create a 0.00157 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.8) keeps it, or refine the mesh.
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 27 x 39 x 10 cells (0.7 s total)
+  mesh | 27 x 39 x 10 = 10,530 cells | 3.3 MiB (0.5 s total)
   mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.02397 m, would create a 0.00103 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=7.3) keeps it, or refine the mesh.
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 28 x 40 x 10 cells (0.7 s total)
+  mesh | 28 x 40 x 10 = 11,200 cells | 3.5 MiB (0.5 s total)
   mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 28 x 41 x 10 cells (0.7 s total)
+  mesh | 28 x 41 x 10 = 11,480 cells | 3.6 MiB (0.5 s total)
   mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0269002 m, would create a 0.0009 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.4) keeps it, or refine the mesh.
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 30 x 42 x 10 cells (0.8 s total)
+  mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.6 s total)
   mesh | feature planes
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 26 x 38 x 10 cells (0.7 s total)
+  mesh | 26 x 38 x 10 = 9,880 cells | 3.1 MiB (0.5 s total)
   mesh | feature planes
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 27 x 39 x 10 cells (0.7 s total)
+  mesh | 27 x 39 x 10 = 10,530 cells | 3.3 MiB (0.5 s total)
   mesh | feature planes
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 28 x 40 x 10 cells (0.7 s total)
+  mesh | 28 x 40 x 10 = 11,200 cells | 3.5 MiB (0.5 s total)
   mesh | feature planes
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 28 x 41 x 10 cells (0.7 s total)
+  mesh | 28 x 41 x 10 = 11,480 cells | 3.6 MiB (0.5 s total)
   mesh | feature planes
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 30 x 42 x 10 cells (0.8 s total)
+  mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.6 s total)
 h = 5 mm: Z_strip =  40.8 ohm (sum)   39.7 ohm (difference)
 h = 6 mm: Z_strip =  45.0 ohm (sum)   43.7 ohm (difference)
 h = 7 mm: Z_strip =  48.4 ohm (sum)   46.8 ohm (difference)
@@ -933,19 +937,17 @@ impedances for the design follow, together with the mode itself:</p>
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">design: Z_strip = </span><span class="si">{</span><span class="n">Z_SUM</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (sum), </span><span class="si">{</span><span class="n">Z_DIFF</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (difference)</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 29 x 41 x 10 cells (0.7 s total)
+  mesh | 29 x 41 x 10 = 11,890 cells | 3.7 MiB (0.5 s total)
   mesh | feature planes
-  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 29 x 41 x 10 cells (0.7 s total)
+  mesh | 29 x 41 x 10 = 11,890 cells | 3.7 MiB (0.5 s total)
 design: Z_strip = 52.8 ohm (sum), 51.0 ohm (difference)
 </pre></div>
 </div>
@@ -967,7 +969,7 @@ parallel to the beam axis, at every frequency of interest, plus a
 field picture on the mid-plane at the design frequency.  Where that
 line sits matters: on the electric wall <span class="math notranslate nohighlight">\(E_z\)</span> vanishes, and the
 transverse analysis below needs its <em>gradient</em> — so the line is asked
-for close to the axis, and the monitor reports the cell centre it
+for close to the axis, and the monitor reports the cell center it
 actually landed on.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">FREQS</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.arange.html#numpy.arange" title="numpy.arange"><span class="n">np</span><span class="o">.</span><span class="n">arange</span></a><span class="p">(</span><span class="mf">0.1e9</span><span class="p">,</span> <span class="n">F_MAX</span><span class="p">,</span> <span class="mf">0.05e9</span><span class="p">)</span><span class="w">
 </span><span class="w">
@@ -992,10 +994,10 @@ actually landed on.</p>
 </span>        <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">,</span><span class="w">
 </span>    <span class="p">)</span><span class="w">
 </span>    <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">line</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span></a><span class="p">(</span><span class="w">
-</span>        <span class="n">freqs</span><span class="o">=</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="p">(</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="n">FAR</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">FAR</span><span class="p">)</span><span class="p">)</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">Ez_line</span><span class="s2">&quot;</span><span class="w">
+</span>        <span class="n">frequencies</span><span class="o">=</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="p">(</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="n">FAR</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">FAR</span><span class="p">)</span><span class="p">)</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">Ez_line</span><span class="s2">&quot;</span><span class="w">
 </span>    <span class="p">)</span><span class="w">
 </span>    <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">plane</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span></a><span class="p">(</span><span class="w">
-</span>        <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">F0</span><span class="p">]</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="p">(</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">)</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E_plane</span><span class="s2">&quot;</span><span class="w">
+</span>        <span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="n">F0</span><span class="p">]</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="p">(</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">)</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E_plane</span><span class="s2">&quot;</span><span class="w">
 </span>    <span class="p">)</span><span class="w">
 </span>    <span class="n">analysis</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">[</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">line</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">plane</span></a><span class="p">]</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="w">
 </span>    <span class="n">z_port</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">downstream</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">z_line_num</span><span class="w">
@@ -1007,8 +1009,8 @@ actually landed on.</p>
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">grid: </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-property reference internal" href="../api/core.html#magnelio.Mesh.Nx" title="magnelio.Mesh.Nx"><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span></a><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-property reference internal" href="../api/core.html#magnelio.Mesh.Ny" title="magnelio.Mesh.Ny"><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span></a><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-property reference internal" href="../api/core.html#magnelio.Mesh.Nz" title="magnelio.Mesh.Nz"><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span></a><span class="si">}</span><span class="s2"> cells</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">coax port impedance on the grid: </span><span class="si">{</span><span class="n">Z_PORT</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="w">
-</span>    <span class="sa">f</span><span class="s2">&quot;</span><span class="s2">field line recorded at y = </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centres</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, </span><span class="s2">&quot;</span><span class="w">
-</span>    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centres</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="p">)</span><span class="si">}</span><span class="s2"> points</span><span class="s2">&quot;</span><span class="w">
+</span>    <span class="sa">f</span><span class="s2">&quot;</span><span class="s2">field line recorded at y = </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centers</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, </span><span class="s2">&quot;</span><span class="w">
+</span>    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centers</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="p">)</span><span class="si">}</span><span class="s2"> points</span><span class="s2">&quot;</span><span class="w">
 </span><span class="p">)</span><span class="w">
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">9.0</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">)</span><span class="p">)</span><span class="w">
@@ -1018,14 +1020,14 @@ actually landed on.</p>
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
 UserWarning: 10 geometry-edge planes (3 on x, 3 on y, 4 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
-  mesh | feature planes | done (1.0 s)
+  mesh | feature planes | done (0.7 s)
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.3 s)
+  mesh | materials | done (1.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (15.8 s)
+  mesh | conformal cells | done (11.1 s)
   mesh | PEC masks
-  mesh | 46 x 56 x 209 cells (18.3 s total)
+  mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (12.9 s total)
 grid: 46 x 56 x 209 cells
 coax port impedance on the grid: 52.3 ohm
 field line recorded at y = 0.90 mm, 209 points
@@ -1080,9 +1082,9 @@ strip — and <span class="math notranslate nohighlight">\(Z_c\)</span> the feed
 </span><span class="w">
 </span><span class="n">P_IN</span> <span class="o">=</span> <span class="mf">2.0</span><span class="w">
 </span><span class="n">V_K</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Z_PORT</span> <span class="o">*</span> <span class="n">P_IN</span><span class="p">)</span><span class="w">
-</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">z_line</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centres</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w">
-</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">y_line</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centres</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w">
-</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">ez_diff</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centred</span></a><span class="p">(</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">z_line</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centers</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">y_line</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centers</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">ez_diff</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centered</span></a><span class="p">(</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">v_forward</span></a> <span class="o">=</span> <span class="n">beam_voltage</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">ez_diff</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">z_line</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">v_backward</span></a> <span class="o">=</span> <span class="n">beam_voltage</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">ez_diff</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">z_line</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="w">
@@ -1150,8 +1152,8 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)</p>
 R_\parallel T^2 = Z_c\, |K_\parallel|^2 .\]</div>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model_sum</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh_sum</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-analysis sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/analysis.html#magnelio.analysis.ScatteringTDResult" title="magnelio.analysis.ScatteringTDResult"><span class="n">result_sum</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">line_sum</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">_</span></a><span class="p">,</span> <span class="n">Z_PORT_SUM</span> <span class="o">=</span> <span class="n">kicker_run</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">PMC</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">v_sum</span></a> <span class="o">=</span> <span class="n">beam_voltage</span><span class="p">(</span><span class="w">
-</span>    <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line_sum</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centred</span></a><span class="p">(</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span><span class="w">
-</span>    <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line_sum</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centres</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="p">,</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line_sum</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centered</span></a><span class="p">(</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><span class="n">line_sum</span><span class="o">.</span><span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centers</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="p">,</span><span class="w">
 </span>    <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">FREQS</span></a><span class="p">,</span><span class="w">
 </span>    <span class="n">direction</span><span class="o">=</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="w">
 </span><span class="p">)</span><span class="w">
@@ -1159,14 +1161,14 @@ R_\parallel T^2 = Z_c\, |K_\parallel|^2 .\]</div>
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">r_par</span></a> <span class="o">=</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">k_par</span></a><span class="o">*</span><span class="o">*</span><span class="mi">2</span><span class="w">
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mesh | feature planes
-mesh | feature planes | done (1.0 s)
+mesh | feature planes | done (0.7 s)
 mesh | grid lines
 mesh | materials
-mesh | materials | done (1.3 s)
+mesh | materials | done (1.0 s)
 mesh | conformal cells
-mesh | conformal cells | done (15.7 s)
+mesh | conformal cells | done (11.0 s)
 mesh | PEC masks
-mesh | 46 x 56 x 209 cells (18.2 s total)
+mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (12.8 s total)
 </pre></div>
 </div>
 </section>
@@ -1311,7 +1313,7 @@ particle velocity enters only through <span class="math notranslate nohighlight"
 one and watch the lobes shift down in frequency and the transverse
 response change), and the pit depth and feed offsets are the knobs
 that move the real device toward, or away from, the ideal stripline.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (6 minutes 42.106 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (5 minutes 9.802 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-stripline-pickup-kicker-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/4f45f16660f9674c2e4e6eb9a377a83f/plot_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_stripline_pickup_kicker.ipynb</span></code></a></p>

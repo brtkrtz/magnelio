@@ -287,9 +287,9 @@ dielectric gap.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (5.6 s)
+      mesh | conformal cells | done (4.3 s)
       mesh | PEC masks
-      mesh | 25 x 25 x 67 cells (5.6 s total)
+      mesh | 25 x 25 x 67 = 41,875 cells | 13 MiB (4.3 s total)
     grid: 25 x 25 x 67 cells
 
 
@@ -409,7 +409,7 @@ faces solid, the graded fill between them as hairlines — and the
 exact contour on top.  What differs is the cell shading.
 
 * Left, the *classification*: the material whose volume contains
-  each cell's centre.  A circle on a rectangular grid looks like a
+  each cell's center.  A circle on a rectangular grid looks like a
   staircase here, and this picture is often mistaken for the
   accuracy of the discretisation.  It is not — it is only the
   baseline the sub-cell treatment starts from.
@@ -511,7 +511,7 @@ Numerical mode vs. analytical reference
 
     Port 'port1' — 1 mode(s)
       z_line = 49.67 Ω (on this grid), 51.67 Ω (analytical reference, Δ -3.87 %)
-      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -320 dB)
+      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -321 dB)
     z_line numerical :   49.67 Ohm  (-3.9 %)
     z_line reference :   51.67 Ohm
 
@@ -539,7 +539,7 @@ conductor, the tinted annulus the dielectric:
 .. code-block:: Python
 
 
-    fig, ax = report.modes[0].plot(field="E", title="Coax TEM mode, transverse E", geometry=model)
+    fig, ax = report.modes[0].plot(component="E", title="Coax TEM mode, transverse E", geometry=model)
 
 
 
@@ -593,7 +593,7 @@ Run and S-parameters
 
  .. code-block:: none
 
-    max |S11| in band: -114.4 dB
+    max |S11| in band: -114.5 dB
 
 
 
@@ -668,7 +668,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 10.746 seconds)
+   **Total running time of the script:** (0 minutes 8.207 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -374,6 +381,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -691,7 +705,7 @@ symmetry plane automatically.</p>
 </span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">grid: </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-property reference internal" href="../api/core.html#magnelio.Mesh.Nx" title="magnelio.Mesh.Nx"><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span></a><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-property reference internal" href="../api/core.html#magnelio.Mesh.Ny" title="magnelio.Mesh.Ny"><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span></a><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-property reference internal" href="../api/core.html#magnelio.Mesh.Nz" title="magnelio.Mesh.Nz"><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span></a><span class="si">}</span><span class="s2"> cells, z from </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">mesh</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">z</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> mm</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="w">
-</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">farfield</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">farfield</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">farfield</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span></a><span class="p">(</span><span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">]</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">farfield</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">analysis</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span></a><span class="p">(</span><span class="w">
 </span>    <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span><span class="w">
@@ -707,7 +721,7 @@ symmetry plane automatically.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 46 x 46 x 55 cells
+  mesh | 46 x 46 x 55 = 116,380 cells | 34 MiB
 grid: 46 x 46 x 55 cells, z from 0 mm
 </pre></div>
 </div>
@@ -784,7 +798,7 @@ a half model, and pattern cuts plus the 3D radiation surface.  The
 same three ingredients carry over unchanged to patch antennas and
 arrays — declare the full structure, state its symmetry, and read
 full-model answers.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 26.467 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 20.363 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-15-dipole-farfield-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/dbf98d90590a5c0a0ab189ce2b120c3b/plot_15_dipole_farfield.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_15_dipole_farfield.ipynb</span></code></a></p>

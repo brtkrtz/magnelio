@@ -340,79 +340,69 @@ once more without changing the mode.
 
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 26 x 38 x 10 cells (0.7 s total)
+      mesh | 26 x 38 x 10 = 9,880 cells | 3.1 MiB (0.5 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0232202 m, would create a 0.00157 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.8) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 27 x 39 x 10 cells (0.7 s total)
+      mesh | 27 x 39 x 10 = 10,530 cells | 3.3 MiB (0.5 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.02397 m, would create a 0.00103 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=7.3) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 40 x 10 cells (0.7 s total)
+      mesh | 28 x 40 x 10 = 11,200 cells | 3.5 MiB (0.5 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 41 x 10 cells (0.7 s total)
+      mesh | 28 x 41 x 10 = 11,480 cells | 3.6 MiB (0.5 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0269002 m, would create a 0.0009 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.4) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 30 x 42 x 10 cells (0.8 s total)
+      mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.6 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 26 x 38 x 10 cells (0.7 s total)
+      mesh | 26 x 38 x 10 = 9,880 cells | 3.1 MiB (0.5 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 27 x 39 x 10 cells (0.7 s total)
+      mesh | 27 x 39 x 10 = 10,530 cells | 3.3 MiB (0.5 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 40 x 10 cells (0.7 s total)
+      mesh | 28 x 40 x 10 = 11,200 cells | 3.5 MiB (0.5 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 41 x 10 cells (0.7 s total)
+      mesh | 28 x 41 x 10 = 11,480 cells | 3.6 MiB (0.5 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 30 x 42 x 10 cells (0.8 s total)
+      mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.6 s total)
     h = 5 mm: Z_strip =  40.8 ohm (sum)   39.7 ohm (difference)
     h = 6 mm: Z_strip =  45.0 ohm (sum)   43.7 ohm (difference)
     h = 7 mm: Z_strip =  48.4 ohm (sum)   46.8 ohm (difference)
@@ -449,19 +439,17 @@ impedances for the design follow, together with the mode itself:
  .. code-block:: none
 
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 29 x 41 x 10 cells (0.7 s total)
+      mesh | 29 x 41 x 10 = 11,890 cells | 3.7 MiB (0.5 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 29 x 41 x 10 cells (0.7 s total)
+      mesh | 29 x 41 x 10 = 11,890 cells | 3.7 MiB (0.5 s total)
     design: Z_strip = 52.8 ohm (sum), 51.0 ohm (difference)
 
 
@@ -488,7 +476,7 @@ parallel to the beam axis, at every frequency of interest, plus a
 field picture on the mid-plane at the design frequency.  Where that
 line sits matters: on the electric wall :math:`E_z` vanishes, and the
 transverse analysis below needs its *gradient* — so the line is asked
-for close to the axis, and the monitor reports the cell centre it
+for close to the axis, and the monitor reports the cell center it
 actually landed on.
 
 .. GENERATED FROM PYTHON SOURCE LINES 266-314
@@ -519,10 +507,10 @@ actually landed on.
             f_max=F_MAX,
         )
         line = monitors.MonitorFieldFrequency(
-            freqs=FREQS, fields=["Ez"], corners=((0, 1e-3, -FAR), (0, 1e-3, FAR)), name="Ez_line"
+            frequencies=FREQS, fields=["Ez"], corners=((0, 1e-3, -FAR), (0, 1e-3, FAR)), name="Ez_line"
         )
         plane = monitors.MonitorFieldFrequency(
-            freqs=[F0], fields=["E"], corners=((0, None, None), (0, None, None)), name="E_plane"
+            frequencies=[F0], fields=["E"], corners=((0, None, None), (0, None, None)), name="E_plane"
         )
         analysis = mio.AnalysisScatteringTD(mesh=mesh, monitors=[line, plane], verbose=False)
         z_port = analysis.solve_ports()["downstream"].z_line_num
@@ -534,8 +522,8 @@ actually landed on.
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
     print(f"coax port impedance on the grid: {Z_PORT:.1f} ohm")
     print(
-        f"field line recorded at y = {line.spectrum.cell_centres[1][0] * 1e3:.2f} mm, "
-        f"{len(line.spectrum.cell_centres[2])} points"
+        f"field line recorded at y = {line.spectrum.cell_centers[1][0] * 1e3:.2f} mm, "
+        f"{len(line.spectrum.cell_centers[2])} points"
     )
 
     fig, ax = plt.subplots(figsize=(9.0, 3.6))
@@ -558,14 +546,14 @@ actually landed on.
 
       mesh | feature planes
     UserWarning: 10 geometry-edge planes (3 on x, 3 on y, 4 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
-      mesh | feature planes | done (1.0 s)
+      mesh | feature planes | done (0.7 s)
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.3 s)
+      mesh | materials | done (1.0 s)
       mesh | conformal cells
-      mesh | conformal cells | done (15.8 s)
+      mesh | conformal cells | done (11.1 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (18.3 s total)
+      mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (12.9 s total)
     grid: 46 x 56 x 209 cells
     coax port impedance on the grid: 52.3 ohm
     field line recorded at y = 0.90 mm, 209 points
@@ -674,9 +662,9 @@ strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
     P_IN = 2.0
     V_K = math.sqrt(2 * Z_PORT * P_IN)
-    z_line = line.spectrum.cell_centres[2]
-    y_line = line.spectrum.cell_centres[1][0]
-    ez_diff = line.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"]
+    z_line = line.spectrum.cell_centers[2]
+    y_line = line.spectrum.cell_centers[1][0]
+    ez_diff = line.spectrum.cell_centered(["Ez"], squeeze=True)["Ez"]
 
     v_forward = beam_voltage(ez_diff, z_line, FREQS, direction=+1)
     v_backward = beam_voltage(ez_diff, z_line, FREQS, direction=-1)
@@ -788,8 +776,8 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
 
     model_sum, mesh_sum, result_sum, line_sum, _, Z_PORT_SUM = kicker_run("PMC")
     v_sum = beam_voltage(
-        line_sum.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"],
-        line_sum.spectrum.cell_centres[2],
+        line_sum.spectrum.cell_centered(["Ez"], squeeze=True)["Ez"],
+        line_sum.spectrum.cell_centers[2],
         FREQS,
         direction=+1,
     )
@@ -805,14 +793,14 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
  .. code-block:: none
 
       mesh | feature planes
-      mesh | feature planes | done (1.0 s)
+      mesh | feature planes | done (0.7 s)
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.3 s)
+      mesh | materials | done (1.0 s)
       mesh | conformal cells
-      mesh | conformal cells | done (15.7 s)
+      mesh | conformal cells | done (11.0 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (18.2 s total)
+      mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (12.8 s total)
 
 
 
@@ -1021,7 +1009,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (6 minutes 42.106 seconds)
+   **Total running time of the script:** (5 minutes 9.802 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

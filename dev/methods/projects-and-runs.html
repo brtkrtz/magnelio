@@ -174,8 +174,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-geometry.html">
-    Upgrading geometry construction
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
   </a>
 </li>
 
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading geometry construction
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
     Upgrading from 0.7.x
@@ -379,6 +386,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
   </a>
@@ -523,6 +537,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -756,7 +771,7 @@ to +5 dB — lower only where a run ended deeper, −100 dB when there is
 no criterion — because the first samples of a run are the empty grid,
 which in dB is a plunge to −3000 that would squash the decay into a
 line along the top; <code class="docutils literal notranslate"><span class="pre">floor_db=</span></code> pins the lower end by hand.</p>
-<p><code class="docutils literal notranslate"><span class="pre">monitor()</span></code> returns a notebook widget — the run table above the
+<p><code class="docutils literal notranslate"><span class="pre">watch_panel()</span></code> returns a notebook widget — the run table above the
 energy plot — that a background thread refreshes every few seconds
 until the project is finished.  Left as the last expression of a
 cell, the cell returns at once and the panel keeps moving while other
@@ -804,6 +819,24 @@ prompt with what it is, how large it is and what state it is in — never
 with its arrays.  In a notebook the same summaries render as tables.
 The arrays are one attribute away (<code class="docutils literal notranslate"><span class="pre">result.energy_trace</span></code>,
 <code class="docutils literal notranslate"><span class="pre">s_params.matrix</span></code>); the summary is the part meant to be read.</p>
+</section>
+<section id="selecting-a-run-and-reading-its-count">
+<h2>Selecting a run and reading its count<a class="headerlink" href="#selecting-a-run-and-reading-its-count" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">name</span></code> names a new <code class="docutils literal notranslate"><span class="pre">AnalysisTD.run(name=...)</span></code>. Once stored, select it with
+<code class="docutils literal notranslate"><span class="pre">project.result(run=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">monitors_for(run=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">energy_trace(run=...)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">checkpoint_state(run=...)</span></code> or <code class="docutils literal notranslate"><span class="pre">resume(project,</span> <span class="pre">run=...)</span></code>. An exact stored
+name wins over a scattering <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code> interpretation. A sole run can be
+implicit; multiple runs require a selector. <code class="docutils literal notranslate"><span class="pre">excited</span></code> on scattering launch
+and power-wave access continues to mean an actual excitation.</p>
+<p>A single <code class="docutils literal notranslate"><span class="pre">TDResult</span></code> and <code class="docutils literal notranslate"><span class="pre">Run</span></code> expose <code class="docutils literal notranslate"><span class="pre">n_steps</span></code>. Scattering aggregates expose
+<code class="docutils literal notranslate"><span class="pre">n_steps_by_run</span></code> and <code class="docutils literal notranslate"><span class="pre">max_run_steps</span></code>, the maximum count rather than a sum.
+<code class="docutils literal notranslate"><span class="pre">project.result(run=...).settings.n_steps</span></code> identifies one run;
+<code class="docutils literal notranslate"><span class="pre">project.settings.n_steps</span></code> is absent for a combined result. Extrapolating
+signals does not add solver steps to their provenance.</p>
+<p>For observation, <code class="docutils literal notranslate"><span class="pre">watch_panel()</span></code> immediately returns a notebook widget with
+<code class="docutils literal notranslate"><span class="pre">stop()</span></code>. <code class="docutils literal notranslate"><span class="pre">watch()</span></code> supplies a generator or callback, while <code class="docutils literal notranslate"><span class="pre">follow()</span></code> blocks
+and displays progress. See the <a class="reference internal" href="../migration-api-naming.html"><span class="std std-doc">naming migration</span></a>
+when upgrading existing scripts.</p>
 </section>
 </section>
 
@@ -863,6 +896,7 @@ The arrays are one attribute away (<code class="docutils literal notranslate"><s
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#time">Time</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoints-and-resume">Checkpoints and resume</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-prints">What prints</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#selecting-a-run-and-reading-its-count">Selecting a run and reading its count</a></li>
 </ul>
   </nav></div>
 

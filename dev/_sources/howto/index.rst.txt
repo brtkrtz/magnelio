@@ -41,7 +41,7 @@ the tutorials instead.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the centre frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the center frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run.">
 
 .. only:: html
 
