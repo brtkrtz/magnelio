@@ -12,10 +12,9 @@ A. **Exact restriction (PEC crossing)** — a center-fed thin-wire
    machine noise (measured 5e-16 / 8e-16 at introduction).
 
 B. **Open-boundary parity (PEC crossing)** — the same dipole under
-   CPML.  Parity here is physics-level, floored by the CPML min/max
-   mirror asymmetry (KB-023): measured max |S11_half - S11_full|
-   ~ 2.1e-2 at introduction, against the O(0.3) error of an unscaled
-   feed (the monopole trap).
+   staggered CPML. The independent time-step estimates retain a small
+   spectral difference; the 1e-4 gate excludes the former 2.1e-2
+   absorber asymmetry and the O(0.3) error of an unscaled feed.
 
 C. **Parallel cut (PMC containment)** — a passive lumped load lying
    in a magnetic symmetry plane presents the internally doubled
@@ -155,10 +154,10 @@ def gate_b_open_boundary_parity():
     bc_h["zmin"] = "ForceSymmetryPEC"
     s_half = _dipole_run(mesh_h, grid_h, i0, j0, 0.0, float(grid_h.z[1]), bc_h).S("feed", "feed")
     err = float(np.max(np.abs(s_half - s_full)))
-    ok = err < 5e-2
+    ok = err < 1e-4
     print(
         f"[{'PASS' if ok else 'FAIL'}] B open-boundary parity: "
-        f"max |dS11| = {err:.2e} (KB-023 floor ~1e-2, unscaled feed ~3e-1)"
+        f"max |dS11| = {err:.2e} (gate 1e-4, unscaled feed ~3e-1)"
     )
     return ok
 

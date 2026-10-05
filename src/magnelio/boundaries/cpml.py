@@ -55,6 +55,10 @@ class CPMLBoundary:
 
     Notes
     -----
+    Stretching profiles are sampled at the transverse electric-field
+    nodes and magnetic-field cell centres along the layer normal.
+    Distances are measured from the physical layer interface.
+
     A waveguide port embedded in this face owns the columns behind its
     window: :meth:`set_port_windows` (wired by the solver) sets the
     stretching coefficients to ``σ = 0, κ = 1`` there over the whole
@@ -207,23 +211,70 @@ class CPMLBoundary:
         self._c_E1 = self._c_E2 = self._c_H1 = self._c_H2 = self._c_3d
         self._ck_E1 = self._ck_E2 = self._ck_H1 = self._ck_H2 = self._ck_3d
         self._port_windows: list = []
+        self._set_e_sampling(1)
 
         self._initialized = True
+
+    def _set_e_sampling(self, version: int) -> None:
+        """Resolve node profiles, retaining the old rule for old checkpoints."""
+        if version not in (0, 1):
+            raise ValueError(f"Unsupported CPML profile sampling version: {version}.")
+        self._profile_sampling = version
+        if version == 0:
+            b, c, ck = self._b, self._c, self._ck
+        else:
+            # DD-286: transverse E is node-registered along the layer normal.
+            # Sum from the physical interface outwards on either side.
+            widths = np.asarray(self._d_arr)[self._pml_idx]
+            ordered = widths[::-1] if self._side == "min" else widths
+            ends = np.concatenate(([0.0], np.cumsum(ordered)))
+            depth = ends[1:][::-1] if self._side == "min" else ends[:-1]
+            d_phys = float(sum(widths)) or 1.0
+            rho = np.clip(depth / d_phys, 0.0, 1.0)
+            sigma_max = -(self.m + 1) * C0 * EPS0 * np.log(self.R_target) / (2 * d_phys)
+            sigma = sigma_max * rho**self.m
+            kappa = 1.0 + (self.kappa_max - 1.0) * rho**self.m
+            alpha = self.alpha_max * (1.0 - rho)
+            b = np.exp(-(sigma / kappa + alpha) * self._dt / EPS0)
+            c = np.divide(
+                sigma * (1.0 - b),
+                kappa * sigma + kappa**2 * alpha,
+                out=np.zeros_like(sigma),
+                where=sigma > 0.0,
+            )
+            ck = 1.0 - 1.0 / kappa
+        self._b_E, self._c_E, self._ck_E = b, c, ck
+        shape = self._b_3d.shape
+        self._b_E_3d = self._xp.asarray(b.reshape(shape), dtype=self._dtype)
+        self._c_E_3d = self._xp.asarray(c.reshape(shape), dtype=self._dtype)
+        self._ck_E_3d = self._xp.asarray(ck.reshape(shape), dtype=self._dtype)
+        self._c_E1 = self._c_E2 = self._c_E_3d
+        self._ck_E1 = self._ck_E2 = self._ck_E_3d
+        if self._port_windows:
+            self.set_port_windows(self._port_windows)
 
     def state_dict(self) -> dict:
         """Checkpoint the ψ auxiliary convolution fields.
 
-        Serialises every ``_psi_*`` array — the exact subset depends on
-        the boundary face axis.  All other CPML data are constant
-        stretching coefficients, re-derived at construction.
+        Serialises every ``_psi_*`` array and the profile-sampling version.
+        Stretching coefficients are re-derived when loading. Checkpoints
+        without a version retain their original cell-sampled electric
+        profiles when resumed.
         """
-        return {name: getattr(self, name).copy() for name in vars(self) if name.startswith("_psi_")}
+        return {
+            "profile_sampling": self._profile_sampling,
+            **{name: getattr(self, name).copy() for name in vars(self) if name.startswith("_psi_")},
+        }
 
     def load_state_dict(self, sd: dict) -> None:
         """Restore ψ fields written by :meth:`state_dict` (in place)."""
         from magnelio._backend.array_api import copy_into  # noqa: PLC0415
 
+        # Missing marker identifies the cell-centred E rule used before DD-286.
+        self._set_e_sampling(int(sd.get("profile_sampling", 0)))
         for name, arr in sd.items():
+            if name == "profile_sampling":
+                continue
             copy_into(getattr(self, name), arr)
 
     def set_pec_mask(
@@ -326,7 +377,7 @@ class CPMLBoundary:
         self._air_H2 = xp.asarray(airH2)
 
     def set_port_windows(self, windows, *, xp=None) -> None:
-        """Switch the absorber off behind waveguide-port windows (DD-198).
+        """Switch the absorber off behind waveguide-port windows.
 
         A modal port embedded in this absorbing face owns the columns
         behind its window: the mode enters the domain through a
@@ -359,12 +410,8 @@ class CPMLBoundary:
         self._port_windows = windows
         axis = {"x": 0, "y": 1, "z": 2}[self._axis]
         N = (self.grid.Nx, self.grid.Ny, self.grid.Nz)
-        b, c, ck = self._b, self._c, self._ck
         bshape = [1, 1, 1]
         bshape[axis] = -1
-        c3 = c.reshape(bshape)
-        ck3 = ck.reshape(bshape)
-        del b
 
         def footprint(shape):
             keep = np.ones(shape, dtype=float)
@@ -387,9 +434,12 @@ class CPMLBoundary:
             comps = (self._psi_Ex, self._psi_Ey, self._psi_Hx, self._psi_Hy)
         names = ("E1", "E2", "H1", "H2")
         for name, psi in zip(names, comps):
+            c = self._c_E if name.startswith("E") else self._c
+            ck = self._ck_E if name.startswith("E") else self._ck
+            c3, ck3 = c.reshape(bshape), ck.reshape(bshape)
             if not windows:
-                setattr(self, f"_c_{name}", self._c_3d)
-                setattr(self, f"_ck_{name}", self._ck_3d)
+                setattr(self, f"_c_{name}", self._c_E_3d if name.startswith("E") else self._c_3d)
+                setattr(self, f"_ck_{name}", self._ck_E_3d if name.startswith("E") else self._ck_3d)
                 continue
             keep = footprint(tuple(int(n) for n in psi.shape))
             setattr(self, f"_c_{name}", xp.asarray(c3 * keep, dtype=self._dtype))
@@ -444,7 +494,7 @@ class CPMLBoundary:
         axis = self._axis
         k0 = self._k0
         n = self._n_pml
-        b3 = self._b_3d
+        b3 = self._b_E_3d
         c_1, ck_1, c_2, ck_2 = self._c_E1, self._ck_E1, self._c_E2, self._ck_E2
 
         n_Ex = Nx * (Ny + 1) * (Nz + 1)
@@ -607,8 +657,8 @@ class CPMLBoundary:
     def sigma_per_cell(self) -> np.ndarray:
         """Conductivity σ [S/m] for each PML cell along the normal axis.
 
-        The array has length ``thickness_cells`` and follows the grading
-        profile from the interface (index 0) inward.  Requires
+        The array samples magnetic-field cell centres and follows
+        :attr:`pml_axis_indices` in ascending global order. Requires
         :meth:`initialize` to have been called first.
         """
         if not self._initialized:

@@ -11,6 +11,10 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Opposing CPML boundaries sample electric and magnetic fields at their
+  staggered positions, removing the absorber asymmetry in symmetry-model
+  comparisons. Existing checkpoints retain their original profiles on resume.
+
 - CAD volume measurements accurately integrate small rational spline faces,
   including smooth circular tapers, while retaining curved-sheet precision.
 

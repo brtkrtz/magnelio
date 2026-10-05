@@ -16,7 +16,7 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-10-05: KB-023, KB-038 and KB-043.**
+**Two entries are open as of 2026-10-05: KB-038 and KB-043.**
 Everything else is struck through and resolved.
 
 ## KB-051: ~~Energy stopping can discard pending finite excitations~~ — Resolved (2026-10-05)
@@ -883,33 +883,17 @@ Regression cover in `tests/unit/test_geometry.py::TestMissingOccSurfaces`:
 each site raises on `ImportError` and still skips on any other failure.
 Nothing changes on an install that has the dependency.
 
-## KB-023: CPML min and max faces are not mirror images — Open (2026-08-18)
+## KB-023: ~~CPML min and max faces are not mirror images~~ — Resolved (2026-10-05)
 
-The CPML profile (σ, κ, α) is sampled at cell centres and the same
-per-cell coefficient drives both the ψ recursion of the node-registered
-E components and the cell-registered H components.  On a staggered
-grid that puts the effective profile half a cell off its staggered
-sampling points, with opposite sign on min and max faces — so the two
-absorbers of one axis are not mirror images and their residual
-reflections differ.  The absorber still meets its `R_target`; only the
-*symmetry* between opposing faces is broken.
-
-Measured (internal record, DD-172 parity work): a mirror-symmetric
-thin-wire dipole in a CPML box shows a field-level mirror asymmetry of
-~1e-4 at the PML interface shortly after the pulse passes, growing to
-several percent of the (decaying) local field in the resonant tail —
-in double precision, so it is structural, not rounding.  Recycled
-through the high-Q antenna it floors the full-vs-half S11 parity of
-`validation/lumped_symmetry_parity_certificate.py` at ~2e-2 (gate B);
-the same comparison in an all-PEC cavity is exact to 5e-16 (gate A),
-and a plain vacuum port under CPML agrees to 3e-6 — the asymmetry only
-matters where a resonator re-amplifies the residual.
-
-Closing it means sampling the profile at the true staggered positions
-(E at nodes, H at cell centres, measured from the physical interface),
-which changes every CPML run's bit pattern and needs its own
-reflection-floor re-certification — deferred until a use case needs
-mirror-exact absorbers.
+DD-286 samples electric updates at nodes and magnetic updates at cell
+centres, using physical depth from the interface on graded grids. All
+three axes and both precisions pass independent mirror tests. The resonant
+full/half dipole max S11 difference improves from 0.02149 to 3.04e-5;
+its gate tightens from 5e-2 to 1e-4. The vacuum pulse certificate covers
+opposing faces and 8/16/24 cells in all three directions. Existing
+checkpoints retain their former profiles and resume bit-exactly against
+the original source; start a new run to use the corrected profiles.
+Evidence: `investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
 
 ## KB-022: ~~Pair coupling accepts ladder candidates 100x looser than the transparent-boundary gate~~ — Resolved (DD-228, 2026-08-30)
 

@@ -326,6 +326,14 @@ Polynomial grading (ρ ∈ [0, 1] = normalised depth):
 Default: `BoundaryConditions.cpml_thickness_cells = 8`; 16 is a
 common choice for waveguide port PML.
 
+DD-286 samples transverse E corrections at the normal-axis grid nodes and
+H corrections at cell centres, with physical depth measured from the
+interface on either side. Auxiliary shapes and global slab indices stay
+unchanged; E and H carry separate b/c/ck broadcasts and port-window masks.
+The checkpoint stores a numeric profile-sampling marker: 1 for staggered
+sampling, 0 for legacy cell-sampled E. A missing marker loads as 0 and
+retains the old rule, including on subsequent checkpoints.
+
 **PEC re-enforcement:** After all CPML E-corrections, PEC/PMC boundary
 conditions are re-applied to prevent PEC-wall violations inside PML regions.
 

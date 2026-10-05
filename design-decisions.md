@@ -11671,6 +11671,9 @@ asymmetry the gate uncovered (KB-023); an unscaled feed sits at
 O(0.3).  Gate C — a passive load in a magnetic plane presents the
 doubled trapezoidal impedance to 1.0e-7.
 
+**Absorber follow-up (2026-10-05):** [[DD-286]] resolves KB-023 with
+staggered profile sampling; gate B now measures 3.04e-5 and enforces 1e-4.
+
 **Files:** `src/magnelio/ports/_lumped/port_report.py` (new),
 `ports/_lumped/factory.py` (`_resolve_symmetry`, `_scaled_element`),
 `ports/_lumped/operator.py` (`port_report` field),
@@ -24043,3 +24046,61 @@ run passes 590 (overlapping selections). Fresh offline HTML executes Tutorial
 Tutorial 14 explain physical volume and its approximation limits.
 Reproduction, rejected approach and acceptance logs:
 `investigations/kb046-volume-quadrature/MEASUREMENTS.md` (internal record).
+
+## DD-286 — Sample CPML profiles at the true staggered positions
+
+**Date:** 2026-10-05. **Status:** implemented, unreleased.
+
+**Problem.** KB-023 used one cell-centred stretching profile for both
+transverse E at normal-axis nodes and H at normal-axis cell centres.
+This shifts the electric profile in opposite directions at the two faces.
+A resonant full/half dipole comparison measures max complex S11 difference
+0.0214879 and relative input-impedance difference 0.0429919 in double.
+That is an absorber discretisation defect, not a precision floor.
+
+**Decision.** Keep the existing H profiles. Derive separate E b/c/ck
+coefficients from the physical node distance to the PML interface,
+accumulating graded cell widths from the interface outwards. All three
+normal axes use the same rule; the polynomial conductivity/stretch and
+frequency-shift laws and defaults remain unchanged. The E update uses
+node-sampled b/c/ck; H retains centre-sampled coefficients. Port footprints
+mask each component's appropriate profile, including when cleared or
+restored. Auxiliary shapes and global slab indices remain unchanged; the
+outer electric nodes are still PEC-backed. The interface has sigma = 0,
+kappa = 1, so no electric correction is needed there. Division at zero
+conductivity is guarded, including alpha_max = 0.
+
+**Checkpoint compatibility.** Store an integer `profile_sampling` marker
+alongside psi: 1 for the new rule, 0 for the former rule. Missing means 0.
+Loading restores the appropriate coefficients without resetting psi,
+PEC masks or port footprints, and subsequent checkpoints retain that marker.
+An actual pre-fix HDF5 checkpoint with nonzero psi resumes bit-exactly
+against the original source in both single and double precision. New-run
+checkpoint tests exercise the staggered rule. No public option is added for
+selecting the old rule; it exists for continuation of existing recordings.
+
+**Validation.** Independent node-coordinate coefficient checks include
+graded cells, all six faces and zero frequency shift. Twelve reflection-
+commutation cases cover all axes, uniform/graded meshes and float32/float64;
+all twelve fail with the archived original boundary and pass with the fix.
+The existing resonant parity fixture improves to max dS11 = 3.04105e-5
+and relative dZ = 7.51897e-5; its gates tighten to 1e-4 and 2e-4. The
+independent time-step estimates retain a small spectral difference.
+
+`validation/cpml_staggered_reflection_certificate.py` compares transverse
+vacuum pulses with a larger domain using the same analytic time step.
+Across x/y/z and opposing faces, worst 1--12 GHz reflection is -71.89 /
+-97.82 / -111.94 dB for 8/16/24 cells; gates are -65/-90/-100 dB.
+The original rule measures about -12.25/-18.68/-22.58 dB on that fixture.
+This is a reproducible fixture floor, not a universal R_target guarantee.
+The existing `validation/lumped_symmetry_parity_certificate.py` retains
+the PEC and PMC gates and tightens its CPML gate to 1e-4; all three pass.
+The restored mirror symmetry also exposes angular nulls in four far-field
+store comparisons. Transform/normalisation order differs by about 1e-17
+there, making a purely relative gate meaningless. Retain rtol = 1e-10 and
+add an absolute bound of 16 float64 eps times the reference pattern peak;
+raw surface bins must agree exactly for storage, resume and both legacy
+phasor cases. No production monitor or normalisation arithmetic changes.
+Methods and Tutorial 08 document staggered sampling, practical absorption
+limits and old-checkpoint continuation. Evidence and final suite status:
+`investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
