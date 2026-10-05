@@ -494,6 +494,34 @@ excitation run. `ax=` accepts existing matplotlib axes. Stored project
 results provide the same plotting methods. Band-port results currently
 have no calibrated time-domain a/b decomposition and reject these plots.
 
+### Finite records and decay stopping
+
+The default modal-port run stops when stored energy has fallen 70 dB
+below its peak **or** the interval port-voltage envelope has fallen 60 dB
+below its peak. Energy stopping waits until all finite excitations have
+reached their nominal ends, including delays and synthesised port-drive
+buffers; plane waves also include retardation at their injection faces.
+Port stopping also waits for a generous domain transit margin.
+An explicit `total_time_steps` remains a bound on the run.
+
+These thresholds measure transient decay. They do not prescribe an
+S-parameter error: the omitted response spectrum is divided by the
+incident spectrum, which can be weak at a band edge. Waveguide content
+near cutoff can also decay slowly after the source has finished. Tighten
+both `energy_stop_db` and `port_signal_stop_db` when checking a longer
+record; changing one leaves the other stopping path active.
+
+Compare complex S-parameters over the frequencies and channels relevant
+to the device. Small changes over short time windows can miss narrow
+resonances and delayed responses. Include expected ringing times in the
+recording plan, and resolve narrow features on the frequency axis.
+For lossless closed structures, power balance is an additional check.
+
+The result settings record the stopping reason and the final checked
+port-voltage level. Energy-stopped runs report the current check interval.
+Port stopping remains available when trapped field energy has no coupling
+to the measured ports and therefore never reaches the energy threshold.
+
 ### Running out of time: continuing a truncated record
 
 A march has to stop somewhere.  On a high-Q structure what it leaves

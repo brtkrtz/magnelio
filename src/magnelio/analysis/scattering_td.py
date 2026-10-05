@@ -1193,16 +1193,12 @@ class AnalysisScatteringTD(AnalysisTD):
             Courant safety factor.
         energy_stop_db : float, default 70.0
             Stop each TD run when stored EM energy has decayed by this
-            many dB below peak.  Calibrated against the well-absorbed
-            TEM-line case: at 70 dB the truncation residual on V/I
-            falls below ~7e-4 of peak, which keeps the rectangular-DFT
-            sidelobes on ``|S21|`` below ~0.02 dB; the port floors
-            themselves sit at the DTBC level (−130 dB class on
-            certified lines).  More aggressive cuts
-            (40 dB) leave a residual of ~1 % that produces
-            ``|S21| > 1`` artefacts until either the run is extended
-            or the rectangular window is replaced (see
-            ``taper_signals``).  Set to ``None`` to disable the early
+            many dB below peak, after the finite excitation has reached
+            its nominal end. This is a decay threshold, not a bound on
+            S-parameter error: weak incident spectra and long response
+            tails can amplify record truncation. The independent port
+            criterion may stop first, so tighten both thresholds when
+            checking a longer record. Set to ``None`` to disable the early
             stop; the run is then bounded by ``total_time_steps`` (an
             explicit value, or the auto-sized estimate as a fallback cap
             when both are left open).  Not applicable on the band
@@ -2327,6 +2323,7 @@ class AnalysisScatteringTD(AnalysisTD):
             recorder=recorder,
             drives={excited_chan: _band_drive_fn(ref_time, dt)},
             n_steps_estimate=n_steps,
+            excitation_end_steps=n_syn,
             port_modes={op.name: self._modes_for_operator(op) for op in operators},
             port_normal_dx={op.name: op.plane.normal_dx for op in operators},
             port_line_params={},
@@ -2526,6 +2523,16 @@ def _resume_scattering(
     store = ProjectStore(proj.path)
     store.mark_analysis_started()
     excitation = Excitation(excited_chan[0], mode=excited_chan[1], waveform=analysis.waveform)
+    if run_meta.get("port_model", "modal") != "band":
+        from magnelio.analysis._recipe import excitation_from_dict  # noqa: PLC0415
+
+        # DD-281: the per-run resolved pulse is authoritative, including legacy
+        # automatic drives whose analysis recipe has waveform=None.
+        stored_excitations = proj._run_excitations(run_name)
+        if stored_excitations:
+            excitation = excitation_from_dict(stored_excitations[0])
+            if (excitation.source, excitation.mode) != excited_chan:
+                raise ValueError("stored scattering excitation does not match its run channel")
     prepare = None
     if run_meta.get("port_model") == "band":
         # The band pipeline builds its own operators (contour-QZ kernels

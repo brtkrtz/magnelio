@@ -46,6 +46,10 @@ class Source(ABC):
     # port operators must capture its trace before the first step.
     writes_initial_field: bool = False
 
+    def _excitation_end_time(self) -> float:
+        """Latest declared drive end [s], after attachment (DD-282)."""
+        return 0.0
+
     # -- excitation binding (solver-facing, like Port.set_excitation) --
 
     @abstractmethod
@@ -153,6 +157,11 @@ class _WaveformDriven(Source):
         """Drive ``A · w(t − delay)`` at time(s) *t* [s]."""
         w = self._require_waveform()
         return self._amplitude * w(t - self._delay)
+
+    def _excitation_end_time(self) -> float:
+        if self._waveform is None or not math.isfinite(self._waveform.t_end):
+            return 0.0
+        return self._delay + self._waveform.t_end
 
 
 __all__ = ["Source"]

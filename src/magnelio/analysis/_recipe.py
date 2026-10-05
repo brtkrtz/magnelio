@@ -128,12 +128,21 @@ def _waveform_to_dict(wf) -> dict | None:
     if wf is None:
         return None
     if isinstance(wf, WaveformGaussian):
-        return {"type": "WaveformGaussian", "f_max": float(wf.f_max)}
+        return {
+            "type": "WaveformGaussian",
+            "f_max": float(wf.f_max),
+            "edge_attenuation_db": float(wf.edge_attenuation_db),
+            "tau": float(wf.tau),
+            "peak_time": float(wf.peak_time),
+        }
     if isinstance(wf, WaveformGaussianModulated):
         return {
             "type": "WaveformGaussianModulated",
             "f_min": float(wf.f_min),
             "f_max": float(wf.f_max),
+            "edge_attenuation_db": float(wf.edge_attenuation_db),
+            "tau": float(wf.tau),
+            "peak_time": float(wf.peak_time),
         }
     if isinstance(wf, WaveformSine):
         return {
@@ -171,6 +180,33 @@ def _waveform_to_dict(wf) -> dict | None:
     )
 
 
+def _restore_gaussian_parameters(waveform, d: dict):
+    """Restore resolved parameters, retaining pre-DD-281 waveform physics."""
+    from magnelio.signals.waveforms import _modulated_edge_log, _positive
+
+    parameter_keys = {"tau", "peak_time", "edge_attenuation_db"}
+    present = parameter_keys.intersection(d)
+    if present and present != parameter_keys:
+        raise ValueError("stored Gaussian needs tau, peak_time and edge_attenuation_db together")
+    if present:
+        tau = _positive("tau", d["tau"])
+        peak = _positive("peak_time", d["peak_time"])
+    else:
+        width = waveform.f_max - waveform.f_min
+        tau = 2.0 / (math.pi * width)
+        peak = 4.0 / width
+        if waveform.f_center is None:
+            log_attenuation = 4.0
+        else:
+            m = waveform.f_max / width + waveform.f_min / width
+            log_attenuation = _modulated_edge_log(1.0, m)
+        object.__setattr__(waveform, "edge_attenuation_db", 20.0 * log_attenuation / math.log(10.0))
+    # Stored values bypass recomputation to keep checkpoint source samples exact.
+    object.__setattr__(waveform, "_tau", tau)
+    object.__setattr__(waveform, "_peak_time", peak)
+    return waveform
+
+
 def _waveform_from_dict(d: dict | None):
     """Inverse of :func:`_waveform_to_dict`."""
     from magnelio.signals.waveforms import (  # noqa: PLC0415
@@ -185,9 +221,21 @@ def _waveform_from_dict(d: dict | None):
         return None
     t = d["type"]
     if t == "WaveformGaussian":
-        return WaveformGaussian(f_max=float(d["f_max"]))
+        return _restore_gaussian_parameters(
+            WaveformGaussian(
+                f_max=float(d["f_max"]), edge_attenuation_db=d.get("edge_attenuation_db", 25.0)
+            ),
+            d,
+        )
     if t == "WaveformGaussianModulated":
-        return WaveformGaussianModulated(f_min=float(d["f_min"]), f_max=float(d["f_max"]))
+        return _restore_gaussian_parameters(
+            WaveformGaussianModulated(
+                f_min=float(d["f_min"]),
+                f_max=float(d["f_max"]),
+                edge_attenuation_db=d.get("edge_attenuation_db", 25.0),
+            ),
+            d,
+        )
     if t == "WaveformSine":
         return WaveformSine(
             f=float(d["f"]),

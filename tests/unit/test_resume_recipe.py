@@ -11,6 +11,7 @@ unchanged, and an unserialisable configuration raises at write time
 from __future__ import annotations
 
 import json
+import math
 
 import numpy as np
 import pytest
@@ -21,6 +22,8 @@ from magnelio.analysis._recipe import (
     _monitor_to_dict,
     _spec_from_dict,
     _spec_to_dict,
+    _waveform_from_dict,
+    _waveform_to_dict,
 )
 from magnelio.boundaries.boundary_conditions import BoundaryConditions
 from magnelio.boundaries.pec import PECBoundary
@@ -34,6 +37,65 @@ from magnelio.ports._modal.factory import (
     PortSpecNumerical,
     PortSpecRectWG,
 )
+from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
+
+
+@pytest.mark.parametrize(
+    "w",
+    [
+        WaveformGaussian(1e9, edge_attenuation_db=17),
+        WaveformGaussianModulated(1e6, 1e9, edge_attenuation_db=6),
+    ],
+)
+def test_gaussian_resolved_parameters_round_trip(w):
+    recipe = json.loads(json.dumps(_waveform_to_dict(w)))
+    restored = _waveform_from_dict(recipe)
+    assert restored == w
+    assert restored.tau == w.tau
+    assert restored.peak_time == w.peak_time
+    np.testing.assert_array_equal(
+        restored(np.linspace(0, w.t_end, 501)), w(np.linspace(0, w.t_end, 501))
+    )
+
+
+@pytest.mark.parametrize("modulated", [False, True])
+def test_legacy_gaussian_recipe_preserves_original_samples(modulated):
+    recipe = {
+        "type": "WaveformGaussianModulated" if modulated else "WaveformGaussian",
+        "f_max": 1e9,
+    }
+    if modulated:
+        recipe["f_min"] = 1e6
+    w = _waveform_from_dict(recipe)
+    width = recipe["f_max"] - recipe.get("f_min", 0.0)
+    tau, peak = 2 / (math.pi * width), 4 / width
+    t = np.linspace(0, 8 / width, 501)
+    original = np.exp(-(((t - peak) / tau) ** 2))
+    if modulated:
+        original *= np.cos(2 * math.pi * (recipe["f_max"] + recipe["f_min"]) / 2 * (t - peak))
+    assert w.peak_time == peak and w.tau == tau
+    np.testing.assert_array_equal(w(t), original)
+    # Re-saving a legacy run must retain its legacy timing as explicit metadata.
+    restored = _waveform_from_dict(json.loads(json.dumps(_waveform_to_dict(w))))
+    np.testing.assert_array_equal(restored(t), original)
+    assert restored == w
+
+
+def test_gaussian_stored_resolved_values_not_recomputed():
+    recipe = _waveform_to_dict(WaveformGaussianModulated(1e6, 1e9))
+    recipe["tau"] = np.nextafter(recipe["tau"], math.inf)
+    recipe["peak_time"] = np.nextafter(recipe["peak_time"], math.inf)
+    restored = _waveform_from_dict(recipe)
+    assert restored.tau == recipe["tau"]
+    assert restored.peak_time == recipe["peak_time"]
+
+
+@pytest.mark.parametrize(
+    "bad", [{"tau": 1e-9}, {"tau": -1, "peak_time": 1e-9, "edge_attenuation_db": 25}]
+)
+def test_gaussian_invalid_stored_parameters_refused(bad):
+    with pytest.raises(ValueError, match="tau"):
+        _waveform_from_dict({"type": "WaveformGaussian", "f_max": 1e9, **bad})
 
 
 @pytest.mark.parametrize(

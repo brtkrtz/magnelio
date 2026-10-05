@@ -7,6 +7,7 @@ import math
 import numpy as np
 import pytest
 
+from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
 from magnelio.signals.signal_1d import Signal1D
 from magnelio.signals.waveforms import gaussian, modulated_gaussian, waveform_for_mode
 
@@ -108,9 +109,9 @@ class TestSignal1D:
 
 class TestWaveforms:
     def test_gaussian_peak(self):
-        """Gaussian peaks at t0 = 4/f_max with value 1."""
+        """The default Gaussian has a unit peak at its reported time."""
         f_max = 1e9
-        t0 = 4.0 / f_max
+        t0 = WaveformGaussian(f_max).peak_time
         assert gaussian(t0, f_max) == pytest.approx(1.0)
 
     def test_gaussian_zero_at_origin(self):
@@ -127,11 +128,10 @@ class TestWaveforms:
         assert result.shape == (100,)
 
     def test_modulated_gaussian_peak(self):
-        """Modulated Gaussian has peak envelope = 1 at t0 = 4/bandwidth."""
+        """The modulated default has a unit peak at its reported time."""
         f_max = 10e9
         f_min = 5e9
-        bandwidth = f_max - f_min
-        t0 = 4.0 / bandwidth
+        t0 = WaveformGaussianModulated(f_min, f_max).peak_time
         # At t0 the envelope is 1, cos factor is cos(0) = 1
         val = modulated_gaussian(t0, f_max, f_min)
         assert val == pytest.approx(1.0)
@@ -142,23 +142,23 @@ class TestWaveforms:
         assert isinstance(result, np.ndarray)
         assert result.shape == (50,)
 
-    def test_matches_port2d_tem(self):
-        """gaussian() formula: bandwidth = f_max, t0 = 4/f_max."""
+    def test_baseband_default_formula(self):
+        """The default width gives a 25-dB upper spectral edge."""
         f_max = 1e9
-        sigma = 2.0 / (math.pi * f_max)
-        t0 = 4.0 / f_max
+        sigma = math.sqrt(25 * math.log(10) / 20) / (math.pi * f_max)
+        t0 = 4.5 * sigma
         for t in [0.0, 1e-9, 2e-9, 4e-9, 6e-9]:
             x = (t - t0) / sigma
             expected = math.exp(-x * x)
             assert gaussian(t, f_max) == pytest.approx(expected, rel=1e-12)
 
-    def test_matches_port2d_te(self):
-        """modulated_gaussian() bandwidth = f_max - f_min, t0 = 4/bandwidth."""
+    def test_separated_lobe_default_formula(self):
+        """Mirrored-lobe overlap is negligible on this band."""
         f_max = 10e9
         f_min = 5e9
         bandwidth = f_max - f_min
-        sigma = 2.0 / (math.pi * bandwidth)
-        t0 = 4.0 / bandwidth
+        sigma = 2 * math.sqrt(25 * math.log(10) / 20) / (math.pi * bandwidth)
+        t0 = 4.5 * sigma
         f_center = 0.5 * (f_min + f_max)
         for t in [0.0, 0.5e-9, 1e-9, 1.5e-9, 2e-9]:
             x = (t - t0) / sigma
@@ -168,7 +168,7 @@ class TestWaveforms:
     def test_waveform_for_mode_tem(self):
         f_max = 1e9
         wf = waveform_for_mode(f_max, omega_c=0.0)
-        t0 = 4.0 / f_max
+        t0 = WaveformGaussian(f_max).peak_time
         assert wf(t0) == pytest.approx(1.0)
         assert wf(0.0) == pytest.approx(gaussian(0.0, f_max))
 
@@ -178,7 +178,7 @@ class TestWaveforms:
         wf = waveform_for_mode(f_max, omega_c)
         f_cutoff = omega_c / (2 * math.pi)
         # waveform_for_mode forwards f_cutoff as the modulated-Gaussian f_min
-        t0 = 4.0 / (f_max - f_cutoff)
+        t0 = WaveformGaussianModulated(f_cutoff, f_max).peak_time
         assert wf(t0) == pytest.approx(modulated_gaussian(t0, f_max, f_cutoff))
 
     def test_waveform_for_mode_f_min_overrides_dc(self):
@@ -186,15 +186,15 @@ class TestWaveforms:
         f_max = 12.4e9
         f_min = 8.2e9
         wf = waveform_for_mode(f_max, omega_c=0.0, f_min=f_min)
-        t0 = 4.0 / (f_max - f_min)
+        t0 = WaveformGaussianModulated(f_min, f_max).peak_time
         # At t0 the envelope peaks → value is 1 (cos(0) = 1)
         assert wf(t0) == pytest.approx(1.0)
         # f_min=0 forces plain DC-Gaussian
         wf_dc = waveform_for_mode(f_max, omega_c=0.0, f_min=0.0)
-        assert wf_dc(4.0 / f_max) == pytest.approx(1.0)
+        assert wf_dc(WaveformGaussian(f_max).peak_time) == pytest.approx(1.0)
 
     def test_waveform_for_mode_zero_omega_uses_gaussian(self):
         """omega_c=0 should fall back to a plain Gaussian."""
         wf = waveform_for_mode(1e9, omega_c=0.0)
-        t0 = 4.0 / 1e9
+        t0 = WaveformGaussian(1e9).peak_time
         assert wf(t0) == pytest.approx(1.0)

@@ -421,6 +421,11 @@ waveguide port supporting all 6 domain faces. Features:
   (exact discrete cut-off; replaces the former lumped node-Laplace).
 - Supports TEM, TE, and TM modes with frequency-dependent impedance.
 - Waveform: plain Gaussian for TEM, modulated Gaussian for TE/TM (DD-022).
+  DD-281 sizes both by upper-edge amplitude attenuation (25 dB by default),
+  relative to DC or the carrier-centre spectrum including mirrored lobes.
+  Envelope `exp(-((t-peak_time)/tau)^2)`, peak at `4.5*tau`, nominal end
+  `9*tau`; resolved width and timing persist with backward reconstruction
+  of legacy Gaussian records. The width solve runs once on construction.
 - Integrated into the high-level API as declarative ports (`PortWaveguide`,
   declared on the model — DD-109); optionally windowed to a sub-rectangle
   of the face via `corners=` (world-coordinate corner pair, DD-153).
@@ -1305,17 +1310,20 @@ def run(
     that actually terminates shielded lossless structures, whose
     stored energy plateaus on TM-cut-off cavity content no port can
     drain.
-    The 70 dB threshold is calibrated against the well-absorbed TEM-line
-    case: at that depth the V/I residual at truncation is below ~7e-4
-    of peak, which keeps rectangular-DFT sidelobes on |S21| under
-    ~0.02 dB and lets |S11| converge to its physical Mur-1 floor.
+    Both decay criteria wait for every finite excitation's nominal end,
+    including resolved delay and finite synthesised port-source buffers
+    (DD-282). Attached plane-wave sources extend that guard by spatial
+    retardation on their actual injection patches. Continuation uses
+    absolute completed steps. Energy/voltage decay measures are heuristics,
+    not bounds on the omitted Fourier tail or on complex S-parameter error.
 
     Parameter priority:
     - dt is computed from the Courant condition with the chosen accuracy
       safety factor and the mesh's effective ε / μ floors.
     - total_time_steps default ``None``: the run is unbounded; the
-      ``ceil((2·t0_pulse + 25·t_diag) / dt)`` estimate (with
-      ``t0_pulse = 4 / bandwidth``, ``t_diag = ‖bbox‖ / (0.5 c₀)``)
+      ``ceil((t_pulse + 25·t_diag) / dt)`` estimate (with
+      ``t_pulse = max(delay + waveform.t_end)``,
+      ``t_diag = ‖bbox‖ / (0.5 c₀)``)
       only sets the stop-check cadence.  An explicit value restores a
       hard cap.
     - excited default: ``[(first_port_name, 0)]``.
@@ -1328,7 +1336,10 @@ def run(
     energy_stop_db:
         Default 70 dB.  The solver checks total EM energy on a 100-step
         cadence and terminates once it has decayed by this many dB
-        below peak.  ``PortSignalRecorder.finalize`` trims V/I buffers
+        below peak, after the finite-excitation guard. The current port
+        interval is polled before either decay decision; running peaks
+        and the pending interval survive continuation checkpoints.
+        ``PortSignalRecorder.finalize`` trims V/I buffers
         to the actual leapfrog count so the FFT does not see zero-
         padded tails.  On structures whose energy never falls 70 dB
         below peak (closed cavities, narrow filters) the port-signal

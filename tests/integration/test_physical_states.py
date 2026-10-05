@@ -243,7 +243,7 @@ def test_plane_wave_amplitude_is_physical():
     )
     src.set_excitation(WaveformGaussian(f_max=f_max), amplitude=1.0)
     c0 = 299_792_458.0
-    t_end = 4.0 / f_max + z[10] / c0 + 2.0 / f_max
+    t_end = src.waveform.peak_time + z[10] / c0 + 2.0 / f_max
     n_steps = int(np.ceil(t_end / dt)) + 5
 
     mon = MonitorFieldTime(

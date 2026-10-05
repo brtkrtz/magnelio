@@ -2,7 +2,7 @@
 
 Tutorial 09's straight 50 ohm microstrip reflects nothing in theory, so
 its reported |S11| is the port's own error.  With the frozen source it
-reads about -32.9 dB; the rank-r source, which carries the exact
+reads about -33.65 dB with the current Gaussian pulse; the rank-r source, which carries the exact
 per-frequency decomposition with it, has to do materially better.
 """
 
@@ -56,9 +56,9 @@ class TestDispersiveSourceRun:
     def test_it_beats_the_frozen_source_on_a_microstrip(self, mesh):
         frozen, _ = _worst_s11_db(mesh, "frozen")
         disp, res = _worst_s11_db(mesh, "dispersive")
-        # Frozen reproduces the tutorial's printed number.
-        assert frozen == pytest.approx(-32.9, abs=0.6)
-        # The gain measured on this fixture is ~6 dB; the gate keeps
+        # The current pulse and decay guard pin the frozen baseline.
+        assert frozen == pytest.approx(-33.65, abs=0.6)
+        # The gain measured on this fixture is ~10 dB; the gate keeps
         # margin for grid and platform noise but fails if the coupling
         # to the per-frequency split is ever broken, which shows up as
         # the dispersive arm being *worse* than the frozen one.

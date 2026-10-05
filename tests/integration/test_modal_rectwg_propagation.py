@@ -129,8 +129,7 @@ def test_rectwg_te10_wave_arrival():
     )
     rec = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
 
-    bandwidth = f_max - f_min
-    t0_pulse = 4.0 / bandwidth
+    t0_pulse = waveform.peak_time
 
     f_c_te10 = C0 / (2.0 * WR90_A)
     v_g_calc = C0 * math.sqrt(max(0.0, 1.0 - (f_c_te10 / f_calc) ** 2))
@@ -243,8 +242,7 @@ def test_rectwg_te10_no_higher_mode_leakage():
     )
     rec = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
 
-    bandwidth = f_max - f_min
-    t0_pulse = 4.0 / bandwidth
+    t0_pulse = waveform.peak_time
 
     f_c_te10 = C0 / (2.0 * WR90_A)
     v_g_calc = C0 * math.sqrt(max(0.0, 1.0 - (f_c_te10 / f_calc) ** 2))
@@ -377,8 +375,7 @@ def test_rectwg_te10_te20_propagating_no_leakage():
 
     rec = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
 
-    bandwidth = f_max - f_min
-    t0_pulse = 4.0 / bandwidth
+    t0_pulse = waveform.peak_time
 
     f_c_te10 = C0 / (2.0 * WR90_A)
     v_g_calc = C0 * math.sqrt(max(0.0, 1.0 - (f_c_te10 / f_calc) ** 2))

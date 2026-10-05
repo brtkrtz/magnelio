@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import magnelio as mio
-from magnelio import geo, ports
+from magnelio import geo, ports, signals
 from magnelio.constants import *
 
 r_i = 0.405e-3  # inner conductor radius [m]
@@ -108,10 +108,19 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # mode".  The analysis performs one time-domain run per entry and
 # merges everything into a single result that answers for every
 # :math:`S_{ij}`.
+#
+# The default Gaussian has 25 dB spectral amplitude attenuation at the
+# upper band edge, relative to DC for this TEM drive. We make the same
+# choice explicit here; ``edge_attenuation_db`` can be adjusted when a
+# different balance between band-edge excitation and out-of-band content
+# is needed. The peak is at ``4.5 * pulse.tau`` and the effective duration
+# is ``pulse.t_end``. See :doc:`/methods/sources-monitors` for the modulated
+# pulse and for the effect of weak spectral edges on record accuracy.
 
 # f_max is omitted: the analysis band defaults to the design frequency
 # the mesh was generated for (``mesh.f_max``).
-analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
+pulse = signals.WaveformGaussian(f_max=f_max, edge_attenuation_db=25)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, waveform=pulse, verbose=False)
 result = analysis.run(excited=["port1", "port2"])
 
 # %%

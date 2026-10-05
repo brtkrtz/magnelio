@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Energy decay stopping waits for all scheduled finite excitations to
+  finish, including delayed drives, synthesised port-source buffers and
+  plane-wave spatial retardation, on initial runs and continuation.
+- Energy-stopped runs report the current port-voltage check interval.
+  Checkpoints retain current decay peaks and pending port envelopes.
+
 - A bare port name in `run(excited="port1")` selects one port instead
   of interpreting its characters as port names.
 
@@ -19,6 +25,13 @@ major version is 0, minor releases may change the public API.
   use their documented accessor.
 
 ### Changed
+
+- Gaussian drives use a configurable `edge_attenuation_db` (25 dB by
+  default) at the upper band edge and peak after 4.5 envelope time constants.
+  The modulated pulse includes both mirrored spectral lobes when sizing
+  its width. Waveforms expose `tau` and `peak_time`; duration estimates
+  follow the resolved pulse. Existing stored runs retain their original
+  source waveform when resumed.
 
 - Public API names now distinguish physical frequency in Hz, excitation
   normalization, rectangular corner origins, field frames and eigenmodes,

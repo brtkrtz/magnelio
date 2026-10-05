@@ -298,6 +298,7 @@ class TestPortSignalStop:
             ops,
             dt,
             total_time_steps=None,
+            energy_stop_db=70.0,
             port_signal_stop_db=100.0,
             energy_check_interval=200,
         )
@@ -305,9 +306,10 @@ class TestPortSignalStop:
         tr = solver._energy_trace
         e_tr = np.asarray(tr["energy"], dtype=float)
         final_db = 10.0 * math.log10(e_tr[-1] / e_tr.max())
-        # The TM-cut-off plateau keeps the energy far above a -40 dB
+        # The TM-cut-off plateau keeps the energy above the -70 dB
         # energy criterion — the signal criterion is what terminated.
-        assert final_db > -40.0
+        assert final_db > -70.0
+        assert solver._stop_reason == "port_signal"
         assert solver._peak_signal > 0.0
 
     def test_unbounded_needs_some_criterion(self):

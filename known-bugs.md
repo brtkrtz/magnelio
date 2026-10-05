@@ -16,8 +16,31 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Five entries are open as of 2026-10-04: KB-023, KB-038, KB-043,
+**Five entries are open as of 2026-10-05: KB-023, KB-038, KB-043,
 KB-046 and KB-047.** Everything else is struck through and resolved.
+
+## KB-051: ~~Energy stopping can discard pending finite excitations~~ — Resolved (2026-10-05)
+
+DD-282 guards energy stopping until every scheduled finite waveform and
+synthesised port-drive buffer has completed, including effective delay and
+plane-wave spatial retardation. Absolute completed steps preserve that
+protection on resume; explicit duration bounds remain available. A delayed
+second drive, an active single pulse, a translated plane wave and resumed
+drives are covered by regressions. The narrower-band waveguide's complex
+S21 error improves from 8.69e-4 to 2.41e-5. Full reproduction and acceptance:
+`investigations/termination-accuracy/MEASUREMENTS.md` and `IMPLEMENTATION.md`
+(internal records).
+
+## KB-050: ~~Energy-stopped runs report a stale final port-signal level~~ — Resolved (2026-10-05)
+
+DD-282 polls the current port-voltage interval before an energy return and
+persists current energy/voltage peaks before periodic checkpoints. Pending
+port-envelope state survives checkpoints between checks; old records remain
+loadable. Three unaffected GPU fixtures retain identical S-parameters and
+step counts while the reported diagnostic agrees with the final recorded
+interval. Both field precisions and continuation are covered by regressions.
+Evidence: `investigations/termination-accuracy/IMPLEMENTATION.md` (internal
+record).
 
 ## KB-049: ~~Loaded geometry lacks the 3D `show()` method~~ — Resolved (2026-10-04)
 

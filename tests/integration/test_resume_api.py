@@ -18,6 +18,7 @@ exactly reproducible, not merely FP-floor close.
 
 from __future__ import annotations
 
+import json
 import os
 import signal
 
@@ -29,12 +30,13 @@ from magnelio import AnalysisScatteringTD, Material, MeshControl, open_project, 
 from magnelio.geo import Brick
 from magnelio.mesh.mesher import Mesh
 from magnelio.ports import PortWaveguide
+from magnelio.signals import WaveformGaussian
 
 A, B, LZ = 10.0e-3, 5.0e-3, 20.0e-3
 F_MAX = 12.0e9
 
 
-def _tem_analysis(project=None, monitors=()):
+def _tem_analysis(project=None, monitors=(), waveform=None):
     """A small parallel-plate TEM two-port (needs OCC); optional store."""
     from magnelio.geo import GeometryModel  # noqa: PLC0415
 
@@ -70,6 +72,7 @@ def _tem_analysis(project=None, monitors=()):
         verbose=False,
         project=project,
         geometry=model,
+        waveform=waveform,
     )
     analysis.monitors = monitors
     return analysis
@@ -113,11 +116,12 @@ def _assert_bit_exact(ref_vi, got_vi, tag):
 # ═════════════════════════════════════════════════════════════════════
 
 
-def test_resume_bounded_bit_exact(tmp_path):
+@pytest.mark.parametrize("waveform", [None, WaveformGaussian(F_MAX, edge_attenuation_db=17)])
+def test_resume_bounded_bit_exact(tmp_path, waveform):
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     n1, n_total = 120, 300
 
-    ref = _tem_analysis().run(
+    ref = _tem_analysis(waveform=waveform).run(
         excited=[("port1", 0)],
         energy_stop_db=None,
         total_time_steps=n_total,
@@ -125,7 +129,7 @@ def test_resume_bounded_bit_exact(tmp_path):
     ref_vi = _vi(ref.signals[("port1", 0)])
 
     p = tmp_path / "pp"
-    _tem_analysis(project=p).run(
+    _tem_analysis(project=p, waveform=waveform).run(
         excited=[("port1", 0)],
         energy_stop_db=None,
         total_time_steps=n1,
@@ -149,6 +153,44 @@ def test_resume_bounded_bit_exact(tmp_path):
     # S-parameters derived on read match the uninterrupted run exactly.
     assert np.array_equal(ref.S("port1", "port1"), proj.S("port1", "port1"))
     assert np.array_equal(ref.S("port2", "port1"), proj.S("port2", "port1"))
+
+
+def test_legacy_automatic_pulse_resume_during_excitation(tmp_path, monkeypatch):
+    """A pre-change auto pulse resumes exactly despite new constructor defaults."""
+    import h5py
+
+    from magnelio.analysis._recipe import _waveform_from_dict
+
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    legacy = _waveform_from_dict({"type": "WaveformGaussian", "f_max": F_MAX})
+    p = tmp_path / "legacy"
+    with monkeypatch.context() as old:
+        old.setattr(AnalysisScatteringTD, "_resolve_waveform", lambda self, *args: legacy)
+        ref = _tem_analysis().run(
+            excited="port1", energy_stop_db=None, port_signal_stop_db=None, total_time_steps=300
+        )
+        _tem_analysis(project=p).run(
+            excited="port1",
+            energy_stop_db=None,
+            port_signal_stop_db=None,
+            total_time_steps=80,
+            checkpoint_interval=40,
+        )
+    # Remove new optional metadata to reproduce the actual old on-disk shape.
+    results_path = next(p.rglob("results.h5"))
+    with h5py.File(results_path, "r+") as f:
+        excitations = json.loads(f.attrs["excitations"])
+        for exc in excitations:
+            for key in ("tau", "peak_time", "edge_attenuation_db"):
+                exc["waveform"].pop(key)
+        f.attrs.modify("excitations", json.dumps(excitations))
+    before = open_project(p)
+    assert before.setup["recipe"]["waveform"] is None
+    assert abs(legacy(80 * before.runs["port1_mode0"].dt)) > 0.5
+    resumed = resume(p, run=("port1", 0), total_time_steps=300, verbose=False)
+    _assert_bit_exact(
+        _vi(ref.signals[("port1", 0)]), _vi(resumed.signals[("port1", 0)]), "legacy-pulse"
+    )
 
 
 def test_resume_port_signal_gated(tmp_path):
@@ -179,7 +221,7 @@ def test_resume_port_signal_gated(tmp_path):
 
 
 def test_resume_energy_gated_bit_exact(tmp_path):
-    """run1 stops BOUNDED before the pulse decays, so the energy-gated
+    """run1 stops BOUNDED before the energy criterion fires, so the energy-gated
     resume hits the same check grid as the uninterrupted energy run and
     stops at the identical step with bit-identical V/I."""
     pytest.importorskip("OCC.Core.BRepPrimAPI")
@@ -190,7 +232,7 @@ def test_resume_energy_gated_bit_exact(tmp_path):
         total_time_steps=None,
     )
     ref_vi = _vi(ref.signals[("port1", 0)])
-    assert ref.max_run_steps > 120  # decays well after the bounded stub
+    assert ref.max_run_steps > 100  # continues beyond the bounded stub
 
     p = tmp_path / "pp"
     _tem_analysis(project=p).run(

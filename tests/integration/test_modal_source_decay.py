@@ -127,7 +127,7 @@ def test_coax_source_cutoff_energy_decay():
 
     f_calc = 10e9
     f_max = 10e9
-    t0_pulse = 4.0 / f_max
+    t0_pulse = WaveformGaussian(f_max).peak_time
     mesh, m_eps, m_mu, dt = _make_coax_occ_mesh(L_x, L_yz, r_i, r_o, f_max)
 
     spec_src, spec_load = _coax_specs(L_yz, r_i, r_o, f_max)
@@ -188,7 +188,7 @@ def test_coax_source_decay_with_modal_recorder():
 
     f_calc = 10e9
     f_max = 10e9
-    t0_pulse = 4.0 / f_max
+    t0_pulse = WaveformGaussian(f_max).peak_time
     mesh, m_eps, m_mu, dt = _make_coax_occ_mesh(L_x, L_yz, r_i, r_o, f_max)
 
     spec_src, spec_load = _coax_specs(L_yz, r_i, r_o, f_max)
@@ -301,7 +301,7 @@ def test_coax_pec_confined_wave_arrival():
         min_effective_mu=compute_min_effective_mu(mesh),
     )
     f_calc = f_max
-    t0_pulse = 4.0 / f_max
+    t0_pulse = WaveformGaussian(f_max).peak_time
 
     spec_src, spec_load = _coax_specs(L_yz, r_i, r_o, f_max)
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)

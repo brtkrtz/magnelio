@@ -522,6 +522,19 @@ class TestDTBCSelection:
 class TestSimultaneousModeExcitation:
     """Several modes of one port drive at once (DD-224 Phase B)."""
 
+    def test_checkpoint_keeps_pending_signal_interval(self):
+        _mesh, _plane, op, _discrete = _wr90_setup()
+        op._V_absmax = 0.123
+        state = op.state_dict()
+        op.poll_signal_absmax()
+        op.load_state_dict(state)
+        assert op.poll_signal_absmax() == 0.123
+        # Older checkpoints have no pending interval metadata.
+        state.pop("signal_absmax")
+        op._V_absmax = 0.456
+        op.load_state_dict(state)
+        assert op.poll_signal_absmax() == 0.0
+
     def test_two_modes_each_keep_their_own_buffer(self):
         from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
 

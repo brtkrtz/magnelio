@@ -1125,6 +1125,7 @@ class PortOperatorModal:
         sd = {
             "V_port_prev": self._V_port_prev.copy(),
             "V_interior_prev": self._V_interior_prev.copy(),
+            "signal_absmax": self._V_absmax,
             "src_buffers": {
                 str(m): np.array(buf, dtype=float) for m, (_, buf) in self._excitations.items()
             },
@@ -1149,6 +1150,9 @@ class PortOperatorModal:
         """Restore state written by :meth:`state_dict` (bit-exact resume)."""
         self._V_port_prev[:] = np.asarray(sd["V_port_prev"], dtype=float)
         self._V_interior_prev[:] = np.asarray(sd["V_interior_prev"], dtype=float)
+        # DD-282: keep an interval spanning a checkpoint intact. Older
+        # checkpoints have no pending-envelope field and start it at zero.
+        self._V_absmax = float(sd.get("signal_absmax", 0.0))
         # The waveforms were re-bound by the caller (set_excitation before
         # the load); only the retardation buffers are restored, per mode.
         for m_str, buf in sd["src_buffers"].items():
