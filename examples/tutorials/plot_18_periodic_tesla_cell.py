@@ -336,7 +336,7 @@ for ax, res, label in (
     res.plot(
         mode=0, component="E", normal="y", position=0.0, plot_type="vector", geometry=model, ax=ax
     )
-    ax.set_title(f"{label}, {res.f_axis[0] / 1e9:.4f} GHz")
+    ax.set_title(f"{label}, {res.frequencies[0] / 1e9:.4f} GHz")
 fig.tight_layout()
 
 # %%

@@ -9,6 +9,12 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Fixed
+
+- The microstrip dispersion and periodic TESLA-cell tutorials execute with
+  the revised API; derived phases retain radians and eigenmode frequencies
+  use their documented accessor.
+
 ### Changed
 
 - Public API names now distinguish physical frequency in Hz, excitation

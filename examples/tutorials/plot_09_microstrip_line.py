@@ -347,8 +347,8 @@ print(f"|S11|: max {20 * np.log10(np.abs(s11).max()):.1f} dB")
 # the port's curve:
 
 f_axis = result.f_axis
-phase_deg = np.unwrap(np.angle(s21))
-eps_eff_td = (C0 * (-phase) / (2 * np.pi * f_axis * L)) ** 2
+phase_rad = np.unwrap(np.angle(s21))
+eps_eff_td = (C0 * (-phase_rad) / (2 * np.pi * f_axis * L)) ** 2
 
 sel = f_axis >= 1.0e9  # phase-derived values are 0/0-noisy near DC
 fig, ax = plt.subplots(figsize=(7, 4.2))
