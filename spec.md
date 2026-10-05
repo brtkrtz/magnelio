@@ -1279,6 +1279,19 @@ override of the per-mode default.  The full reserved
 vocabulary (sources, waveforms, monitors, namespaces, engines,
 arguments) is the table in DD-224.
 
+Stored scattering results use selective reads and calibrated channel
+spectra (DD-283). Metadata access reads no V/I payloads; S(out,in)
+evaluates the driven and observed channels of one excitation run.
+Band ports retain all coupled projections of the involved cross-sections.
+Completed-run spectral caches share denominators across queries and use
+frequency-axis content and numerical options as keys. Custom axes are
+cached as well. Metadata changes and refresh invalidate result caches;
+running/aborted records are not cached as final results. Selected reads
+retain the common flushed prefix across every stream in a run.
+Direct Fourier evaluation shares frequency/sample blocks across records
+and applies optional tapering within those blocks. The existing large-axis
+modal rFFT/interpolation fallback remains; band evaluation stays direct.
+
 ---
 ## 9. AnalysisScatteringTD.run() — convenience parameters
 

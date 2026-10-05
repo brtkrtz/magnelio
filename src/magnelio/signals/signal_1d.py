@@ -12,6 +12,51 @@ from dataclasses import dataclass
 import numpy as np
 
 
+def _spectra_at_frequencies(signals, f_target, *, direct=False, windows=None):
+    """Evaluate equal-length records with shared, bounded DFT blocks."""
+    f_target = np.asarray(f_target, dtype=float).ravel()
+    if not signals:
+        return []
+    first = signals[0]
+    n = len(first.values)
+    if any(len(s.values) != n or s.dt != first.dt for s in signals):
+        return [
+            _spectra_at_frequencies(
+                [s], f_target, direct=direct, windows=None if windows is None else [windows[i]]
+            )[0]
+            for i, s in enumerate(signals)
+        ]
+    if not direct and f_target.size * n > int(1e8):
+        return [
+            (
+                s
+                if windows is None or windows[i] is None
+                else Signal1D(s.t, s.values * windows[i], s.dt)
+            ).at_frequencies(f_target)
+            for i, s in enumerate(signals)
+        ]
+    # DD-283: at most 16 MiB per complex kernel, independent of run size.
+    sample_block = min(n, 65536)
+    frequency_block = max(1, (1024 * 1024) // max(sample_block, 1))
+    spectra = np.zeros((len(signals), f_target.size), dtype=complex)
+    for f_start in range(0, f_target.size, frequency_block):
+        f_stop = min(f_start + frequency_block, f_target.size)
+        for start in range(0, n, max(sample_block, 1)):
+            stop = min(start + sample_block, n)
+            phase = -2j * math.pi * np.outer(f_target[f_start:f_stop], np.arange(start, stop))
+            phase *= first.dt
+            np.exp(phase, out=phase)
+            for channel in range(0, len(signals), 16):
+                values = np.stack([s.values[start:stop] for s in signals[channel : channel + 16]])
+                if windows is not None:
+                    for i in range(len(values)):
+                        window = windows[channel + i]
+                        if window is not None:
+                            values[i] *= window[start:stop]
+                spectra[channel : channel + len(values), f_start:f_stop] += (phase @ values.T).T
+    return list(spectra)
+
+
 @dataclass(frozen=True)
 class Signal1D:
     """Immutable time-domain signal.
@@ -95,9 +140,7 @@ class Signal1D:
         # Direct DFT cutoff: O(Nf · N) ≤ 1e8 keeps the cost under ~1 s on
         # a single core for typical post-processing frequency sweeps.
         if f_target.size * N <= int(1e8):
-            n = np.arange(N)
-            phase = -2j * math.pi * np.outer(f_target, n) * self.dt
-            return np.exp(phase) @ self.values
+            return _spectra_at_frequencies([self], f_target)[0]
 
         # Fallback: zero-padded rFFT + linear interp on real/imag.
         if f_target.size > 1:

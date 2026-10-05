@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
-from magnelio.signals.signal_1d import Signal1D
+from magnelio.signals.signal_1d import Signal1D, _spectra_at_frequencies
 from magnelio.signals.waveforms import gaussian, modulated_gaussian, waveform_for_mode
 
 # ======================================================================
@@ -100,6 +100,42 @@ class TestSignal1D:
         r = repr(sig)
         assert "Signal1D" in r
         assert "N=128" in r
+
+
+def test_shared_dft_blocks_equal_independent_direct_sums(monkeypatch):
+    """Cross sample, frequency and channel blocks without interpolation."""
+    n, dt = 65540, 2e-12
+    axis = np.linspace(0.0, 8e9, 19)[::-1]
+    rng = np.random.default_rng(283)
+    records = [Signal1D(np.arange(n) * dt, rng.normal(size=n), dt) for _ in range(17)]
+    exp = np.exp
+    shapes = []
+
+    def bounded_exp(phase, *args, **kwargs):
+        shapes.append(phase.shape)
+        assert phase.nbytes <= 16 * 1024 * 1024
+        return exp(phase, *args, **kwargs)
+
+    monkeypatch.setattr(np, "exp", bounded_exp)
+    actual = _spectra_at_frequencies(records, axis, direct=True)
+    kernel = exp(-2j * math.pi * np.outer(axis, np.arange(n)) * dt)
+    for record, spectrum in zip(records, actual):
+        np.testing.assert_allclose(spectrum, kernel @ record.values, atol=2e-11, rtol=2e-12)
+    assert len(shapes) == 4
+
+
+def test_shared_dft_handles_different_sample_clocks():
+    axis = np.array([3e9, 0.0, 3e9, 5e9])
+    records = [
+        Signal1D(np.arange(n) * dt, np.arange(n) ** 2, dt) for n, dt in [(17, 1e-12), (23, 2e-12)]
+    ]
+    actual = _spectra_at_frequencies(records, axis)
+    for record, spectrum in zip(records, actual):
+        expected = (
+            np.exp(-2j * math.pi * np.outer(axis, np.arange(len(record.values))) * record.dt)
+            @ record.values
+        )
+        np.testing.assert_allclose(spectrum, expected, atol=1e-10)
 
 
 # ======================================================================

@@ -510,6 +510,53 @@ def compute_s_parameters(
             "(power-wave decomposition undefined at DC)"
         )
 
+    waves = _modal_spectral_waves(
+        recorder_signals,
+        port_modes,
+        f_axis,
+        reference_signal=reference_signal,
+        taper_signals=taper_signals,
+        port_normal_dx=port_normal_dx,
+        port_line_params=port_line_params,
+        port_reference_scale=port_reference_scale,
+    )
+    a_incident = waves[excited][0]
+    result = [_scattering_ratios(waves, a_incident, a_threshold=a_threshold)]
+    if return_incident:
+        result.append(a_incident)
+    if return_reference:
+        result.append({key: wave[2] for key, wave in waves.items()})
+    return result[0] if len(result) == 1 else tuple(result)
+
+
+def _scattering_ratios(waves, incident, *, a_threshold=1e-12):
+    """Normalize outgoing waves with the excited channel's spectral floor."""
+    finite = np.isfinite(incident)
+    peak = float(np.max(np.abs(incident[finite]))) if finite.any() else 0.0
+    valid = finite & (np.abs(incident) >= a_threshold * peak) & (peak > 0.0)
+    safe = np.where(valid, incident, 1.0 + 0j)
+    return {
+        key: np.where(valid, wave[1] / safe, np.nan + 1j * np.nan) for key, wave in waves.items()
+    }
+
+
+def _modal_spectral_waves(
+    recorder_signals,
+    port_modes,
+    f_axis,
+    *,
+    reference_signal=None,
+    taper_signals=False,
+    port_normal_dx=None,
+    port_line_params=None,
+    port_reference_scale=None,
+):
+    """Calibrate selected modal channels without deriving S-parameters."""
+    from magnelio.signals.signal_1d import _spectra_at_frequencies  # noqa: PLC0415
+
+    f_axis = np.asarray(f_axis, dtype=float)
+    if np.any(f_axis <= 0.0):
+        raise ValueError("f_axis must contain only positive frequencies")
     omega = 2.0 * math.pi * f_axis
 
     # Yee half-step phase correction for MODALLY-sampled I (V ∼ e at
@@ -524,13 +571,23 @@ def compute_s_parameters(
     # Sanity: the unused-but-still-referenced reference_signal.  Force
     # an early evaluation so a malformed input fails here rather than
     # silently downstream.
-    _ = reference_signal.at_frequencies(f_axis)
+    records = [] if reference_signal is None else [reference_signal]
 
     if taper_signals:
         N = len(next(iter(recorder_signals.values()))[0].values)
         window = tukey(N, alpha=_TUKEY_ALPHA_DEFAULT, sym=True)
     else:
         window = None
+
+    windows = [None] if reference_signal is not None else []
+    for pair in recorder_signals.values():
+        records.extend(pair)
+        windows.extend((window, window))
+    spectra = iter(
+        _spectra_at_frequencies(records, f_axis, windows=windows if window is not None else None)
+    )
+    if reference_signal is not None:
+        next(spectra)
 
     a_channels: dict[tuple[str, int], np.ndarray] = {}
     b_channels: dict[tuple[str, int], np.ndarray] = {}
@@ -550,22 +607,8 @@ def compute_s_parameters(
             )
         mode = modes[mode_idx]
 
-        if window is not None:
-            V_sig = Signal1D(
-                t=V_sig.t,
-                values=V_sig.values * window,
-                dt=V_sig.dt,
-                label=V_sig.label,
-            )
-            I_sig = Signal1D(
-                t=I_sig.t,
-                values=I_sig.values * window,
-                dt=I_sig.dt,
-                label=I_sig.label,
-            )
-
-        V_f = V_sig.at_frequencies(f_axis)
-        I_f = I_sig.at_frequencies(f_axis)
+        V_f = next(spectra)
+        I_f = next(spectra)
         if not getattr(mode, "i_cotemporal", False):
             I_f = I_f * i_phase_correction
 
@@ -580,36 +623,11 @@ def compute_s_parameters(
             normal_dx=normal_dx,
             line_params=line_params,
         )
-        if return_reference:
-            z = channel_reference_impedance(mode, omega, dt, line_params).real
-            if getattr(mode, "z_line", None) is not None and port_reference_scale:
-                z = z * float(port_reference_scale.get(label, 1.0))
-            z_channels[key] = z
-
-    def _pack(S_out, a_out):
-        out = [S_out]
-        if return_incident:
-            out.append(a_out)
-        if return_reference:
-            out.append(z_channels)
-        return out[0] if len(out) == 1 else tuple(out)
-
-    a_excited = a_channels[excited]
-    a_peak = float(np.max(np.abs(a_excited)))
-    if a_peak == 0.0:
-        # Fully zero excitation: S is undefined everywhere.
-        S_nan = {key: np.full_like(f_axis, np.nan, dtype=complex) for key in recorder_signals}
-        return _pack(S_nan, a_excited)
-
-    valid = np.abs(a_excited) >= (a_threshold * a_peak)
-    safe_a = np.where(valid, a_excited, 1.0 + 0j)
-
-    S: dict[tuple[str, int], np.ndarray] = {}
-    for key, b in b_channels.items():
-        S_k = b / safe_a
-        S_k = np.where(valid, S_k, np.nan + 1j * np.nan)
-        S[key] = S_k
-    return _pack(S, a_excited)
+        z = channel_reference_impedance(mode, omega, dt, line_params).real
+        if getattr(mode, "z_line", None) is not None and port_reference_scale:
+            z = z * float(port_reference_scale.get(label, 1.0))
+        z_channels[key] = z
+    return {key: (a_channels[key], b_channels[key], z_channels[key]) for key in recorder_signals}
 
 
 def compute_band_s_parameters(
@@ -690,6 +708,34 @@ def compute_band_s_parameters(
         channel.  Channels whose family does not propagate at a
         frequency carry NaN there.
     """
+    waves = _band_spectral_waves(
+        recorder_signals,
+        ports,
+        f_axis,
+        m_eps=m_eps,
+        m_mu=m_mu,
+        c_3d=c_3d,
+        port_reference_scale=port_reference_scale,
+        search=search,
+    )
+    if excited not in waves:
+        raise ValueError(f"excited channel {excited!r} not among recorded band channels")
+    result = _scattering_ratios(waves, waves[excited][0], a_threshold=a_threshold)
+    return (result, {key: wave[2] for key, wave in waves.items()}) if return_reference else result
+
+
+def _band_spectral_waves(
+    recorder_signals,
+    ports,
+    f_axis,
+    *,
+    m_eps=None,
+    m_mu=None,
+    c_3d=None,
+    port_reference_scale=None,
+    search="track",
+):
+    """Decompose all coupled projections of selected band ports."""
     # Design: WP-R4a (per-frequency true-mode decomposition; cost-watch
     # numbers measured there), DD-244 (continuation, power waves).
     from magnelio.ports._modal.band_dtbc import BandDecomposition
@@ -697,6 +743,7 @@ def compute_band_s_parameters(
         decompose_power_waves,
         solve_port_dispersion,
     )
+    from magnelio.signals.signal_1d import _spectra_at_frequencies  # noqa: PLC0415
 
     # Accept built operators (live runs) or detached records (a project
     # store read).  Legacy records without stored masses fall back to
@@ -713,9 +760,11 @@ def compute_band_s_parameters(
 
     f_axis = np.asarray(f_axis, dtype=float)
     n_f = f_axis.size
-    labels = [p.name for p in ports]
-    if excited[0] not in labels:
-        raise ValueError(f"excited port {excited[0]!r} not among {labels}")
+
+    records = [
+        s for port in ports for c in range(port.n_modes) for s in recorder_signals[(port.name, c)]
+    ]
+    spectra = iter(_spectra_at_frequencies(records, f_axis, direct=True))
 
     a_all: dict[tuple[str, int], np.ndarray] = {}
     b_all: dict[tuple[str, int], np.ndarray] = {}
@@ -737,17 +786,12 @@ def compute_band_s_parameters(
         V0, _ = recorder_signals[(port.name, 0)]
         t_axis = V0.t
         dt = float(t_axis[1] - t_axis[0])
-        n_steps = t_axis.size
         w_dt_axis = 2.0 * math.pi * f_axis * dt
-        dft = np.exp(
-            -1j * np.outer(w_dt_axis, np.arange(n_steps)),
-        )
         Vh = np.empty((n_ch, n_f), complex)
         Ih = np.empty((n_ch, n_f), complex)
         for c in range(n_ch):
-            V_sig, I_sig = recorder_signals[(port.name, c)]
-            Vh[c] = dft @ V_sig.values
-            Ih[c] = (dft @ I_sig.values) * np.exp(0.5j * w_dt_axis)
+            Vh[c] = next(spectra)
+            Ih[c] = next(spectra) * np.exp(0.5j * w_dt_axis)
         a, b = decompose_power_waves(disp, Vh, Ih)
         z_scale = float(port_reference_scale.get(port.name, 1.0)) if port_reference_scale else 1.0
         for c in range(n_ch):
@@ -777,12 +821,4 @@ def compute_band_s_parameters(
                 stacklevel=2,
             )
 
-    a_exc = a_all[excited]
-    finite = np.isfinite(a_exc.real)
-    peak = float(np.abs(a_exc[finite]).max()) if finite.any() else 0.0
-    valid = finite & (np.abs(np.where(finite, a_exc, 0.0)) >= a_threshold * max(peak, 1e-300))
-    safe_a = np.where(valid, a_exc, 1.0)
-    S: dict[tuple[str, int], np.ndarray] = {}
-    for key, b in b_all.items():
-        S[key] = np.where(valid, b / safe_a, np.nan + 1j * np.nan)
-    return (S, z_all) if return_reference else S
+    return {key: (a_all[key], b_all[key], z_all[key]) for key in a_all}
