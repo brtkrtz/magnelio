@@ -147,6 +147,10 @@ for root, _dirs, files in sorted(os.walk(proj_dir)):
 # separation the store exists for: a cluster job computes, your
 # laptop evaluates.  S-parameters are derived on read from the stored
 # signals, with the accessors you already know:
+# An explicit pair reads and evaluates only its driven and observed
+# ports in the selected run. Further pairs reuse the incident spectrum;
+# ``s_params`` requests the entire matrix. Metadata such as ``channels``
+# and ``excitations`` does not trigger a spectral calculation.
 
 # ``open_project`` hands back the very same kind of object ``run()``
 # returned above — a reader over the directory — only initialised from
@@ -156,6 +160,12 @@ print(type(result_loaded).__name__, "->", result_loaded.status)
 
 fig, ax = result_loaded.plot_s(("port1", "port3"), ("port1", "port4"), ("port4", "port3"))
 ax.set_title("Read back from the project store")
+
+# Select an excitation for a time plot because this project has two runs.
+# Both calibrated waves are obtained from the same port record; no
+# S-parameter calculation is needed to display them.
+fig, ax = result_loaded.plot_time_signals("port1", excited="port3")
+ax.set_title("Port 1 time signals during the port 3 excitation")
 
 # %%
 # Watching a run: the energy trace

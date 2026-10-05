@@ -120,7 +120,7 @@ declared, whatever the cell size.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 92 x 92 x 96 = 812,544 cells | 237 MiB
+      mesh | 92 x 92 x 96 = 812,544 cells | 237 MiB (0.6 s total)
 
 
 
@@ -324,7 +324,7 @@ What to watch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 15.116 seconds)
+   **Total running time of the script:** (2 minutes 52.166 seconds)
 
 
 .. _sphx_glr_download_howto_plot_current_path_source.py:

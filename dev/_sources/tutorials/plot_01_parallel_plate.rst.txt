@@ -228,11 +228,11 @@ cap the cell size at 1/16 of the plate spacing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (13.7 s)
+      mesh | materials | done (12.0 s)
       mesh | conformal cells
-      mesh | conformal cells | done (5.6 s)
+      mesh | conformal cells | done (4.7 s)
       mesh | PEC masks
-      mesh | 32 x 16 x 64 = 32,768 cells | 10.0 MiB (19.5 s total)
+      mesh | 32 x 16 x 64 = 32,768 cells | 10.0 MiB (17.0 s total)
     grid: 32 x 16 x 64 cells
 
 
@@ -505,7 +505,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 28.434 seconds)
+   **Total running time of the script:** (0 minutes 24.513 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

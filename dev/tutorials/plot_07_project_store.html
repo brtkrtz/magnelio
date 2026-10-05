@@ -775,7 +775,11 @@ process gets from <a class="reference internal" href="../api/core.html#magnelio.
 needs the analysis, the mesh, or the solver.  This is the
 separation the store exists for: a cluster job computes, your
 laptop evaluates.  S-parameters are derived on read from the stored
-signals, with the accessors you already know:</p>
+signals, with the accessors you already know:
+An explicit pair reads and evaluates only its driven and observed
+ports in the selected run. Further pairs reuse the incident spectrum;
+<code class="docutils literal notranslate"><span class="pre">s_params</span></code> requests the entire matrix. Metadata such as <code class="docutils literal notranslate"><span class="pre">channels</span></code>
+and <code class="docutils literal notranslate"><span class="pre">excitations</span></code> does not trigger a spectral calculation.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span class="c1"># ``open_project`` hands back the very same kind of object ``run()``</span><span class="w">
 </span><span class="c1"># returned above — a reader over the directory — only initialised from</span><span class="w">
 </span><span class="c1"># the path instead of by the run that wrote it.</span><span class="w">
@@ -784,10 +788,20 @@ signals, with the accessors you already know:</p>
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.plot_s" title="magnelio.io.Project.plot_s"><span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_s</span></a><span class="p">(</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">Read back from the project store</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="c1"># Select an excitation for a time plot because this project has two runs.</span><span class="w">
+</span><span class="c1"># Both calibrated waves are obtained from the same port record; no</span><span class="w">
+</span><span class="c1"># S-parameter calculation is needed to display them.</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.plot_time_signals" title="magnelio.io.Project.plot_time_signals"><span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_time_signals</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">Port 1 time signals during the port 3 excitation</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project -&gt; done
+<ul class="sphx-glr-horizontal">
+<li><img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-multi-img"/></li>
+<li><img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Port 1 time signals during the port 3 excitation" class = "sphx-glr-multi-img"/></li>
+</ul>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project -&gt; done
 
-Text(0.5, 1.0, 'Read back from the project store')
+Text(0.5, 1.0, 'Port 1 time signals during the port 3 excitation')
 </pre></div>
 </div>
 </section>
@@ -814,7 +828,7 @@ loop, and the live panel for a notebook.</p>
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">trace</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-property reference internal" href="../api/io.html#magnelio.io.Project.runs" title="magnelio.io.Project.runs"><span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span></a><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port3_mode0</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">energy_trace</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">energy samples stored for the H-arm run: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">trace</span></a><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the two runs" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored for the H-arm run: 28
+<img src="../_images/sphx_glr_plot_07_project_store_003.png" srcset="../_images/sphx_glr_plot_07_project_store_003.png" alt="Energy in the grid during the two runs" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored for the H-arm run: 28
 </pre></div>
 </div>
 <p>The monitor data of <em>every</em> run is preserved — where the previous
@@ -837,7 +851,7 @@ recorded in the same simulation:</p>
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">E-arm drive: $E_z$, vertical slice</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_07_project_store_003.png" srcset="../_images/sphx_glr_plot_07_project_store_003.png" alt="H-arm drive: $E_z$, mid-height slice, E-arm drive: $E_z$, vertical slice" class = "sphx-glr-single-img"/><p>The volume can also be opened in the 3D viewer.  <code class="docutils literal notranslate"><span class="pre">show</span></code> lays the
+<img src="../_images/sphx_glr_plot_07_project_store_004.png" srcset="../_images/sphx_glr_plot_07_project_store_004.png" alt="H-arm drive: $E_z$, mid-height slice, E-arm drive: $E_z$, vertical slice" class = "sphx-glr-single-img"/><p>The volume can also be opened in the 3D viewer.  <code class="docutils literal notranslate"><span class="pre">show</span></code> lays the
 field on the viewer’s cutting plane — here the E-arm drive, cut
 along the E-arm’s own symmetry plane, the tee’s metal drawn with it
 and the cells inside the walls cut out of the field sheet — and,
@@ -862,11 +876,11 @@ build shows the frame the call asks for.</p>
 <input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
 <label class="sd-tab-label" for="sd-tab-item-0">
 Static Scene</label><div class="sd-tab-content docutils">
-<img src="../_images/sphx_glr_plot_07_project_store_004.png" srcset="../_images/sphx_glr_plot_07_project_store_004.png" alt="plot 07 project store" class = "sphx-glr-single-img"/></div>
+<img src="../_images/sphx_glr_plot_07_project_store_005.png" srcset="../_images/sphx_glr_plot_07_project_store_005.png" alt="plot 07 project store" class = "sphx-glr-single-img"/></div>
 <input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
 <label class="sd-tab-label" for="sd-tab-item-1">
 Interactive Scene</label><div class="sd-tab-content docutils">
-<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_07_project_store_004.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_07_project_store_005.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
 </div>
 </section>
 <section id="running-longer-resume">
@@ -955,7 +969,7 @@ how-to <em>Watching a simulation that is still running</em> is that recipe.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.311 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.077 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>
