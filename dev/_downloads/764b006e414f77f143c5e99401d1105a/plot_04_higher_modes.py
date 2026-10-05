@@ -80,7 +80,7 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # ---------------
 
 analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
-report = analysis.solve_ports()["port1"]
+report = analysis.solve_ports(["port1"])["port1"]
 print(report)
 
 # %%

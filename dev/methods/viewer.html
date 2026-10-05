@@ -659,15 +659,22 @@ other editor REPLs whose kernels cannot identify their frontend.</p>
 <tr class="row-even"><td><p>Waveguide ports</p></td>
 <td><p>A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name written in the window’s plane.</p></td>
 </tr>
-<tr class="row-odd"><td><p>Symmetry planes</p></td>
-<td><p>Tinted sheets on the declared symmetry planes (<code class="docutils literal notranslate"><span class="pre">SymmetryPEC</span></code> blue, <code class="docutils literal notranslate"><span class="pre">SymmetryPMC</span></code> green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge.</p></td>
+<tr class="row-odd"><td><p>Boundary conditions</p></td>
+<td><p>Initially hidden sheets on the domain faces: PEC blue, PMC green, CPML orange and periodic purple. Separate from symmetry planes in <em>Show</em>. With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code>, the faces follow the mesh extent, including the absorbing buffer.</p></td>
 </tr>
-<tr class="row-even"><td><p>Domain box</p></td>
+<tr class="row-even"><td><p>Symmetry planes</p></td>
+<td><p>Initially hidden tinted sheets on the declared symmetry planes (<code class="docutils literal notranslate"><span class="pre">SymmetryPEC</span></code> blue, <code class="docutils literal notranslate"><span class="pre">SymmetryPMC</span></code> green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Domain box</p></td>
 <td><p>Outline of the computational domain — the grid extent when a mesh is given, including the absorbing buffer at open faces; the bounds of the solids and the field otherwise.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">show_boundaries=True</span></code> or <code class="docutils literal notranslate"><span class="pre">show_symmetry=True</span></code> to turn these overlays
+on initially, including in screenshots. Both are off by default and can
+be toggled independently in <em>Show</em>. A mirrored field still shows boundary
+conditions on the actually simulated mesh domain.</p>
 <p>Lengths are shown in millimetres (<code class="docutils literal notranslate"><span class="pre">scale_mm=False</span></code> for metres).  The
 projection is parallel, as in engineering drawings.</p>
 </section>
@@ -712,13 +719,26 @@ along that axis, and a side to remove.  In the widget it lives in the
 toolbar:</p>
 <ul class="simple">
 <li><p><strong>Cut</strong> — <code class="docutils literal notranslate"><span class="pre">off</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code>;</p></li>
-<li><p>the <strong>position slider</strong> across the domain extent;</p></li>
+<li><p>the <strong>position slider</strong> across the domain extent and a coordinate
+<strong>input field</strong> in the displayed unit;</p></li>
+<li><p><strong>− / +</strong> — previous or next mesh plane; in field views, previous or
+next recorded cell layer; without either, a small step across the extent;</p></li>
 <li><p><strong>Flip</strong> — remove the other half;</p></li>
 <li><p><strong>undo</strong> (last change) and <strong>reset</strong> (initial state);</p></li>
 <li><p><strong>Show</strong> — a menu of the object groups (solids, grid on cut, ports,
-lumped elements, wires, labels, symmetry planes, domain box); untick
+lumped elements, wires, labels, symmetry planes, boundary conditions,
+domain box); untick
 a group to hide it.</p></li>
 </ul>
+<p>The <strong>Solids</strong> submenu lists individual bodies under their geometry group
+paths, with a visibility checkbox for each body. Search matches body and
+group names; <strong>Show all</strong> and <strong>Hide all</strong> apply to every body, including
+those outside the search results. The global <em>Show → Solids</em> switch hides
+the group without forgetting the individual choices. Group paths survive
+project storage; older projects without this metadata list their bodies
+under <em>Ungrouped</em>. Bodies are selected only through this menu.</p>
+<p>Both toolbar rows wrap when the window is narrow. The arrow settings live
+in a submenu so the cutting plane and field selector remain accessible.</p>
 <p>Before the cut controls sit the camera buttons: reset, isometric view,
 a view along x, y or z, and the projection toggle (parallel, as the
 scene opens, or perspective).  Then a <strong>ruler</strong> (a measured box around
@@ -768,7 +788,7 @@ position slider walks that layer through the recorded volume.</p>
 <td><p>The exposed layer of cells, each coloured by the magnitude of <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code> (dark to bright) or by one signed component (<code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Hz</span></code>, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; <code class="docutils literal notranslate"><span class="pre">vmax=</span></code> fixes it.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Vectors</p></td>
-<td><p>For <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code>: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet’s scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;color&quot;</span></code> drops them, <code class="docutils literal notranslate"><span class="pre">arrow_color=</span></code> paints them one colour, <code class="docutils literal notranslate"><span class="pre">glyph=&quot;cone&quot;</span></code> draws cones and <code class="docutils literal notranslate"><span class="pre">glyph_width=</span></code> sets the thickness.</p></td>
+<td><p>For <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code>: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet’s scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;color&quot;</span></code> drops them, <code class="docutils literal notranslate"><span class="pre">arrow_color=</span></code> paints them one colour, <code class="docutils literal notranslate"><span class="pre">glyph=&quot;cone&quot;</span></code> draws cones and <code class="docutils literal notranslate"><span class="pre">glyph_width=</span></code> sets the thickness. <code class="docutils literal notranslate"><span class="pre">arrow_length=&quot;uniform&quot;</span></code> uses equal lengths; <code class="docutils literal notranslate"><span class="pre">arrow_scale=</span></code> multiplies the length in either mode. Zero vectors are never shown.</p></td>
 </tr>
 <tr class="row-even"><td><p>Metal</p></td>
 <td><p>With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code>, cells buried in a perfect conductor are cut out of the sheet, so the solids’ cut faces show through where no field is defined.</p></td>
@@ -804,6 +824,55 @@ the frames, labelled with index and eigenfrequency (degenerate pairs
 share the frequency, so the index leads), the amplitudes in arbitrary
 units; a complex Bloch mode is turned to the instant of its maximum
 energy first, the phase slider turns it from there.</p>
+<section id="colour-limits">
+<h3>Colour limits<a class="headerlink" href="#colour-limits" title="Link to this heading">#</a></h3>
+<p>The <strong>Colour scale</strong> submenu provides <strong>Minimum</strong> and <strong>Maximum</strong> in the
+selected field’s physical units. Enter both limits and press <strong>Apply</strong> or
+Enter; <strong>Automatic</strong> restores the peak over all recorded frames and layers
+(zero to peak for magnitudes, minus peak to peak for signed components).
+Manual settings are remembered separately for each selected field component
+while the viewer stays open.</p>
+<p>A strong local peak, for example near an edge, can hide the colour contrast
+of the region of interest. Lower <strong>Maximum</strong> to that region’s useful range:
+values above it saturate at the highest colour. This changes the display,
+not the recorded fields. <strong>Minimum</strong> sets the lower colour limit, not an
+arrow visibility cutoff. The upper limit also sets the magnitude-scaled
+arrow lengths, the relative arrow hiding threshold and relative isosurface
+levels; equal-length arrows retain their length. Fixed-colour arrows still
+use the upper limit for lengths and hiding.</p>
+<p>Initial limits can also be set in the public API:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">500.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The maximum must be finite, positive and greater than the minimum.
+Magnitudes require a nonnegative minimum; signed components permit negative
+and asymmetric limits. Invalid menu entries leave the current picture in
+place and show an explanation.</p>
+</section>
+<section id="arrow-readability">
+<h3>Arrow readability<a class="headerlink" href="#arrow-readability" title="Link to this heading">#</a></h3>
+<p>The <strong>Arrows</strong> submenu controls length (magnitude or equal lengths),
+length scale, thickness, density, the fraction of the colour ceiling below
+which vectors are hidden, and magnitude colouring versus a fixed colour.
+These settings apply to arrows on the cut and in the volume.</p>
+<p>Density counts samples along the longest axis, not across a narrow gap;
+the other axes keep approximately the same spatial spacing. Long, thin
+structures therefore need a higher density to show several rows across
+their width. The menu permits up to 200 samples on the longest axis (or
+an initially higher <code class="docutils literal notranslate"><span class="pre">density=</span></code>). Volume arrows grow cubically with density
+and can be expensive. These are display samples interpolated from the
+field; increasing density does not refine the simulation mesh.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">glyph_width</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+             <span class="n">arrow_length</span><span class="o">=</span><span class="s2">"uniform"</span><span class="p">,</span> <span class="n">arrow_scale</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+             <span class="n">arrow_color</span><span class="o">=</span><span class="s2">"blue"</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.005</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Equal lengths make directions easier to read while magnitude colouring
+can retain the strength information. With a fixed colour, strength is no
+longer encoded by the arrows in this mode. <code class="docutils literal notranslate"><span class="pre">threshold=0</span></code> retains every
+nonzero vector. In the default magnitude mode, the minimum length remains
+30 % of the lattice spacing for readability.</p>
+</section>
 </section>
 <section id="fields-in-the-volume">
 <h2>Fields in the volume<a class="headerlink" href="#fields-in-the-volume" title="Link to this heading">#</a></h2>
@@ -996,7 +1065,11 @@ loaded geometry.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-is-drawn">What is drawn</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-initial-camera">Setting the initial camera</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-cutting-plane">The cutting plane</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-on-the-cut">Fields on the cut</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-on-the-cut">Fields on the cut</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#colour-limits">Colour limits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#arrow-readability">Arrow readability</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-in-the-volume">Fields in the volume</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rendering-modes">Rendering modes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements">Requirements</a></li>

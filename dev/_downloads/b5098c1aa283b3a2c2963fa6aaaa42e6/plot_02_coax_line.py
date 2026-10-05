@@ -239,7 +239,7 @@ fig.tight_layout()
 
 analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 
-report = analysis.solve_ports()["port1"]
+report = analysis.solve_ports(["port1"])["port1"]
 print(report)
 
 z_num = report.z_line_num

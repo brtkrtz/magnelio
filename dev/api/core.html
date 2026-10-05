@@ -911,7 +911,7 @@ analysis.</p>
 <li><p><strong>f_axis</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Target frequencies [Hz], shape <code class="docutils literal notranslate"><span class="pre">(Nf,)</span></code>.  Strictly positive.
 Default: the constructor-derived axis (see the <code class="docutils literal notranslate"><span class="pre">f_axis</span></code>
 property).</p></li>
-<li><p><strong>excited</strong> (<em>iterable</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">[(port_name,</span> <span class="pre">mode_idx),</span> <span class="pre">...]</span></code> or a list of bare
+<li><p><strong>excited</strong> (<em>str</em><em> or </em><em>iterable</em><em>, </em><em>optional</em>) – A single port name (mode 0), <code class="docutils literal notranslate"><span class="pre">[(port_name,</span> <span class="pre">mode_idx),</span> <span class="pre">...]</span></code> or a list of bare
 <code class="docutils literal notranslate"><span class="pre">port_name</span></code> strings (mode 0 implied).  Default: the first
 port at mode 0.</p></li>
 <li><p><strong>accuracy</strong> (<em>{&quot;draft&quot;</em><em>, </em><em>&quot;normal&quot;</em><em>, </em><em>&quot;high&quot;}</em><em>, </em><em>default &quot;normal&quot;</em>) – Courant safety factor.</p></li>
@@ -1237,8 +1237,8 @@ same object <a class="reference internal" href="#magnelio.open_project" title="m
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.AnalysisTD.solve_ports">
-<span class="sig-name descname"><span class="pre">solve_ports</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.AnalysisTD.solve_ports" title="Link to this definition">#</a></dt>
-<dd><p>Solve every port’s 2D mode problem without a TD run.</p>
+<span class="sig-name descname"><span class="pre">solve_ports</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.AnalysisTD.solve_ports" title="Link to this definition">#</a></dt>
+<dd><p>Solve selected ports’ 2D mode problems without a TD run.</p>
 <p>Builds each port operator exactly as <a class="reference internal" href="#magnelio.AnalysisTD.run" title="magnelio.AnalysisTD.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a> would (same
 mesh, same material matrices, mode calculation at <code class="docutils literal notranslate"><span class="pre">f_max</span></code>)
 and returns its mode solution as a
@@ -1251,11 +1251,15 @@ the 3D time-domain simulation.</p>
 <p>Lumped ports appear with an empty mode tuple and
 <code class="docutils literal notranslate"><span class="pre">z_line_num</span> <span class="pre">=</span> <span class="pre">Z0</span></code>.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Keyed by port name, in <code class="docutils literal notranslate"><span class="pre">ports</span></code> order.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ports</strong> (<em>str</em><em> or </em><em>iterable</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Port names to solve, in the requested order. Omit to solve
+every port. Shared mesh preparation is still performed.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict[str, <a class="reference internal" href="ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport">PortReport</a>]</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keyed by port name, in selection order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, <a class="reference internal" href="ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport">PortReport</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1665,7 +1669,8 @@ already ends at the symmetry plane, declare it without clipping:
 shapes on insertion (recursively for nested Groups), so the
 mesher, material filling and overlap layers only ever see leaf
 shapes.  Lists/tuples are added element-wise, and may themselves
-contain Groups.</p>
+contain Groups. Group names are retained for the viewer’s
+body list while the solver geometry remains flat.</p>
 <p>Every shape entering the model must carry a material: a
 material-less shape is a construction body (a Boolean operand or
 an extrusion profile), not a physical object, and is rejected

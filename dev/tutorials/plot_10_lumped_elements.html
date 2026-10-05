@@ -778,7 +778,7 @@ lossless PEC anyway.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 95 x 17 x 58 = 93,670 cells | 28 MiB (0.6 s total)
+  mesh | 95 x 17 x 58 = 93,670 cells | 28 MiB (0.8 s total)
 grid: 95 x 17 x 58 cells
 </pre></div>
 </div>
@@ -799,7 +799,7 @@ circuit and are not terminated by the single-mode ports, so we stop
 the analysis at 9 GHz — from DC up to a safe margin below that
 ceiling.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">analysis</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="w">
-</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.AnalysisTD.solve_ports" title="magnelio.AnalysisTD.solve_ports"><span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span></a><span class="p">(</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.AnalysisTD.solve_ports" title="magnelio.AnalysisTD.solve_ports"><span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span></a><span class="p">(</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/ports.html#magnelio.ports.PortReport" title="magnelio.ports.PortReport"><span class="n">report</span></a><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — 1 mode(s)
@@ -915,7 +915,7 @@ package-mode band ceiling, and the passive <code class="docutils literal notrans
 doing what only a resistor can do for a divider.  The copper is
 still perfect and the substrate loss-free — making them real is the
 next tutorial’s subject.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 55.072 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 13.869 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-10-lumped-elements-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/83a73d9af24641f40003456f8a59fbb5/plot_10_lumped_elements.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_10_lumped_elements.ipynb</span></code></a></p>

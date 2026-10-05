@@ -45,8 +45,14 @@ other editor REPLs whose kernels cannot identify their frontend.
 | Thin wires | Tubes in the wire colour. |
 | Discrete ports, lumped elements | Tubes between their two end points (red for ports, green for elements), with their name beside them. |
 | Waveguide ports | A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name written in the window's plane. |
-| Symmetry planes | Tinted sheets on the declared symmetry planes (`SymmetryPEC` blue, `SymmetryPMC` green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge. |
+| Boundary conditions | Initially hidden sheets on the domain faces: PEC blue, PMC green, CPML orange and periodic purple. Separate from symmetry planes in *Show*. With `mesh=`, the faces follow the mesh extent, including the absorbing buffer. |
+| Symmetry planes | Initially hidden tinted sheets on the declared symmetry planes (`SymmetryPEC` blue, `SymmetryPMC` green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge. |
 | Domain box | Outline of the computational domain — the grid extent when a mesh is given, including the absorbing buffer at open faces; the bounds of the solids and the field otherwise. |
+
+Use `show_boundaries=True` or `show_symmetry=True` to turn these overlays
+on initially, including in screenshots. Both are off by default and can
+be toggled independently in *Show*. A mirrored field still shows boundary
+conditions on the actually simulated mesh domain.
 
 Lengths are shown in millimetres (`scale_mm=False` for metres).  The
 projection is parallel, as in engineering drawings.
@@ -98,12 +104,27 @@ along that axis, and a side to remove.  In the widget it lives in the
 toolbar:
 
 - **Cut** — `off`, `x`, `y`, `z`;
-- the **position slider** across the domain extent;
+- the **position slider** across the domain extent and a coordinate
+  **input field** in the displayed unit;
+- **− / +** — previous or next mesh plane; in field views, previous or
+  next recorded cell layer; without either, a small step across the extent;
 - **Flip** — remove the other half;
 - **undo** (last change) and **reset** (initial state);
 - **Show** — a menu of the object groups (solids, grid on cut, ports,
-  lumped elements, wires, labels, symmetry planes, domain box); untick
+  lumped elements, wires, labels, symmetry planes, boundary conditions,
+  domain box); untick
   a group to hide it.
+
+The **Solids** submenu lists individual bodies under their geometry group
+paths, with a visibility checkbox for each body. Search matches body and
+group names; **Show all** and **Hide all** apply to every body, including
+those outside the search results. The global *Show → Solids* switch hides
+the group without forgetting the individual choices. Group paths survive
+project storage; older projects without this metadata list their bodies
+under *Ungrouped*. Bodies are selected only through this menu.
+
+Both toolbar rows wrap when the window is narrow. The arrow settings live
+in a submenu so the cutting plane and field selector remain accessible.
 
 Before the cut controls sit the camera buttons: reset, isometric view,
 a view along x, y or z, and the projection toggle (parallel, as the
@@ -151,7 +172,7 @@ eigen.show(mode=2, glyph="cone")                # starting at mode 2, cones inst
 | Item | Appearance |
 |---|---|
 | Field sheet | The exposed layer of cells, each coloured by the magnitude of `E` or `H` (dark to bright) or by one signed component (`Ex`, `Hz`, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; `vmax=` fixes it. |
-| Vectors | For `E` or `H`: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet's scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; `plot_type="color"` drops them, `arrow_color=` paints them one colour, `glyph="cone"` draws cones and `glyph_width=` sets the thickness. |
+| Vectors | For `E` or `H`: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet's scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; `plot_type="color"` drops them, `arrow_color=` paints them one colour, `glyph="cone"` draws cones and `glyph_width=` sets the thickness. `arrow_length="uniform"` uses equal lengths; `arrow_scale=` multiplies the length in either mode. Zero vectors are never shown. |
 | Metal | With `mesh=`, cells buried in a perfect conductor are cut out of the sheet, so the solids' cut faces show through where no field is defined. |
 | Grid | With `mesh=` and `show_grid=True`, the grid cells are drawn on the cut under the field.  A mirrored field has no grid — the mesh covers the modelled part only — and says so; `mirror=False` brings it back. |
 | Symmetry | With `mesh=` (an eigenmode result brings its own), a field recorded behind the model's symmetry planes is continued across them with the parity of each component, so the picture is the whole model like every other field plot; `mirror=False` shows the modelled part.  A region that stops short of a plane is not mirrored across it. |
@@ -177,6 +198,62 @@ the frames, labelled with index and eigenfrequency (degenerate pairs
 share the frequency, so the index leads), the amplitudes in arbitrary
 units; a complex Bloch mode is turned to the instant of its maximum
 energy first, the phase slider turns it from there.
+
+### Colour limits
+
+The **Colour scale** submenu provides **Minimum** and **Maximum** in the
+selected field's physical units. Enter both limits and press **Apply** or
+Enter; **Automatic** restores the peak over all recorded frames and layers
+(zero to peak for magnitudes, minus peak to peak for signed components).
+Manual settings are remembered separately for each selected field component
+while the viewer stays open.
+
+A strong local peak, for example near an edge, can hide the colour contrast
+of the region of interest. Lower **Maximum** to that region's useful range:
+values above it saturate at the highest colour. This changes the display,
+not the recorded fields. **Minimum** sets the lower colour limit, not an
+arrow visibility cutoff. The upper limit also sets the magnitude-scaled
+arrow lengths, the relative arrow hiding threshold and relative isosurface
+levels; equal-length arrows retain their length. Fixed-colour arrows still
+use the upper limit for lengths and hiding.
+
+Initial limits can also be set in the public API:
+
+```python
+monitor.show("E", mesh=mesh, vmin=0.0, vmax=500.0)
+```
+
+The maximum must be finite, positive and greater than the minimum.
+Magnitudes require a nonnegative minimum; signed components permit negative
+and asymmetric limits. Invalid menu entries leave the current picture in
+place and show an explanation.
+
+### Arrow readability
+
+The **Arrows** submenu controls length (magnitude or equal lengths),
+length scale, thickness, density, the fraction of the colour ceiling below
+which vectors are hidden, and magnitude colouring versus a fixed colour.
+These settings apply to arrows on the cut and in the volume.
+
+Density counts samples along the longest axis, not across a narrow gap;
+the other axes keep approximately the same spatial spacing. Long, thin
+structures therefore need a higher density to show several rows across
+their width. The menu permits up to 200 samples on the longest axis (or
+an initially higher `density=`). Volume arrows grow cubically with density
+and can be expensive. These are display samples interpolated from the
+field; increasing density does not refine the simulation mesh.
+
+```python
+monitor.show("E", mesh=mesh, density=120, glyph_width=2.0,
+             arrow_length="uniform", arrow_scale=0.8,
+             arrow_color="blue", threshold=0.005)
+```
+
+Equal lengths make directions easier to read while magnitude colouring
+can retain the strength information. With a fixed colour, strength is no
+longer encoded by the arrows in this mode. `threshold=0` retains every
+nonzero vector. In the default magnitude mode, the minimum length remains
+30 % of the lattice spacing for readability.
 
 ## Fields in the volume
 
