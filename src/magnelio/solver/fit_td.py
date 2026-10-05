@@ -15,6 +15,7 @@ See spec.md for the FIT update equations.
 from __future__ import annotations
 
 import itertools
+import math
 import time
 import warnings
 from dataclasses import dataclass, field, replace
@@ -209,6 +210,10 @@ class FITTimeDomainSolver:
     dt: float = 1e-12
     verbose: bool = True
     energy_stop_db: float | None = None
+    # DD-282: absolute completed-step guard for finite excitations. The
+    # analysis supplies the latest resolved source end, including delays
+    # and synthesised drive buffers. None retains the low-level behaviour.
+    energy_stop_min_steps: int | None = None
     # Stop when every modal port's |V| envelope (windowed max between
     # checks — zero-crossing-proof) has decayed by this many dB below its
     # run peak (DD-096).  The robust termination for shielded lossless
@@ -711,6 +716,16 @@ class FITTimeDomainSolver:
             if hasattr(src, "attach"):
                 src.attach(self)
 
+        # DD-282: only attached sources know spatial retardation on their
+        # actual injection patches. Extend the analysis guard, also on resume.
+        if self.energy_stop_min_steps is not None:
+            for src in self.sources:
+                end = getattr(src, "_excitation_end_time", lambda: 0.0)()
+                self.energy_stop_min_steps = max(self.energy_stop_min_steps, math.ceil(end / dt))
+            self.port_signal_min_steps = max(
+                self.port_signal_min_steps or 0, self.energy_stop_min_steps
+            )
+
         # A source may have written an initial field into the state.  The
         # modal ports difference their plane against the previous step, so
         # they must capture that field once before the first one — with
@@ -1210,25 +1225,74 @@ class FITTimeDomainSolver:
                     current_energy = 0.5 * (energy_E + energy_HH)
                 energy_trace.append((n, current_energy))
 
-                # Stream the newly recorded V/I tail + this energy sample
-                # to the project store (DD-070); a separate reader process
-                # follows the run live via HDF5-SWMR.
-                if self.sink is not None:
-                    self.sink.flush(energy=(n, n * dt, current_energy))
-
                 if current_energy > peak_energy:
                     peak_energy = current_energy
                     energy_falling = False
                     if energy_stop is not None:
                         energy_threshold = peak_energy * 10 ** (-energy_stop / 10)
                 elif peak_energy > 0.0:
-                    if not energy_falling:
-                        energy_falling = True
+                    energy_falling = True
 
-                    # Early stopping
-                    if energy_stop is not None and current_energy < energy_threshold:
-                        self._stop_reason = "energy"
-                        self._final_signal_db = last_sig_db
+                # DD-282: poll before an energy return and persist the current
+                # peaks before a flush can write a continuation checkpoint.
+                signal_falling = False
+                if signal_stop is not None:
+                    sig = max(op.poll_signal_absmax() for op in signal_ports)
+                    if sig > peak_signal:
+                        peak_signal = sig
+                        last_sig_db = 0.0
+                        if stall is not None:
+                            stall.reset()
+                    elif peak_signal > 0.0:
+                        last_sig_db = 20.0 * np.log10(max(sig, 1e-300) / peak_signal)
+                        signal_falling = True
+                self._peak_energy = peak_energy
+                self._peak_signal = peak_signal
+                if self.sink is not None:
+                    self.sink.flush(energy=(n, n * dt, current_energy))
+
+                # Early stopping
+                if (
+                    energy_stop is not None
+                    and peak_energy > 0.0
+                    and current_energy < energy_threshold
+                    and (self.energy_stop_min_steps is None or n + 1 >= self.energy_stop_min_steps)
+                ):
+                    self._stop_reason = "energy"
+                    self._final_signal_db = last_sig_db
+                    self._peak_energy = peak_energy
+                    self._peak_signal = peak_signal
+                    self._actual_steps = n + 1
+                    self._resume_step = n + 1
+                    self._energy_trace = self._build_energy_trace(
+                        energy_trace,
+                        dt,
+                    )
+                    if self.verbose:
+                        energy_db = 10 * np.log10(max(current_energy, 1e-300) / peak_energy)
+                        rep.final(
+                            self._status_line(
+                                n + 1,
+                                total_str,
+                                n_steps,
+                                f"energy {energy_db:.1f}/{-energy_stop:.0f} dB",
+                                done="energy criterion",
+                            )
+                        )
+                    for mon in self.monitors:
+                        if hasattr(mon, "finalize"):
+                            mon.finalize()
+                    if self.sink is not None:
+                        self.sink.flush()  # final V/I tail past last check
+                    return fields
+
+                # Energy retains precedence when both criteria are satisfied.
+                if signal_falling:
+                    sig_db = last_sig_db
+                    armed = signal_min_steps is None or n + 1 >= signal_min_steps
+                    if armed and sig < peak_signal * 10.0 ** (-signal_stop / 20.0):
+                        self._stop_reason = "port_signal"
+                        self._final_signal_db = sig_db
                         self._peak_energy = peak_energy
                         self._peak_signal = peak_signal
                         self._actual_steps = n + 1
@@ -1238,120 +1302,76 @@ class FITTimeDomainSolver:
                             dt,
                         )
                         if self.verbose:
-                            energy_db = 10 * np.log10(max(current_energy, 1e-300) / peak_energy)
                             rep.final(
                                 self._status_line(
                                     n + 1,
                                     total_str,
                                     n_steps,
-                                    f"energy {energy_db:.1f}/{-energy_stop:.0f} dB",
-                                    done="energy criterion",
+                                    f"port signal {sig_db:.1f}/{-signal_stop:.0f} dB",
+                                    done="port-signal criterion",
                                 )
                             )
                         for mon in self.monitors:
                             if hasattr(mon, "finalize"):
                                 mon.finalize()
                         if self.sink is not None:
-                            self.sink.flush()  # final V/I tail past last check
+                            self.sink.flush()
                         return fields
-
-                # Port-signal stop (DD-096): the polled value is the
-                # per-channel |V| envelope over the steps since the
-                # last check, so a zero crossing at poll time cannot
-                # fake a decayed signal.
-                if signal_stop is not None:
-                    sig = max(op.poll_signal_absmax() for op in signal_ports)
-                    if sig > peak_signal:
-                        peak_signal = sig
-                        last_sig_db = 0.0
-                        if stall is not None:
-                            stall.reset()
-                    elif peak_signal > 0.0:
-                        sig_db = 20.0 * np.log10(max(sig, 1e-300) / peak_signal)
-                        last_sig_db = sig_db
-                        armed = signal_min_steps is None or n + 1 >= signal_min_steps
-                        if armed and sig < peak_signal * 10.0 ** (-signal_stop / 20.0):
-                            self._stop_reason = "port_signal"
-                            self._final_signal_db = sig_db
-                            self._peak_energy = peak_energy
-                            self._peak_signal = peak_signal
-                            self._actual_steps = n + 1
-                            self._resume_step = n + 1
-                            self._energy_trace = self._build_energy_trace(
-                                energy_trace,
-                                dt,
-                            )
-                            if self.verbose:
-                                rep.final(
-                                    self._status_line(
-                                        n + 1,
-                                        total_str,
-                                        n_steps,
-                                        f"port signal {sig_db:.1f}/{-signal_stop:.0f} dB",
-                                        done="port-signal criterion",
-                                    )
+                    # Stall watchdog (DD-122): the criterion did not
+                    # fire — check whether its threshold is provably
+                    # out of reach before the runtime cap (band-edge
+                    # plateaus decay algebraically and hold the
+                    # envelope just above the threshold forever).
+                    if armed and stall is not None and stall.observe(n, sig_db, -signal_stop):
+                        self._stop_reason = "port_signal_stall"
+                        self._final_signal_db = sig_db
+                        self._peak_energy = peak_energy
+                        self._peak_signal = peak_signal
+                        self._actual_steps = n + 1
+                        self._resume_step = n + 1
+                        self._energy_trace = self._build_energy_trace(
+                            energy_trace,
+                            dt,
+                        )
+                        slope_window = (
+                            (stall.slope_db_per_step or 0.0) * stall.window * check_interval
+                        )
+                        warnings.warn(
+                            f"port-signal stop criterion "
+                            f"({-signal_stop:.0f} dB below peak) is "
+                            f"unreachable before the runtime cap: the "
+                            f"|V| envelope has stalled at {sig_db:.1f} dB "
+                            f"(decaying {slope_window:.2e} dB over the "
+                            f"last {stall.window * check_interval} "
+                            f"steps) — typically band-edge content near "
+                            f"a waveguide cut-off, which decays "
+                            f"algebraically rather than exponentially.  "
+                            f"Accepting the stall level as the "
+                            f"effective floor and stopping at step "
+                            f"{n + 1}.  The recorded signals carry a "
+                            f"truncation residual of about this level "
+                            f"(taper_signals=True bounds its spectral "
+                            f"leakage); raise max_time_steps or pass "
+                            f"total_time_steps to march further.",
+                            RuntimeWarning,
+                            stacklevel=2,
+                        )
+                        if self.verbose:
+                            rep.final(
+                                self._status_line(
+                                    n + 1,
+                                    total_str,
+                                    n_steps,
+                                    f"port signal {sig_db:.1f}/{-signal_stop:.0f} dB",
+                                    done="port signal stalled",
                                 )
-                            for mon in self.monitors:
-                                if hasattr(mon, "finalize"):
-                                    mon.finalize()
-                            if self.sink is not None:
-                                self.sink.flush()
-                            return fields
-                        # Stall watchdog (DD-122): the criterion did not
-                        # fire — check whether its threshold is provably
-                        # out of reach before the runtime cap (band-edge
-                        # plateaus decay algebraically and hold the
-                        # envelope just above the threshold forever).
-                        if armed and stall is not None and stall.observe(n, sig_db, -signal_stop):
-                            self._stop_reason = "port_signal_stall"
-                            self._final_signal_db = sig_db
-                            self._peak_energy = peak_energy
-                            self._peak_signal = peak_signal
-                            self._actual_steps = n + 1
-                            self._resume_step = n + 1
-                            self._energy_trace = self._build_energy_trace(
-                                energy_trace,
-                                dt,
                             )
-                            slope_window = (
-                                (stall.slope_db_per_step or 0.0) * stall.window * check_interval
-                            )
-                            warnings.warn(
-                                f"port-signal stop criterion "
-                                f"({-signal_stop:.0f} dB below peak) is "
-                                f"unreachable before the runtime cap: the "
-                                f"|V| envelope has stalled at {sig_db:.1f} dB "
-                                f"(decaying {slope_window:.2e} dB over the "
-                                f"last {stall.window * check_interval} "
-                                f"steps) — typically band-edge content near "
-                                f"a waveguide cut-off, which decays "
-                                f"algebraically rather than exponentially.  "
-                                f"Accepting the stall level as the "
-                                f"effective floor and stopping at step "
-                                f"{n + 1}.  The recorded signals carry a "
-                                f"truncation residual of about this level "
-                                f"(taper_signals=True bounds its spectral "
-                                f"leakage); raise max_time_steps or pass "
-                                f"total_time_steps to march further.",
-                                RuntimeWarning,
-                                stacklevel=2,
-                            )
-                            if self.verbose:
-                                rep.final(
-                                    self._status_line(
-                                        n + 1,
-                                        total_str,
-                                        n_steps,
-                                        f"port signal {sig_db:.1f}/{-signal_stop:.0f} dB",
-                                        done="port signal stalled",
-                                    )
-                                )
-                            for mon in self.monitors:
-                                if hasattr(mon, "finalize"):
-                                    mon.finalize()
-                            if self.sink is not None:
-                                self.sink.flush()
-                            return fields
+                        for mon in self.monitors:
+                            if hasattr(mon, "finalize"):
+                                mon.finalize()
+                        if self.sink is not None:
+                            self.sink.flush()
+                        return fields
 
                 # Status display: absolute stored energy while the system
                 # is still filling, decay in dB below the run peak once

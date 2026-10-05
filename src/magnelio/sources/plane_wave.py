@@ -214,6 +214,18 @@ class SourcePlaneWave(SourceFieldIncident):
 
     # ── TF/SF injection ───────────────────────────────────────────────────
 
+    def _excitation_end_time(self) -> float:
+        # Spatial retardation can put a translated TF/SF box well after
+        # the scalar drive. Include every attached Yee face and its clock.
+        end = super()._excitation_end_time()
+        if end == 0.0:
+            return end
+        retardation = max(
+            (float(self._xp.max(p[2])) for p in (*self._patches_E, *self._patches_H)),
+            default=0.0,
+        )
+        return end + max(0.0, retardation) + self._dt / 2
+
     def _apply(self, patches, fields, t: float) -> None:
         """Add every face correction at time level *t*."""
         for comp, index, delay, coef in patches:

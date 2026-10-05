@@ -23728,3 +23728,122 @@ Browser checks and test/build outputs are recorded in
 
 **Documentation.** `docs/methods/ports.md`, `docs/methods/viewer.md` and Tutorials
 02/03/04/10 cover the selected solves, phase/time plots and viewer controls.
+
+## DD-281 — Gaussian upper-edge attenuation and shorter initial delay
+
+**Date:** 2026-10-05
+**Status:** Accepted (developer approved; merged to main, unreleased).
+
+**Decision.** `WaveformGaussian` and `WaveformGaussianModulated` accept the
+keyword-only positive finite `edge_attenuation_db`, default 25 dB. It specifies
+`|G(f_max)|/|G(f_ref)| = 10^(-D/20)` for the ideal continuous spectrum;
+`f_ref=0` for baseband and the carrier centre for modulation. The real
+modulated pulse includes both mirrored lobes. Width is solved once during
+construction with a dimensionless scalar root and a cancellation-safe
+log attenuation; scalar and array evaluation use cached parameters.
+
+The envelope is `exp(-((t-peak_time)/tau)^2)`, with new-pulse
+`peak_time=4.5*tau` and effective `t_end=9*tau`. Read-only `tau` and
+`peak_time` expose physical timing. Endpoint envelope is about 1.6e-9;
+evaluation continues along the Gaussian tail. Duration estimates and caps
+already consume waveform.t_end, so no independent period-count heuristic
+is introduced. Baseband and modulated shapes retain their distinct meanings
+when the lower edge tends to DC; overlap strengthens the lower edge.
+
+**Rationale and limits.** The earlier 2*pi-tau initial margin delayed usable
+excitation unnecessarily. A defined spectral edge makes pulse width
+consistent across the two classes. Independent quadrature, sampling and
+60 private field probes support 4.5 tau and the 25 dB compromise.
+Attenuation controls excitation coverage, not a guaranteed S-parameter
+error. Automatic energy/voltage OR termination and cutoff-record error
+remain separate concerns; requiring both criteria would revive the trapped
+port-invisible energy problem of DD-096/DD-114. DD-282 subsequently resolves
+the separate diagnostic defect KB-050.
+
+**Persistence.** Recipes store resolved `tau`, `peak_time` and attenuation.
+Old Gaussian records lacking all three reconstruct the original
+`tau=2/(pi*bandwidth)`, `peak_time=4/bandwidth`; partial metadata is rejected.
+Stored values are restored exactly rather than recomputed. Scattering
+resume binds the run's resolved excitation, including old automatic pulses
+whose analysis-level recipe contains waveform=None. This is additive
+metadata within the supported store schema; no schema or release change.
+
+**Validation.** `test_waveforms.py` checks full-spectrum edges near DC and
+on narrow bands, independent time quadrature, parameter rejection and
+cached evaluation. `test_resume_recipe.py` pins legacy sample identity and
+resolved-value round trips. `test_resume_api.py` verifies bit-identical
+continuation during an old automatic pulse, plus current/default and
+nondefault pulses. Propagation/source tests use reported peak times.
+Six production GPU probes reproduce the earlier 25 dB candidate signals;
+CuPy array dispatch is checked in both precisions. Detailed evidence and
+private probes: `investigations/pulse-defaults/IMPLEMENTATION.md` (internal
+record). Public explanation and use: `docs/methods/sources-monitors.md`
+and Tutorial 03.
+
+**Termination follow-up (2026-10-05).** Nine additional GPU runs and
+delayed-drive controls separate source completion from response convergence.
+Energy stopping can discard a later scheduled drive (KB-051); a source-end
+guard is warranted independently of a spectral accuracy target. The
+90/80 dB energy/port pair improves measured records but still leaves
+2.62e-3 complex error at 1.01 waveguide cutoff. Three short-window spectral
+deltas can underestimate error by almost twelvefold. Four plateau/transit
+gates pass; the plateau test now activates the actual 70 dB energy
+criterion and asserts a port stop. This initial investigation left
+termination unchanged; DD-282 implements the subsequent corrections.
+Evidence: `investigations/termination-accuracy/MEASUREMENTS.md` and
+`DERIVATION.md` (internal record).
+
+---
+
+## DD-282: Finite-excitation arming and current decay diagnostics
+
+**Date:** 2026-10-05. **Status:** merged to main,
+unreleased. Resolves KB-050 and KB-051; follows DD-281.
+
+**Decision.** High-level runs guard energy decay by the latest nominal
+finite excitation end, including effective delay and any finite synthesized
+port-source buffer. The guard counts absolute completed steps, so continued
+runs retain the original excitation schedule. Attached plane-wave sources
+extend it by spatial retardation on their actual TF/SF injection patches
+and the Yee clock offset. Port stopping retains the larger transit guard.
+Explicit duration and runtime caps remain independent bounds. Low-level
+solvers without this optional guard retain their previous semantics.
+
+Poll the current modal-voltage interval before either decay decision and
+persist current energy/voltage peaks before a checkpoint flush. Modal port
+state also stores the pending interval maximum; older states without it
+load with an empty pending interval. The reported energy-stop diagnostic
+now corresponds to the final checked interval. Preserve energy/port OR:
+port-invisible trapped energy must still permit a port stop.
+
+**Evidence.** A delayed second drive was previously discarded at 0.555 ns,
+before its 1.5 ns delay. Guarded runs record it fully and match fixed-step
+controls and checkpoint continuation bit-identically. In the narrower-band
+waveguide, the guarded CuPy FP64 run reaches 5.591 ns (2801 steps), beyond
+the 5.417 ns source end, and complex discrete-line S21 error falls from
+8.69e-4 to 2.4066e-5. Three CuPy FP32 fixtures already completing their drives
+retain identical S-parameters and step counts. Their diagnostics agree with
+the final recorded interval within 7e-8 dB.
+
+**Accuracy limits and next strategy.** Neither decay threshold bounds the
+omitted Fourier integral. Growing-window comparisons improve the recorded
+line cases but still falsely accept a passive 8 GHz, 50 us lifetime
+resonance: observed change 3.21e-5 versus actual complex error 0.499946.
+This analytic control refutes a general accuracy claim, not the field march.
+Keep 70/60 dB defaults for now; plan an observed-convergence diagnostic
+with per-frequency normalization, a declared physical observation horizon
+and explicit insufficient-information status. No automatic S-accuracy
+criterion or implicit extrapolation is introduced.
+
+**Validation and provenance.** `tests/integration/test_termination.py`
+covers delayed drives, active pulses, explicit bounds, continuation,
+translated plane-wave retardation, current diagnostics and checkpoint
+peaks. `test_fit_td.py` pins absolute arming, `test_modal_operator.py`
+preserves pending interval state and legacy loading. Focused termination,
+lossy/dispersive source, trapped-energy and synthesized-band checks pass;
+general-source and plane-wave field gates also pass. Methods documentation
+explains completion guards and finite-record accuracy limits. Scripts
+`check_fixed_results.py` and `study_spectral_gate.py`, measurements,
+acceptance and strategy live in `investigations/termination-accuracy/`
+(internal dossier), especially `IMPLEMENTATION.md` and
+`SPECTRAL_STRATEGY.md` (internal records).

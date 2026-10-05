@@ -74,7 +74,7 @@ class TestExcitationBinding:
         w = WaveformGaussian(f_max=5e9)
         pw.set_excitation(w, amplitude=2.5, delay=1e-10)
         assert pw.waveform is w
-        t0 = 4.0 / 5e9
+        t0 = pw.waveform.peak_time
         assert pw._drive(t0 + 1e-10) == pytest.approx(2.5)
         assert pw._drive(t0) == pytest.approx(2.5 * w(t0 - 1e-10))
 
@@ -174,7 +174,7 @@ class TestIncidentField:
 
     def test_E_along_polarisation(self):
         pw = self._make_attached()
-        t0 = 4.0 / 5e9  # peak of Gaussian
+        t0 = pw.waveform.peak_time  # peak of Gaussian
         r = np.array([3e-3, 3e-3, 0.0])
         E = pw.incident_E(r, t0)
         # Must point in x direction only
@@ -184,13 +184,13 @@ class TestIncidentField:
 
     def test_amplitude_scales_the_field(self):
         pw = self._make_attached(amp=2.5)
-        t0 = 4.0 / 5e9
+        t0 = pw.waveform.peak_time
         r = np.array([3e-3, 3e-3, 0.0])
         assert pw.incident_E(r, t0)[0] == pytest.approx(2.5)
 
     def test_H_perpendicular(self):
         pw = self._make_attached()
-        t0 = 4.0 / 5e9
+        t0 = pw.waveform.peak_time
         r = np.array([3e-3, 3e-3, 0.0])
         E = pw.incident_E(r, t0)
         H = pw.incident_H(r, t0)
@@ -201,7 +201,7 @@ class TestIncidentField:
 
     def test_impedance_ratio(self):
         pw = self._make_attached()
-        t0 = 4.0 / 5e9
+        t0 = pw.waveform.peak_time
         r = np.array([3e-3, 3e-3, 0.0])
         E = pw.incident_E(r, t0)
         H = pw.incident_H(r, t0)
@@ -211,7 +211,7 @@ class TestIncidentField:
     def test_retardation(self):
         """Field at distance d is delayed by d/c₀."""
         pw = self._make_attached()
-        t0 = 4.0 / 5e9
+        t0 = pw.waveform.peak_time
         r0 = np.array([3e-3, 3e-3, 0.0])
         d = 1e-3
         r1 = r0 + np.array([0, 0, d])

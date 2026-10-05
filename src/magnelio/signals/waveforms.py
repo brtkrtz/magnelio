@@ -10,23 +10,24 @@ ports or sources.
 
 Convention of the Gaussian family (unit peak):
 
-    bandwidth = f_max - f_min   (or f_max when f_min = 0)
-    sigma     = 2 / (pi * bandwidth)
-    t0        = 4 / bandwidth
+    envelope  = exp(-((t - peak_time) / tau)**2)
+    peak_time = 4.5 * tau
+    t_end     = 9 * tau
 
-Choosing the bandwidth from the actual passband ``[f_min, f_max]``
-keeps the Gaussian envelope spectrally tight: a coax → rectangular-
-waveguide junction with WR-90 cut-off (6.56 GHz) and excitation
-[8.2, 12.4] GHz stays comfortably above the cut-off, while a ``[0,
-f_max]`` pulse would leak ~50 % of its energy below the cut-off →
-total reflection → slow Mur-ABC ringing.
+The width follows the requested upper-edge spectral attenuation,
+25 dB by default, relative to DC or the carrier-centre spectrum.
+The modulated pulse includes both mirrored spectral lobes in this
+definition. Its lower edge can be more strongly excited near DC.
+Choosing the actual passband reduces unwanted below-cutoff content;
+Gaussian pulses have spectral tails rather than a strict band limit.
 
 The module-level functions ``gaussian``, ``modulated_gaussian`` and
-``waveform_for_mode`` are the internal closed forms the classes wrap;
-they are not part of the public surface.
+``waveform_for_mode`` are internal default-pulse helpers. Production
+drives retain waveform objects with cached width and timing; the
+helpers are not part of the public surface.
 """
 
-# Design: DD-224 (the excitation triad Source / Waveform / Excitation).
+# Design: DD-224 (the excitation triad), DD-281 (Gaussian spectral edges).
 
 from __future__ import annotations
 
@@ -37,6 +38,7 @@ from dataclasses import field as dc_field
 from typing import Callable
 
 import numpy as np
+from scipy.optimize import brentq
 
 from magnelio.signals.signal_1d import Signal1D
 
@@ -57,24 +59,53 @@ def _is_array(t) -> bool:
     return getattr(t, "ndim", 0) > 0
 
 
-def gaussian(t: float | np.ndarray, f_max: float) -> float | np.ndarray:
-    """Plain Gaussian pulse, peak = 1 at t0 = 4/f_max.
-
-    Suitable for TEM modes (DC-inclusive).
-
-    Parameters
-    ----------
-    t : float or np.ndarray
-        Time [s].
-    f_max : float
-        Bandwidth [Hz].
-    """
-    sigma = 2.0 / (math.pi * f_max)
-    t0 = 4.0 / f_max
-    x = (t - t0) / sigma
+def _gaussian_value(t, tau: float, peak_time: float, f_center: float | None = None):
+    """Evaluate cached pulse parameters, preserving NumPy/CuPy dispatch."""
+    x = (t - peak_time) / tau
     if _is_array(t):
-        return np.exp(-x * x)
-    return math.exp(-x * x)
+        value = np.exp(-x * x)
+        return (
+            value
+            if f_center is None
+            else value * np.cos(2.0 * math.pi * f_center * (t - peak_time))
+        )
+    value = math.exp(-x * x)
+    return (
+        value if f_center is None else value * math.cos(2.0 * math.pi * f_center * (t - peak_time))
+    )
+
+
+def _modulated_edge_log(k: float, m: float) -> float:
+    """Log attenuation of the full real-pulse spectrum at its upper edge.
+
+    k = pi*tau*bandwidth/2, m = (f_max+f_min)/bandwidth.
+    expm1 avoids cancellation at small requested attenuation.
+    """
+    square = k * k
+    mirror = math.exp(-4.0 * m * m * square)
+    correction = mirror / (1.0 + mirror) * math.expm1(-4.0 * m * square)
+    return square - math.log1p(correction)
+
+
+def _modulated_tau(f_min: float, f_max: float, attenuation_db: float) -> float:
+    width = f_max - f_min
+    m = f_max / width + f_min / width
+    log_attenuation = attenuation_db * (math.log(10.0) / 20.0)
+    scale = math.sqrt(log_attenuation)
+    # Solve once on construction; normalised roots also cover tiny dB values.
+    root = brentq(
+        lambda u: _modulated_edge_log(u * scale, m) / log_attenuation - 1.0,
+        0.0,
+        1.01,
+        xtol=1e-14,
+        rtol=1e-14,
+    )
+    return 2.0 * scale * root / (math.pi * width)
+
+
+def gaussian(t: float | np.ndarray, f_max: float) -> float | np.ndarray:
+    """Evaluate the default DC-inclusive Gaussian pulse."""
+    return WaveformGaussian(f_max)(t)
 
 
 def modulated_gaussian(
@@ -82,35 +113,8 @@ def modulated_gaussian(
     f_max: float,
     f_min: float,
 ) -> float | np.ndarray:
-    """Gaussian envelope modulated at the band center (f_min + f_max) / 2.
-
-    The envelope sigma scales with the passband bandwidth ``f_max -
-    f_min`` rather than ``f_max`` alone, so the spectrum is tightly
-    confined to [f_min, f_max] and almost nothing leaks below f_min.
-    This is what one wants when the lower edge is constrained — by a
-    waveguide cut-off frequency or by an explicit user-specified band.
-
-    Parameters
-    ----------
-    t : float or np.ndarray
-        Time [s].
-    f_max : float
-        Upper passband edge [Hz].
-    f_min : float
-        Lower passband edge [Hz].  Either an explicit user value or
-        the mode's cut-off frequency.
-    """
-    bandwidth = f_max - f_min
-    sigma = 2.0 / (math.pi * bandwidth)
-    t0 = 4.0 / bandwidth
-    x = (t - t0) / sigma
-    f_center = 0.5 * (f_min + f_max)
-
-    if _is_array(t):
-        env = np.exp(-x * x)
-        return env * np.cos(2.0 * math.pi * f_center * (t - t0))
-    env = math.exp(-x * x)
-    return env * math.cos(2.0 * math.pi * f_center * (t - t0))
+    """Evaluate the default Gaussian pulse on the band-centre carrier."""
+    return WaveformGaussianModulated(f_min, f_max)(t)
 
 
 def waveform_for_mode(
@@ -145,16 +149,8 @@ def waveform_for_mode(
     """
     eff_f_min = max(omega_c / (2.0 * math.pi), f_min)
     if eff_f_min <= 0.0:
-
-        def _waveform(t: float) -> float:
-            return float(gaussian(t, f_max))
-
-        return _waveform
-
-    def _waveform_mod(t: float) -> float:
-        return float(modulated_gaussian(t, f_max, eff_f_min))
-
-    return _waveform_mod
+        return WaveformGaussian(f_max)
+    return WaveformGaussianModulated(eff_f_min, f_max)
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -290,29 +286,57 @@ class Waveform(ABC):
 
 @dataclass(frozen=True)
 class WaveformGaussian(Waveform):
-    """Baseband Gaussian pulse (DC-inclusive), unit peak at ``t = 4 / f_max``.
+    """Baseband Gaussian pulse (DC-inclusive), with a specified spectral edge.
 
     The pulse for TEM and lumped ports and for any source that may
-    carry DC.  Its spectrum is a Gaussian of width ``f_max`` (the
-    ``e^{-4}`` point), so ``f_max`` is the useful upper band edge.
+    carry DC. The envelope is ``exp(-((t-peak_time)/tau)**2)``;
+    its peak is at ``4.5*tau`` and its effective duration at ``9*tau``.
 
     Parameters
     ----------
     f_max : float
         Upper band edge [Hz].
+    edge_attenuation_db : float, default 25.0
+        Positive spectral amplitude attenuation at ``f_max`` relative
+        to DC: ``|G(f_max)| / |G(0)| = 10**(-edge_attenuation_db/20)``.
+        Must be finite and strictly positive. Increasing it widens the
+        pulse in time and reduces excitation at the band edge.
+
+    Notes
+    -----
+    Waveforms restored from older projects retain their original width
+    and peak time. Read ``peak_time`` and ``t_end`` for their timing.
 
     Examples
     --------
     >>> from magnelio import signals
     >>> w = signals.WaveformGaussian(f_max=10e9)
-    >>> w(4.0 / 10e9)
+    >>> w(w.peak_time)
     1.0
     """
 
     f_max: float
+    edge_attenuation_db: float = dc_field(default=25.0, kw_only=True)
+    _tau: float = dc_field(init=False, repr=False)
+    _peak_time: float = dc_field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "f_max", _positive("f_max", self.f_max))
+        attenuation = _positive("edge_attenuation_db", self.edge_attenuation_db)
+        object.__setattr__(self, "edge_attenuation_db", attenuation)
+        tau = math.sqrt(attenuation * (math.log(10.0) / 20.0)) / (math.pi * self.f_max)
+        object.__setattr__(self, "_tau", _positive("tau", tau))
+        object.__setattr__(self, "_peak_time", _positive("peak_time", 4.5 * tau))
+
+    @property
+    def tau(self) -> float:
+        """Envelope time constant [s]; statistical standard deviation is tau/sqrt(2)."""
+        return self._tau
+
+    @property
+    def peak_time(self) -> float:
+        """Time of the unit peak [s]."""
+        return self._peak_time
 
     @property
     def f_min(self) -> float:
@@ -324,29 +348,27 @@ class WaveformGaussian(Waveform):
 
     @property
     def t_end(self) -> float:
-        """Twice the peak time — the pulse is below 1e-17 of its peak there."""
-        return 8.0 / self.f_max
+        """Effective duration [s]; the default endpoint envelope is about 1.6e-9."""
+        return 2.0 * self.peak_time
 
     def __call__(self, t):
-        return gaussian(t, self.f_max)
+        return _gaussian_value(t, self.tau, self.peak_time)
 
     def spectrum(self, f):
         f = np.asarray(f, dtype=float)
-        sigma = 2.0 / (math.pi * self.f_max)
-        t0 = 4.0 / self.f_max
-        env = sigma * math.sqrt(math.pi) * np.exp(-((math.pi * sigma * f) ** 2))
-        return env * np.exp(-2j * math.pi * f * t0)
+        env = self.tau * math.sqrt(math.pi) * np.exp(-((math.pi * self.tau * f) ** 2))
+        return env * np.exp(-2j * math.pi * f * self.peak_time)
 
 
 @dataclass(frozen=True)
 class WaveformGaussianModulated(Waveform):
     """Gaussian envelope on a carrier at the band center, unit peak.
 
-    The band-limited pulse for TE/TM modes and any drive whose lower
-    band edge matters: the envelope's sigma follows the passband
-    ``f_max − f_min``, so almost no energy leaks below ``f_min``.  The
-    carrier sits at ``(f_min + f_max) / 2``, which makes this the
-    waveform an :class:`~magnelio.Excitation` may phase-shift.
+    The pulse for TE/TM modes and any drive whose lower band edge
+    matters. The envelope is ``exp(-((t-peak_time)/tau)**2)``;
+    its peak is at ``4.5*tau`` and its effective duration at ``9*tau``.
+    The carrier sits at ``(f_min + f_max) / 2``. Gaussian spectral tails
+    extend beyond the requested band, including below ``f_min``.
 
     Parameters
     ----------
@@ -354,6 +376,16 @@ class WaveformGaussianModulated(Waveform):
         Lower band edge [Hz].
     f_max : float
         Upper band edge [Hz]; must exceed ``f_min``.
+    edge_attenuation_db : float, default 25.0
+        Positive spectral amplitude attenuation at ``f_max`` relative
+        to the carrier-centre spectrum. Includes both mirrored spectral
+        lobes; the lower edge is more strongly excited near DC. Must be
+        finite and strictly positive.
+
+    Notes
+    -----
+    Waveforms restored from older projects retain their original width
+    and peak time. Read ``peak_time`` and ``t_end`` for their timing.
 
     Examples
     --------
@@ -365,6 +397,9 @@ class WaveformGaussianModulated(Waveform):
 
     f_min: float
     f_max: float
+    edge_attenuation_db: float = dc_field(default=25.0, kw_only=True)
+    _tau: float = dc_field(init=False, repr=False)
+    _peak_time: float = dc_field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "f_min", _nonnegative("f_min", self.f_min))
@@ -373,31 +408,43 @@ class WaveformGaussianModulated(Waveform):
             raise ValueError(
                 f"f_max ({self.f_max:.4g} Hz) must exceed f_min ({self.f_min:.4g} Hz)",
             )
+        attenuation = _positive("edge_attenuation_db", self.edge_attenuation_db)
+        object.__setattr__(self, "edge_attenuation_db", attenuation)
+        tau = _modulated_tau(self.f_min, self.f_max, attenuation)
+        object.__setattr__(self, "_tau", _positive("tau", tau))
+        object.__setattr__(self, "_peak_time", _positive("peak_time", 4.5 * tau))
+
+    @property
+    def tau(self) -> float:
+        """Envelope time constant [s]; statistical standard deviation is tau/sqrt(2)."""
+        return self._tau
+
+    @property
+    def peak_time(self) -> float:
+        """Time of the unit peak [s]."""
+        return self._peak_time
 
     @property
     def f_center(self) -> float:
         """Carrier frequency [Hz]: the center of ``[f_min, f_max]``."""
-        return 0.5 * (self.f_min + self.f_max)
+        return 0.5 * self.f_min + 0.5 * self.f_max
 
     @property
     def t_end(self) -> float:
-        """Twice the peak time — the envelope is below 1e-17 of its peak there."""
-        return 8.0 / (self.f_max - self.f_min)
+        """Effective duration [s]; the default endpoint envelope is about 1.6e-9."""
+        return 2.0 * self.peak_time
 
     def __call__(self, t):
-        return modulated_gaussian(t, self.f_max, self.f_min)
+        return _gaussian_value(t, self.tau, self.peak_time, self.f_center)
 
     def spectrum(self, f):
         f = np.asarray(f, dtype=float)
-        bandwidth = self.f_max - self.f_min
-        sigma = 2.0 / (math.pi * bandwidth)
-        t0 = 4.0 / bandwidth
         fc = self.f_center
-        env = 0.5 * sigma * math.sqrt(math.pi)
-        lobes = np.exp(-((math.pi * sigma * (f - fc)) ** 2)) + np.exp(
-            -((math.pi * sigma * (f + fc)) ** 2)
+        env = 0.5 * self.tau * math.sqrt(math.pi)
+        lobes = np.exp(-((math.pi * self.tau * (f - fc)) ** 2)) + np.exp(
+            -((math.pi * self.tau * (f + fc)) ** 2)
         )
-        return env * lobes * np.exp(-2j * math.pi * f * t0)
+        return env * lobes * np.exp(-2j * math.pi * f * self.peak_time)
 
 
 def _raised_cosine_ramp(t, rise_time: float):

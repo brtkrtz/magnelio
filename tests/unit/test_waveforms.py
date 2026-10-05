@@ -34,9 +34,11 @@ class TestGaussian:
         assert w.f_max == 10e9
         assert w.f_min == 0.0
         assert w.f_center is None
-        assert w.t_end == pytest.approx(8.0 / 10e9)
-        assert abs(w(w.t_end)) < 1e-15
-        assert w(4.0 / 10e9) == pytest.approx(1.0)
+        assert w.tau == pytest.approx(math.sqrt(25 * math.log(10) / 20) / (math.pi * 10e9))
+        assert w.peak_time == 4.5 * w.tau
+        assert w.t_end == 2 * w.peak_time
+        assert w(w.t_end) == pytest.approx(math.exp(-(4.5**2)))
+        assert w(w.peak_time) == pytest.approx(1.0)
 
     def test_validation(self):
         with pytest.raises(ValueError, match="f_max"):
@@ -56,10 +58,11 @@ class TestGaussian:
         f = np.linspace(0.0, 15e9, 7)
         analytic = w.spectrum(f)
         numeric = Waveform.spectrum(w, f)
-        np.testing.assert_allclose(analytic, numeric, rtol=1e-9, atol=1e-12 * abs(analytic).max())
-        # e^{-4} at f_max relative to DC, the "bandwidth" convention.
+        # The sampled finite interval omits envelope tails of about 1.6e-9.
+        np.testing.assert_allclose(analytic, numeric, rtol=1e-8, atol=5e-10 * abs(analytic).max())
+        # The spectrum meets the documented amplitude ratio at the upper edge.
         assert abs(w.spectrum(np.array([10e9]))[0]) / abs(w.spectrum(np.array([0.0]))[0]) == (
-            pytest.approx(math.exp(-4.0))
+            pytest.approx(10 ** (-25 / 20))
         )
 
     def test_sample_is_signal(self):
@@ -82,8 +85,10 @@ class TestGaussianModulated:
     def test_band_and_duration(self):
         w = WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9)
         assert w.f_center == pytest.approx(10.3e9)
-        assert w.t_end == pytest.approx(8.0 / 4.2e9)
-        assert w(4.0 / 4.2e9) == pytest.approx(1.0)
+        assert w.peak_time == 4.5 * w.tau
+        assert w.t_end == 2 * w.peak_time
+        assert abs(w(w.t_end)) <= math.exp(-(4.5**2)) * (1 + 1e-12)
+        assert w(w.peak_time) == pytest.approx(1.0)
 
     def test_validation(self):
         with pytest.raises(ValueError, match="exceed"):
@@ -96,11 +101,62 @@ class TestGaussianModulated:
         f = np.linspace(0.0, 20e9, 9)
         analytic = w.spectrum(f)
         numeric = Waveform.spectrum(w, f)
-        np.testing.assert_allclose(analytic, numeric, rtol=1e-9, atol=1e-12 * abs(analytic).max())
-        # Band-limited: exp(-(2 Δf / bandwidth)²) — 1.2e-4 at 4 GHz, 1e-7 at 2 GHz.
+        np.testing.assert_allclose(analytic, numeric, rtol=1e-8, atol=5e-10 * abs(analytic).max())
         s_c = abs(w.spectrum(np.array([w.f_center]))[0])
-        assert abs(w.spectrum(np.array([4e9]))[0]) / s_c == pytest.approx(math.exp(-9.0), rel=1e-6)
+        assert abs(w.spectrum(np.array([w.f_max]))[0]) / s_c == pytest.approx(10 ** (-25 / 20))
         assert abs(w.spectrum(np.array([2e9]))[0]) / s_c < 1e-6
+
+
+@pytest.mark.parametrize("attenuation", [0.1, 1.0, 6.0, 25.0, 60.0])
+@pytest.mark.parametrize("ratio", [0.0, 1e-8, 0.1, 0.5, 0.9999])
+def test_modulated_full_spectrum_edge(attenuation, ratio):
+    w = WaveformGaussianModulated(ratio * 1e9, 1e9, edge_attenuation_db=attenuation)
+    f = np.linspace(w.f_min, w.f_max, 501)
+    ratios = abs(w.spectrum(f)) / abs(w.spectrum(w.f_center))
+    target = 10 ** (-attenuation / 20)
+    assert ratios[-1] == pytest.approx(target, rel=1e-12)
+    assert min(ratios) >= target * (1 - 1e-12)
+
+
+@pytest.mark.parametrize(
+    "factory", [WaveformGaussian, lambda f, **kw: WaveformGaussianModulated(0, f, **kw)]
+)
+@pytest.mark.parametrize("invalid", [0, -1, math.inf, math.nan])
+def test_edge_attenuation_validation(factory, invalid):
+    with pytest.raises(ValueError, match="edge_attenuation_db"):
+        factory(1e9, edge_attenuation_db=invalid)
+
+
+@pytest.mark.parametrize("modulated", [False, True])
+def test_nondefault_width_matches_numerical_time_integral(modulated):
+    from scipy.integrate import quad
+
+    w = (
+        WaveformGaussianModulated(0.01e9, 1e9, edge_attenuation_db=6)
+        if modulated
+        else WaveformGaussian(1e9, edge_attenuation_db=6)
+    )
+    # Integrate the actual time function, independently of its closed transform.
+    for f in [0.0, 0.3e9, 1e9]:
+
+        def integrand(u):
+            t = w.peak_time + w.tau * u
+            return w(t) * np.exp(-2j * math.pi * f * t)
+
+        numeric = w.tau * (
+            quad(lambda u: integrand(u).real, -4.5, 4.5, epsabs=1e-12)[0]
+            + 1j * quad(lambda u: integrand(u).imag, -4.5, 4.5, epsabs=1e-12)[0]
+        )
+        assert abs(numeric - w.spectrum(f)) < 5e-10 * abs(w.spectrum(w.f_center or 0.0))
+
+
+def test_scalar_evaluation_uses_cached_width(monkeypatch):
+    w = WaveformGaussianModulated(1e6, 1e9)
+    monkeypatch.setattr(
+        "magnelio.signals.waveforms.brentq", lambda *a, **kw: pytest.fail("recomputed width")
+    )
+    assert w(w.peak_time) == 1.0
+    assert np.all(np.isfinite(w(np.linspace(0, w.t_end, 10))))
 
 
 class TestSine:

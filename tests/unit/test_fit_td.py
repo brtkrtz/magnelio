@@ -44,6 +44,19 @@ def _cavity_solver(Nx=6, Ny=6, Nz=6, n_steps=50):
 
 
 class TestFITTDSetup:
+    @pytest.mark.parametrize("start, expected", [(0, 151), (73, 151), (151, 161)])
+    def test_energy_guard_uses_absolute_completed_steps(self, start, expected):
+        solver, _ = _cavity_solver(n_steps=200)
+        solver.setup()
+        solver._resume_step = start
+        solver._peak_energy = 1.0
+        solver.energy_stop_db = 70.0
+        solver.energy_stop_min_steps = 151
+        solver.energy_check_interval = 10
+        solver.run()
+        assert solver._stop_reason == "energy"
+        assert solver._actual_steps == expected
+
     def test_setup_allocates_fields(self):
         solver, _ = _cavity_solver()
         solver.setup()

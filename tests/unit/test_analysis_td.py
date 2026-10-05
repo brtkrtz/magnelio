@@ -193,7 +193,7 @@ class TestDurationRules:
             Excitation("pw", waveform=g, delay=3e-9),
             Excitation("q", waveform=signals.WaveformSine(f=1e9)),
         ]
-        assert AnalysisTD._pulse_duration(excs) == pytest.approx(3e-9 + 8.0 / 10e9)
+        assert AnalysisTD._pulse_duration(excs) == pytest.approx(3e-9 + g.t_end)
         assert AnalysisTD._pulse_duration(excs[2:]) == 0.0
 
     def test_step_estimate_reproduces_the_gaussian_rule(self):
@@ -201,8 +201,9 @@ class TestDurationRules:
         dt = 1e-12
         f_max = 10e9
         L = math.sqrt(8e-3**2 + 4e-3**2 + 12e-3**2)
-        expected = math.ceil((2.0 * (4.0 / f_max) + 25 * L / (0.5 * 299_792_458.0)) / dt)
-        assert AnalysisTD._estimate_steps(grid, 8.0 / f_max, dt) == expected
+        duration = signals.WaveformGaussian(f_max).t_end
+        expected = math.ceil((duration + 25 * L / (0.5 * 299_792_458.0)) / dt)
+        assert AnalysisTD._estimate_steps(grid, duration, dt) == expected
 
 
 class TestStopAndNames:

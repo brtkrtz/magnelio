@@ -574,6 +574,8 @@ class _PreparedRun:
     port_modes: dict
     port_normal_dx: dict
     port_line_params: dict
+    # Absolute completed step at the end of every finite drive (DD-282).
+    excitation_end_steps: int = 0
     # DD-244: dispersion records of the quasi-TEM modal ports (their
     # feed chains, for the exact de-embedding) and the half-window →
     # full-model factor of every port's line impedance.
@@ -1027,7 +1029,8 @@ class AnalysisTD(_AnalysisBase):
             Courant safety factor.
         energy_stop_db : float, default 70.0
             Stop when the stored energy has decayed by this many dB
-            below its peak (``None`` disables).
+            below its peak, after all finite excitations have reached
+            their nominal ends (``None`` disables).
         total_time_steps : int, optional
             Exact leapfrog step count; default unbounded until a stop
             criterion fires, backstopped by ``max_time_steps``.
@@ -1435,6 +1438,12 @@ class AnalysisTD(_AnalysisBase):
             self._bind_dispersive_sources(
                 resolved, drives, label_to_op, port_dispersion, dt, n_steps_estimate
             )
+        excitation_end_steps = math.ceil(self._pulse_duration(resolved) / dt)
+        # Frequency-tracked sources have a finite synthesised buffer which
+        # can extend past the scalar waveform's nominal end.
+        for op in operators:
+            for terms in getattr(op, "_disp_sources", {}).values():
+                excitation_end_steps = max(excitation_end_steps, terms.waveform.shape[1])
         recorder = PortSignalRecorder(dt=dt, ports=operators) if operators else None
         port_modes = {op.name: self._modes_for_operator(op) for op in operators}
         # Spatial de-stagger of the I sampling plane (modal ports only;
@@ -1462,6 +1471,7 @@ class AnalysisTD(_AnalysisBase):
             port_modes=port_modes,
             port_normal_dx=port_normal_dx,
             port_line_params=port_line_params,
+            excitation_end_steps=excitation_end_steps,
             port_dispersion=port_dispersion,
             port_reference_scale=self._reference_scales(operators),
         )
@@ -1589,7 +1599,7 @@ class AnalysisTD(_AnalysisBase):
 
         Heuristic: ``t_pulse + n_traversals · t_diag``, where
         ``t_pulse`` is the time the last excitation has died out
-        (``max_i(delay_i + t_end_i)``; ``8 / f_max`` for a Gaussian
+        (``max_i(delay_i + t_end_i)``; ``9*tau`` for a new Gaussian
         pulse) and ``t_diag = ‖bbox‖ / v_safe`` uses ``v_safe = 0.5·c₀``
         to keep a margin against dispersion (group velocity in hollow
         WG drops below c₀ near cutoff).
@@ -1701,8 +1711,9 @@ class AnalysisTD(_AnalysisBase):
             energy_check_interval=check_interval,
             dt=dt,
             energy_stop_db=energy_stop_db,
+            energy_stop_min_steps=prepared.excitation_end_steps,
             port_signal_stop_db=port_signal_stop_db,
-            port_signal_min_steps=prepared.n_steps_estimate,
+            port_signal_min_steps=max(prepared.n_steps_estimate, prepared.excitation_end_steps),
             max_time_steps=self._resolve_cap(
                 max_time_steps, total_time_steps, prepared.n_steps_estimate, start_step
             ),
