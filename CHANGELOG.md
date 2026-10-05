@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Stored-result metadata and time plots no longer derive the full
+  S-matrix. Individual S-parameter queries evaluate only the selected
+  excitation and involved ports, reuse calibrated spectra on matching
+  frequency axes, and discard cached results after a run is resumed.
+  Fourier evaluation shares bounded temporary blocks across records.
+
 - Energy decay stopping waits for all scheduled finite excitations to
   finish, including delayed drives, synthesised port-source buffers and
   plane-wave spatial retardation, on initial runs and continuation.

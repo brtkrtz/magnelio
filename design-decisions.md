@@ -23847,3 +23847,76 @@ explains completion guards and finite-record accuracy limits. Scripts
 acceptance and strategy live in `investigations/termination-accuracy/`
 (internal dossier), especially `IMPLEMENTATION.md` and
 `SPECTRAL_STRATEGY.md` (internal records).
+
+---
+
+## DD-283 — Selective stored-result evaluation and shared Fourier blocks
+
+**Date:** 2026-10-05. **Status:** implemented on
+`perf/selective-result-access`, unreleased.
+
+**Problem.** A first time plot requested the excitation list through
+`Project.excitations`, which derived the complete S-matrix. On a 102-channel,
+144,901-sample record this took 114.47 s although reading all V/I records
+took 0.306 s. Individual S, phase and magnitude queries, reference
+impedance and monitor incident-normalization fallback also requested more
+channels than needed. Repeated direct DFTs rebuilt the same complex
+frequency-by-time exponential matrix per record.
+
+**Decision.** Read run metadata separately from port payloads. Selected
+reads materialize only requested V/I channels, while inspecting the lengths
+of all streams to preserve the common-prefix SWMR contract. Incremental
+completed-run reads merge requested records in canonical channel order
+and share one time axis. Full signals and TDResult access still materialize
+their documented records. The longest reference is selected using metadata
+before its payload is read.
+
+Calibrate per-channel spectral a/b waves before forming S ratios. S(out,in)
+needs only one excitation run, its incident denominator and the observed
+outgoing numerator. Band channels remain joint projections: selecting one
+channel evaluates every projection of the involved port, including the
+excited port. Self-contained band records need no global mesh operators;
+legacy records retain reconstruction. Reference impedance uses calibration
+alone, with a selected band dispersion solve when needed. Monitor fallback
+normalization evaluates only the driven channel (or coupled band port);
+TEM/QTEM unity normalization requires no spectra.
+
+**Reuse and lifetime.** Completed runs reuse calibrated a/b/Z spectra
+across S, dB, phase and complete matrix assembly. Keys include run revision,
+taper option and full frequency-axis content. This preserves per-axis
+incident-floor semantics and also caches custom axes. Bounded LRU caches
+retain 256 channel spectra, 256 impedance vectors, eight corrected time-wave
+pairs and four complete matrices. Public selected outputs copy or derive
+their arrays so mutation cannot corrupt the cached waves. Raw records
+accumulate only as requested. Running/aborted runs remain uncached as final
+records. Every project-index change invalidates result caches, including
+changes after completion; refresh also clears incident normalization.
+
+**Fourier evaluation.** Share complex exponential kernels across records
+in blocks of at most 1,048,576 complex128 entries (16 MiB), at most 65,536
+samples and 16 signal rows per multiply. Tapering is applied within each
+signal block instead of copying every full record. Preserve direct
+evaluation for band ports and the existing modal 1e8-operation cutoff
+with its rFFT/interpolation fallback. Block accumulation changes only
+floating-point summation order; it introduces no new interpolation.
+
+**Validation and evidence.** The stored HESR record's three-port first
+time plot takes 0.44 s, a selected S query 0.55 s, and a repeated query
+0.00011 s. Complete matrix assembly takes 2.58 s after selected queries,
+versus a fresh baseline's 112.44 s; a fresh optimized reader takes 2.67 s.
+Every entry agrees within 1.73e-14
+complex absolute error. `tests/unit/test_selective_result_access.py` pins
+payload selection, metadata-only access, common-prefix consistency,
+custom-axis reuse, cache renewal, time-wave pair reuse, incident
+normalization and coupled band projections. `test_signals.py` compares
+shared sample/frequency/channel blocks against independent direct sums.
+RAM/store contract, streaming/resume and physical band-port gates preserve
+the calibrated results: 217 targeted tests pass, one optional-tool check
+skips. The full HTML documentation build passes with Tutorial 07 executed.
+Ruff, format, public hygiene, DD-reference and API-surface gates pass.
+Two unrelated cap-warning tests also fail on the
+unchanged main source; their baseline reproduction is retained privately.
+Methods documentation and Tutorial 07 show selective evaluation.
+The read-only timing/comparison script `probe_result_access.py`,
+measurements and documentation build runner are in
+`investigations/time-signal-first-call/` (internal dossier).

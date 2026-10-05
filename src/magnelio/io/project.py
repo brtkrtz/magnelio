@@ -47,6 +47,7 @@ import os
 import socket
 import sys
 import time
+from collections import OrderedDict
 from collections.abc import Mapping
 from dataclasses import fields as dc_fields
 from pathlib import Path
@@ -1915,7 +1916,9 @@ def _last_energy_step(run_dir: Path) -> int | None:
         return None
 
 
-def _read_run_results(run_dir: Path) -> dict:
+def _read_run_results(
+    run_dir: Path, *, channels=None, metadata_only=False, time_axis=None, load_bands=False
+) -> dict:
     """Read a run written by :class:`_RunResultWriter` into a plain dict.
 
     Opens the file in SWMR mode so an in-progress (live) run can be read
@@ -1963,16 +1966,28 @@ def _read_run_results(run_dir: Path) -> dict:
                 (str(cg.attrs["name"]), int(cg.attrs["mode"]), v_ds, i_ds),
             )
         n_steps = min(lengths)  # common prefix across all streams
-        t = np.arange(n_steps) * dt
-        reference = Signal1D(
-            t=t,
-            values=f["reference"][:n_steps],
-            dt=dt,
-            label="excitation",
+        t = None
+        if not metadata_only:
+            t = (
+                time_axis
+                if time_axis is not None and len(time_axis) == n_steps
+                else np.arange(n_steps) * dt
+            )
+        reference = (
+            None
+            if metadata_only
+            else Signal1D(
+                t=t,
+                values=f["reference"][:n_steps],
+                dt=dt,
+                label="excitation",
+            )
         )
 
         signals = {}
         for label, mode, v_ds, i_ds in chan_items:
+            if metadata_only or (channels is not None and (label, mode) not in channels):
+                continue
             v = Signal1D(t=t, values=v_ds[:n_steps], dt=dt, label=f"{label}_mode{mode}_V")
             i = Signal1D(t=t, values=i_ds[:n_steps], dt=dt, label=f"{label}_mode{mode}_I")
             signals[(label, mode)] = (v, i)
@@ -1985,9 +2000,12 @@ def _read_run_results(run_dir: Path) -> dict:
                 label="excitation" if single else f"excitation{key}",
             )
             for key, ds in exc_items
+            if not metadata_only and channels is None
         }
 
-        energy_trace = _read_energy_group(f["energy"])
+        energy_trace = (
+            _read_energy_group(f["energy"]) if not metadata_only and channels is None else None
+        )
 
         port_modes = {}
         port_normal_dx = {}
@@ -1997,7 +2015,11 @@ def _read_run_results(run_dir: Path) -> dict:
         for label in f["ports"]:
             p = f["ports"][label]
             port_modes[label] = [_mode_from_dict(d) for d in json.loads(p.attrs["modes"])]
-            if "band" in p:
+            if (
+                "band" in p
+                and (not metadata_only or load_bands)
+                and (channels is None or any(c[0] == label for c in channels))
+            ):
                 port_band[label] = _read_band_decomposition(p, label)
             if "reference_scale" in p.attrs:
                 port_reference_scale[label] = float(p.attrs["reference_scale"])
@@ -2012,6 +2034,8 @@ def _read_run_results(run_dir: Path) -> dict:
                 )
 
     return dict(
+        recorded_channels=tuple((label, mode) for label, mode, _, _ in chan_items),
+        complete=channels is None and not metadata_only,
         excited=excited,
         excitations=excitations,
         excitation_signals=excitation_signals,
@@ -4201,22 +4225,24 @@ class Project(ScatteringResultMixin):
         self._mesh = None
         self._geometry = None
         self._run_cache: dict = {}
-        self._s_cache: dict = {}
+        self._s_cache = OrderedDict()
+        self._spectral_cache = OrderedDict()
+        self._time_wave_cache = OrderedDict()
+        self._incident_cache = {}
+        self._impedance_cache = OrderedDict()
+        self._band_ops = None
         self._run_objects: dict = {}
 
     @property
     def meta(self) -> dict:
         """The parsed ``project.json`` contents.
 
-        Re-read from disk whenever the file changed, for as long as the
-        project is not finished — so a project opened while a solver
-        writes it shows the current state without :meth:`refresh`.
+        Re-read from disk whenever the file changed, so a project opened
+        while a solver writes it shows the current state without :meth:`refresh`.
         The file is small and replaced atomically by the writer, so the
         check is one ``stat`` per access and a parse only on a change.
-        Once the stored status is terminal the parsed copy is kept.
+        A finished project also notices when another process resumes it.
         """
-        if self._meta is not None and self._meta.get("status") in _TERMINAL_STATUS:
-            return self._meta
         stamp = _file_stamp(self.path / "project.json")
         if self._meta is None or stamp != self._meta_stamp:
             with open(self.path / "project.json", encoding="utf-8") as fh:
@@ -4228,7 +4254,7 @@ class Project(ScatteringResultMixin):
             if self._meta is not None:
                 # The index changed under a live reader: derived data
                 # (S-matrix, cached runs) was computed from the old one.
-                self._s_cache.clear()
+                self._clear_result_caches()
             self._meta = meta
             self._meta_stamp = stamp
         return self._meta
@@ -4269,18 +4295,32 @@ class Project(ScatteringResultMixin):
     def refresh(self) -> "Project":
         """Re-read the metadata and drop cached run / S-parameter data.
 
-        A project that is not finished re-reads its metadata on its own
-        whenever the file changes; call this to force a re-read on a
-        finished project (a run resumed elsewhere), or to drop the
+        A project re-reads its metadata on its own whenever the file
+        changes, including after a resume; call this to drop the
         cached run and S-parameter data.  The immutable model (mesh,
         geometry) is kept.  Returns ``self`` for chaining
         (``project.refresh().s_params``).
         """
         self._meta = None
         self._meta_stamp = None
+        self._clear_result_caches()
+        return self
+
+    def _clear_result_caches(self):
         self._run_cache.clear()
         self._s_cache.clear()
-        return self
+        self._spectral_cache.clear()
+        self._time_wave_cache.clear()
+        self._incident_cache.clear()
+        self._impedance_cache.clear()
+
+    @staticmethod
+    def _remember(cache, key, value, limit):
+        cache[key] = value
+        cache.move_to_end(key)
+        while len(cache) > limit:
+            cache.popitem(last=False)
+        return value
 
     # ── wall clock (DD-253) ─────────────────────────────────────────
     #
@@ -4476,7 +4516,7 @@ class Project(ScatteringResultMixin):
             )
         return name
 
-    def _load_run(self, name: str) -> dict:
+    def _load_run(self, name: str, *, channels=None, metadata_only=False, load_bands=False) -> dict:
         # Only a finished run is safe to cache: a still-running run grows
         # on disk, so re-read it (SWMR) on every access until it is done.
         # The cache is keyed by what the index says about the run, so a
@@ -4486,10 +4526,44 @@ class Project(ScatteringResultMixin):
         state = info.get("state", "done")
         key = (info.get("n_steps"), info.get("finished"))
         cached = self._run_cache.get(name)
+        previous = None
         if state == "done" and cached is not None and cached[0] == key:
-            return cached[1]
-        data = _read_run_results(self.path / "runs" / name)
+            previous = cached[1]
+            ports = set(previous["port_modes"]) if channels is None else {c[0] for c in channels}
+            bands_ready = not load_bands or ports <= previous["port_band"].keys()
+            if (metadata_only and bands_ready) or previous["complete"]:
+                return previous
+            if not metadata_only and channels is not None and previous["reference"] is not None:
+                channels = set(channels) - previous["signals"].keys()
+                if not channels:
+                    return previous
+        time_axis = (
+            previous["reference"].t
+            if previous is not None and previous["reference"] is not None
+            else None
+        )
+        data = _read_run_results(
+            self.path / "runs" / name,
+            channels=channels,
+            metadata_only=metadata_only,
+            time_axis=time_axis,
+            load_bands=load_bands,
+        )
         if state == "done":
+            if previous is not None:
+                for field in ("signals", "port_band"):
+                    data[field] = previous[field] | data[field]
+                data["signals"] = {
+                    c: data["signals"][c] for c in data["recorded_channels"] if c in data["signals"]
+                }
+                if not data["complete"]:
+                    data["excitation_signals"] = (
+                        previous["excitation_signals"] | data["excitation_signals"]
+                    )
+                    if data["energy_trace"] is None:
+                        data["energy_trace"] = previous["energy_trace"]
+                    if data["reference"] is None:
+                        data["reference"] = previous["reference"]
             self._run_cache[name] = (key, data)
         return data
 
@@ -4526,7 +4600,7 @@ class Project(ScatteringResultMixin):
 
     def _run_excitations(self, name: str) -> list:
         """The Excitation dicts stored with a run (DD-224)."""
-        return list(self._load_run(name).get("excitations", []))
+        return list(self._load_run(name, metadata_only=True).get("excitations", []))
 
     def result(self, run: str | tuple[str, int] | None = None):
         """One run as a :class:`~magnelio.analysis.TDResult`.
@@ -4586,12 +4660,12 @@ class Project(ScatteringResultMixin):
 
     @property
     def dt(self) -> float:
-        return self._load_run(self._first_started_run())["dt"]
+        return self._load_run(self._first_started_run(), metadata_only=True)["dt"]
 
     @property
     def f_axis(self) -> np.ndarray:
         """Frequency axis of the stored S-matrix [Hz], ascending."""
-        return self._load_run(self._first_started_run())["f_axis"]
+        return self._load_run(self._first_started_run(), metadata_only=True)["f_axis"]
 
     @property
     def signals(self) -> dict:
@@ -4619,11 +4693,11 @@ class Project(ScatteringResultMixin):
     @property
     def reference_signal(self):
         """Excitation waveform of the longest run (see ``ScatteringTDResult``)."""
-        runs = self._all_runs()
+        runs = {name: self._load_run(name, metadata_only=True) for name in self._started_runs()}
         if not runs:
             raise ValueError(f"project {self.path} has no started runs")
-        longest = max(runs.values(), key=lambda d: d["n_steps"])
-        return longest["reference"]
+        longest = max(runs, key=lambda name: runs[name]["n_steps"])
+        return self._load_run(longest, channels=())["reference"]
 
     def energy_trace(self, run: str | tuple[str, int] | None = None):
         """Stored ``(step, time, energy)`` trace of a run [structured array].
@@ -4917,30 +4991,25 @@ class Project(ScatteringResultMixin):
         waveform, derived from the stored port signals exactly as the
         S-matrix is; ``None`` when the run has no port signals.
         """
-        from magnelio.post.modal_sparameters import (  # noqa: PLC0415
-            compute_s_parameters,
-        )
+        from magnelio.ports._modal.mode import ModeType  # noqa: PLC0415
 
-        cache = self.__dict__.setdefault("_incident_cache", {})
-        if run_name in cache:
+        info = self._run_info(run_name)
+        done = info.get("state", "done") == "done"
+        cache = self._incident_cache
+        if done and run_name in cache:
             return cache[run_name]
-        d = self._load_run(run_name)
-        signals = d.get("signals")
-        if not signals or d.get("reference") is None or d.get("excited") is None:
-            cache[run_name] = None
+        d = self._load_run(run_name, metadata_only=True)
+        excited = d.get("excited")
+        if excited is None or excited not in d["recorded_channels"]:
+            return None
+        mode = d["port_modes"][excited[0]][excited[1]]
+        if getattr(mode, "mode_type", None) not in (ModeType.TE, ModeType.TM):
+            if done:
+                cache[run_name] = None
             return None
         f_axis = np.asarray(d["f_axis"], dtype=float)
-        _, a_inc = compute_s_parameters(
-            recorder_signals=signals,
-            port_modes=d["port_modes"],
-            excited=d["excited"],
-            reference_signal=d["reference"],
-            f_axis=f_axis,
-            taper_signals=bool(self._run_info(run_name).get("taper_signals", False)),
-            port_normal_dx=d["port_normal_dx"],
-            port_line_params=d["port_line_params"],
-            return_incident=True,
-        )
+        a_inc = self._spectral_waves(run_name, (excited,), f_axis)[excited][0]
+        d = self._load_run(run_name, channels=())
         from magnelio.analysis.scattering_td import (  # noqa: PLC0415
             incident_amplitude_ratio,
         )
@@ -4948,8 +5017,10 @@ class Project(ScatteringResultMixin):
         ratio = incident_amplitude_ratio(
             d["reference"], f_axis, a_inc, d["port_modes"], d["excited"]
         )
-        cache[run_name] = None if ratio is None else (f_axis, ratio)
-        return cache[run_name]
+        result = None if ratio is None else (f_axis, ratio)
+        if done:
+            cache[run_name] = result
+        return result
 
     @property
     def monitors(self) -> dict:
@@ -5133,69 +5204,133 @@ class Project(ScatteringResultMixin):
         mesh = self.mesh
         return (build_M_eps(mesh), build_M_mu(mesh), build_curl_matrix(mesh.grid))
 
-    def _s_params(self, f_axis=None):
-        from magnelio.post.modal_sparameters import (  # noqa: PLC0415
-            compute_s_parameters,
-        )
-        from magnelio.post.sparameter_result import (  # noqa: PLC0415
-            SParameterResult,
-        )
+    def _band_operators(self, bands):
+        """Current port records are self-contained; rebuild only legacy operators."""
+        if all(
+            b.me_u is not None
+            and b.me_v is not None
+            and b.mh_u is not None
+            and b.mh_v is not None
+            and b.curl_slice is not None
+            for b in bands
+        ):
+            return (None, None, None)
+        if self._band_ops is None:
+            self._band_ops = self._band_mesh_operators()
+        return self._band_ops
 
-        runs = self._all_runs()
+    @staticmethod
+    def _band_records(data, ports):
+        missing = set(ports) - data["port_band"].keys()
+        if missing:
+            raise ValueError(
+                f"band port records missing for {sorted(missing)}; this older project "
+                "cannot reconstruct their calibrated waves — re-run it"
+            )
+        return [data["port_band"][port] for port in ports]
+
+    def _scattering_runs(self):
+        runs = {name: self._load_run(name, metadata_only=True) for name in self._started_runs()}
         if not runs:
             raise ValueError(f"project {self.path} has no started runs")
-        general = [name for name, d in runs.items() if d.get("excited") is None]
+        general = [name for name, data in runs.items() if data["excited"] is None]
         if general:
             raise ValueError(
                 f"runs {general} are general time-domain runs (AnalysisTD) without "
                 f"an excited channel; S-parameters are a scattering result — read "
-                f"them with project.result(name)",
+                f"them with project.result(name)"
             )
-        # Cache the derived S-matrix only once every run is finished — a
-        # partial (live) run yields a converging-but-not-final S.
-        run_index = self._run_index()
-        all_done = all(info.get("state", "done") == "done" for info in run_index.values())
-        use_cache = f_axis is None and all_done
-        if use_cache and "default" in self._s_cache:
-            return self._s_cache["default"]
-        if f_axis is None:
-            f_axis = next(iter(runs.values()))["f_axis"]
-        band_ops = None
-        cols = []
-        for name, d in runs.items():
-            if run_index.get(name, {}).get("port_model") == "band":
-                # The band pipeline decomposes per frequency against the
-                # port's own chain, so the mesh-side operators are needed
-                # (DD-230).  Built once for the whole project — they are
-                # functions of the grid, shared by every run and port.
-                if band_ops is None:
-                    band_ops = self._band_mesh_operators()
-                s_dict, z_ref = _band_s_dict(d, f_axis, band_ops)
+        return runs
+
+    def _spectral_waves(self, name, channels, f_axis=None):
+        """Read and calibrate requested channels; band ports retain joint projections."""
+        from magnelio.post.modal_sparameters import (  # noqa: PLC0415
+            _band_spectral_waves,
+            _modal_spectral_waves,
+        )
+
+        meta = self._load_run(name, metadata_only=True)
+        requested = tuple(dict.fromkeys(channels))
+        unknown = set(requested) - set(meta["recorded_channels"])
+        if unknown:
+            raise KeyError(
+                f"channels {sorted(unknown)} not recorded; available: {meta['recorded_channels']}"
+            )
+        axis = np.asarray(meta["f_axis"] if f_axis is None else f_axis, dtype=float).ravel()
+        info = self._run_info(name)
+        done = info.get("state", "done") == "done"
+        band = info.get("port_model") == "band"
+        selected = requested
+        if band:
+            ports = {channel[0] for channel in requested}
+            selected = tuple(c for c in meta["recorded_channels"] if c[0] in ports)
+        revision = (info.get("n_steps"), info.get("finished"))
+        prefix = (name, revision, bool(info.get("taper_signals", False)), axis.tobytes())
+        cache = self._spectral_cache
+        found = {c: cache[prefix + (c,)] for c in selected if done and prefix + (c,) in cache}
+        for c in found:
+            cache.move_to_end(prefix + (c,))
+        missing = [c for c in selected if c not in found]
+        if band and missing:
+            ports = {c[0] for c in missing}
+            missing = [c for c in selected if c[0] in ports]
+        if missing:
+            data = self._load_run(name, channels=missing)
+            records = {c: data["signals"][c] for c in missing}
+            if band:
+                bands = self._band_records(data, dict.fromkeys(c[0] for c in missing))
+                ops = self._band_operators(bands)
+                computed = _band_spectral_waves(
+                    records,
+                    bands,
+                    axis,
+                    m_eps=ops[0],
+                    m_mu=ops[1],
+                    c_3d=ops[2],
+                    port_reference_scale=data["port_reference_scale"],
+                )
             else:
-                s_dict, z_ref = compute_s_parameters(
-                    recorder_signals=d["signals"],
-                    port_modes=d["port_modes"],
-                    excited=d["excited"],
-                    reference_signal=d["reference"],
-                    f_axis=f_axis,
-                    taper_signals=bool(run_index.get(name, {}).get("taper_signals", False)),
-                    port_normal_dx=d["port_normal_dx"],
-                    port_line_params=d["port_line_params"],
-                    return_reference=True,
-                    port_reference_scale=d.get("port_reference_scale"),
+                computed = _modal_spectral_waves(
+                    records,
+                    data["port_modes"],
+                    axis,
+                    taper_signals=bool(info.get("taper_signals", False)),
+                    port_normal_dx=data["port_normal_dx"],
+                    port_line_params=data["port_line_params"],
+                    port_reference_scale=data["port_reference_scale"],
                 )
-            cols.append(
+            found.update(computed)
+            if done:
+                for channel, wave in computed.items():
+                    self._remember(cache, prefix + (channel,), wave, 256)
+        return {channel: found[channel] for channel in requested}
+
+    def _s_params(self, f_axis=None):
+        from magnelio.post.modal_sparameters import _scattering_ratios  # noqa: PLC0415
+        from magnelio.post.sparameter_result import SParameterResult  # noqa: PLC0415
+
+        runs = self._scattering_runs()
+        axis = np.asarray(
+            next(iter(runs.values()))["f_axis"] if f_axis is None else f_axis, dtype=float
+        ).ravel()
+        key = axis.tobytes()
+        done = all(info.get("state", "done") == "done" for info in self._run_index().values())
+        if done and key in self._s_cache:
+            self._s_cache.move_to_end(key)
+            return self._s_cache[key]
+        columns = []
+        for name, data in runs.items():
+            waves = self._spectral_waves(name, data["recorded_channels"], axis)
+            columns.append(
                 SParameterResult.from_single_excitation(
-                    s_dict,
-                    d["excited"],
-                    f_axis,
-                    reference_impedances=z_ref,
+                    _scattering_ratios(waves, waves[data["excited"]][0]),
+                    data["excited"],
+                    axis,
+                    reference_impedances={c: w[2] for c, w in waves.items()},
                 )
             )
-        res = cols[0] if len(cols) == 1 else SParameterResult.merge(cols)
-        if use_cache:
-            self._s_cache["default"] = res
-        return res
+        result = columns[0] if len(columns) == 1 else SParameterResult.merge(columns)
+        return self._remember(self._s_cache, key, result, 4) if done else result
 
     @property
     def s_params(self):
@@ -5209,7 +5344,7 @@ class Project(ScatteringResultMixin):
         )
 
         try:
-            run = self._load_run(self._first_started_run())
+            run = self._load_run(self._first_started_run(), metadata_only=True)
         except Exception:  # noqa: BLE001 — no started run yet
             return None
         return _cutoffs_from_port_modes(run.get("port_modes"))
@@ -5240,11 +5375,9 @@ class Project(ScatteringResultMixin):
         dt = None
         n_actual = None
         try:
-            run = self._load_run(self._first_started_run())
+            run = self._load_run(self._first_started_run(), metadata_only=True)
             dt = float(run["dt"])
-            ref = run.get("reference")
-            if ref is not None:
-                n_actual = int(run["n_steps"]) if len(self._started_runs()) == 1 else None
+            n_actual = int(run["n_steps"]) if len(self._started_runs()) == 1 else None
         except Exception:  # noqa: BLE001 — no started run yet
             pass
         run_info = next(
@@ -5281,21 +5414,22 @@ class Project(ScatteringResultMixin):
     @property
     def channels(self) -> tuple:
         """Observed ``(port_name, mode_idx)`` pairs, in S-matrix order."""
-        return self._s_params().channels
+        return next(iter(self._scattering_runs().values()))["recorded_channels"]
 
     @property
     def excitations(self) -> tuple:
         """Excited ``(port_name, mode_idx)`` pairs — the S-matrix columns stored."""
-        return self._s_params().excitations
+        return tuple(data["excited"] for data in self._scattering_runs().values())
 
     def S(self, out_port, in_port, *, mode_out=0, mode_in=0, f_axis=None):
         """S-parameter column, derived on read (optionally on a custom ``f_axis``)."""
-        return self._s_params(f_axis).S(
-            out_port,
-            in_port,
-            mode_out=mode_out,
-            mode_in=mode_in,
-        )
+        from magnelio.post.modal_sparameters import _scattering_ratios  # noqa: PLC0415
+
+        name = self._run_name_for_excited((in_port, mode_in))
+        excited = (in_port, mode_in)
+        observed = (out_port, mode_out)
+        waves = self._spectral_waves(name, (excited, observed), f_axis)
+        return _scattering_ratios({observed: waves[observed]}, waves[excited][0])[observed]
 
     def db(self, out_port, in_port, *, mode_out=0, mode_in=0, floor_db=-200.0, f_axis=None):
         """S-parameter magnitude in dB, derived on read (see :meth:`S`).
@@ -5303,13 +5437,86 @@ class Project(ScatteringResultMixin):
         ``floor_db`` clamps the result from below so an exact zero stays
         plottable instead of becoming ``-inf``.
         """
-        return self._s_params(f_axis).db(
-            out_port,
-            in_port,
-            mode_out=mode_out,
-            mode_in=mode_in,
-            floor_db=floor_db,
+        s = self.S(out_port, in_port, mode_out=mode_out, mode_in=mode_in, f_axis=f_axis)
+        magnitude = np.abs(s)
+        return 20.0 * np.log10(
+            np.maximum(np.where(np.isnan(magnitude), 0.0, magnitude), 10.0 ** (floor_db / 20.0))
         )
+
+    def reference_impedance(self, port: str, mode: int = 0) -> np.ndarray:
+        """Reference impedance [Ω] of one channel along the frequency axis.
+
+        Parameters
+        ----------
+        port : str
+            Recorded port name.
+        mode : int, default 0
+            Mode index at the selected port.
+
+        Returns
+        -------
+        numpy.ndarray
+            Real reference impedance at each stored frequency.
+
+        Notes
+        -----
+        Reads port calibration without loading time records. Band ports
+        solve their selected cross-section's dispersion when needed.
+        """
+        from magnelio.post.modal_sparameters import channel_reference_impedance  # noqa: PLC0415
+
+        name = self._first_started_run()
+        data = self._load_run(name, metadata_only=True)
+        if (port, mode) not in data["recorded_channels"]:
+            raise KeyError(f"channel {(port, mode)!r} not recorded")
+        info = self._run_info(name)
+        if info.get("port_model") == "band":
+            from magnelio.ports._modal.dispersion import solve_port_dispersion  # noqa: PLC0415
+
+            key = (
+                name,
+                info.get("n_steps"),
+                info.get("finished"),
+                port,
+                mode,
+                data["f_axis"].tobytes(),
+            )
+            done = info.get("state", "done") == "done"
+            spectral_key = (
+                name,
+                (info.get("n_steps"), info.get("finished")),
+                bool(info.get("taper_signals", False)),
+                data["f_axis"].tobytes(),
+                (port, mode),
+            )
+            if done and spectral_key in self._spectral_cache:
+                self._spectral_cache.move_to_end(spectral_key)
+                return self._spectral_cache[spectral_key][2].copy()
+            if done and key in self._impedance_cache:
+                self._impedance_cache.move_to_end(key)
+                return self._impedance_cache[key].copy()
+            data = self._load_run(
+                name, channels=((port, mode),), metadata_only=True, load_bands=True
+            )
+            bands = self._band_records(data, (port,))
+            ops = self._band_operators(bands)
+            dispersion = solve_port_dispersion(
+                bands[0], data["f_axis"], m_eps=ops[0], m_mu=ops[1], c_3d=ops[2]
+            )
+            z = dispersion.z_line[mode] * data["port_reference_scale"].get(port, 1.0)
+            if done:
+                self._remember(self._impedance_cache, key, z, 256)
+            return z.copy()
+        modal = data["port_modes"][port][mode]
+        z = channel_reference_impedance(
+            modal,
+            2.0 * np.pi * data["f_axis"],
+            data["dt"],
+            data["port_line_params"].get((port, mode)),
+        ).real
+        if getattr(modal, "z_line", None) is not None:
+            z = z * data["port_reference_scale"].get(port, 1.0)
+        return z.copy()
 
     def a(self, port, mode=0, *, excited=None, f_ref=None, destagger=True):
         """Incident power-wave time series ``a(t)`` (see ``ScatteringTDResult.a``)."""
@@ -5344,8 +5551,9 @@ class Project(ScatteringResultMixin):
             )
         from magnelio.signals.signal_1d import Signal1D  # noqa: PLC0415
 
-        d = self._load_run(self._run_name_for_excited(excited))
         chan = (port, mode)
+        run_name = self._run_name_for_excited(excited)
+        d = self._load_run(run_name, channels=(chan,))
         if chan not in d["signals"]:
             raise KeyError(
                 f"channel {chan!r} not recorded; available: {sorted(d['signals'].keys())}",
@@ -5367,16 +5575,28 @@ class Project(ScatteringResultMixin):
         name = "a" if sign > 0 else "b"
 
         if destagger:
-            a_sig, b_sig = destaggered_power_waves(
-                V_sig,
-                I_sig,
-                modes[mode],
-                z_ref=Z.real,
-                normal_dx=d["port_normal_dx"].get(port),
-                line_params=d["port_line_params"].get(chan),
-            )
+            info = self._run_info(run_name)
+            done = info.get("state", "done") == "done"
+            key = (run_name, info.get("n_steps"), info.get("finished"), chan, float(f_ref), Z.real)
+            pair = self._time_wave_cache.get(key) if done else None
+            if pair is None:
+                pair = destaggered_power_waves(
+                    V_sig,
+                    I_sig,
+                    modes[mode],
+                    z_ref=Z.real,
+                    normal_dx=d["port_normal_dx"].get(port),
+                    line_params=d["port_line_params"].get(chan),
+                )
+                if done:
+                    self._remember(self._time_wave_cache, key, pair, 8)
+            elif done:
+                self._time_wave_cache.move_to_end(key)
+            a_sig, b_sig = pair
             sig = a_sig if sign > 0 else b_sig
-            return Signal1D(t=sig.t, values=sig.values, dt=sig.dt, label=f"{name}({port},{mode})")
+            return Signal1D(
+                t=sig.t, values=sig.values.copy(), dt=sig.dt, label=f"{name}({port},{mode})"
+            )
 
         sqrt_z = math.sqrt(Z.real)
         V = V_sig.values

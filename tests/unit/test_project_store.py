@@ -473,7 +473,7 @@ class TestProjectStatus:
         assert p.runs["port1_mode0"].state == "running"
         assert p.status == "running"
 
-    def test_metadata_follows_the_file_until_the_project_is_finished(self, tmp_path):
+    def test_metadata_follows_the_file_after_the_project_is_finished(self, tmp_path):
         from magnelio.io.project import _update_meta
 
         store = self._store(tmp_path)
@@ -489,8 +489,8 @@ class TestProjectStatus:
             meta["setup"]["note"] = "later"
 
         _update_meta(store.path, _note)
-        # Finished projects keep their parsed copy until asked.
-        assert "note" not in p.setup
+        # A completed reader must also notice a later resume or update.
+        assert p.setup["note"] == "later"
         assert p.refresh().setup["note"] == "later"
 
     def test_repr_never_raises_on_a_foreign_schema(self, tmp_path):

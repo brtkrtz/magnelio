@@ -414,9 +414,9 @@ def test_a_mode_without_a_channel_is_reported(band_project, monkeypatch):
 
     monkeypatch.setattr(zeta_pencil, "find_propagating_modes", with_an_orphan)
 
-    # An explicit axis: S is cached when the axis is left to default,
-    # and a cache warmed by an earlier read would never reach the
-    # patched search.
+    # Equal explicit/default axes share calibrated spectra. Drop the
+    # cache so this probe reaches the patched mode search.
+    band_project.refresh()
     with pytest.warns(UserWarning, match="match no recording channel"):
         band_project.S("port1", "port1", f_axis=band_project.f_axis)
 
