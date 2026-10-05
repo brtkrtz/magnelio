@@ -200,7 +200,7 @@ def rasterize_points(pts, grid) -> EdgePath:
     return EdgePath(axes=axes, ijk=ijk, signs=signs, dls=dls, flat_indices=flats)
 
 
-def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float:
+def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float | complex:
     """Line integral ``∫_curve E·dl`` [V] of an E field along *curve*.
 
     The first (read-only) consumer of :func:`rasterize_curve`: it sums the
@@ -226,16 +226,22 @@ def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float:
 
     Returns
     -------
-    float
+    float or complex
         The line integral [V] (the total voltage along the curve).
+        Real fields return a float; complex fields return a complex
+        voltage phasor, retaining both magnitude and phase.
 
     Notes
     -----
-    Real-valued fields only: a complex frame currently loses its
-    imaginary part here (known limitation).
+    The integral is linear in the field, without complex conjugation.
+    Reversing the path negates it. Integrating a real phase snapshot
+    gives the real part of the voltage phasor at that same phase.
     """
     path = rasterize_curve(curve, grid, samples_per_cell=samples_per_cell)
     comp = {"x": field.Ex, "y": field.Ey, "z": field.Ez}
+    scalar_type = {
+        axis: complex if np.iscomplexobj(values) else float for axis, values in comp.items()
+    }
     v = 0.0
     for axis, (i, j, k), sign, dl in zip(
         path.axes,
@@ -243,8 +249,7 @@ def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float:
         path.signs,
         path.dls,
     ):
-        # KB-047: this float() cast silently drops the imaginary part of
-        # a complex frame (ComplexWarning only).  Fixing it changes the
-        # declared return type, so it is a decision, not a typo.
-        v += sign * float(comp[axis][i, j, k]) * dl
+        # Python scalars retain complex phase and the existing real
+        # accumulation precision even for float32 input (DD-284).
+        v += sign * scalar_type[axis](comp[axis][i, j, k]) * dl
     return v

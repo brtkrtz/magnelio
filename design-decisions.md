@@ -4394,6 +4394,9 @@ model, and there the single-edge-vs-distributed-mode normalisation must be
 handled by the element, not the rasteriser.  Next: 3b lumped RLC on a
 single-edge curve fixture.
 
+DD-284 extends the original real-only integral contract to complex
+physical field frames, preserving the real accumulation and rasteriser.
+
 ---
 
 ## DD-077 — Trapezoidal RLC companion models (3b core); operator unification pending
@@ -23953,3 +23956,43 @@ again raise the documented ValueError rather than a missing-run KeyError.
 The store round-trip/resume gate passes; the selective-access gate also
 rejects reading an unrelated header. Evidence:
 `investigations/test-health-2026-10-05/MEASUREMENTS.md` (internal record).
+
+---
+
+## DD-284 — Phase-preserving electric-field line integrals
+
+**Date:** 2026-10-05. **Status:** implemented, uncommitted.
+Resolves KB-047; extends DD-076 to the physical frames of DD-259.
+
+**Decision.** `circuit.integrate_E` accepts both real time-domain and
+complex frequency-domain `FieldState` samples in V/m. It returns a
+Python float for real samples and a Python complex voltage for complex
+samples, including a complex frame whose imaginary part is zero.
+Choose float/complex scalar conversion from each component's dtype before
+summing `sign * E * dl`. This preserves the existing real double-precision
+accumulation, including float32 inputs, while retaining phasor phase.
+The shared path rasteriser, orientation, cell-length weighting and units
+remain unchanged; raw FIT edge voltages are not physical input.
+
+**Rationale.** A frequency monitor naturally supplies a complex frame.
+Rejecting that frame or adding a second integrator would split one linear
+measurement by storage kind. The integral needs no complex conjugation:
+reversal negates it, and integrating a phase snapshot commutes with
+`Re(V * exp(+j phase))`. Conservative fields telescope to the endpoint
+potential difference; general time-varying fields may have nonzero
+closed-path circulation.
+
+**Compatibility.** Real inputs retain their return type and arithmetic.
+Complex inputs previously emitted ComplexWarning and silently returned
+the real part. Correcting that invalid result is an additive bug fix,
+recorded in the unreleased changelog; no release is performed.
+
+**Validation and documentation.** The rasteriser tests reproduce the
+7 mm, `Ex=3+4j` counterexample and cover purely imaginary and zero-imaginary
+complex fields, all three axes on uniform/graded grids, path reversal,
+closed-path circulation, frequency-frame snapshots at several phases and
+unchanged real float32/float64 accumulation. ComplexWarning is treated
+as an error. Methods prose states the physical units, path dependence,
+return kinds and phase convention; the voltage-integral how-to uses a
+frequency-monitor frame and its own grid. Evidence:
+`investigations/kb047-complex-integrals/MEASUREMENTS.md` (internal record).

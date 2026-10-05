@@ -631,6 +631,13 @@ namespace; plumbing is not exported.  Every public name has exactly
 one documented home (`validation/tools/check_api_surface.py` enforces
 this, including the pinned core surface).
 
+`circuit.integrate_E(field, curve, grid)` integrates physical E samples
+in V/m along the canonical directed edge path (DD-284). Real fields
+retain the existing Python-float accumulation and return type; complex
+frequency frames return a Python complex voltage, without conjugation.
+The supplied grid belongs to the frame, including monitor subregions.
+It is a path integral and need not be an endpoint potential difference.
+
 DD-279 records the implemented naming revision: explicit physical units,
 coordinates, normalization, selectors, operation scope and public type homes.
 The version-neutral `docs/migration-api-naming.md` lists every breaking

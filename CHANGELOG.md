@@ -11,6 +11,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Electric-field line integrals retain the full complex voltage and phase
+  of frequency-domain fields. Real-valued fields still return a float.
+
 - S-parameter queries on stored general time-domain runs again explain
   that a scattering analysis is required, instead of reporting a missing run.
 
