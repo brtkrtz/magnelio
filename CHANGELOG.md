@@ -11,6 +11,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Project watching delivers the final state when a writer finishes while
+  the consumer is processing the previous update.
+
 - Opposing CPML boundaries sample electric and magnetic fields at their
   staggered positions, removing the absorber asymmetry in symmetry-model
   comparisons. Existing checkpoints retain their original profiles on resume.

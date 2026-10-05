@@ -4765,8 +4765,11 @@ class Project(ScatteringResultMixin):
                 signature = last
             if signature != last:
                 last = signature
+                # Decide before yielding: the writer may finish while the
+                # consumer handles this update, requiring one more snapshot.
+                terminal = self._is_terminal()
                 yield self
-                if self._is_terminal():
+                if terminal:
                     return
             if deadline is not None and time.monotonic() >= deadline:
                 return

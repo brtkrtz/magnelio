@@ -19,6 +19,16 @@ dedicated DD keep their record here.
 **Two entries are open as of 2026-10-05: KB-038 and KB-043.**
 Everything else is struck through and resolved.
 
+## KB-052: ~~Project watching can omit the final writer state~~ — Resolved (2026-10-05)
+
+The generator checked terminal state after yielding a running update. If
+the writer completed while the consumer handled that update, iteration
+ended before yielding the completed state. A deterministic paused-consumer
+test reproduces the missing update. The terminal decision now precedes
+the yield, so completion during consumption is observed in the next
+iteration. All five watch tests pass. Discovery and reproduction:
+`investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
+
 ## KB-051: ~~Energy stopping can discard pending finite excitations~~ — Resolved (2026-10-05)
 
 DD-282 guards energy stopping until every scheduled finite waveform and

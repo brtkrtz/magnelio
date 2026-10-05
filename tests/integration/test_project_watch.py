@@ -158,3 +158,15 @@ def test_timeout_ends_a_watch_on_a_live_run(tmp_path):
     assert proj.status == "running"
     with pytest.raises(ValueError, match="interval"):
         proj.watch(interval=0)
+
+
+def test_generator_observes_completion_while_consumer_handles_a_snapshot(tmp_path):
+    store = _store_with_running_run(tmp_path, os.getpid(), socket.gethostname())
+    proj = open_project(store.path)
+    changes = proj.watch(interval=0.001, timeout=1.0)
+    assert next(changes).status == "running"
+    # The writer completes while the consumer processes the yielded snapshot.
+    store._finalize_run("port1_mode0", 10, "done")
+    assert next(changes).status == "done"
+    with pytest.raises(StopIteration):
+        next(changes)
