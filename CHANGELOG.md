@@ -11,6 +11,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- CAD volume measurements accurately integrate small rational spline faces,
+  including smooth circular tapers, while retaining curved-sheet precision.
+
 - Electric-field line integrals retain the full complex voltage and phase
   of frequency-domain fields. Real-valued fields still return a float.
 

@@ -20240,6 +20240,8 @@ directions keep DD-144's `MakePipeShell` sweep unchanged.
   an offset one.  Volumes at 0.2 / 1/3 / 0.5 / 0.66 on the cone:
   1344.3 / 1353.0 / 1363.9 / 1374.4 mm³ (fixed rule), monotone.
 - **`volume()` is quadrature-limited on the rational face — KB-046.**
+  Historical measurement; resolved by [[DD-275]] WP4 and [[DD-285]].
+  The original taper gate now uses public `volume()` at rel 1e-6.
   OCC's fixed Gauss rule, which `occ_volume` uses, reads the cone taper
   **0.9 % too large** (1352.86 against 1341.01) while landing on every
   other shape measured — sphere, torus, filleted brick, the DD-144
@@ -23996,3 +23998,48 @@ as an error. Methods prose states the physical units, path dependence,
 return kinds and phase convention; the voltage-integral how-to uses a
 frequency-monitor frame and its own grid. Evidence:
 `investigations/kb047-complex-integrals/MEASUREMENTS.md` (internal record).
+
+## DD-285 — Condition CAD volume integration independently of construction
+
+**Date:** 2026-10-05. **Status:** implemented, unreleased.
+
+**Problem.** KB-046's fixed quadrature over-read the rational circular
+tangent taper by 0.884%. DD-275 WP4 already replaced it with span-aware
+Gauss-Kronrod integration, preserving the polar paraboloid regression.
+The original taper gate still bypassed `volume()`, however: normal metre
+construction returns 1341.072956 mm³ against the independent smoothstep
+integral 1341.011264 mm³, a relative error of 4.60e-5. Tightening GK's
+tolerance from 1e-9 to 1e-15 does not change that discrepancy, despite its
+reported error near 2e-9. A transformed copy, including an identity-scale
+copy, removes the discrepancy; a plain topology/geometry copy does not.
+This is a kernel representation/measurement precision problem, not evidence
+that the smoothstep geometry or solver needs a different law.
+
+**Decision.** `occ_volume` measures a transformed copy centred on its
+geometry bounding box, with a power-of-two scale targeting a 128-unit
+diagonal using the existing fine-detail scaling rule. Integrate this copy
+with the existing span-aware GK rule and divide by the scale cubed. The
+input shape, construction scale, topology ownership and mesher geometry
+remain intact. This applies to all shapes, including imported, trimmed,
+Boolean and hollow geometry; no surface-kind or operation-specific switch
+is introduced. Empty geometry reports zero. The kernel error estimate is
+not a guarantee against geometric approximation error or cancellation.
+
+Rebuilding every construction at a larger scale was rejected: it changes
+construction behaviour and causes a previously loud folded-offset fixture
+to fail inside ShapeFix with a different kernel exception. Conditioning only
+the completed measurement copy avoids this regression. Tightening quadrature
+tolerance alone was also ineffective.
+
+**Acceptance.** The original taper gate now calls public `volume()` at
+rel 1e-6, with zero absolute tolerance, for increasing/decreasing radii,
+three physical sizes and automatic/explicit build scales. The original
+3/6 mm taper agrees to about 1e-10 relative. The polar paraboloid prism
+retains its existing 1e-4 gate across three build scales (measured error
+4.84e-6), unlike the old adaptive Gauss rule's 2.17e-3 discrepancy.
+The final modification/geometry run passes 491 tests; the adjacent geometry
+run passes 590 (overlapping selections). Fresh offline HTML executes Tutorial
+14 successfully. Ruff, format, hygiene, DD and API gates pass. Methods and
+Tutorial 14 explain physical volume and its approximation limits.
+Reproduction, rejected approach and acceptance logs:
+`investigations/kb046-volume-quadrature/MEASUREMENTS.md` (internal record).

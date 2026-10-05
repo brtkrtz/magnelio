@@ -482,7 +482,10 @@ class TestTangentBlend:
             assert mid / near == pytest.approx(4.0, abs=0.4)
             assert far / mid == pytest.approx(4.0, abs=0.4)
 
-    def test_taper_between_two_circles_has_the_smoothstep_volume(self):
+    @pytest.mark.parametrize("scale", [None, 1.0, 1000.0])
+    @pytest.mark.parametrize("size_factor", [1e-3, 1.0, 1e3])
+    @pytest.mark.parametrize("radii", [(3e-3, 6e-3), (6e-3, 3e-3)])
+    def test_taper_between_two_circles_has_the_smoothstep_volume(self, scale, size_factor, radii):
         """A round taper is the exact reparametrised cone.
 
         Between radii r0 and r1 the eased profile is r0 + (r1 - r0) w(s)
@@ -490,27 +493,22 @@ class TestTangentBlend:
         lateral face is a rational periodic B-spline here (the cone's own
         circles), which is the branch that carries weights along.
 
-        Integrated with the kernel's adaptive rule rather than through
-        volume(): the fixed Gauss rule volume() uses reads this rational
-        face 0.9 % too large (KB-046), and this test is about the
-        geometry, not the quadrature.
+        The public volume measurement must integrate this rational face
+        accurately, both with automatic scaling and explicit build scales.
         """
         import math
 
-        from OCC.Core.BRepGProp import brepgprop
-        from OCC.Core.GProp import GProp_GProps
-
         mat = Material.pec()
-        r0, r1, length = 3e-3, 6e-3, 20e-3
-        c0 = Cylinder(origin=(0, 0, -5e-3), axis="z", radius=r0, height=5e-3, material=mat)
-        c1 = Cylinder(origin=(0, 0, length), axis="z", radius=r1, height=5e-3, material=mat)
+        r0, r1 = (r * size_factor for r in radii)
+        length, height = 20e-3 * size_factor, 5e-3 * size_factor
+        c0 = Cylinder(origin=(0, 0, -height), axis="z", radius=r0, height=height, material=mat)
+        c1 = Cylinder(origin=(0, 0, length), axis="z", radius=r1, height=height, material=mat)
         taper = loft(c0, (0, 0, 0), c1, (0, 0, length), material=mat, blend="tangent")
-        props = GProp_GProps()
-        brepgprop.VolumeProperties(taper._occ_shape(1000.0), props, 1e-9)
         dr = r1 - r0
         # int_0^1 w ds = 1/2, int_0^1 w**2 ds = 9/5 - 2 + 4/7
         expected = math.pi * length * (r0**2 + 2 * r0 * dr * 0.5 + dr**2 * (9 / 5 - 2 + 4 / 7))
-        assert props.Mass() * 1e-9 == pytest.approx(expected, rel=1e-6)
+        build_scale = None if scale is None else scale / size_factor
+        assert taper.volume(scale=build_scale) == pytest.approx(expected, rel=1e-6, abs=0.0)
 
     def test_offset_parallel_faces_make_a_smooth_dog_leg(self):
         """Parallel faces that are not coaxial still take the loft branch.

@@ -825,9 +825,12 @@ Geometrically flat spline sheets are re-covered from exact boundaries. All
 operations preserve holes; Loft accepts mixed planar sections and closed Curve
 conveniences. Direct FaceRef construction keeps owner registrations on that
 original owner. Two-section tangent lofts construct corresponding hole tools
-under the same full-section centroid/normal conditions. Geometry volume measurement uses span-aware adaptive
-Gauss-Kronrod integration with spline spans, including composed/placed results
-and project read-back of rebuilt rational tangent surfaces.
+under the same full-section centroid/normal conditions. Geometry volume
+measurement uses span-aware adaptive Gauss-Kronrod integration on a centred
+copy scaled to a 128-unit diagonal with a power-of-two factor (DD-285).
+Dividing by that factor cubed restores the built shape's units. Construction
+and mesher topology remain unchanged; composed/placed results and project
+read-back of rebuilt rational tangent surfaces use the same measurement.
 
 Chamfer and fillet accept EdgeRef/EdgeSetRef inputs through `edges=` or
 FaceRef/FaceSetRef boundaries through `faces=`. Shell accepts face refs through

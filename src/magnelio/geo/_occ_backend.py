@@ -7909,14 +7909,41 @@ def occ_volume(shape) -> float:
     from OCC.Core.BRepGProp import brepgprop  # noqa: PLC0415
     from OCC.Core.GProp import GProp_GProps  # noqa: PLC0415
 
+    from magnelio.geo._scaling import fine_detail_scale  # noqa: PLC0415
+
+    occ = _require_occ()
+    box = occ["Bnd_Box"]()
+    occ["brepbndlib"].AddOptimal(shape, box, False, False)
+    if box.IsVoid():
+        return 0.0
+    xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
+    factor = fine_detail_scale((xmin, ymin, zmin), (xmax, ymax, zmax))
+    center = ((xmin + xmax) / 2, (ymin + ymax) / 2, (zmin + zmax) / 2)
+    trsf = occ["gp_Trsf"]()
+    trsf.SetValues(
+        factor,
+        0.0,
+        0.0,
+        -factor * center[0],
+        0.0,
+        factor,
+        0.0,
+        -factor * center[1],
+        0.0,
+        0.0,
+        factor,
+        -factor * center[2],
+    )
+    # DD-285: condition a copy for measurement; keep the construction intact.
+    measured = occ["Transform"](shape, trsf, True).Shape()
     props = GProp_GProps()
     # DD-275: the default fixed mass quadrature over-read rebuilt rational
     # tangent surfaces by 0.84%. Span-aware adaptive Gauss-Kronrod integration
     # also retains analytic precision for conics and trimmed curved sheets.
-    error = brepgprop.VolumePropertiesGK(shape, props, 1e-9, False, True)
+    error = brepgprop.VolumePropertiesGK(measured, props, 1e-9, False, True)
     if error < 0:
         raise RuntimeError("Geometry volume integration failed.")
-    return props.Mass()
+    return props.Mass() / factor**3
 
 
 def find_edges_on_nearest_face(shape, point, scale: float = 1.0):
