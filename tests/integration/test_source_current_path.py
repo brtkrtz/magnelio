@@ -27,7 +27,7 @@ from magnelio.boundaries.pec import PECBoundary
 from magnelio.constants import C0, ETA0
 from magnelio.mesh.grid import GridLines
 from magnelio.monitors import MonitorFarFieldFrequency
-from magnelio.signals import WaveformGaussian
+from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
 from magnelio.solver.fit_td import FITTimeDomainSolver
 from magnelio.solver.stability import courant_dt
 from magnelio.sources import SourceCurrentPath
@@ -123,11 +123,16 @@ def test_short_filament_radiates_a_hertzian_dipole():
     ff = MonitorFarFieldFrequency(frequencies=[f0], margin_cells=2, name="pattern")
 
     mesh = Mesh.from_grid(grid).with_boundary_conditions(dict.fromkeys(FACES, "CPML"))
+    # A unipolar current leaves endpoint charge and a static E tail;
+    # truncating that tail contaminates the far-field surface DFT.
+    waveform = WaveformGaussianModulated(f_min=0.8 * f0, f_max=1.2 * f0)
     result = AnalysisTD(mesh=mesh, sources=[src], monitors=[ff], f_max=2 * f0, verbose=False).run(
-        excitations=[Excitation("fil", waveform=WaveformGaussian(f_max=2 * f0), amplitude=1.0)],
+        excitations=[Excitation("fil", waveform=waveform, amplitude=1.0)],
         total_time_steps=6000,
         energy_stop_db=60,
     )
+    drive = result.excitation_signal("fil").values
+    assert abs(drive.sum()) < 1e-8 * np.abs(drive).sum()
     result.normalize_to_excitation("fil")
     with warnings.catch_warnings():  # the box clearance is the point, see below
         warnings.simplefilter("ignore")

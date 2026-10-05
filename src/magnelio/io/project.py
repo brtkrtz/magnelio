@@ -5229,11 +5229,21 @@ class Project(ScatteringResultMixin):
             )
         return [data["port_band"][port] for port in ports]
 
-    def _scattering_runs(self):
-        runs = {name: self._load_run(name, metadata_only=True) for name in self._started_runs()}
+    def _require_scattering_runs(self):
+        """Validate the result kind from the run index without reading payloads."""
+        runs = self._started_runs()
         if not runs:
             raise ValueError(f"project {self.path} has no started runs")
-        general = [name for name, data in runs.items() if data["excited"] is None]
+        general = [
+            name
+            for name, info in runs.items()
+            if (
+                info["excited"]
+                if "excited" in info
+                else self._load_run(name, metadata_only=True)["excited"]
+            )
+            is None
+        ]
         if general:
             raise ValueError(
                 f"runs {general} are general time-domain runs (AnalysisTD) without "
@@ -5241,6 +5251,12 @@ class Project(ScatteringResultMixin):
                 f"them with project.result(name)"
             )
         return runs
+
+    def _scattering_runs(self):
+        return {
+            name: self._load_run(name, metadata_only=True)
+            for name in self._require_scattering_runs()
+        }
 
     def _spectral_waves(self, name, channels, f_axis=None):
         """Read and calibrate requested channels; band ports retain joint projections."""
@@ -5425,6 +5441,7 @@ class Project(ScatteringResultMixin):
         """S-parameter column, derived on read (optionally on a custom ``f_axis``)."""
         from magnelio.post.modal_sparameters import _scattering_ratios  # noqa: PLC0415
 
+        self._require_scattering_runs()
         name = self._run_name_for_excited((in_port, mode_in))
         excited = (in_port, mode_in)
         observed = (out_port, mode_out)

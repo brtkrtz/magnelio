@@ -556,6 +556,17 @@ frequency point erodes, so a band-averaged figure of merit shows
 nothing.  This is now documented for users in
 `docs/methods/precision.md`.
 
+**Complete-suite audit, 2026-10-05.** The small fixture now reads median
+-145.77/-136.56 dB at 4064/8128 steps: both better than the recorded
+-136.19/-129.85 dB, but with a 9.21 dB difference. Historical source
+`19ac93d3` on the current environment reproduces that difference, so it
+does not establish a new code regression. The regression test retains the
+original doubled-run ceilings, anchored to the recorded baseline, and adds
+a short-run ceiling; cancellation lowering the short-run floor alone no
+longer fails it. This does not fix the interface-wordlength defect or
+establish its floor for arbitrary run lengths. Evidence:
+`investigations/test-health-2026-10-05/MEASUREMENTS.md` (internal record).
+
 ## KB-037: ~~Two builds of the same band port gave different Galerkin subspaces~~ — Resolved (2026-08-31)
 
 `zeta_pencil.find_propagating_modes` called `spla.eigs` without a start

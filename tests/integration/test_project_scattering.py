@@ -9,6 +9,7 @@ multi-excitation fill-in flow.
 
 from __future__ import annotations
 
+import math
 import os
 import threading
 import time
@@ -25,6 +26,8 @@ from magnelio.geo import (
 )
 from magnelio.io.project import open_project  # noqa: E402
 from magnelio.ports import PortWaveguide
+from magnelio.signals import WaveformGaussian
+from magnelio.solver.stability import courant_dt
 
 
 def _model_and_mesh():
@@ -55,7 +58,7 @@ def _model_and_mesh():
     return model, mesh, f_max
 
 
-def _analysis(mesh, model, f_max, project=None):
+def _analysis(mesh, model, f_max, project=None, waveform=None):
     return AnalysisScatteringTD(
         mesh=mesh,
         ports=[
@@ -66,6 +69,7 @@ def _analysis(mesh, model, f_max, project=None):
         verbose=False,
         project=project,
         geometry=model,
+        waveform=waveform,
     )
 
 
@@ -332,27 +336,29 @@ def test_stop_reason_booked_in_index_and_settings(tmp_path):
 
 
 def test_runtime_cap_truncates_books_and_resumes(tmp_path):
-    """A tiny cap truncates with a warning; a bare resume() finishes the
+    """A cap during the pulse truncates; a bare resume() finishes the
     run to its inherited criterion despite the 'done' state (DD-122)."""
     import magnelio as mio  # noqa: PLC0415
 
     model, mesh, f_max = _model_and_mesh()
-    with pytest.warns(RuntimeWarning, match="runtime cap of 120 steps"):
-        proj = _analysis(mesh, model, f_max, project=tmp_path / "pp").run(
+    waveform = WaveformGaussian(f_max=f_max)
+    cap = math.ceil(waveform.peak_time / courant_dt(mesh.grid, "normal"))
+    with pytest.warns(RuntimeWarning, match=f"runtime cap of {cap} steps"):
+        proj = _analysis(mesh, model, f_max, project=tmp_path / "pp", waveform=waveform).run(
             excited=[("port1", 0)],
-            max_time_steps=120,
+            max_time_steps=cap,
         )
     info = proj.runs["port1_mode0"]
     assert info.state == "done"
     assert info.stop_reason == "runtime_cap"
-    assert info.n_steps == 120
+    assert info.n_steps == cap
 
     # The cap-truncated run resumes on its inherited launch criterion
     # (a fresh auto cap budget) and now ends on a real criterion.
     proj2 = mio.resume(tmp_path / "pp", run="port1", verbose=False)
     info2 = proj2.runs["port1_mode0"]
     assert info2.stop_reason in ("energy", "port_signal")
-    assert info2.n_steps > 120
+    assert info2.n_steps > cap
 
 
 def test_lumped_element_streams_and_resumes(tmp_path):
@@ -378,15 +384,17 @@ def test_lumped_element_streams_and_resumes(tmp_path):
     mesh = Mesh.from_geometry(model, MeshControl(min_nodes_per_wavelength=8), f_max=f_max)
     assert len(mesh.elements) == 1
 
-    ram = _analysis(mesh, model, f_max).run(excited=[("port1", 0)])
+    waveform = WaveformGaussian(f_max=f_max)
+    cap = math.ceil(waveform.peak_time / courant_dt(mesh.grid, "normal"))
+    ram = _analysis(mesh, model, f_max, waveform=waveform).run(excited=[("port1", 0)])
     s11_ram = np.abs(ram.S("port1", "port1"))
     # The mid-line 100 ohm shunt reflects hard (z_line ~ 188 ohm).
     assert float(s11_ram.max()) > 0.3
 
     with pytest.warns(RuntimeWarning, match="runtime cap"):
-        _analysis(mesh, model, f_max, project=tmp_path / "pp").run(
+        _analysis(mesh, model, f_max, project=tmp_path / "pp", waveform=waveform).run(
             excited=[("port1", 0)],
-            max_time_steps=120,
+            max_time_steps=cap,
         )
     proj = mio.resume(tmp_path / "pp", run="port1", verbose=False)
     info = proj.runs["port1_mode0"]

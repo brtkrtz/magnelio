@@ -11,6 +11,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- S-parameter queries on stored general time-domain runs again explain
+  that a scattering analysis is required, instead of reporting a missing run.
+
 - Stored-result metadata and time plots no longer derive the full
   S-matrix. Individual S-parameter queries evaluate only the selected
   excitation and involved ports, reuse calibrated spectra on matching

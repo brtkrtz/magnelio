@@ -17457,6 +17457,20 @@ the Hertzian value with `D_max` 1.499 and a `sin θ` pattern.  The
 how-to *Impressed currents* adds the ground-plane monopole (P_rad
 0.960 of the analytic value, D 3.14 against 3.0).
 
+**Finite-record audit (2026-10-05).** The revised Gaussian exposed a
+fixture limitation: a unipolar open-path current leaves endpoint charge
+and a static E tail. Its rectangular finite DFT produces D_max 1.707,
+unchanged with energy stopping disabled. A modulated 4–6 GHz pulse with
+negligible net current gives 1.5073151. Independently extending only the
+unipolar probe's final static E samples by their exact geometric-series
+DFT tail gives 1.5073151 and the same radiated power to 2e-8 relative.
+The radiation test therefore uses the charge-balanced pulse and checks
+its sampled net current; the unipolar discrete-charge gate stays intact.
+No static-tail assumption is added to production monitors. Methods prose
+states this finite-record limit. Evidence and the probe `probe_sources.py`:
+`investigations/test-health-2026-10-05/DERIVATION.md` and `MEASUREMENTS.md`
+(internal records).
+
 **Limits.**  This is a source, not a wire: no sub-cell thin-wire
 model, no self-consistent current, no conductor.  The internal
 `mesh._thin_wire` machinery (used by the DD-173 antenna gates) stays
@@ -23780,6 +23794,16 @@ private probes: `investigations/pulse-defaults/IMPLEMENTATION.md` (internal
 record). Public explanation and use: `docs/methods/sources-monitors.md`
 and Tutorial 03.
 
+**Complete-suite audit follow-up (2026-10-05).** Two incident-field gates
+still sampled the old 267 ps peak at 280/310 ps, after the new 162 ps
+pulse. They now derive their snapshots and run end from the waveform.
+Two project-store cap/resume gates used 120 steps, but the new pulse lets
+the unbounded reference finish on energy at 101 steps. Their cap now lies
+at the declared waveform peak, before finite-drive completion, so the
+warning, truncated record and resumed response are actually exercised.
+Evidence: `investigations/test-health-2026-10-05/MEASUREMENTS.md`
+(internal record).
+
 **Termination follow-up (2026-10-05).** Nine additional GPU runs and
 delayed-drive controls separate source completion from response convergence.
 Energy stopping can discard a later scheduled drive (KB-051); a source-end
@@ -23920,3 +23944,12 @@ Methods documentation and Tutorial 07 show selective evaluation.
 The read-only timing/comparison script `probe_result_access.py`,
 measurements and documentation build runner are in
 `investigations/time-signal-first-call/` (internal dossier).
+
+**Complete-suite audit follow-up (2026-10-05).** Selected S access again
+checks the scattering-only result contract before resolving its input run.
+The check uses the run index, with a metadata-only fallback for old entries,
+so it does not open unrelated run records. General multi-drive projects
+again raise the documented ValueError rather than a missing-run KeyError.
+The store round-trip/resume gate passes; the selective-access gate also
+rejects reading an unrelated header. Evidence:
+`investigations/test-health-2026-10-05/MEASUREMENTS.md` (internal record).

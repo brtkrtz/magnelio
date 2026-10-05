@@ -358,6 +358,16 @@ charge anywhere else — to the last bit of double precision.  An open
 current path *is* a consistent oscillating dipole, with the right
 near-zone electrostatic part; there is nothing to clean up.
 
+A unipolar pulse on an open path leaves opposite charges at its ends
+after the current finishes. The resulting electrostatic field does not
+decay. A finite rectangular Fourier record cuts off that field and can
+contaminate a far-field pattern, even after the radiating transient has
+left the box. For a transient measurement of an AC radiation pattern,
+use a modulated pulse whose net time-integrated current is negligible,
+and record its complete response. This finite-record limitation follows
+from the endpoint-charge identity above (in-house analysis); the far-field
+monitor does not automatically complete a static tail.
+
 Edges the solver holds at zero — inside a perfect conductor, or
 tangential to a PEC wall — cannot take an impressed current.  A path
 crossing such a region radiates less than it was asked to, and says so

@@ -39,6 +39,15 @@ exactly closed and second-order accurate on graded grids.  The
 memory cost is one complex sample per frequency and surface cell —
 negligible next to a volume monitor.
 
+The DFT covers the recorded interval. A field that remains static at the
+end is also cut off by that interval; extending the run alone does not
+make its Fourier boundary term vanish. In particular, a unipolar current
+on an open impressed-current path leaves endpoint charge. For its AC
+radiation pattern, use a pulse with negligible net integrated current
+so the electrostatic tail is negligible, and record the radiating
+response completely. The monitor applies no automatic static-tail
+completion (in-house finite-record analysis).
+
 After the run, `monitor.result(f)` performs the transform and returns
 a `FarFieldResult` with the complex patterns $E_\theta$, $E_\varphi$
 on a spherical grid (ISO convention: $\theta$ from the $+z$ axis,
