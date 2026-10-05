@@ -684,9 +684,9 @@ root-mean-square form of the textbook expression.</p>
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">free space: peak directivity    </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-property reference internal" href="../api/post.html#magnelio.post.FarFieldResult.directivity" title="magnelio.post.FarFieldResult.directivity"><span class="n">dipole</span><span class="o">.</span><span class="n">directivity</span><span class="o">.</span><span class="n">max</span></a><span class="p">(</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   (1.50, see below)</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">free space: far-field closure   </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-property reference internal" href="../api/post.html#magnelio.post.FarFieldResult.power_balance" title="magnelio.post.FarFieldResult.power_balance"><span class="n">dipole</span><span class="o">.</span><span class="n">power_balance</span></a><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   (target above 0.95)</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>free space: P_rad / Hertzian    0.973   (target 1.00 +- 0.05)
-free space: peak directivity    1.548   (1.50, see below)
-free space: far-field closure   0.994   (target above 0.95)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>free space: P_rad / Hertzian    0.983   (target 1.00 +- 0.05)
+free space: peak directivity    1.528   (1.50, see below)
+free space: far-field closure   0.992   (target above 0.95)
 </pre></div>
 </div>
 </section>
@@ -713,8 +713,8 @@ masked below the plane and the horizon directivity doubles.</p>
   mesh | conformal cells
   mesh | PEC masks
   mesh | 92 x 92 x 49 = 414,736 cells | 122 MiB
-ground plane: P_rad / monopole  0.960   (target 1.00 +- 0.05)
-ground plane: peak directivity  3.135   (3.00, see below)
+ground plane: P_rad / monopole  0.970   (target 1.00 +- 0.05)
+ground plane: peak directivity  3.097   (3.00, see below)
 </pre></div>
 </div>
 <p>Both powers hold to a few percent, which is the number that matters:
@@ -794,7 +794,7 @@ the path in that half and let the symmetry wall supply its image.</p></li>
 </ul>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 36.504 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 15.116 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-current-path-source-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/91d55e6409f4dc1250dd08c55ac2d62f/plot_current_path_source.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_current_path_source.ipynb</span></code></a></p>

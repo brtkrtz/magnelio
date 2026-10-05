@@ -767,7 +767,7 @@ resolution parameter.</p>
 coax line impedance on this grid: 47.31 Ohm
 --- coax, naive start values ---
 worst |S11| in band :  -19.5 dB
-|S11| &lt; -20 dB up to:  14.18 GHz
+|S11| &lt; -20 dB up to:  14.25 GHz
 max |phase error|   :  28.97 deg
 </pre></div>
 </div>
@@ -807,7 +807,7 @@ reactance is what reflects at the top of the band.</p>
   mesh | PEC masks
   mesh | 14 x 14 x 39 = 7,644 cells | 2.4 MiB
 
-&lt;matplotlib.legend.Legend object at 0x7f04cb556f10&gt;
+&lt;matplotlib.legend.Legend object at 0x7fa214ceb050&gt;
 </pre></div>
 </div>
 <p><strong>Gap position</strong> moves the phase error.  The termination does not
@@ -859,7 +859,7 @@ coax, gap start at -2·gap: max |phase error|   5.83 deg
   mesh | 14 x 14 x 32 = 6,272 cells | 2.0 MiB
 coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f04ce556f10&gt;
+&lt;matplotlib.legend.Legend object at 0x7fa215ef9490&gt;
 </pre></div>
 </div>
 <p><strong>Port impedance</strong> sets the low-frequency floor: the constant
@@ -890,7 +890,7 @@ mismatch.</p>
   mesh | PEC masks
   mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
 
-&lt;matplotlib.legend.Legend object at 0x7f04cea2c7d0&gt;
+&lt;matplotlib.legend.Legend object at 0x7fa215855210&gt;
 </pre></div>
 </div>
 </section>
@@ -986,7 +986,7 @@ microstrip line impedance on this grid: 50.23 Ohm
 --- microstrip, trace end at the reference plane ---
 worst |S11| in band :  -14.4 dB
 |S11| &lt; -20 dB up to:   5.97 GHz
-max |phase error|   :  23.73 deg
+max |phase error|   :  23.76 deg
 </pre></div>
 </div>
 <p>The position sweep again — with one difference to the coax.  A
@@ -1014,30 +1014,30 @@ of the band that matters most in your application.</p>
   mesh | conformal cells
   mesh | PEC masks
   mesh | 24 x 23 x 22 = 12,144 cells | 3.7 MiB
-microstrip, trace end at 0.0·h_sub: max |phase error|  23.73 deg
+microstrip, trace end at 0.0·h_sub: max |phase error|  23.76 deg
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
   mesh | 24 x 23 x 21 = 11,592 cells | 3.6 MiB
-microstrip, trace end at -0.5·h_sub: max |phase error|  10.59 deg
+microstrip, trace end at -0.5·h_sub: max |phase error|  10.63 deg
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
   mesh | 24 x 23 x 20 = 11,040 cells | 3.4 MiB
-microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
+microstrip, trace end at -1.0·h_sub: max |phase error|   2.48 deg
   mesh | feature planes
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
   mesh | 24 x 23 x 19 = 10,488 cells | 3.2 MiB
-microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
+microstrip, trace end at -1.5·h_sub: max |phase error|  15.58 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f04cc00af50&gt;
+&lt;matplotlib.legend.Legend object at 0x7fa216846210&gt;
 </pre></div>
 </div>
 </section>
@@ -1165,9 +1165,9 @@ impedance.</p>
   mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
 CPW line impedance on this grid: 42.22 Ohm
 --- CPW, naive start values ---
-worst |S11| in band :  -26.6 dB
+worst |S11| in band :  -26.7 dB
 |S11| &lt; -20 dB up to:  15.00 GHz
-max |phase error|   :  21.35 deg
+max |phase error|   :  21.31 deg
 </pre></div>
 </div>
 <p>The two geometric knobs, swept.  The gap-width sweep mirrors the
@@ -1250,7 +1250,7 @@ reference plane on this structure.</p>
   mesh | conformal cells
   mesh | PEC masks
   mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
-CPW, gap start at +0·s: max |phase error|  21.35 deg
+CPW, gap start at +0·s: max |phase error|  21.31 deg
   mesh | feature planes
   mesh | grid lines
   mesh | materials
@@ -1276,7 +1276,7 @@ CPW, gap start at +8·s: max |phase error|  11.02 deg
   mesh | conformal cells
   mesh | PEC masks
   mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
-CPW, gap start at +16·s: max |phase error|   0.74 deg
+CPW, gap start at +16·s: max |phase error|   0.71 deg
   mesh | feature planes
   mesh | grid lines
   mesh | materials
@@ -1289,7 +1289,7 @@ CPW, gap start at +16·s: max |phase error|   0.74 deg
   mesh | conformal cells
   mesh | PEC masks
   mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
-CPW, gap start at +24·s: max |phase error|   9.60 deg
+CPW, gap start at +24·s: max |phase error|   9.66 deg
 </pre></div>
 </div>
 <p>And the impedance floor, as before: the grid’s line impedance sits
@@ -1318,7 +1318,7 @@ catalogue value leaves a visible broadband pedestal.</p>
   mesh | PEC masks
   mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
 
-&lt;matplotlib.legend.Legend object at 0x7f04cd442250&gt;
+&lt;matplotlib.legend.Legend object at 0x7fa213bf1610&gt;
 </pre></div>
 </div>
 </section>
@@ -1348,19 +1348,19 @@ quantities of your production model, run, and read the scoreboard.</p>
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>--- coax, naive start values ---
 worst |S11| in band :  -19.5 dB
-|S11| &lt; -20 dB up to:  14.18 GHz
+|S11| &lt; -20 dB up to:  14.25 GHz
 max |phase error|   :  28.97 deg
 --- microstrip, naive start values ---
 worst |S11| in band :  -14.4 dB
 |S11| &lt; -20 dB up to:   5.97 GHz
-max |phase error|   :  23.73 deg
+max |phase error|   :  23.76 deg
 --- CPW, naive start values ---
-worst |S11| in band :  -26.6 dB
+worst |S11| in band :  -26.7 dB
 |S11| &lt; -20 dB up to:  15.00 GHz
-max |phase error|   :  21.35 deg
+max |phase error|   :  21.31 deg
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 2.694 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 40.011 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-lumped-port-investigations-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/c9ef743082ff880408b55ba207ef6782/plot_lumped_port_investigations.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_lumped_port_investigations.ipynb</span></code></a></p>

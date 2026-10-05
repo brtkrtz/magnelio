@@ -916,16 +916,12 @@ property).</p></li>
 port at mode 0.</p></li>
 <li><p><strong>accuracy</strong> (<em>{&quot;draft&quot;</em><em>, </em><em>&quot;normal&quot;</em><em>, </em><em>&quot;high&quot;}</em><em>, </em><em>default &quot;normal&quot;</em>) – Courant safety factor.</p></li>
 <li><p><strong>energy_stop_db</strong> (<em>float</em><em>, </em><em>default 70.0</em>) – Stop each TD run when stored EM energy has decayed by this
-many dB below peak.  Calibrated against the well-absorbed
-TEM-line case: at 70 dB the truncation residual on V/I
-falls below ~7e-4 of peak, which keeps the rectangular-DFT
-sidelobes on <code class="docutils literal notranslate"><span class="pre">|S21|</span></code> below ~0.02 dB; the port floors
-themselves sit at the DTBC level (−130 dB class on
-certified lines).  More aggressive cuts
-(40 dB) leave a residual of ~1 % that produces
-<code class="docutils literal notranslate"><span class="pre">|S21|</span> <span class="pre">&gt;</span> <span class="pre">1</span></code> artefacts until either the run is extended
-or the rectangular window is replaced (see
-<code class="docutils literal notranslate"><span class="pre">taper_signals</span></code>).  Set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to disable the early
+many dB below peak, after the finite excitation has reached
+its nominal end. This is a decay threshold, not a bound on
+S-parameter error: weak incident spectra and long response
+tails can amplify record truncation. The independent port
+criterion may stop first, so tighten both thresholds when
+checking a longer record. Set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to disable the early
 stop; the run is then bounded by <code class="docutils literal notranslate"><span class="pre">total_time_steps</span></code> (an
 explicit value, or the auto-sized estimate as a fallback cap
 when both are left open).  Not applicable on the band
@@ -1213,7 +1209,8 @@ a continuous-wave drive never decays, so the energy and
 port-signal criteria are disabled for such a run.</p></li>
 <li><p><strong>accuracy</strong> (<em>{&quot;draft&quot;</em><em>, </em><em>&quot;normal&quot;</em><em>, </em><em>&quot;high&quot;}</em><em>, </em><em>default &quot;normal&quot;</em>) – Courant safety factor.</p></li>
 <li><p><strong>energy_stop_db</strong> (<em>float</em><em>, </em><em>default 70.0</em>) – Stop when the stored energy has decayed by this many dB
-below its peak (<code class="docutils literal notranslate"><span class="pre">None</span></code> disables).</p></li>
+below its peak, after all finite excitations have reached
+their nominal ends (<code class="docutils literal notranslate"><span class="pre">None</span></code> disables).</p></li>
 <li><p><strong>total_time_steps</strong> (<em>int</em><em>, </em><em>optional</em>) – Exact leapfrog step count; default unbounded until a stop
 criterion fires, backstopped by <code class="docutils literal notranslate"><span class="pre">max_time_steps</span></code>.</p></li>
 <li><p><strong>port_signal_stop_db</strong> (<em>float</em><em>, </em><em>None</em><em> or </em><em>&quot;auto&quot;</em><em>, </em><em>default &quot;auto&quot;</em>) – Stop when every modal port’s <code class="docutils literal notranslate"><span class="pre">|V|</span></code> envelope has decayed by

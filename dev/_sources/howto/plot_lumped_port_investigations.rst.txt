@@ -219,7 +219,7 @@ resolution parameter.
     coax line impedance on this grid: 47.31 Ohm
     --- coax, naive start values ---
     worst |S11| in band :  -19.5 dB
-    |S11| < -20 dB up to:  14.18 GHz
+    |S11| < -20 dB up to:  14.25 GHz
     max |phase error|   :  28.97 deg
 
 
@@ -282,7 +282,7 @@ reactance is what reflects at the top of the band.
       mesh | PEC masks
       mesh | 14 x 14 x 39 = 7,644 cells | 2.4 MiB
 
-    <matplotlib.legend.Legend object at 0x7f04cb556f10>
+    <matplotlib.legend.Legend object at 0x7fa214ceb050>
 
 
 
@@ -356,7 +356,7 @@ whole band; hold that thought for the microstrip section.
       mesh | 14 x 14 x 32 = 6,272 cells | 2.0 MiB
     coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-    <matplotlib.legend.Legend object at 0x7f04ce556f10>
+    <matplotlib.legend.Legend object at 0x7fa215ef9490>
 
 
 
@@ -409,7 +409,7 @@ mismatch.
       mesh | PEC masks
       mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
 
-    <matplotlib.legend.Legend object at 0x7f04cea2c7d0>
+    <matplotlib.legend.Legend object at 0x7fa215855210>
 
 
 
@@ -523,7 +523,7 @@ they would in a real layout.
     --- microstrip, trace end at the reference plane ---
     worst |S11| in band :  -14.4 dB
     |S11| < -20 dB up to:   5.97 GHz
-    max |phase error|   :  23.73 deg
+    max |phase error|   :  23.76 deg
 
 
 
@@ -574,30 +574,30 @@ of the band that matters most in your application.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 24 x 23 x 22 = 12,144 cells | 3.7 MiB
-    microstrip, trace end at 0.0·h_sub: max |phase error|  23.73 deg
+    microstrip, trace end at 0.0·h_sub: max |phase error|  23.76 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
       mesh | 24 x 23 x 21 = 11,592 cells | 3.6 MiB
-    microstrip, trace end at -0.5·h_sub: max |phase error|  10.59 deg
+    microstrip, trace end at -0.5·h_sub: max |phase error|  10.63 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
       mesh | 24 x 23 x 20 = 11,040 cells | 3.4 MiB
-    microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
+    microstrip, trace end at -1.0·h_sub: max |phase error|   2.48 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
       mesh | 24 x 23 x 19 = 10,488 cells | 3.2 MiB
-    microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
+    microstrip, trace end at -1.5·h_sub: max |phase error|  15.58 deg
 
-    <matplotlib.legend.Legend object at 0x7f04cc00af50>
+    <matplotlib.legend.Legend object at 0x7fa216846210>
 
 
 
@@ -743,9 +743,9 @@ impedance.
       mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
     CPW line impedance on this grid: 42.22 Ohm
     --- CPW, naive start values ---
-    worst |S11| in band :  -26.6 dB
+    worst |S11| in band :  -26.7 dB
     |S11| < -20 dB up to:  15.00 GHz
-    max |phase error|   :  21.35 deg
+    max |phase error|   :  21.31 deg
 
 
 
@@ -851,7 +851,7 @@ reference plane on this structure.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
-    CPW, gap start at +0·s: max |phase error|  21.35 deg
+    CPW, gap start at +0·s: max |phase error|  21.31 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
@@ -877,7 +877,7 @@ reference plane on this structure.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
-    CPW, gap start at +16·s: max |phase error|   0.74 deg
+    CPW, gap start at +16·s: max |phase error|   0.71 deg
       mesh | feature planes
       mesh | grid lines
       mesh | materials
@@ -890,7 +890,7 @@ reference plane on this structure.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 23 x 31 x 35 = 24,955 cells | 7.6 MiB
-    CPW, gap start at +24·s: max |phase error|   9.60 deg
+    CPW, gap start at +24·s: max |phase error|   9.66 deg
 
 
 
@@ -942,7 +942,7 @@ catalogue value leaves a visible broadband pedestal.
       mesh | PEC masks
       mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
 
-    <matplotlib.legend.Legend object at 0x7f04cd442250>
+    <matplotlib.legend.Legend object at 0x7fa213bf1610>
 
 
 
@@ -989,16 +989,16 @@ quantities of your production model, run, and read the scoreboard.
 
     --- coax, naive start values ---
     worst |S11| in band :  -19.5 dB
-    |S11| < -20 dB up to:  14.18 GHz
+    |S11| < -20 dB up to:  14.25 GHz
     max |phase error|   :  28.97 deg
     --- microstrip, naive start values ---
     worst |S11| in band :  -14.4 dB
     |S11| < -20 dB up to:   5.97 GHz
-    max |phase error|   :  23.73 deg
+    max |phase error|   :  23.76 deg
     --- CPW, naive start values ---
-    worst |S11| in band :  -26.6 dB
+    worst |S11| in band :  -26.7 dB
     |S11| < -20 dB up to:  15.00 GHz
-    max |phase error|   :  21.35 deg
+    max |phase error|   :  21.31 deg
 
 
 
@@ -1006,7 +1006,7 @@ quantities of your production model, run, and read the scoreboard.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 2.694 seconds)
+   **Total running time of the script:** (0 minutes 40.011 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_investigations.py:

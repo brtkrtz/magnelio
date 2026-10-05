@@ -1066,6 +1066,31 @@ excitation run. <code class="docutils literal notranslate"><span class="pre">ax=
 results provide the same plotting methods. Band-port results currently
 have no calibrated time-domain a/b decomposition and reject these plots.</p>
 </section>
+<section id="finite-records-and-decay-stopping">
+<h3>Finite records and decay stopping<a class="headerlink" href="#finite-records-and-decay-stopping" title="Link to this heading">#</a></h3>
+<p>The default modal-port run stops when stored energy has fallen 70 dB
+below its peak <strong>or</strong> the interval port-voltage envelope has fallen 60 dB
+below its peak. Energy stopping waits until all finite excitations have
+reached their nominal ends, including delays and synthesised port-drive
+buffers; plane waves also include retardation at their injection faces.
+Port stopping also waits for a generous domain transit margin.
+An explicit <code class="docutils literal notranslate"><span class="pre">total_time_steps</span></code> remains a bound on the run.</p>
+<p>These thresholds measure transient decay. They do not prescribe an
+S-parameter error: the omitted response spectrum is divided by the
+incident spectrum, which can be weak at a band edge. Waveguide content
+near cutoff can also decay slowly after the source has finished. Tighten
+both <code class="docutils literal notranslate"><span class="pre">energy_stop_db</span></code> and <code class="docutils literal notranslate"><span class="pre">port_signal_stop_db</span></code> when checking a longer
+record; changing one leaves the other stopping path active.</p>
+<p>Compare complex S-parameters over the frequencies and channels relevant
+to the device. Small changes over short time windows can miss narrow
+resonances and delayed responses. Include expected ringing times in the
+recording plan, and resolve narrow features on the frequency axis.
+For lossless closed structures, power balance is an additional check.</p>
+<p>The result settings record the stopping reason and the final checked
+port-voltage level. Energy-stopped runs report the current check interval.
+Port stopping remains available when trapped field energy has no coupling
+to the measured ports and therefore never reaches the energy threshold.</p>
+</section>
 <section id="running-out-of-time-continuing-a-truncated-record">
 <h3>Running out of time: continuing a truncated record<a class="headerlink" href="#running-out-of-time-continuing-a-truncated-record" title="Link to this heading">#</a></h3>
 <p>A march has to stop somewhere.  On a high-Q structure what it leaves
@@ -1417,6 +1442,7 @@ change placements on minimum or maximum domain faces.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#s-parameters">S-parameters</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-an-s-matrix">Reading an S-matrix</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnitude-phase-and-time-signals">Magnitude, phase and time signals</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#finite-records-and-decay-stopping">Finite records and decay stopping</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-out-of-time-continuing-a-truncated-record">Running out of time: continuing a truncated record</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#band-ports-one-decomposition-per-frequency-dd-235">Band ports: one decomposition per frequency (DD-235)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-plane-shift-de-embedding-dd-187">Reference-plane shift (de-embedding, DD-187)</a></li>

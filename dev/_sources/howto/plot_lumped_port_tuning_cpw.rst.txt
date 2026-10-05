@@ -341,9 +341,9 @@ end of the band.
  .. code-block:: none
 
     --- current settings — tune until this meets your spec ---
-    worst |S11| in band :  -26.6 dB
+    worst |S11| in band :  -26.7 dB
     |S11| < -20 dB up to:  15.00 GHz
-    max |phase error|   :  21.35 deg
+    max |phase error|   :  21.31 deg
 
 
 
@@ -388,7 +388,7 @@ resolution or band changes, run this page again.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 9.205 seconds)
+   **Total running time of the script:** (0 minutes 5.609 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_tuning_cpw.py:

@@ -788,20 +788,29 @@ a continuous-wave form.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.signals.WaveformGaussian">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformGaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussian" title="Link to this definition">#</a></dt>
-<dd><p>Baseband Gaussian pulse (DC-inclusive), unit peak at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">4</span> <span class="pre">/</span> <span class="pre">f_max</span></code>.</p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformGaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_attenuation_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussian" title="Link to this definition">#</a></dt>
+<dd><p>Baseband Gaussian pulse (DC-inclusive), with a specified spectral edge.</p>
 <p>The pulse for TEM and lumped ports and for any source that may
-carry DC.  Its spectrum is a Gaussian of width <code class="docutils literal notranslate"><span class="pre">f_max</span></code> (the
-<code class="docutils literal notranslate"><span class="pre">e^{-4}</span></code> point), so <code class="docutils literal notranslate"><span class="pre">f_max</span></code> is the useful upper band edge.</p>
+carry DC. The envelope is <code class="docutils literal notranslate"><span class="pre">exp(-((t-peak_time)/tau)**2)</span></code>;
+its peak is at <code class="docutils literal notranslate"><span class="pre">4.5*tau</span></code> and its effective duration at <code class="docutils literal notranslate"><span class="pre">9*tau</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>f_max</strong> (<em>float</em>) – Upper band edge [Hz].</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f_max</strong> (<em>float</em>) – Upper band edge [Hz].</p></li>
+<li><p><strong>edge_attenuation_db</strong> (<em>float</em><em>, </em><em>default 25.0</em>) – Positive spectral amplitude attenuation at <code class="docutils literal notranslate"><span class="pre">f_max</span></code> relative
+to DC: <code class="docutils literal notranslate"><span class="pre">|G(f_max)|</span> <span class="pre">/</span> <span class="pre">|G(0)|</span> <span class="pre">=</span> <span class="pre">10**(-edge_attenuation_db/20)</span></code>.
+Must be finite and strictly positive. Increasing it widens the
+pulse in time and reduces excitation at the band edge.</p></li>
+</ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Waveforms restored from older projects retain their original width
+and peak time. Read <code class="docutils literal notranslate"><span class="pre">peak_time</span></code> and <code class="docutils literal notranslate"><span class="pre">t_end</span></code> for their timing.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">signals</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussian</span><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="mf">10e9</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">/</span> <span class="mf">10e9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">peak_time</span><span class="p">)</span>
 <span class="go">1.0</span>
 </pre></div>
 </div>
@@ -817,30 +826,49 @@ integrated numerically.  Continuous-wave forms (<code class="docutils literal no
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussian.peak_time">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">peak_time</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussian.peak_time" title="Link to this definition">#</a></dt>
+<dd><p>Time of the unit peak [s].</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="magnelio.signals.WaveformGaussian.t_end">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">t_end</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussian.t_end" title="Link to this definition">#</a></dt>
-<dd><p>Twice the peak time — the pulse is below 1e-17 of its peak there.</p>
+<dd><p>Effective duration [s]; the default endpoint envelope is about 1.6e-9.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussian.tau">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tau</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussian.tau" title="Link to this definition">#</a></dt>
+<dd><p>Envelope time constant [s]; statistical standard deviation is tau/sqrt(2).</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformGaussianModulated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformGaussianModulated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_attenuation_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated" title="Link to this definition">#</a></dt>
 <dd><p>Gaussian envelope on a carrier at the band center, unit peak.</p>
-<p>The band-limited pulse for TE/TM modes and any drive whose lower
-band edge matters: the envelope’s sigma follows the passband
-<code class="docutils literal notranslate"><span class="pre">f_max</span> <span class="pre">−</span> <span class="pre">f_min</span></code>, so almost no energy leaks below <code class="docutils literal notranslate"><span class="pre">f_min</span></code>.  The
-carrier sits at <code class="docutils literal notranslate"><span class="pre">(f_min</span> <span class="pre">+</span> <span class="pre">f_max)</span> <span class="pre">/</span> <span class="pre">2</span></code>, which makes this the
-waveform an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> may phase-shift.</p>
+<p>The pulse for TE/TM modes and any drive whose lower band edge
+matters. The envelope is <code class="docutils literal notranslate"><span class="pre">exp(-((t-peak_time)/tau)**2)</span></code>;
+its peak is at <code class="docutils literal notranslate"><span class="pre">4.5*tau</span></code> and its effective duration at <code class="docutils literal notranslate"><span class="pre">9*tau</span></code>.
+The carrier sits at <code class="docutils literal notranslate"><span class="pre">(f_min</span> <span class="pre">+</span> <span class="pre">f_max)</span> <span class="pre">/</span> <span class="pre">2</span></code>. Gaussian spectral tails
+extend beyond the requested band, including below <code class="docutils literal notranslate"><span class="pre">f_min</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>f_min</strong> (<em>float</em>) – Lower band edge [Hz].</p></li>
 <li><p><strong>f_max</strong> (<em>float</em>) – Upper band edge [Hz]; must exceed <code class="docutils literal notranslate"><span class="pre">f_min</span></code>.</p></li>
+<li><p><strong>edge_attenuation_db</strong> (<em>float</em><em>, </em><em>default 25.0</em>) – Positive spectral amplitude attenuation at <code class="docutils literal notranslate"><span class="pre">f_max</span></code> relative
+to the carrier-centre spectrum. Includes both mirrored spectral
+lobes; the lower edge is more strongly excited near DC. Must be
+finite and strictly positive.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Waveforms restored from older projects retain their original width
+and peak time. Read <code class="docutils literal notranslate"><span class="pre">peak_time</span></code> and <code class="docutils literal notranslate"><span class="pre">t_end</span></code> for their timing.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">signals</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">w</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussianModulated</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">)</span>
@@ -871,9 +899,21 @@ integrated numerically.  Continuous-wave forms (<code class="docutils literal no
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated.peak_time">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">peak_time</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated.peak_time" title="Link to this definition">#</a></dt>
+<dd><p>Time of the unit peak [s].</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated.t_end">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">t_end</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated.t_end" title="Link to this definition">#</a></dt>
-<dd><p>Twice the peak time — the envelope is below 1e-17 of its peak there.</p>
+<dd><p>Effective duration [s]; the default endpoint envelope is about 1.6e-9.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated.tau">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tau</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated.tau" title="Link to this definition">#</a></dt>
+<dd><p>Envelope time constant [s]; statistical standard deviation is tau/sqrt(2).</p>
 </dd></dl>
 
 </dd></dl>
@@ -1006,13 +1046,17 @@ explicitly when the table is short or noisy.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformFunction"><code class="docutils literal notranslate"><span class="pre">WaveformFunction</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian.spectrum"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian.spectrum()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian.peak_time"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian.peak_time</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian.t_end"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian.t_end</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian.tau"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian.tau</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.spectrum"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.spectrum()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.f_center"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.f_center</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.peak_time"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.peak_time</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.t_end"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.t_end</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.tau"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.tau</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformSine"><code class="docutils literal notranslate"><span class="pre">WaveformSine</span></code></a></li>

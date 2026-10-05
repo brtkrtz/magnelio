@@ -754,12 +754,12 @@ everything went (sizes in kB):</p>
 geometry.json                                                    0.9
 mesh.h5                                                      11787.6
 project.json                                                     3.8
-runs/port3_mode0/checkpoint.h5                                1523.7
+runs/port3_mode0/checkpoint.h5                                1288.1
 runs/port3_mode0/fields_freq.h5                               5579.0
-runs/port3_mode0/results.h5                                    699.6
-runs/port4_mode0/checkpoint.h5                                1523.7
+runs/port3_mode0/results.h5                                    371.9
+runs/port4_mode0/checkpoint.h5                                1326.5
 runs/port4_mode0/fields_freq.h5                               5579.0
-runs/port4_mode0/results.h5                                    699.6
+runs/port4_mode0/results.h5                                    371.9
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">project.json</span></code> carries the run registry and the reconstruction
@@ -814,7 +814,7 @@ loop, and the live panel for a notebook.</p>
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">trace</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-property reference internal" href="../api/io.html#magnelio.io.Project.runs" title="magnelio.io.Project.runs"><span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span></a><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port3_mode0</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">energy_trace</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">energy samples stored for the H-arm run: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">trace</span></a><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the two runs" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored for the H-arm run: 65
+<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the two runs" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored for the H-arm run: 28
 </pre></div>
 </div>
 <p>The monitor data of <em>every</em> run is preserved — where the previous
@@ -888,8 +888,8 @@ Here we ask the third one, extending the H-arm run by 2000 steps:</p>
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">steps: </span><span class="si">{</span><span class="n">n_before</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">n_before</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2000</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">max |dS13| from 2000 extra steps: </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s13_after</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s13_before</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="p">)</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>steps: 6401 -&gt; 8401
-max |dS13| from 2000 extra steps: 3.7e-04
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>steps: 2701 -&gt; 4701
+max |dS13| from 2000 extra steps: 1.0e-04
 </pre></div>
 </div>
 <p>The change is far below any engineering tolerance — the original
@@ -955,7 +955,7 @@ how-to <em>Watching a simulation that is still running</em> is that recipe.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 20.749 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.311 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>

@@ -501,7 +501,7 @@ radiating into half the space).
     peak directivity:   5.16 dBi
     peak gain:          5.08 dBi
     peak realized gain: 4.99 dBi
-    radiated power:     0.963 W per incident W
+    radiated power:     0.962 W per incident W
 
 
 
@@ -531,7 +531,7 @@ components built from them.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 15.360 seconds)
+   **Total running time of the script:** (0 minutes 12.148 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_08_open_boundary.py:

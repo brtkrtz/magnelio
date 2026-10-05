@@ -300,7 +300,7 @@ of 180° at the low end of the band.
     --- current settings — tune until this meets your spec ---
     worst |S11| in band :  -14.4 dB
     |S11| < -20 dB up to:   5.97 GHz
-    max |phase error|   :  23.73 deg
+    max |phase error|   :  23.76 deg
 
 
 
@@ -344,7 +344,7 @@ resolution or band changes, run this page again.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 3.153 seconds)
+   **Total running time of the script:** (0 minutes 2.076 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_tuning_microstrip.py:

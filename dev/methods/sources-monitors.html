@@ -650,8 +650,8 @@ independent run, listed in <code class="docutils literal notranslate"><span clas
 waveform per excited mode from the analysis band: a Gaussian
 pulse over <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">f_max]</span></code> for TEM and lumped ports, a modulated
 Gaussian over <code class="docutils literal notranslate"><span class="pre">[max(f_cutoff,</span> <span class="pre">f_min),</span> <span class="pre">f_max]</span></code> above a mode’s
-cut-off, so that no pulse energy sits below cut-off where it would
-be totally reflected.  <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD(waveform=...)</span></code> overrides
+cut-off, reducing below-cutoff spectral content that would be
+totally reflected.  <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD(waveform=...)</span></code> overrides
 that choice with any waveform; a waveform reaching above the
 analysis band warns.  Simultaneous excitations of several ports and
 sources in one run (<code class="docutils literal notranslate"><span class="pre">excitations=[Excitation(...),</span> <span class="pre">...]</span></code>) are the
@@ -661,6 +661,58 @@ analysis, which rejects the argument.</p>
 a source injects: <code class="docutils literal notranslate"><span class="pre">operator.set_excitation(mode,</span> <span class="pre">waveform)</span></code> and
 <code class="docutils literal notranslate"><span class="pre">source.set_excitation(waveform,</span> <span class="pre">amplitude=...,</span> <span class="pre">delay=...)</span></code> — the
 solver-facing form of the same triad.</p>
+<section id="gaussian-pulse-width-and-duration">
+<h3>Gaussian pulse width and duration<a class="headerlink" href="#gaussian-pulse-width-and-duration" title="Link to this heading">#</a></h3>
+<p>Both Gaussian classes accept <code class="docutils literal notranslate"><span class="pre">edge_attenuation_db</span></code>, a positive amplitude
+attenuation in dB, default <strong>25</strong>. It sets the ideal continuous spectrum
+at the upper band edge:</p>
+<div class="math notranslate nohighlight">
+\[
+\frac{|G(f_\mathrm{max})|}{|G(f_\mathrm{ref})|}
+=10^{-D/20},\qquad D=\texttt{edge\_attenuation\_db}.
+\]</div>
+<p>The reference is DC for <code class="docutils literal notranslate"><span class="pre">WaveformGaussian</span></code> and the carrier centre
+<code class="docutils literal notranslate"><span class="pre">(f_min</span> <span class="pre">+</span> <span class="pre">f_max)/2</span></code> for <code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated</span></code>. The modulated
+definition includes both mirrored lobes of its real-valued spectrum.
+Near DC those lobes overlap, strengthening excitation at the lower
+edge; equal attenuation at both edges is therefore not generally possible.
+The carrier centre is the specified reference, even when overlap shifts
+the exact spectral maximum slightly. Baseband and modulated pulses are
+different shapes; choosing a positive lower edge switches to the latter.</p>
+<p>At 25 dB the edge has about 5.6% of the reference spectral amplitude.
+Increasing the attenuation lengthens the pulse and reduces out-of-band
+excitation, while making the S-parameter normalisation more sensitive to
+residual record error at the edge. A Gaussian has spectral tails beyond
+its nominal band. The attenuation describes excitation coverage, not
+the accuracy of a measured S parameter. Weak edges and cutoff ringdown
+can require extending the record despite an energy or port-signal stop.</p>
+<p>The envelope is</p>
+<div class="math notranslate nohighlight">
+\[
+g(t)=\exp[-((t-t_\mathrm{peak})/\tau)^2],\qquad
+t_\mathrm{peak}=4.5\tau,\qquad t_\mathrm{end}=9\tau.
+\]</div>
+<p><code class="docutils literal notranslate"><span class="pre">tau</span></code> is the envelope time constant, with statistical standard deviation
+<code class="docutils literal notranslate"><span class="pre">tau/sqrt(2)</span></code>. The endpoint envelope is about <span class="math notranslate nohighlight">\(1.6\cdot10^{-9}\)</span> of its
+peak. <code class="docutils literal notranslate"><span class="pre">t_end</span></code> is an effective duration: evaluation continues along the
+Gaussian tail afterwards. The analysis derives its duration estimate
+from this value, including each excitation’s delay and phase delay.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalysisScatteringTD</span><span class="p">,</span> <span class="n">signals</span>
+
+<span class="n">pulse</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussian</span><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="mf">6e9</span><span class="p">,</span> <span class="n">edge_attenuation_db</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">waveform</span><span class="o">=</span><span class="n">pulse</span><span class="p">)</span>
+<span class="c1"># Read the physical timing without assuming a fixed number of periods.</span>
+<span class="n">peak_time</span><span class="p">,</span> <span class="n">duration</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">peak_time</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">t_end</span>
+
+<span class="n">band_pulse</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussianModulated</span><span class="p">(</span>
+    <span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">,</span> <span class="n">edge_attenuation_db</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Stored runs retain their resolved width and peak time. Continuing an older
+project preserves the original pulse, including the earlier timing,
+while newly constructed waveforms use the current defaults.</p>
+</section>
 </section>
 <section id="the-general-time-domain-analysis">
 <h2>The general time-domain analysis<a class="headerlink" href="#the-general-time-domain-analysis" title="Link to this heading">#</a></h2>
@@ -680,6 +732,13 @@ excitation has died out, <code class="docutils literal notranslate"><span class=
 generous number of diagonal transits of the domain.  The estimate
 sets the energy-check cadence and the checkpoint stride; the run
 itself ends on the energy or port-signal criterion.</p></li>
+<li><p>Energy decay can end a run only after every finite excitation has
+reached its nominal end, including its effective delay. Frequency-
+tracked port drives also complete their synthesised buffers. A plane
+wave includes spatial retardation at its injection faces. The
+port-signal criterion retains its additional transit margin. These
+guards also apply when continuing a stored run; an explicit duration
+or step bound can deliberately end a run sooner.</p></li>
 <li><p>A continuous-wave waveform (<code class="docutils literal notranslate"><span class="pre">WaveformSine</span></code>, a <code class="docutils literal notranslate"><span class="pre">WaveformStep</span></code>
 without <code class="docutils literal notranslate"><span class="pre">fall_time</span></code>) never decays, so such a run needs an explicit
 length — <code class="docutils literal notranslate"><span class="pre">run(t_end=…)</span></code> in seconds or <code class="docutils literal notranslate"><span class="pre">total_time_steps=</span></code> — and
@@ -1229,7 +1288,10 @@ Networks separately use <code class="docutils literal notranslate"><span class="
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sources-waveforms-and-excitations">Sources, waveforms and excitations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sources-waveforms-and-excitations">Sources, waveforms and excitations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gaussian-pulse-width-and-duration">Gaussian pulse width and duration</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-general-time-domain-analysis">The general time-domain analysis</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#incident-fields-on-a-total-field-scattered-field-box">Incident fields on a total-field/scattered-field box</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#initial-fields">Initial fields</a></li>

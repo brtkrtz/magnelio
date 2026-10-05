@@ -152,9 +152,9 @@ root-mean-square form of the textbook expression.
 
  .. code-block:: none
 
-    free space: P_rad / Hertzian    0.973   (target 1.00 +- 0.05)
-    free space: peak directivity    1.548   (1.50, see below)
-    free space: far-field closure   0.994   (target above 0.95)
+    free space: P_rad / Hertzian    0.983   (target 1.00 +- 0.05)
+    free space: peak directivity    1.528   (1.50, see below)
+    free space: far-field closure   0.992   (target above 0.95)
 
 
 
@@ -199,8 +199,8 @@ masked below the plane and the horizon directivity doubles.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 92 x 92 x 49 = 414,736 cells | 122 MiB
-    ground plane: P_rad / monopole  0.960   (target 1.00 +- 0.05)
-    ground plane: peak directivity  3.135   (3.00, see below)
+    ground plane: P_rad / monopole  0.970   (target 1.00 +- 0.05)
+    ground plane: peak directivity  3.097   (3.00, see below)
 
 
 
@@ -324,7 +324,7 @@ What to watch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 36.504 seconds)
+   **Total running time of the script:** (2 minutes 15.116 seconds)
 
 
 .. _sphx_glr_download_howto_plot_current_path_source.py:

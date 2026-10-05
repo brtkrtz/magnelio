@@ -287,9 +287,9 @@ dielectric gap.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (6.1 s)
+      mesh | conformal cells | done (4.3 s)
       mesh | PEC masks
-      mesh | 25 x 25 x 67 = 41,875 cells | 13 MiB (6.1 s total)
+      mesh | 25 x 25 x 67 = 41,875 cells | 13 MiB (4.4 s total)
     grid: 25 x 25 x 67 cells
 
 
@@ -511,7 +511,7 @@ Numerical mode vs. analytical reference
 
     Port 'port1' — 1 mode(s)
       z_line = 49.67 Ω (on this grid), 51.67 Ω (analytical reference, Δ -3.87 %)
-      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -320 dB)
+      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -321 dB)
     z_line numerical :   49.67 Ohm  (-3.9 %)
     z_line reference :   51.67 Ohm
 
@@ -593,7 +593,7 @@ Run and S-parameters
 
  .. code-block:: none
 
-    max |S11| in band: -114.4 dB
+    max |S11| in band: -144.0 dB
 
 
 
@@ -645,7 +645,7 @@ length :math:`\beta L` with
 
  .. code-block:: none
 
-    max phase deviation: 0.050 deg
+    max phase deviation: 0.001 deg
 
 
 
@@ -668,7 +668,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 11.279 seconds)
+   **Total running time of the script:** (0 minutes 8.043 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

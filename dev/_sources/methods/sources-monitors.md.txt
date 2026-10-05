@@ -45,8 +45,8 @@ independent run, listed in `run(excited=...)` — and derives the
 waveform per excited mode from the analysis band: a Gaussian
 pulse over `[0, f_max]` for TEM and lumped ports, a modulated
 Gaussian over `[max(f_cutoff, f_min), f_max]` above a mode's
-cut-off, so that no pulse energy sits below cut-off where it would
-be totally reflected.  `AnalysisScatteringTD(waveform=...)` overrides
+cut-off, reducing below-cutoff spectral content that would be
+totally reflected.  `AnalysisScatteringTD(waveform=...)` overrides
 that choice with any waveform; a waveform reaching above the
 analysis band warns.  Simultaneous excitations of several ports and
 sources in one run (`excitations=[Excitation(...), ...]`) are the
@@ -57,6 +57,64 @@ At the component level a bound waveform is what a port operator or
 a source injects: `operator.set_excitation(mode, waveform)` and
 `source.set_excitation(waveform, amplitude=..., delay=...)` — the
 solver-facing form of the same triad.
+
+### Gaussian pulse width and duration
+
+Both Gaussian classes accept `edge_attenuation_db`, a positive amplitude
+attenuation in dB, default **25**. It sets the ideal continuous spectrum
+at the upper band edge:
+
+$$
+\frac{|G(f_\mathrm{max})|}{|G(f_\mathrm{ref})|}
+=10^{-D/20},\qquad D=\texttt{edge\_attenuation\_db}.
+$$
+
+The reference is DC for `WaveformGaussian` and the carrier centre
+`(f_min + f_max)/2` for `WaveformGaussianModulated`. The modulated
+definition includes both mirrored lobes of its real-valued spectrum.
+Near DC those lobes overlap, strengthening excitation at the lower
+edge; equal attenuation at both edges is therefore not generally possible.
+The carrier centre is the specified reference, even when overlap shifts
+the exact spectral maximum slightly. Baseband and modulated pulses are
+different shapes; choosing a positive lower edge switches to the latter.
+
+At 25 dB the edge has about 5.6% of the reference spectral amplitude.
+Increasing the attenuation lengthens the pulse and reduces out-of-band
+excitation, while making the S-parameter normalisation more sensitive to
+residual record error at the edge. A Gaussian has spectral tails beyond
+its nominal band. The attenuation describes excitation coverage, not
+the accuracy of a measured S parameter. Weak edges and cutoff ringdown
+can require extending the record despite an energy or port-signal stop.
+
+The envelope is
+
+$$
+g(t)=\exp[-((t-t_\mathrm{peak})/\tau)^2],\qquad
+t_\mathrm{peak}=4.5\tau,\qquad t_\mathrm{end}=9\tau.
+$$
+
+`tau` is the envelope time constant, with statistical standard deviation
+`tau/sqrt(2)`. The endpoint envelope is about $1.6\cdot10^{-9}$ of its
+peak. `t_end` is an effective duration: evaluation continues along the
+Gaussian tail afterwards. The analysis derives its duration estimate
+from this value, including each excitation's delay and phase delay.
+
+```python
+from magnelio import AnalysisScatteringTD, signals
+
+pulse = signals.WaveformGaussian(f_max=6e9, edge_attenuation_db=25)
+analysis = AnalysisScatteringTD(mesh=mesh, waveform=pulse)
+# Read the physical timing without assuming a fixed number of periods.
+peak_time, duration = pulse.peak_time, pulse.t_end
+
+band_pulse = signals.WaveformGaussianModulated(
+    f_min=8.2e9, f_max=12.4e9, edge_attenuation_db=30
+)
+```
+
+Stored runs retain their resolved width and peak time. Continuing an older
+project preserves the original pulse, including the earlier timing,
+while newly constructed waveforms use the current defaults.
 
 ## The general time-domain analysis
 
@@ -77,6 +135,13 @@ Three rules follow from the waveforms:
   generous number of diagonal transits of the domain.  The estimate
   sets the energy-check cadence and the checkpoint stride; the run
   itself ends on the energy or port-signal criterion.
+- Energy decay can end a run only after every finite excitation has
+  reached its nominal end, including its effective delay. Frequency-
+  tracked port drives also complete their synthesised buffers. A plane
+  wave includes spatial retardation at its injection faces. The
+  port-signal criterion retains its additional transit margin. These
+  guards also apply when continuing a stored run; an explicit duration
+  or step bound can deliberately end a run sooner.
 - A continuous-wave waveform (`WaveformSine`, a `WaveformStep`
   without `fall_time`) never decays, so such a run needs an explicit
   length — `run(t_end=…)` in seconds or `total_time_steps=` — and

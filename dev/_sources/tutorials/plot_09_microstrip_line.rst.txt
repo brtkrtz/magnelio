@@ -483,7 +483,7 @@ between levels falls below ``tol``:
       mesh | 52 x 92 x 6 = 28,704 cells | 9.1 MiB
       setup | material matrices
       setup | CFL eigenvalue
-      setup | CFL eigenvalue | done (1.4 s)
+      setup | CFL eigenvalue | done (1.2 s)
       setup | port 'port1'
       refine | level 2: 4784 plane cells, z_line = 50.1695  Δ +2.792 %
     Port 'port1' — z_line of mode 0 under port-plane refinement (not converged at tol 1.0e-03)
@@ -558,7 +558,7 @@ everything should go through, nothing should come back.
  .. code-block:: none
 
     |S21|: min -0.00 dB
-    |S11|: max -31.6 dB
+    |S11|: max -32.5 dB
 
 
 
@@ -669,8 +669,8 @@ references and can be re-referenced:
  .. code-block:: none
 
     reference impedance of port1: 46.01 Ω
-    |S11| against the line's own impedance: -31.6 dB
-    |S11| re-referenced to 50 Ω:          -26.1 dB
+    |S11| against the line's own impedance: -32.5 dB
+    |S11| re-referenced to 50 Ω:          -26.3 dB
 
 
 
@@ -707,7 +707,7 @@ resistor.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.038 seconds)
+   **Total running time of the script:** (0 minutes 5.768 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_09_microstrip_line.py:

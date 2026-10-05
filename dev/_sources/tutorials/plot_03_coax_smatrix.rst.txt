@@ -79,7 +79,7 @@ so; the analysis runs them back to back and merges the results.
     import numpy as np
 
     import magnelio as mio
-    from magnelio import geo, ports
+    from magnelio import geo, ports, signals
     from magnelio.constants import *
 
     r_i = 0.405e-3  # inner conductor radius [m]
@@ -168,7 +168,7 @@ scales to structures with many more sections than three.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 104-111
+.. GENERATED FROM PYTHON SOURCE LINES 104-119
 
 Two excitations, one call
 -------------------------
@@ -178,14 +178,23 @@ mode".  The analysis performs one time-domain run per entry and
 merges everything into a single result that answers for every
 :math:`S_{ij}`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-117
+The default Gaussian has 25 dB spectral amplitude attenuation at the
+upper band edge, relative to DC for this TEM drive. We make the same
+choice explicit here; ``edge_attenuation_db`` can be adjusted when a
+different balance between band-edge excitation and out-of-band content
+is needed. The peak is at ``4.5 * pulse.tau`` and the effective duration
+is ``pulse.t_end``. See :doc:`/methods/sources-monitors` for the modulated
+pulse and for the effect of weak spectral edges on record accuracy.
+
+.. GENERATED FROM PYTHON SOURCE LINES 119-126
 
 .. code-block:: Python
 
 
     # f_max is omitted: the analysis band defaults to the design frequency
     # the mesh was generated for (``mesh.f_max``).
-    analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
+    pulse = signals.WaveformGaussian(f_max=f_max, edge_attenuation_db=25)
+    analysis = mio.AnalysisScatteringTD(mesh=mesh, waveform=pulse, verbose=False)
     result = analysis.run(excited=["port1", "port2"])
 
 
@@ -195,12 +204,12 @@ merges everything into a single result that answers for every
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 118-120
+.. GENERATED FROM PYTHON SOURCE LINES 127-129
 
 The quickest look is the built-in plot, which draws any selection of
 :math:`S_{ij}` channels in one call:
 
-.. GENERATED FROM PYTHON SOURCE LINES 120-130
+.. GENERATED FROM PYTHON SOURCE LINES 129-139
 
 .. code-block:: Python
 
@@ -232,7 +241,7 @@ The quickest look is the built-in plot, which draws any selection of
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 131-136
+.. GENERATED FROM PYTHON SOURCE LINES 140-145
 
 Phase and incident/outgoing pulses
 ----------------------------------
@@ -240,7 +249,7 @@ Phase and incident/outgoing pulses
 The phase representation is wrapped and in degrees by default. Here
 unwrapping makes the transmission delay visible across the band.
 
-.. GENERATED FROM PYTHON SOURCE LINES 136-140
+.. GENERATED FROM PYTHON SOURCE LINES 145-149
 
 .. code-block:: Python
 
@@ -266,13 +275,13 @@ unwrapping makes the transmission delay visible across the band.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-144
+.. GENERATED FROM PYTHON SOURCE LINES 150-153
 
 Select the excitation run explicitly when the result holds more than
 one. Solid lines show a(t), dashed lines b(t), both in square roots
 of watts. These waves are distinct from the total voltage at a port.
 
-.. GENERATED FROM PYTHON SOURCE LINES 144-148
+.. GENERATED FROM PYTHON SOURCE LINES 153-157
 
 .. code-block:: Python
 
@@ -298,7 +307,7 @@ of watts. These waves are distinct from the total voltage at a port.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 149-158
+.. GENERATED FROM PYTHON SOURCE LINES 158-167
 
 Reading the matrix: symmetry and reciprocity
 --------------------------------------------
@@ -310,7 +319,7 @@ reciprocal materials it must be **reciprocal**:
 :math:`S_{12} = S_{21}` — regardless of any symmetry.  Both hold to
 numerical precision:
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-167
+.. GENERATED FROM PYTHON SOURCE LINES 167-176
 
 .. code-block:: Python
 
@@ -331,13 +340,13 @@ numerical precision:
 
  .. code-block:: none
 
-    max |S12 - S21| (reciprocity): 3.66e-07
-    max |S11 - S22| (symmetry)   : 1.92e-07
+    max |S12 - S21| (reciprocity): 1.54e-07
+    max |S11 - S22| (symmetry)   : 1.19e-07
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 168-179
+.. GENERATED FROM PYTHON SOURCE LINES 177-188
 
 In practice these identities are cheap health checks: a broken
 reciprocity points at a solver or normalisation problem, a broken
@@ -351,7 +360,7 @@ ideal impedances of the circular cross-section
 (:math:`Z_\mathrm{PE} = 51.7\,\Omega`,
 :math:`Z_\mathrm{air} = 77.5\,\Omega`).
 
-.. GENERATED FROM PYTHON SOURCE LINES 179-212
+.. GENERATED FROM PYTHON SOURCE LINES 188-221
 
 .. code-block:: Python
 
@@ -401,12 +410,12 @@ ideal impedances of the circular cross-section
 
  .. code-block:: none
 
-    max ||S11|sim - |S11|theory|: 2.6e-04
+    max ||S11|sim - |S11|theory|: 1.6e-05
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 213-236
+.. GENERATED FROM PYTHON SOURCE LINES 222-245
 
 The two curves agree to better than 0.001 in magnitude across the
 band.  Note why the agreement is this good even though the previous
@@ -432,7 +441,7 @@ mode 0 — and the ``.sNp`` extension has to agree with that count,
 because Touchstone records it nowhere else.  Leave the extension off
 and it is filled in for you.
 
-.. GENERATED FROM PYTHON SOURCE LINES 236-242
+.. GENERATED FROM PYTHON SOURCE LINES 245-251
 
 .. code-block:: Python
 
@@ -456,7 +465,7 @@ and it is filled in for you.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 243-252
+.. GENERATED FROM PYTHON SOURCE LINES 252-261
 
 Where to go next
 ----------------
@@ -471,7 +480,7 @@ top of the port indices.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.003 seconds)
+   **Total running time of the script:** (0 minutes 5.430 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_03_coax_smatrix.py:
