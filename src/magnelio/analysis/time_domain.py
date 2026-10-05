@@ -901,8 +901,8 @@ class AnalysisTD(_AnalysisBase):
         """CPML depth [cells] of the mesh's closure."""
         return cpml_thickness_of(self.mesh.boundary_conditions)
 
-    def solve_ports(self) -> dict[str, PortReport]:
-        """Solve every port's 2D mode problem without a TD run.
+    def solve_ports(self, ports=None) -> dict[str, PortReport]:
+        """Solve selected ports' 2D mode problems without a TD run.
 
         Builds each port operator exactly as :meth:`run` would (same
         mesh, same material matrices, mode calculation at ``f_max``)
@@ -917,11 +917,31 @@ class AnalysisTD(_AnalysisBase):
         Lumped ports appear with an empty mode tuple and
         ``z_line_num = Z0``.
 
+        Parameters
+        ----------
+        ports : str or iterable of str, optional
+            Port names to solve, in the requested order. Omit to solve
+            every port. Shared mesh preparation is still performed.
+
         Returns
         -------
         dict[str, PortReport]
-            Keyed by port name, in ``ports`` order.
+            Keyed by port name, in selection order.
         """
+        selected = list(self.ports)
+        if ports is not None:
+            names = [ports] if isinstance(ports, str) else list(ports)
+            available = {spec.name: spec for spec in self.ports}
+            if any(not isinstance(name, str) for name in names):
+                raise TypeError("ports must contain port names")
+            if len(set(names)) != len(names):
+                raise ValueError("ports contains duplicate names")
+            missing = [name for name in names if name not in available]
+            if missing:
+                raise ValueError(f"unknown ports {missing!r}; available: {sorted(available)}")
+            selected = [available[name] for name in names]
+        if not selected:
+            return {}
         rep = Reporter("setup", self._verbose)
         rep.stage("material matrices")
         m_eps = build_M_eps(self.mesh)
@@ -954,8 +974,8 @@ class AnalysisTD(_AnalysisBase):
             return _build
 
         reports = {}
-        n_ports = len(self.ports)
-        for i, spec in enumerate(self.ports, start=1):
+        n_ports = len(selected)
+        for i, spec in enumerate(selected, start=1):
             rep.stage(_port_stage(spec.name, i, n_ports))
             op = self._build_operator(spec, m_eps, m_mu, dt, self.f_max)
             reports[spec.name] = PortReport.from_operator(

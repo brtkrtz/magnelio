@@ -11,6 +11,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A bare port name in `run(excited="port1")` selects one port instead
+  of interpreting its characters as port names.
+
 - The microstrip dispersion and periodic TESLA-cell tutorials execute with
   the revised API; derived phases retain radians and eigenmode frequencies
   use their documented accessor.
@@ -34,8 +37,21 @@ major version is 0, minor releases may change the public API.
   `current_through` integral. Use `show` for interactive geometry and read
   the local surface-current vector or magnitude for current distributions.
 
-
 ### Added
+
+- The field viewer's Colour scale menu accepts minimum and maximum limits
+  in field units, remembers them per component, and restores automatic
+  scaling. `vmin=` complements the existing `vmax=` argument.
+
+- Selected port-mode solves through `solve_ports(["port1", ...])`.
+- S-parameter plots support linear magnitude, dB and wrapped or unwrapped
+  phase in degrees or radians; time plots show incident/outgoing power waves.
+- Viewer boundary-condition overlays, initially hidden along with symmetry
+  planes; direct cut-coordinate input and steps through mesh planes or field
+  layers; searchable solid visibility menus preserving geometry group paths.
+- Field-arrow menus offer higher density, separate length/thickness controls,
+  equal lengths, fixed colours and an adjustable hiding threshold. Toolbars wrap
+  across multiple lines when needed.
 
 - Time-domain analyses provide `estimate_memory()` allocation budgets before
   operator construction, including phase peaks, CPU/GPU scenarios and

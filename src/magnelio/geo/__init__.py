@@ -197,6 +197,7 @@ class GeometryModel:
         )
 
         self.shapes: list = []
+        self._display_groups: dict[int, tuple[str, ...]] = {}
         background = resolve_material(background, "GeometryModel(background=...)")
         self.background: Material = background if background is not None else Material.air()
         self.boundary_conditions = resolve_boundary_conditions(
@@ -214,7 +215,8 @@ class GeometryModel:
         shapes on insertion (recursively for nested Groups), so the
         mesher, material filling and overlap layers only ever see leaf
         shapes.  Lists/tuples are added element-wise, and may themselves
-        contain Groups.
+        contain Groups. Group names are retained for the viewer's
+        body list while the solver geometry remains flat.
 
         Every shape entering the model must carry a material: a
         material-less shape is a construction body (a Boolean operand or
@@ -231,16 +233,22 @@ class GeometryModel:
         ValueError
             If *shape* carries no material.
         """
-        if isinstance(shape, (list, tuple)):
-            for s in shape:
-                self.add(s)
-        elif isinstance(shape, Group):
-            for s in shape.members():
-                self.add(s)
-        else:
-            operand(shape, "The object added to a GeometryModel")
-            _require_material(shape)
-            self.shapes.append(shape)
+
+        def add_member(member, groups=()):
+            if isinstance(member, (list, tuple)):
+                for child in member:
+                    add_member(child, groups)
+            elif isinstance(member, Group):
+                path = groups + (member.name or "Group",)
+                for child in member.shapes:
+                    add_member(child, path)
+            else:
+                operand(member, "The object added to a GeometryModel")
+                _require_material(member)
+                self.shapes.append(member)
+                self._display_groups[id(member)] = groups
+
+        add_member(shape)
         return self
 
     def add_port(self, port) -> "GeometryModel":

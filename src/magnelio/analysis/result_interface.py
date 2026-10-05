@@ -72,15 +72,96 @@ class RunSettings:
 
 
 class ScatteringResultMixin(SDerivedAccessors):
-    """Accessors derived purely from ``S(...)`` — shared verbatim.
+    """Shared plots and accessors on scattering results.
 
     ``phase`` and ``plot_s`` come from
     :class:`~magnelio.post.sparameter_result.SDerivedAccessors`, the
     same base a plain :class:`SParameterResult` (e.g. a de-embedded
     matrix) uses; this mixin adds the members that need the run's port
     records: the export warning, :meth:`to_touchstone` / :meth:`to_skrf`
-    and :meth:`deembed`.
+    and :meth:`deembed`, plus time plots using the calibrated :meth:`a`
+    and :meth:`b` accessors.
     """
+
+    def plot_time_signals(
+        self,
+        *ports,
+        excited=None,
+        kind="both",
+        f_ref=None,
+        destagger=True,
+        ax=None,
+    ):
+        """Plot incident and outgoing port power waves over time.
+
+        Parameters
+        ----------
+        *ports : str or (str, int)
+            Observed ports (mode 0) or explicit channels. Omit for all
+            observed channels, including discrete ports.
+        excited : str or (str, int), optional
+            Excitation run to display. Required for multiple runs.
+        kind : {"a", "b", "both"}, default "both"
+            Incident, outgoing, or both waves, in square roots of watts.
+        f_ref : float, optional
+            Reference frequency [Hz], forwarded to the wave decomposition.
+        destagger : bool, default True
+            Apply the calibrated stagger corrections of :meth:`a` and :meth:`b`.
+        ax : matplotlib.axes.Axes, optional
+            Target axes. A new figure is created otherwise.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        ax : matplotlib.axes.Axes
+
+        Notes
+        -----
+        Band-port results do not support time-domain power waves.
+        """
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        if kind not in ("a", "b", "both"):
+            raise ValueError("kind must be 'a', 'b', or 'both'")
+        if excited is None:
+            if len(self.excitations) != 1:
+                raise ValueError("pass excited= to select one excitation run")
+            excited = self.excitations[0]
+        channels = [
+            (port, 0) if isinstance(port, str) else port for port in (ports or self.channels)
+        ]
+        waves = ("a", "b") if kind == "both" else (kind,)
+        for channel in channels:
+            signals = [
+                (
+                    wave,
+                    getattr(self, wave)(
+                        *channel, excited=excited, f_ref=f_ref, destagger=destagger
+                    ),
+                )
+                for wave in waves
+            ]
+            if ax is None:
+                _, ax = plt.subplots()
+            color = None
+            for wave, signal in signals:
+                (line,) = ax.plot(
+                    signal.t * 1e9,
+                    signal.values,
+                    color=color,
+                    linestyle="-" if wave == "a" else "--",
+                    label=f"{wave}({channel[0]}:{channel[1]})",
+                )
+                color = line.get_color()
+        if ax is None:
+            _, ax = plt.subplots()
+        fig = ax.figure
+        ax.set_xlabel("time / ns")
+        ax.set_ylabel("power wave / √W")
+        ax.grid(True, alpha=0.3)
+        if channels:
+            ax.legend()
+        return fig, ax
 
     def deembed(self, distances):
         """Shift port reference planes; return the de-embedded S-matrix.

@@ -307,11 +307,18 @@ Either way the decision is published per channel, so it can be
 inspected before a run is paid for:
 
 ```python
-for name, report in analysis.solve_ports().items():
+for name, report in analysis.solve_ports(["port1"]).items():
     for mode in report.modes:
         print(name, mode.name, mode.termination,
               mode.chain_spread, mode.chain_floor_db)
 ```
+
+Pass a list of port names to solve only those ports, or one string for
+one port. The returned dictionary follows the requested order. Omitting
+the selection solves all ports. This computes the two-dimensional port
+modes without a time-domain run; shared mesh preparation still takes
+place. To launch a single time-domain excitation, `analysis.run(excited="port1")`
+is equivalent to `analysis.run(excited=["port1"])` (mode 0).
 
 `termination` is `"dtbc"` or `"mur"` and `chain_spread` is the
 cross-section measurement behind that decision.  `chain_floor_db` is
@@ -454,6 +461,39 @@ All three take the same channel arguments as `plot_s` and accept
 `ax=` to compose a figure; `mark=[f1, f2, …]` puts labelled dots on the
 named frequencies of a trace, which is how a resonance or a band edge
 gets pointed at.
+### Magnitude, phase and time signals
+
+`plot_s()` defaults to a magnitude in dB. Select another representation
+without changing the channel selection:
+
+```python
+result.plot_s(("port2", "port1"), representation="linear")
+result.plot_s(("port2", "port1"), representation="phase")
+result.plot_s(("port2", "port1"), representation="phase", phase_unit="rad", unwrap=True)
+```
+
+Phase is wrapped and in degrees by default. Unwrapping removes jumps of
+2π along frequency; it does not make phase near a zero of S meaningful.
+`floor_db` clips only a dB plot. The existing `db=True` / `db=False`
+spelling remains supported; use either `db` or `representation`.
+
+`plot_time_signals()` shows the incident `a(t)` and outgoing `b(t)` power
+waves, including at discrete ports. Both have units √W and use the
+same calibrated decomposition as `a()` / `b()`, including stagger
+corrections. They are not the total port voltage or the source waveform.
+
+```python
+result.plot_time_signals("port1", "port2", excited="port1")
+result.plot_time_signals(("port2", 1), excited=("port1", 0), kind="b")
+```
+
+Omit the observed ports to plot every recorded channel. `kind="a"`,
+`"b"` or `"both"` selects the waves; a port keeps one colour, with solid
+lines for a and dashed lines for b. Omit `excited` only for a single
+excitation run. `ax=` accepts existing matplotlib axes. Stored project
+results provide the same plotting methods. Band-port results currently
+have no calibrated time-domain a/b decomposition and reject these plots.
+
 ### Running out of time: continuing a truncated record
 
 A march has to stop somewhere.  On a high-Q structure what it leaves

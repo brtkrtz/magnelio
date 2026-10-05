@@ -235,8 +235,17 @@ class SDerivedAccessors:
             ph = np.unwrap(ph)
         return np.degrees(ph) if deg else ph
 
-    def plot_s(self, *pairs, db=True, floor_db=-200.0, ax=None):
-        """Plot S-parameter magnitudes over frequency.
+    def plot_s(
+        self,
+        *pairs,
+        db=None,
+        representation=None,
+        floor_db=-200.0,
+        phase_unit="deg",
+        unwrap=False,
+        ax=None,
+    ):
+        """Plot S-parameter magnitudes or phases over frequency.
 
         Parameters
         ----------
@@ -245,8 +254,16 @@ class SDerivedAccessors:
             ``(out_port, in_port, mode_out, mode_in)``.  Without
             arguments every recorded channel of every excitation is
             plotted.
-        db : bool, default True
-            Magnitude in dB (with *floor_db*) instead of linear.
+        db : bool, optional
+            Compatibility spelling: True selects dB, False linear.
+            Cannot be combined with *representation*.
+        representation : {"db", "linear", "phase"}, optional
+            Quantity to display. Defaults to "db".
+        phase_unit : {"deg", "rad"}, default "deg"
+            Unit for phase plots.
+        unwrap : bool, default False
+            Unwrap phase across frequency instead of wrapping at ±180°
+            (±π radians). Phase near zeros of S can be unstable.
         floor_db : float, default -200.0
             Clip floor for the dB display.
         ax : matplotlib.axes.Axes, optional
@@ -259,6 +276,14 @@ class SDerivedAccessors:
         """
         import matplotlib.pyplot as plt  # noqa: PLC0415
 
+        if representation is not None and db is not None:
+            raise ValueError("pass either representation or db, not both")
+        if representation is None:
+            representation = "linear" if db is not None and not db else "db"
+        if representation not in ("db", "linear", "phase"):
+            raise ValueError("representation must be 'db', 'linear', or 'phase'")
+        if phase_unit not in ("deg", "rad"):
+            raise ValueError("phase_unit must be 'deg' or 'rad'")
         if not pairs:
             pairs = tuple(
                 (out_port, in_port, mode_out, mode_in)
@@ -275,9 +300,18 @@ class SDerivedAccessors:
             out_port, in_port = p[0], p[1]
             mode_out = p[2] if len(p) > 2 else 0
             mode_in = p[3] if len(p) > 3 else 0
-            if db:
+            if representation == "db":
                 y = self.db(
                     out_port, in_port, mode_out=mode_out, mode_in=mode_in, floor_db=floor_db
+                )
+            elif representation == "phase":
+                y = self.phase(
+                    out_port,
+                    in_port,
+                    mode_out=mode_out,
+                    mode_in=mode_in,
+                    deg=phase_unit == "deg",
+                    unwrap=unwrap,
                 )
             else:
                 y = np.abs(self.S(out_port, in_port, mode_out=mode_out, mode_in=mode_in))
@@ -286,7 +320,9 @@ class SDerivedAccessors:
                 label = f"S({out_port}:{mode_out} ← {in_port}:{mode_in})"
             ax.plot(f_ghz, y, label=label)
         ax.set_xlabel("f / GHz")
-        ax.set_ylabel("|S| / dB" if db else "|S|")
+        ax.set_ylabel(
+            {"db": "|S| / dB", "linear": "|S|", "phase": f"phase / {phase_unit}"}[representation]
+        )
         ax.grid(True, alpha=0.3)
         ax.legend()
         return fig, ax
