@@ -396,6 +396,35 @@ class TestControls:
 
         assert sheet_max() == pytest.approx(1e-3 / dz)
         assert "field_arrows" in pl.renderer.actors
+        automatic_peak = view.vmax()
+        original_values = view._sheet_pd.cell_data["field"].copy()
+        with state:
+            state[f"{key}_colour_min"] = automatic_peak / 20
+            state[f"{key}_colour_max"] = automatic_peak / 2
+            state[f"{key}_colour_apply"] = 1
+        assert view.colour_range(view.vmax()) == pytest.approx(
+            (automatic_peak / 20, automatic_peak / 2)
+        )
+        assert view.sheet_actor.mapper.scalar_range == pytest.approx(
+            (automatic_peak / 20, automatic_peak / 2)
+        )
+        np.testing.assert_array_equal(view._sheet_pd.cell_data["field"], original_values)
+        with state:
+            state[f"{key}_colour_min"] = automatic_peak
+            state[f"{key}_colour_apply"] = 2
+        assert state[f"{key}_colour_error"]
+        assert view.vmax() == automatic_peak / 2
+        with state:
+            state[f"{key}_comp"] = "Hx"
+        assert view.vmax_fixed is None
+        assert state[f"{key}_colour_unit"] == "A/m"
+        with state:
+            state[f"{key}_comp"] = "E"
+        assert view.vmax() == automatic_peak / 2
+        with state:
+            state[f"{key}_colour_auto"] = 1
+        assert view.vmin_fixed is None and view.vmax_fixed is None
+        assert view.vmax() == automatic_peak
         with state:
             state[f"{key}_frame"] = 2
         assert sheet_max() == pytest.approx(3e-3 / dz)
@@ -1200,3 +1229,115 @@ class TestMirror:
         mon.record(FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz), 0, -1e-12, 1e-12)
         frames = field_3d._frames_of(mon, mesh, mirror=True)
         assert not frames.mirrored
+
+
+class TestArrowOptions:
+    def test_uniform_lengths_keep_magnitude_colours(self):
+        view = _view_of(field_3d._frames_of(_freq_monitor(_grid()), None), arrow_length="uniform")
+        point = np.array([[0.0, 0.0, 0.0]])
+        vector = np.array([[1.0, 0.0, 0.0]])
+        strong = view._glyphs(point, vector, np.array([1.0]), 2.0, 1.0)
+        weak = view._glyphs(point, vector * 0.1, np.array([0.1]), 2.0, 1.0)
+        np.testing.assert_allclose(strong.bounds, weak.bounds)
+        np.testing.assert_allclose(weak.point_data["mag"], 0.1)
+        view.arrow_length = "scaled"
+        weak_scaled = view._glyphs(point, vector * 0.1, np.array([0.1]), 2.0, 1.0)
+        assert weak_scaled.bounds[1] - weak_scaled.bounds[0] < strong.bounds[1] - strong.bounds[0]
+        view.arrow_scale = 2.0
+        longer = view._glyphs(point, vector, np.array([1.0]), 2.0, 1.0)
+        assert longer.bounds[1] - longer.bounds[0] == pytest.approx(
+            2 * (strong.bounds[1] - strong.bounds[0])
+        )
+
+    def test_zero_vectors_are_hidden_even_at_zero_threshold(self):
+        zero = FieldState.from_function(
+            _grid(),
+            E=lambda x, y, z: (0 * x, 0 * y, 0 * z),
+            H=lambda x, y, z: (0 * x, 0 * y, 0 * z),
+        )
+        pl = zero.show(render_mode="none", threshold=0, arrow_length="uniform")
+        try:
+            actor = pl.renderer.actors.get("field_arrows")
+            assert actor is None or not actor.GetVisibility()
+        finally:
+            pl.close()
+
+
+def test_arrow_colouring_can_change_from_fixed_to_magnitude_and_back():
+    from types import SimpleNamespace  # noqa: PLC0415
+
+    view = _view_of(field_3d._frames_of(_freq_monitor(_grid()), None), arrow_color="blue")
+    scene = SimpleNamespace(plotter=pv.Plotter(off_screen=True))
+    glyphs = view._glyphs(
+        np.array([[0.0, 0.0, 0.0]]), np.array([[1.0, 0.0, 0.0]]), np.array([0.4]), 1.0, 0.4
+    )
+    try:
+        actor = view._place_arrows(scene, "field_arrows", glyphs, 0.4)
+        assert not actor.mapper.scalar_visibility
+        view.arrow_color = None
+        same = view._place_arrows(scene, "field_arrows", glyphs, 0.4)
+        assert same is actor and actor.mapper.scalar_visibility
+        assert actor.mapper.scalar_range == pytest.approx((0.0, 0.4))
+        expected = pv.LookupTable(cmap=view.colour_map)
+        np.testing.assert_array_equal(actor.mapper.lookup_table.values, expected.values)
+        view.arrow_color = "red"
+        view._place_arrows(scene, "field_arrows", glyphs, 0.4)
+        assert not actor.mapper.scalar_visibility
+        assert actor.prop.color == pv.Color("red")
+    finally:
+        scene.plotter.close()
+
+
+def test_cut_step_uses_field_cell_centres_including_nonuniform_spacing():
+    from types import SimpleNamespace  # noqa: PLC0415
+
+    from magnelio.post.plot_3d import _CutState, _next_cut_position  # noqa: PLC0415
+
+    scene = SimpleNamespace(
+        cut=_CutState("x", 0.5, False),
+        bounds=(0.0, 7.0, 0.0, 1.0, 0.0, 1.0),
+        field_view=SimpleNamespace(nodes_display=(np.array([0.0, 1.0, 3.0, 7.0]),)),
+        grid=None,
+    )
+    assert _next_cut_position(scene, 1) == 2.0
+    scene.cut.position = 4.0
+    assert _next_cut_position(scene, -1) == 2.0
+
+
+def test_mirrored_field_keeps_boundary_overlays_on_simulated_domain(half_box):
+    model, mesh = half_box
+    fs = FieldState.from_function(mesh.grid, E=lambda x, y, z: (0 * x, 0 * y + 1.0, 0 * z))
+    pl = fs.show(
+        mesh=mesh,
+        geometry=model,
+        show_boundaries=True,
+        show_symmetry=True,
+        render_mode="none",
+        normal="z",
+        position=1e-3,
+    )
+    try:
+        boundary = pl.renderer.actors["boundary_ymax_PEC"]
+        assert boundary.GetVisibility()
+        bounds = boundary.mapper.dataset.bounds
+        assert bounds[0] == pytest.approx(mesh.grid.x[0] * 1e3)
+        assert bounds[1] == pytest.approx(mesh.grid.x[-1] * 1e3)
+        assert pl.renderer.actors["symmetry_xmin"].GetVisibility()
+    finally:
+        pl.close()
+
+
+@pytest.mark.parametrize(
+    "vmin,vmax",
+    [(1.0, 1.0), (2.0, 1.0), (-1.0, 1.0), (0.0, 0.0), (0.0, float("inf")), (float("nan"), 1.0)],
+)
+def test_invalid_colour_limits(vmin, vmax):
+    with pytest.raises(ValueError, match="vmin|vmax"):
+        field_3d.show_field(_field(_grid()), vmin=vmin, vmax=vmax, render_mode="none")
+
+
+def test_signed_asymmetric_colour_range():
+    view = _view_of(
+        field_3d._frames_of(_field(_grid()), None), component="Ez", vmin_fixed=-0.5, vmax_fixed=2.0
+    )
+    assert view.colour_range(view.vmax()) == (-0.5, 2.0)

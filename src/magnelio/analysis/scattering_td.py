@@ -1162,7 +1162,7 @@ class AnalysisScatteringTD(AnalysisTD):
     def run(
         self,
         f_axis: np.ndarray | None = None,
-        excited: Iterable[ExcitedSpec] | None = None,
+        excited: str | Iterable[ExcitedSpec] | None = None,
         accuracy: str = "normal",
         energy_stop_db: float | None = 70.0,
         total_time_steps: int | None = None,
@@ -1185,8 +1185,8 @@ class AnalysisScatteringTD(AnalysisTD):
             Target frequencies [Hz], shape ``(Nf,)``.  Strictly positive.
             Default: the constructor-derived axis (see the ``f_axis``
             property).
-        excited : iterable, optional
-            ``[(port_name, mode_idx), ...]`` or a list of bare
+        excited : str or iterable, optional
+            A single port name (mode 0), ``[(port_name, mode_idx), ...]`` or a list of bare
             ``port_name`` strings (mode 0 implied).  Default: the first
             port at mode 0.
         accuracy : {"draft", "normal", "high"}, default "normal"
@@ -2445,11 +2445,13 @@ class AnalysisScatteringTD(AnalysisTD):
 
     def _resolve_excited(
         self,
-        excited: Iterable[ExcitedSpec] | None,
+        excited: str | Iterable[ExcitedSpec] | None,
     ) -> list[tuple[str, int]]:
         if excited is None:
             first_label = self._spec_label(self.ports[0])
             return [(first_label, 0)]
+        if isinstance(excited, str):
+            excited = [excited]
         out: list[tuple[str, int]] = []
         labels = {self._spec_label(s) for s in self.ports}
         for entry in excited:

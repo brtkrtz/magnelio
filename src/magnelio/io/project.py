@@ -261,9 +261,12 @@ class LoadedGeometry:
     iteration, ``len``) so it drops into the same consumers.
     """
 
-    def __init__(self, shapes: list, background) -> None:
+    def __init__(self, shapes: list, background, *, display_groups=None) -> None:
         self.shapes = shapes
         self.background = background
+        self._display_groups = {
+            id(s): tuple(g) for s, g in zip(shapes, display_groups or [()] * len(shapes))
+        }
 
     def __iter__(self):
         return iter(self.shapes)
@@ -3307,6 +3310,9 @@ class ProjectStore:
                 "topology_recipes": [to_recipe(s) for s in shapes],
                 "materials": [_material_to_dict(s.material) for s in shapes],
                 "names": [getattr(s, "name", None) for s in shapes],
+                "display_groups": [
+                    getattr(geometry, "_display_groups", {}).get(id(s), ()) for s in shapes
+                ],
                 "kinds": ["wire" if isinstance(s, ThinWire) else "solid" for s in shapes],
                 "radii": [s.radius if isinstance(s, ThinWire) else None for s in shapes],
                 # Display colour imported from a CAD file (DD-178), if any.
@@ -4376,7 +4382,12 @@ class Project(ScatteringResultMixin):
                 for s, m, n, c, kind, recipe in zip(occ_shapes, mats, names, colors, kinds, recipes)
                 if kind != "wire"
             ]
-            self._geometry = LoadedGeometry(shapes, background)
+            display_groups = [
+                g
+                for g, kind in zip(gj.get("display_groups", [()] * len(kinds)), kinds)
+                if kind != "wire"
+            ]
+            self._geometry = LoadedGeometry(shapes, background, display_groups=display_groups)
         return self._geometry
 
     @property

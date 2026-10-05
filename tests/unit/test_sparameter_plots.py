@@ -141,3 +141,33 @@ class TestPolar:
         _fig, ax = plt.subplots()
         with pytest.raises(ValueError, match="polar axes"):
             res.plot_polar(ax=ax)
+
+
+class TestRepresentations:
+    @pytest.mark.parametrize("unit", ["deg", "rad"])
+    @pytest.mark.parametrize("unwrap", [False, True])
+    def test_phase_plot_preserves_delay_and_wrap_choice(self, unit, unwrap):
+        result = _two_port()
+        fig, ax = result.plot_s(
+            ("p2", "p1"), representation="phase", phase_unit=unit, unwrap=unwrap
+        )
+        expected = np.angle(result.S("p2", "p1"))
+        if unwrap:
+            expected = np.unwrap(expected)
+        if unit == "deg":
+            expected = np.degrees(expected)
+        np.testing.assert_allclose(ax.lines[0].get_ydata(), expected)
+        assert ax.get_ylabel() == f"phase / {unit}"
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        plt.close(fig)
+
+    def test_existing_db_keyword_still_selects_magnitude(self):
+        result = _two_port()
+        fig, ax = result.plot_s(("p1", "p1"), db=False)
+        np.testing.assert_allclose(ax.lines[0].get_ydata(), 0.5)
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        plt.close(fig)
+        with pytest.raises(ValueError, match="either representation or db"):
+            result.plot_s(db=False, representation="phase")

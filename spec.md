@@ -656,7 +656,7 @@ mesh = mio.Mesh.from_geometry(
 )
 
 analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max)
-report = analysis.solve_ports()["port1"]        # optional pre-check
+report = analysis.solve_ports(["port1"])["port1"]        # optional pre-check
 result = analysis.run(excited=[("port1", m) for m in range(n_modes)])
 
 s21 = result.S("port2", "port1", mode_out=0, mode_in=0)
@@ -669,6 +669,14 @@ mesher buffers exactly the faces that carry one; the mesh hands the
 declarations to the analysis.  An explicit `ports=` on the analysis
 overrides the mesh declarations (and may mix declarative ports with
 `PortSpec*` objects from `magnelio.ports`).
+
+DD-280 adds a port-name selection to `solve_ports`, a bare string for a
+single mode-0 excitation in `run`, and shared magnitude/phase and time-wave
+plotting on in-memory and stored scattering results. Viewer settings are
+presentation-only: boundary and symmetry overlays start hidden, body
+visibility is independent of cuts, and group paths are optional additive
+project geometry metadata. Arrow sampling stays isotropic and independent
+of mesh grading, with separate length, width, colour and threshold controls.
 
 ### 8.2 Domain example — custom port setup via specs
 

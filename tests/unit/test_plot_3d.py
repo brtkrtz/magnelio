@@ -284,6 +284,7 @@ class TestOverlays:
             "wires",
             "labels",
             "symmetry",
+            "boundaries",
             "domain",
         ]
         acts = scene.plotter.renderer.actors
@@ -550,7 +551,7 @@ class TestToolbar:
         assert server.state[viewer.PARALLEL] is True
         pl.close()
 
-    def test_position_readout_has_a_unit_and_a_fixed_width(self, coax):
+    def test_position_input_has_a_unit_and_step_controls(self, coax):
         pytest.importorskip("trame.app")
         from trame.app import get_server  # noqa: PLC0415
         from trame.ui.vuetify3 import SinglePageLayout  # noqa: PLC0415
@@ -578,8 +579,107 @@ class TestToolbar:
         with SinglePageLayout(server) as layout, layout.toolbar:
             menu_items()
         html = layout.html
-        assert "toFixed(" in html and " mm" in html and "tabular-nums" in html
+        assert 'suffix="mm"' in html and 'type="number"' in html
+        assert "Previous layer / plane" in html and "Next layer / plane" in html
         assert "thumb-label" not in html
-        key = f"mio3d_{id(scene)}"
-        assert server.state[f"{key}_dec"] >= 1
         scene.plotter.close()
+
+
+def _controls_scene(model, mesh=None):
+    return plot_3d._build_scene(
+        model,
+        mesh=mesh,
+        cut=("z", 0.0),
+        flip=False,
+        show_ports=True,
+        show_wires=True,
+        show_grid=False,
+        show_labels=True,
+        size=None,
+        render_edges=False,
+        edge_color="#202020",
+        quality=1.0,
+        scale_mm=True,
+        camera="iso",
+        off_screen=True,
+    )
+
+
+def test_boundary_and_symmetry_overlays_start_hidden(features_model):
+    scene = _controls_scene(features_model)
+    try:
+        overlays = [o for o in scene.overlays if o.group in ("boundaries", "symmetry")]
+        assert {o.group for o in overlays} == {"boundaries", "symmetry"}
+        assert len(overlays) == 6
+        assert all(not o.actor.GetVisibility() for o in overlays)
+        scene.hidden_groups -= {"boundaries", "symmetry"}
+        scene.cut.axis = None
+        plot_3d._apply_cut(scene)
+        assert all(o.actor.GetVisibility() for o in overlays)
+    finally:
+        scene.plotter.close()
+
+
+def test_solid_visibility_survives_cut_changes_and_global_toggle(coax):
+    from trame.app import get_server  # noqa: PLC0415
+
+    model = mio.GeometryModel()
+    model.add(geo.Group(geo.Group(*coax[0].shapes, name="Nested"), name="Assembly"))
+    scene = _controls_scene(model)
+    server = get_server(f"mio_solids_{id(scene)}", client_type="vue3")
+    plot_3d._attach_controls(scene, server)
+    key = f"mio3d_{id(scene)}"
+    state = server.state
+    state.ready()
+    try:
+        assert all(body.groups == ("Assembly", "Nested") for body in scene.bodies)
+        with state:
+            state[f"{key}_bodies"] = [1]
+            state[f"{key}_pos"] = 5.0
+        assert not scene.bodies[0].actor.GetVisibility()
+        assert scene.bodies[1].actor.GetVisibility()
+        with state:
+            state[f"{key}_show"] = []
+        with state:
+            state[f"{key}_show"] = ["solids"]
+        assert not scene.bodies[0].actor.GetVisibility()
+        assert scene.bodies[1].actor.GetVisibility()
+        server.controller[f"{key}_all_bodies"]()
+        assert all(body.actor.GetVisibility() for body in scene.bodies)
+        server.controller[f"{key}_no_bodies"]()
+        assert all(not body.actor.GetVisibility() for body in scene.bodies)
+    finally:
+        scene.plotter.close()
+
+
+def test_cut_steps_follow_nonuniform_mesh_planes_and_stop_at_extent():
+    from magnelio.mesh.grid import GridLines  # noqa: PLC0415
+
+    grid = GridLines(
+        x=np.array([0.0, 1.0, 3.0, 7.0]) * 1e-3,
+        y=np.array([0.0, 1.0]) * 1e-3,
+        z=np.array([0.0, 1.0]) * 1e-3,
+    )
+    scene = _controls_scene(None, mio.Mesh.from_grid(grid))
+    try:
+        scene.cut = plot_3d._CutState("x", 1.0, False)
+        assert plot_3d._next_cut_position(scene, 1) == pytest.approx(3.0)
+        assert plot_3d._next_cut_position(scene, -1) == pytest.approx(0.0)
+        scene.cut.position = 7.0
+        assert plot_3d._next_cut_position(scene, 1) == 7.0
+    finally:
+        scene.plotter.close()
+
+
+def test_boundary_overlay_initial_visibility_can_be_requested(features_model):
+    pl = features_model.show(render_mode="none", show_boundaries=True, show_symmetry=True)
+    try:
+        overlays = [
+            actor
+            for name, actor in pl.renderer.actors.items()
+            if name.startswith(("boundary_", "symmetry_"))
+        ]
+        assert len(overlays) == 6
+        assert all(actor.GetVisibility() for actor in overlays)
+    finally:
+        pl.close()

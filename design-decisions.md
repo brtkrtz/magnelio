@@ -23653,3 +23653,78 @@ are migrated too; notebook outputs are preserved. Runtime old-name audits
 remain separate from import checks. Test results and docs/export/import/DD/ruff/hygiene gates are
 recorded in `investigations/api-naming-review-2026-10-04/IMPLEMENTATION-ACCEPTANCE.md`
 (internal record). The developer subsequently authorized merging and pushing main; no release is assigned.
+
+
+## DD-280 — Selected port solves, result plots and viewer display controls
+
+**Date:** 2026-10-05
+**Status:** Accepted (developer discussion; implemented on `feat/viewer-and-result-controls`).
+
+**Problem.** A bare string excitation was iterated character by character;
+inspecting one port solved every port's modes. Results lacked a phase plot
+and a convenient calibrated a/b time plot. The viewer drew only symmetry
+closures, its field row could not wrap, a cut coordinate could not be typed,
+and individual body visibility and arrow readability needed direct controls.
+
+**Decision.**
+
+- `solve_ports(ports=None)` retains the dictionary result and all-port default.
+  A string or iterable selects ports in requested order. Validate before the
+  shared material/CFL preparation; solve only selected operators. An empty
+  selection returns an empty dictionary. The common preparation is deliberately
+  unchanged; reducing it is a separate performance decision.
+- `run(excited="port1")` means one mode-0 excitation, equivalent to the existing
+  singleton list. Multi-mode channel lists retain their grammar.
+- Shared `plot_s(representation=...)` offers dB, linear magnitude or phase;
+  phase defaults to wrapped degrees, optionally radians or unwrapped. Existing
+  `db=` calls remain supported; mixing the two selectors is rejected. `floor_db`
+  applies only to the dB representation. `plot_time_signals` on the scattering
+  mixin delegates to the existing calibrated a/b accessors, including discrete
+  ports and project readers. One excitation is implicit only for a single-run
+  result. Band-port time waves retain the existing refusal. Colour identifies
+  channels, line style identifies incident/outgoing waves.
+- Regular domain-closure sheets and symmetry sheets are separate display groups,
+  both hidden initially (`show_boundaries` / `show_symmetry` opt in). A supplied
+  mesh defines the physical domain closure and extent, retained separately when
+  mirrored fields suppress the mesh grid. Colours distinguish PEC, PMC, CPML and periodic closures.
+- A numeric cut coordinate shares the slider state. −/+ traverses nonuniform
+  mesh planes, or recorded field cell centres (including mirrored centres);
+  a geometry-only view steps through 1/400 of its extent. Undo/reset retain
+  their existing scope. The field row wraps like the cut row.
+- A searchable, scrollable Solids submenu preserves each body's visibility
+  across cuts and global group hiding, with global show/hide-all actions.
+  Nested `Group` paths are presentation metadata: `GeometryModel.add` still
+  flattens solver geometry, but stores the paths per shape identity. Optional
+  `display_groups` in `geometry.json` preserves these paths without changing
+  the schema or physical recipes; older projects use Ungrouped. Actor names
+  are made unique when body labels collide. Body clips are cached per cut so
+  changing visibility or field settings does not recut every solid.
+- The Colour scale submenu edits finite minimum/maximum limits with Apply
+  and Automatic actions; manual ranges are remembered per component so
+  switching between electric, magnetic and power-density units does not
+  carry incompatible display limits. `vmin` complements the existing `vmax`.
+  Colour saturation leaves recorded values intact. The upper bound continues
+  to control scaled arrow lengths, relative hiding and relative iso levels;
+  the lower bound affects colouring only. Invalid entries retain the current
+  scene and report the constraint beside the inputs.
+- Arrow settings live in a submenu: density (up to 200 along the longest
+  axis), magnitude/equal lengths, length multiplier, thickness, colour and
+  relative hiding threshold. The spatial lattice stays isotropic, independent
+  of mesh grading. Magnitude colour remains valid for equal lengths; zero
+  vectors are suppressed even at zero threshold. Existing defaults remain.
+  Density increases display sampling, not numerical resolution; volume cost
+  grows cubically. Component parity/mirroring is unchanged: the reported
+  missing-quadrant case could not be reproduced and is deferred.
+
+**Validation.** Regression gates in `test_solve_ports.py` verify that excluded
+operators are not built and bad names fail before material preparation;
+`test_result_power_waves.py` verifies discrete matched-wave plots and explicit
+run selection. `test_sparameter_plots.py` checks wrapped/unwrapped degree/radian
+traces; `test_plot_3d.py`, `test_field_3d.py` and `test_project_store.py` cover
+visibility persistence, boundary defaults, nonuniform stepping, equal-length
+colour data, zero-vector exclusion and nested display-group persistence.
+Browser checks and test/build outputs are recorded in
+`investigations/viewer-result-controls/` (internal record).
+
+**Documentation.** `docs/methods/ports.md`, `docs/methods/viewer.md` and Tutorials
+02/03/04/10 cover the selected solves, phase/time plots and viewer controls.

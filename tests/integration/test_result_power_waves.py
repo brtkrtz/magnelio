@@ -188,3 +188,45 @@ def test_multi_excitation_requires_selector():
         np.abs(a2.values).max(),
         rtol=0.02,
     )
+
+
+def test_time_plot_discrete_port_uses_calibrated_power_waves():
+    import matplotlib.pyplot as plt  # noqa: PLC0415
+
+    result, _ = _synthetic_result()
+    fig, ax = result.plot_time_signals("p1")
+    a_line, b_line = ax.lines
+    np.testing.assert_allclose(a_line.get_ydata(), result.a("p1").values)
+    np.testing.assert_allclose(b_line.get_ydata(), 0, atol=1e-12)
+    np.testing.assert_allclose(a_line.get_xdata(), result.a("p1").t * 1e9)
+    assert a_line.get_color() == b_line.get_color()
+    assert a_line.get_linestyle() != b_line.get_linestyle()
+    assert "√W" in ax.get_ylabel()
+    plt.close(fig)
+
+
+def test_time_plot_requires_excitation_for_multiple_runs():
+    from dataclasses import replace  # noqa: PLC0415
+
+    import matplotlib.pyplot as plt  # noqa: PLC0415
+
+    result, _ = _synthetic_result()
+    s_params = SParameterResult.from_multiple_excitations(
+        [
+            (key, {channel: np.zeros(5, dtype=complex) for channel in (("p1", 0), ("p1", 1))})
+            for key in (("p1", 0), ("p1", 1))
+        ],
+        result.f_axis,
+    )
+    result = replace(
+        result, s_params=s_params, signals={**result.signals, ("p1", 1): result.signals[("p1", 0)]}
+    )
+    with pytest.raises(ValueError, match="excited="):
+        result.plot_time_signals()
+    fig, ax = result.plot_time_signals(("p1", 0), excited=("p1", 1), kind="b")
+    assert len(ax.lines) == 1
+    np.testing.assert_allclose(ax.lines[0].get_ydata(), 0, atol=1e-12)
+    plt.close(fig)
+    result = replace(result, port_model_used="band")
+    with pytest.raises(ValueError, match="band"):
+        result.plot_time_signals(excited="p1")

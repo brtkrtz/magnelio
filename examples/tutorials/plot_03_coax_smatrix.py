@@ -128,6 +128,24 @@ ax.legend()
 ax.set_title("Coax line with a 4 mm air gap")
 
 # %%
+# Phase and incident/outgoing pulses
+# ----------------------------------
+#
+# The phase representation is wrapped and in degrees by default. Here
+# unwrapping makes the transmission delay visible across the band.
+
+fig, ax = result.plot_s(("port2", "port1"), representation="phase", unwrap=True)
+ax.set_title("Transmission phase")
+
+# %%
+# Select the excitation run explicitly when the result holds more than
+# one. Solid lines show a(t), dashed lines b(t), both in square roots
+# of watts. These waves are distinct from the total voltage at a port.
+
+fig, ax = result.plot_time_signals("port1", "port2", excited="port1")
+ax.set_title("Incident and outgoing waves for port1 excitation")
+
+# %%
 # Reading the matrix: symmetry and reciprocity
 # --------------------------------------------
 #

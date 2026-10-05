@@ -544,3 +544,27 @@ class TestCheckpointState:
         assert "0." not in text.split("file")[0].replace("0.0", "")  # no field content
         assert len(text) < 600
         assert "<table" in ckpt._repr_html_()
+
+
+def test_nested_display_groups_roundtrip_without_changing_shapes(tmp_path):
+    import magnelio as mio  # noqa: PLC0415
+    from magnelio import geo  # noqa: PLC0415
+
+    model = mio.GeometryModel()
+    model.add(
+        geo.Group(
+            geo.Group(
+                geo.Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material="air", name="body"),
+                name="Inner",
+            ),
+            name="Outer",
+        )
+    )
+    mesh = Mesh.from_grid(
+        GridLines(x=np.array([0, 1e-3]), y=np.array([0, 1e-3]), z=np.array([0, 1e-3]))
+    )
+    ProjectStore.create(tmp_path / "groups", mesh, geometry=model)
+    loaded = open_project(tmp_path / "groups").geometry
+    assert len(loaded.shapes) == 1
+    assert loaded.shapes[0].name == "body"
+    assert loaded._display_groups[id(loaded.shapes[0])] == ("Outer", "Inner")

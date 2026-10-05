@@ -201,7 +201,7 @@ fig, ax = model.plot_cross_section("y", h_sub + t_met / 2, mesh=mesh, title="Wil
 # ceiling.
 
 analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
-report = analysis.solve_ports()["port1"]
+report = analysis.solve_ports(["port1"])["port1"]
 print(report)
 
 # %%

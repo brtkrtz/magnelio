@@ -521,3 +521,44 @@ class TestModePlot:
         np.testing.assert_array_equal(got_u, e_u)
         np.testing.assert_array_equal(got_v, e_v)
         np.testing.assert_array_equal(report._field_profiles("H")[0], e_v)
+
+
+def test_port_selection_builds_only_requested_operators(monkeypatch):
+    analysis = _wr90_analysis()
+    built = []
+    original = analysis._build_operator
+
+    def build(spec, *args):
+        built.append(spec.name)
+        return original(spec, *args)
+
+    monkeypatch.setattr(analysis, "_build_operator", build)
+    reports = analysis.solve_ports(["port2"])
+    assert list(reports) == built == ["port2"]
+    reports = analysis.solve_ports(["port2", "port1"])
+    assert list(reports) == ["port2", "port1"]
+    assert list(analysis.solve_ports("port1")) == ["port1"]
+
+
+def test_invalid_port_selection_fails_before_preparation(monkeypatch):
+    analysis = _wr90_analysis()
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("invalid selection must not prepare material matrices")
+
+    monkeypatch.setattr("magnelio.analysis.time_domain.build_M_eps", forbidden)
+    with pytest.raises(ValueError, match="unknown ports"):
+        analysis.solve_ports(["missing"])
+    with pytest.raises(ValueError, match="duplicate"):
+        analysis.solve_ports(["port1", "port1"])
+    with pytest.raises(TypeError, match="port names"):
+        analysis.solve_ports([1])
+    assert analysis.solve_ports([]) == {}
+
+
+def test_bare_excited_string_selects_the_whole_port_name():
+    analysis = _wr90_analysis()
+    assert analysis._resolve_excited("port2") == [("port2", 0)]
+    assert analysis._resolve_excited(["port2"]) == [("port2", 0)]
+    with pytest.raises(ValueError, match="excited port 'missing'"):
+        analysis._resolve_excited("missing")

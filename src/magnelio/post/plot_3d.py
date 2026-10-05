@@ -103,6 +103,7 @@ _GROUPS = (
     ("wires", "Wires"),
     ("labels", "Labels"),
     ("symmetry", "Symmetry planes"),
+    ("boundaries", "Boundary conditions"),
     ("domain", "Domain box"),
 )
 
@@ -277,19 +278,23 @@ _HELP_ROWS = (
     ("HTML", "save the scene as a standalone page that needs no kernel"),
     ("pop out", "the same view in a browser tab of its own"),
     ("Cut", ""),
-    ("Cut, slider, Flip", "the cutting plane's normal, its position, the side removed"),
+    ("Cut, slider, Position, Flip", "the cutting plane's normal, its coordinate, the side removed"),
+    ("− / +", "previous or next mesh plane or recorded field layer"),
     ("undo, reset", "the previous cut; the initial cut"),
     (
         "Show",
         "the object groups drawn — solids, grid on cut, field on cut, vectors on cut, "
         "field vectors (in the volume), isosurfaces, ports, lumped elements, wires, labels, "
-        "symmetry planes, domain box (the computational domain including the absorbing buffer)",
+        "symmetry planes, boundary conditions (both initially hidden), "
+        "domain box (the computational domain including the absorbing buffer)",
     ),
     ("Field", ""),
     ("play, slider, readout", "the frame: time, frequency or mode"),
     ("play, phase", "a complex field at Re(F·e^{+jφ}); play runs time forward"),
     ("Field", "|E|, |H|, or one signed component"),
-    ("iso %, arrows", "the isosurface level; the number of arrows along the longest axis"),
+    ("Solids", "search bodies by name or group; toggle individual bodies or show/hide all"),
+    ("iso %", "the isosurface level"),
+    ("Arrows", "density, magnitude/equal lengths, length scale, thickness, threshold and colour"),
 )
 
 
@@ -550,6 +555,11 @@ class _Body:
     color: tuple[float, float, float]
     opacity: float
     actor: Any = None
+    groups: tuple[str, ...] = ()
+    visible: bool = True
+    clipped: Any = None
+    last_cut: Any = None
+    source_id: int | None = None
 
 
 @dataclass
@@ -663,6 +673,7 @@ def _shape_bodies(shapes, *, unit_scale: float, quality: float) -> list[_Body]:
                 polydata=pd,
                 color=color,  # type: ignore[arg-type]
                 opacity=opacity,
+                source_id=id(shape),
             )
         )
     return bodies
@@ -847,8 +858,15 @@ def _apply_cut(scene: _Scene) -> None:
     """Refresh every actor for the scene's cut state and hidden groups."""
     shown = {key for key, _ in _GROUPS} - scene.hidden_groups
     for body in scene.bodies:
-        clipped = _clip_body(body.polydata, scene.cut, closed=True)
-        visible = "solids" in shown and clipped is not None
+        if "solids" not in shown or not body.visible:
+            body.actor.SetVisibility(False)
+            continue
+        cut_key = (scene.cut.axis, scene.cut.position, scene.cut.flip)
+        if body.last_cut != cut_key:
+            body.clipped = _clip_body(body.polydata, scene.cut, closed=True)
+            body.last_cut = cut_key
+        clipped = body.clipped
+        visible = clipped is not None
         body.actor.SetVisibility(visible)
         if clipped is not None:
             _set_input(body.actor, clipped)
@@ -1102,6 +1120,36 @@ def _add_symmetry_planes(
         )
 
 
+def _add_boundaries(pl, scene, boundary_conditions, *, bounds):
+    """Draw non-symmetry domain closures, initially hidden."""
+    if boundary_conditions is None:
+        return
+    import pyvista as pv  # noqa: PLC0415
+
+    from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
+        bc_type_entries,
+        symmetry_entries,
+    )
+
+    symmetry = symmetry_entries(boundary_conditions)
+    colors = {"PEC": "#4c78a8", "PMC": "#59a14f", "CPML": "#f28e2b", "Periodic": "#b279a2"}
+    for face, kind in bc_type_entries(boundary_conditions).items():
+        if face in symmetry:
+            continue
+        axis = _AXIS_INDEX[face[0]]
+        pos = bounds[2 * axis + int(face.endswith("max"))]
+        b = list(bounds)
+        b[2 * axis] = b[2 * axis + 1] = pos
+        _add_overlay(
+            pl,
+            scene,
+            _Overlay(f"boundary_{face}_{kind}", "boundaries", pv.Box(b)),
+            color=colors[kind],
+            opacity=0.15,
+            lighting=False,
+        )
+
+
 def _add_surface_current(pl, scene, current, *, unit_scale, frame: int, density: int = 1):
     """Draw a surface current over the solids: arrows coloured by |J_s|.
 
@@ -1217,13 +1265,6 @@ def _add_overlays(
             name = str(getattr(element, "name", None) or f"element{i + 1}")
             line_feature(i, "elements", name, element, _ELEMENT_COLOR)
 
-    _add_symmetry_planes(
-        pl,
-        scene,
-        getattr(geometry, "boundary_conditions", None),
-        bounds=bounds,
-        unit_scale=unit_scale,
-    )
     scene.domain_actor = pl.add_mesh(
         pv.Box(bounds).outline(), color=_DOMAIN_COLOR, line_width=1, name="domain"
     )
@@ -1234,6 +1275,30 @@ def _add_overlays(
 # ---------------------------------------------------------------------------
 
 
+def _next_cut_position(scene: _Scene, direction: int) -> float:
+    """Step through field layers, mesh planes, or a fraction of the extent."""
+    if scene.cut.axis is None:
+        return scene.cut.position
+    axis = _AXIS_INDEX[scene.cut.axis]
+    lo, hi = scene.bounds[2 * axis : 2 * axis + 2]
+    if scene.field_view is not None:
+        nodes = scene.field_view.nodes_display[axis]
+        positions = 0.5 * (nodes[:-1] + nodes[1:])
+    elif scene.grid is not None:
+        positions = np.asarray(getattr(scene.grid, ("x", "y", "z")[axis]))
+    else:
+        return float(np.clip(scene.cut.position + direction * (hi - lo) / 400, lo, hi))
+    tolerance = max(hi - lo, 1e-12) * 1e-10
+    candidates = (
+        positions[positions > scene.cut.position + tolerance]
+        if direction > 0
+        else positions[positions < scene.cut.position - tolerance]
+    )
+    if candidates.size:
+        return float(candidates[0] if direction > 0 else candidates[-1])
+    return scene.cut.position
+
+
 def _attach_controls(scene: _Scene, server) -> Any:
     """Register state handlers and return the toolbar builder."""
     from trame.widgets import client, html  # noqa: PLC0415
@@ -1241,11 +1306,31 @@ def _attach_controls(scene: _Scene, server) -> Any:
 
     key = f"mio3d_{id(scene)}"
     k_axis, k_pos, k_flip = f"{key}_axis", f"{key}_pos", f"{key}_flip"
-    k_min, k_max, k_step, k_dec = f"{key}_min", f"{key}_max", f"{key}_step", f"{key}_dec"
+    k_min, k_max, k_step = f"{key}_min", f"{key}_max", f"{key}_step"
+    k_previous, k_next = f"{key}_previous", f"{key}_next"
+    k_search = f"{key}_solid_search"
+    k_bodies = f"{key}_bodies"
+    k_all, k_none = f"{key}_all_bodies", f"{key}_no_bodies"
     k_reset, k_undo, k_show = f"{key}_reset", f"{key}_undo", f"{key}_show"
     state, ctrl = server.state, server.controller
     groups = scene.groups_present()
     titles = dict(_GROUPS)
+    state[k_search] = ""
+    state[k_bodies] = [i for i, body in enumerate(scene.bodies) if body.visible]
+    body_groups = {}
+    for i, body in enumerate(scene.bodies):
+        group = " / ".join(body.groups) or "Ungrouped"
+        body_groups.setdefault(group, []).append(
+            {
+                "title": body.name,
+                "search": " / ".join((*body.groups, body.name)),
+                "value": i,
+            }
+        )
+    state[f"{key}_body_groups"] = [
+        {"title": group, "bodies": items} for group, items in body_groups.items()
+    ]
+    state[f"{key}_expanded_groups"] = list(range(len(body_groups)))
 
     def slider_range(axis: str | None) -> tuple[float, float, float]:
         if axis is None:
@@ -1255,25 +1340,11 @@ def _attach_controls(scene: _Scene, server) -> Any:
         span = max(hi - lo, 1e-12)
         return lo, hi, span / 400.0
 
-    def decimals_of(step: float) -> int:
-        # Enough digits to tell two slider steps apart, and no more.
-        return int(np.clip(np.ceil(-np.log10(max(step, 1e-300))), 0, 6))
-
-    # The position readout is as wide as the widest value it can show,
-    # so the toolbar does not reflow while the slider moves.
-    pos_chars = 3 + len(scene.unit)
-    for axis in _AXIS_INDEX:
-        lo_a, hi_a, step_a = slider_range(axis)
-        digits = decimals_of(step_a)
-        for v in (lo_a, hi_a):
-            pos_chars = max(pos_chars, len(f"{v:.{digits}f}") + 1 + len(scene.unit))
-
     lo, hi, step = slider_range(scene.cut.axis)
     state[k_axis] = scene.cut.axis or "off"
     state[k_pos] = scene.cut.position
     state[k_flip] = scene.cut.flip
     state[k_min], state[k_max], state[k_step] = lo, hi, step
-    state[k_dec] = decimals_of(step)
     state[k_show] = [g for g in groups if g not in scene.hidden_groups]
     state[f"{key}_groups"] = [{"title": titles[g], "value": g} for g in groups]
 
@@ -1313,13 +1384,17 @@ def _attach_controls(scene: _Scene, server) -> Any:
         push_state(_CutState(axis, pos, scene.cut.flip))
         with state:
             state[k_min], state[k_max], state[k_step] = lo, hi, step
-            state[k_dec] = decimals_of(step)
             state[k_pos] = pos
         refresh()
 
     @state.change(k_pos)
     def _on_pos(**kwargs):
-        pos = float(kwargs[k_pos])
+        try:
+            pos = float(kwargs[k_pos])
+        except (TypeError, ValueError):
+            return
+        if not np.isfinite(pos):
+            return
         if pos == scene.cut.position:
             return
         push_state(_CutState(scene.cut.axis, pos, scene.cut.flip))
@@ -1348,7 +1423,6 @@ def _attach_controls(scene: _Scene, server) -> Any:
         with state:
             state[k_axis] = new.axis or "off"
             state[k_min], state[k_max], state[k_step] = lo, hi, step
-            state[k_dec] = decimals_of(step)
             state[k_pos] = new.position
             state[k_flip] = new.flip
         refresh()
@@ -1363,6 +1437,80 @@ def _attach_controls(scene: _Scene, server) -> Any:
     def _undo():
         if scene.history:
             set_cut(scene.history.pop())
+
+    @state.change(k_bodies)
+    def _on_bodies(**kwargs):
+        visible = set(kwargs[k_bodies] or ())
+        for i, body in enumerate(scene.bodies):
+            body.visible = i in visible
+        refresh()
+
+    @ctrl.set(k_all)
+    def _all_bodies():
+        with state:
+            state[k_bodies] = list(range(len(scene.bodies)))
+            state[k_show] = list(dict.fromkeys([*(state[k_show] or ()), "solids"]))
+
+    @ctrl.set(k_none)
+    def _no_bodies():
+        with state:
+            state[k_bodies] = []
+
+    def step_cut(direction):
+        with state:
+            state[k_pos] = _next_cut_position(scene, direction)
+
+    ctrl.set(k_previous)(lambda: step_cut(-1))
+    ctrl.set(k_next)(lambda: step_cut(1))
+
+    def solid_menu():
+        if not scene.bodies:
+            return
+        with vuetify.VMenu(close_on_content_click=False):
+            with vuetify.Template(v_slot_activator="{ props }"):
+                vuetify.VBtn("Solids", v_bind="props", variant="text", size="small")
+            with vuetify.VCard(style="width: 360px; max-width: 90vw;"):
+                vuetify.VTextField(
+                    v_model=(k_search, ""),
+                    label="Search solids or groups",
+                    density="compact",
+                    hide_details=True,
+                    clearable=True,
+                )
+                with html.Div(style="display: flex; flex-wrap: wrap;"):
+                    vuetify.VBtn("Show all", click=ctrl[k_all], variant="text", size="small")
+                    vuetify.VBtn("Hide all", click=ctrl[k_none], variant="text", size="small")
+                with html.Div(style="max-height: 360px; overflow-y: auto;"):
+                    with vuetify.VExpansionPanels(
+                        v_model=(f"{key}_expanded_groups", state[f"{key}_expanded_groups"]),
+                        multiple=True,
+                        variant="accordion",
+                    ):
+                        with vuetify.VExpansionPanel(
+                            v_for=(f"(group, index) in {key}_body_groups",),
+                            key="index",
+                            value=("index",),
+                            v_show=(
+                                f"!{k_search} || group.bodies.some(body => "
+                                f"body.search.toLowerCase().includes("
+                                f"({k_search} || '').toLowerCase()))",
+                            ),
+                        ):
+                            vuetify.VExpansionPanelTitle("{{ group.title }}")
+                            with vuetify.VExpansionPanelText():
+                                vuetify.VCheckbox(
+                                    v_for=("body in group.bodies",),
+                                    key="body.value",
+                                    v_show=(
+                                        f"!{k_search} || body.search.toLowerCase().includes("
+                                        f"({k_search} || '').toLowerCase())",
+                                    ),
+                                    v_model=(k_bodies, state[k_bodies]),
+                                    label=("body.title",),
+                                    value=("body.value",),
+                                    density="compact",
+                                    hide_details=True,
+                                )
 
     def menu_items() -> None:
         # PyVista's menu is a card of fixed height whose rows do not
@@ -1394,11 +1542,40 @@ def _attach_controls(scene: _Scene, server) -> Any:
                 style="width: 220px; margin-left: 8px;",
                 disabled=(f"{k_axis} === 'off'",),
             )
-            html.Span(
-                f"{{{{ Number({k_pos}).toFixed({k_dec}) }}}} {scene.unit}",
-                style=f"margin-left: 6px; white-space: nowrap; min-width: {pos_chars}ch; "
-                "font-variant-numeric: tabular-nums;",
-            )
+            with html.Div(style="display: flex; align-items: center; flex-wrap: nowrap;"):
+                with vuetify.VBtn(
+                    icon=True,
+                    size="small",
+                    variant="text",
+                    click=ctrl[k_previous],
+                    aria_label="Previous layer / plane",
+                    disabled=(f"{k_axis} === 'off'",),
+                ):
+                    vuetify.VIcon("mdi-minus")
+                    vuetify.VTooltip("Previous layer / plane", activator="parent")
+                vuetify.VTextField(
+                    v_model=(k_pos, state[k_pos]),
+                    type="number",
+                    suffix=scene.unit,
+                    min=(k_min, lo),
+                    max=(k_max, hi),
+                    step="any",
+                    label="Position",
+                    density="compact",
+                    hide_details=True,
+                    style="width: 130px; flex: 0 0 130px; margin-left: 6px;",
+                    disabled=(f"{k_axis} === 'off'",),
+                )
+                with vuetify.VBtn(
+                    icon=True,
+                    size="small",
+                    variant="text",
+                    click=ctrl[k_next],
+                    aria_label="Next layer / plane",
+                    disabled=(f"{k_axis} === 'off'",),
+                ):
+                    vuetify.VIcon("mdi-plus")
+                    vuetify.VTooltip("Next layer / plane", activator="parent")
             vuetify.VSwitch(
                 v_model=(k_flip, state[k_flip]),
                 label="Flip",
@@ -1423,6 +1600,7 @@ def _attach_controls(scene: _Scene, server) -> Any:
                 variant="plain",
                 style="width: 150px; margin-left: 8px;",
             )
+            solid_menu()
         if field_items is not None:
             field_items()
 
@@ -1457,6 +1635,9 @@ def _build_scene(
     surface_current=None,
     current_frame: int = 0,
     current_density: int = 1,
+    boundary_mesh=None,
+    show_boundaries: bool = False,
+    show_symmetry: bool = False,
 ) -> _Scene:
     import pyvista as pv  # noqa: PLC0415
 
@@ -1466,6 +1647,16 @@ def _build_scene(
     unit = "mm" if scale_mm else "m"
     shapes = [s for s in geometry if not isinstance(s, ThinWire)] if geometry is not None else []
     bodies = _shape_bodies(shapes, unit_scale=unit_scale, quality=quality)
+    paths = getattr(geometry, "_display_groups", {})
+    used_names = set()
+    for i, body in enumerate(bodies):
+        body.groups = tuple(paths.get(body.source_id, ()))
+        base = body.name
+        suffix = i
+        while body.name in used_names:
+            body.name = f"{base} [{suffix}]"
+            suffix += 1
+        used_names.add(body.name)
     grid = _grid_dataset(mesh, unit_scale=unit_scale) if mesh is not None else None
     bounds = _bounds_of(bodies, grid, extent)
 
@@ -1538,6 +1729,23 @@ def _build_scene(
         show_ports=show_ports,
         labels=show_labels,
     )
+    closure_mesh = mesh if boundary_mesh is None else boundary_mesh
+    closure = getattr(closure_mesh, "boundary_conditions", None)
+    if closure is None:
+        closure = getattr(geometry, "boundary_conditions", None)
+    _add_symmetry_planes(pl, scene, closure, bounds=bounds, unit_scale=unit_scale)
+    boundary_bounds = bounds
+    if closure_mesh is not None:
+        boundary_bounds = tuple(
+            float(node[index]) * unit_scale
+            for node in (closure_mesh.grid.x, closure_mesh.grid.y, closure_mesh.grid.z)
+            for index in (0, -1)
+        )
+    _add_boundaries(pl, scene, closure, bounds=boundary_bounds)
+    if not show_symmetry:
+        scene.hidden_groups.add("symmetry")
+    if not show_boundaries:
+        scene.hidden_groups.add("boundaries")
     if surface_current is not None:
         _add_surface_current(
             pl,
@@ -1706,6 +1914,8 @@ def show_geometry(
     show_wires: bool = True,
     show_grid: bool = True,
     show_labels: bool = True,
+    show_boundaries: bool = False,
+    show_symmetry: bool = False,
     render_mode: str | None = None,
     target: str | None = None,
     size: tuple[int, int] | None = None,
@@ -1753,6 +1963,9 @@ def show_geometry(
         With ``mesh``: draw the grid cells on the cutting plane.
     show_labels : bool, default True
         Write the names of ports and lumped elements next to them.
+    show_boundaries, show_symmetry : bool, default False
+        Initially show domain boundary conditions or symmetry planes.
+        Both remain independently available in the Show menu.
     render_mode : str, optional
         Where to render in a notebook: ``"client"`` (default) renders
         in the browser and needs no OpenGL in the kernel; ``"server"``
@@ -1835,6 +2048,8 @@ def show_geometry(
         show_wires=show_wires,
         show_grid=show_grid,
         show_labels=show_labels,
+        show_boundaries=show_boundaries,
+        show_symmetry=show_symmetry,
         size=size,
         render_edges=render_edges,
         edge_color=edge_color,

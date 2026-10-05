@@ -553,12 +553,15 @@ class _FieldView:
     threshold: float
     opacity: float
     arrow_color: str | None
+    vmin_fixed: float | None = None
     fps: float = 4.0
     volume_start: str | None = None
     iso_level: float = 0.5
     levels: tuple[float, ...] | None = None
     glyph: str = "arrow"
     glyph_width: float = 1.0
+    arrow_length: str = "scaled"
+    arrow_scale: float = 1.0
     nodes_display: tuple[np.ndarray, np.ndarray, np.ndarray] = field(init=False)
     _play_task: Any = field(default=None, repr=False)
     _phase_task: Any = field(default=None, repr=False)
@@ -695,7 +698,10 @@ class _FieldView:
         return self.cmap or ("viridis" if self.is_group else "RdBu_r")
 
     def colour_range(self, vmax: float) -> tuple[float, float]:
-        return (0.0, vmax) if self.is_group else (-vmax, vmax)
+        lower = self.vmin_fixed
+        if lower is None:
+            lower = 0.0 if self.is_group else -vmax
+        return (float(lower), vmax)
 
     # ── values ───────────────────────────────────────────────────────────
 
@@ -910,6 +916,8 @@ class _FieldView:
             self._sheet_pd.copy_from(sheet)
             self._sheet_pd.cell_data.active_scalars_name = "field"
         mapper = self.sheet_actor.mapper
+        mapper.scalar_range = clim
+        mapper.lookup_table.scalar_range = clim
         if self._bar_title != self.bar_title:
             # The component changed: new colours, new range, new title.
             mapper.lookup_table.cmap = cmap
@@ -934,7 +942,12 @@ class _FieldView:
         cloud = pv.PolyData(points)
         cloud["vec"] = vec / np.maximum(mag, 1e-300)[:, None]
         cloud["mag"] = np.minimum(mag, vmax)
-        cloud["len"] = spacing * np.maximum(np.minimum(mag, vmax) / vmax, _ARROW_FLOOR)
+        relative = (
+            np.ones_like(mag)
+            if self.arrow_length == "uniform"
+            else np.maximum(np.minimum(mag, vmax) / max(vmax, 1e-300), _ARROW_FLOOR)
+        )
+        cloud["len"] = spacing * self.arrow_scale * relative
         glyphs = cloud.glyph(orient="vec", scale="len", factor=1.0, geom=self._glyph_geometry())
         return glyphs if glyphs.n_cells else None
 
@@ -977,11 +990,16 @@ class _FieldView:
                 self._volume_pd, self.volume_actor = glyphs, actor
             else:
                 self._arrow_pd, self.arrow_actor = glyphs, actor
-            self._painted[name] = (self.colour_map, self.colour_range(vmax))
+            if self.arrow_color is None:
+                self._painted[name] = (self.colour_map, self.colour_range(vmax))
         else:
             (self._volume_pd if is_volume else self._arrow_pd).copy_from(glyphs)
             if self.arrow_color is None:
                 self._paint(name, actor, vmax)
+        actor.mapper.scalar_visibility = self.arrow_color is None
+        if self.arrow_color is not None:
+            actor.prop.color = self.arrow_color
+            self._painted.pop(name, None)
         if self.arrow_color is None:
             actor.mapper.SetScalarModeToUsePointFieldData()
             actor.mapper.SelectColorArray("mag")
@@ -1000,7 +1018,7 @@ class _FieldView:
         arrays = [vectors[comps[u_axis]], vectors[comps[v_axis]], vectors[comps[axis]]]
         (au, av, aw), live = _resample(uc, vc, us_grid, vs_grid, arrays, keep)
         mag = np.sqrt(au**2 + av**2 + aw**2)
-        mask = live & np.isfinite(mag) & (mag >= self.threshold * vmax)
+        mask = live & np.isfinite(mag) & (mag > 0) & (mag >= self.threshold * vmax)
         if not np.any(mask):
             return False
         uu, vv = np.meshgrid(us_grid, vs_grid, indexing="ij")
@@ -1033,7 +1051,7 @@ class _FieldView:
         keep = None if self.frames.pec is None else ~self.frames.pec
         (ax_, ay_, az_), live = _resample3(centres, raster, arrays, keep)
         mag = np.sqrt(ax_**2 + ay_**2 + az_**2)
-        mask = live & np.isfinite(mag) & (mag >= self.threshold * vmax)
+        mask = live & np.isfinite(mag) & (mag > 0) & (mag >= self.threshold * vmax)
         xx, yy, zz = np.meshgrid(*raster, indexing="ij")
         cut = scene.cut
         if cut.axis is not None:
@@ -1114,13 +1132,72 @@ class _FieldView:
         """
         import asyncio  # noqa: PLC0415
 
+        from pyvista import Color  # noqa: PLC0415
         from trame.widgets import html  # noqa: PLC0415
         from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
         state = server.state
+        k_min, k_max = f"{key}_colour_min", f"{key}_colour_max"
+        k_error, k_unit = f"{key}_colour_error", f"{key}_colour_unit"
+        k_apply, k_auto = f"{key}_colour_apply", f"{key}_colour_auto"
+        state[k_apply] = state[k_auto] = 0
+        ranges = {self.component: (self.vmin_fixed, self.vmax_fixed)}
+
+        def sync_range():
+            with state:
+                state[k_min], state[k_max] = self.colour_range(self.vmax())
+                state[k_unit] = self.unit
+                state[k_error] = ""
+
+        @state.change(k_apply)
+        def apply_range(**_kwargs):
+            if not _kwargs[k_apply]:
+                return
+            try:
+                lower, upper = float(state[k_min]), float(state[k_max])
+            except (TypeError, ValueError):
+                lower = upper = float("nan")
+            if not np.isfinite(lower) or not np.isfinite(upper) or upper <= max(lower, 0.0):
+                with state:
+                    state[k_error] = "Use finite limits with maximum > minimum and maximum > 0."
+                return
+            if self.is_group and lower < 0:
+                with state:
+                    state[k_error] = "Magnitude minimum must be zero or positive."
+                return
+            self.vmin_fixed, self.vmax_fixed = lower, upper
+            ranges[self.component] = (lower, upper)
+            sync_range()
+            refresh()
+
+        @state.change(k_auto)
+        def auto_range(**_kwargs):
+            if not _kwargs[k_auto]:
+                return
+            self.vmin_fixed = self.vmax_fixed = None
+            ranges[self.component] = (None, None)
+            sync_range()
+            refresh()
+
+        sync_range()
         k_frame, k_phase, k_comp = f"{key}_frame", f"{key}_phase", f"{key}_comp"
         k_label, k_play, k_play_phase = f"{key}_frame_label", f"{key}_play", f"{key}_play_phase"
         k_level, k_density = f"{key}_level", f"{key}_density"
+        k_length, k_scale, k_width = (
+            f"{key}_arrow_length",
+            f"{key}_arrow_scale",
+            f"{key}_glyph_width",
+        )
+        k_threshold = f"{key}_threshold"
+        k_magnitude, k_color = f"{key}_arrow_magnitude", f"{key}_arrow_color"
+        state[k_length], state[k_scale], state[k_width] = (
+            self.arrow_length,
+            self.arrow_scale,
+            self.glyph_width,
+        )
+        state[k_threshold] = self.threshold
+        state[k_magnitude] = self.arrow_color is None
+        state[k_color] = Color(self.arrow_color or "blue").hex_rgb
         state[k_frame] = int(self.frame)
         state[k_phase] = float(self.phase)
         state[k_comp] = self.component
@@ -1211,6 +1288,8 @@ class _FieldView:
             if comp == self.component or comp not in state[f"{key}_comps"]:
                 return
             self.component = comp
+            self.vmin_fixed, self.vmax_fixed = ranges.get(comp, (None, None))
+            sync_range()
             refresh()
 
         @state.change(k_level)
@@ -1228,6 +1307,105 @@ class _FieldView:
                 return
             self.density = density
             refresh()
+
+        @state.change(k_length, k_scale, k_width, k_threshold, k_magnitude, k_color)
+        def _on_arrow_options(**kwargs):
+            length = kwargs[k_length]
+            try:
+                scale, width, threshold = (
+                    float(kwargs[k]) for k in (k_scale, k_width, k_threshold)
+                )
+            except (TypeError, ValueError):
+                return
+            if length not in ("scaled", "uniform") or not all(
+                np.isfinite(v) for v in (scale, width, threshold)
+            ):
+                return
+            if scale <= 0 or width <= 0 or not 0 <= threshold <= 1:
+                return
+            color = None if kwargs[k_magnitude] else kwargs[k_color]
+            self.arrow_length, self.arrow_scale, self.glyph_width = length, scale, width
+            self.threshold, self.arrow_color = threshold, color
+            refresh()
+
+        def colour_menu():
+            with vuetify.VMenu(close_on_content_click=False):
+                with vuetify.Template(v_slot_activator="{ props }"):
+                    vuetify.VBtn("Colour scale", v_bind="props", variant="text", size="small")
+                with vuetify.VCard(style="width: 320px; max-width: 90vw; padding: 12px;"):
+                    html.Div(f"Field units: {{{{ {k_unit} }}}}")
+                    for name, label in ((k_min, "Minimum"), (k_max, "Maximum")):
+                        vuetify.VTextField(
+                            v_model=(name,),
+                            label=label,
+                            type="number",
+                            step="any",
+                            density="compact",
+                            hide_details=True,
+                            keydown_enter=f"{k_apply}++",
+                        )
+                    html.Div(f"{{{{ {k_error} }}}}", role="alert", style="color: #b71c1c;")
+                    vuetify.VBtn("Apply", click=f"{k_apply}++", variant="text", size="small")
+                    vuetify.VBtn("Automatic", click=f"{k_auto}++", variant="text", size="small")
+
+        def arrow_menu():
+            with vuetify.VMenu(close_on_content_click=False):
+                with vuetify.Template(v_slot_activator="{ props }"):
+                    vuetify.VBtn("Arrows", v_bind="props", variant="text", size="small")
+                with vuetify.VCard(style="width: 320px; max-width: 90vw; padding: 12px;"):
+                    vuetify.VSelect(
+                        v_model=(k_length, self.arrow_length),
+                        label="Length",
+                        items=(
+                            "arrow_lengths",
+                            [
+                                {"title": "Magnitude", "value": "scaled"},
+                                {"title": "Equal lengths", "value": "uniform"},
+                            ],
+                        ),
+                        density="compact",
+                        hide_details=True,
+                    )
+                    vuetify.VSlider(
+                        v_model=(k_density, self.density),
+                        min=5,
+                        max=max(200, self.density),
+                        step=1,
+                        label="Density",
+                        hide_details=True,
+                        thumb_label=True,
+                        density="compact",
+                    )
+                    html.Div("Samples along the longest axis")
+                    for name, label, value, minimum, maximum, step in (
+                        (k_scale, "Length scale", self.arrow_scale, 0.1, 3.0, 0.1),
+                        (k_width, "Thickness", self.glyph_width, 0.25, 6.0, 0.25),
+                        (k_threshold, "Hide below peak fraction", self.threshold, 0.0, 0.2, 0.001),
+                    ):
+                        vuetify.VSlider(
+                            v_model=(name, value),
+                            min=minimum,
+                            max=max(maximum, value),
+                            step=step,
+                            label=label,
+                            hide_details=True,
+                            thumb_label=True,
+                            density="compact",
+                        )
+                    vuetify.VSwitch(
+                        v_model=(k_magnitude, self.arrow_color is None),
+                        label="Colour by magnitude",
+                        density="compact",
+                        hide_details=True,
+                    )
+                    vuetify.VTextField(
+                        v_model=(k_color, state[k_color]),
+                        type="color",
+                        label="Fixed colour",
+                        disabled=(k_magnitude,),
+                        density="compact",
+                        hide_details=True,
+                    )
 
         def play_button(k_flag: str, tooltip: str) -> None:
             with vuetify.VBtn(
@@ -1257,7 +1435,7 @@ class _FieldView:
             with html.Div(
                 classes="mio-field-row",
                 style="flex-basis: 100%; display: flex; align-items: center; "
-                "flex-wrap: nowrap; padding: 2px 4px 2px 0;",
+                "flex-wrap: wrap; padding: 2px 4px 2px 0;",
             ):
                 if n_frames > 1:
                     play_button(k_play, "Play / pause the frames")
@@ -1303,17 +1481,9 @@ class _FieldView:
                         style="width: 110px; margin-left: 12px;",
                     )
                     readout(f"iso {{{{ {k_level} }}}} %", 8)
+                colour_menu()
                 if self.has_arrows:
-                    vuetify.VSlider(
-                        v_model=(k_density, state[k_density]),
-                        min=5,
-                        max=40,
-                        step=1,
-                        hide_details=True,
-                        density="compact",
-                        style="width: 110px; margin-left: 12px;",
-                    )
-                    readout(f"{{{{ {k_density} }}}} arrows", 9)
+                    arrow_menu()
 
         return items
 
@@ -1365,6 +1535,7 @@ def show_field(
     f: float | None = None,
     phase_deg: float = 0.0,
     vmax: float | None = None,
+    vmin: float | None = None,
     cmap: str | None = None,
     density: int = 20,
     threshold: float = 0.02,
@@ -1376,6 +1547,8 @@ def show_field(
     iso_level: float = 0.5,
     glyph: str = "arrow",
     glyph_width: float = 1.0,
+    arrow_length: str = "scaled",
+    arrow_scale: float = 1.0,
     mirror: bool = True,
     geometry=None,
     mesh=None,
@@ -1383,6 +1556,8 @@ def show_field(
     show_wires: bool = True,
     show_grid: bool = False,
     show_labels: bool = True,
+    show_boundaries: bool = False,
+    show_symmetry: bool = False,
     mode: int | None = None,
     render_mode: str | None = None,
     target: str | None = None,
@@ -1448,6 +1623,12 @@ def show_field(
         Ceiling of the colour scale and of the arrow length.  Default:
         the peak over every frame and layer of the region, so that the
         colours stay comparable while sliding through time.
+    vmin : float, optional
+        Lower colour limit in field units. Default: zero for magnitude,
+        minus *vmax* for a signed component. Magnitude limits must be
+        nonnegative; *vmax* must be positive and greater than *vmin*.
+        The Colour scale submenu edits both limits or restores automatic
+        scaling. Values beyond the limits saturate without changing data.
     cmap : str, optional
         Colour map; default ``"viridis"`` for a magnitude, ``"RdBu_r"``
         for a signed component.
@@ -1488,6 +1669,12 @@ def show_field(
         The shape of the field vectors, centred on their sample points.
     glyph_width : float, default 1.0
         Thickness of the vectors relative to the default.
+    arrow_length : {"scaled", "uniform"}, default "scaled"
+        Scale lengths by magnitude (with a readability floor), or draw
+        equal lengths. Colour can still encode magnitude in either mode.
+        Zero vectors are never drawn.
+    arrow_scale : float, default 1.0
+        Length multiplier relative to the arrow lattice spacing.
     mirror : bool, default True
         Continue the field across the model's symmetry planes, so the
         view shows the whole model (as every other field picture does).
@@ -1505,6 +1692,9 @@ def show_field(
         planes are read from it (*mirror*).
     show_ports, show_wires, show_labels : bool, default True
         As in the geometry viewer.
+    show_boundaries, show_symmetry : bool, default False
+        Initially show domain boundary conditions or symmetry planes.
+        They remain independently available in the Show menu.
     show_grid : bool, default False
         With *mesh*: draw the grid cells on the cut under the field.
     render_mode, target, size, quality, scale_mm
@@ -1552,7 +1742,13 @@ def show_field(
     """
     if glyph not in _GLYPH_CHOICES:
         raise ValueError(f"glyph must be one of {_GLYPH_CHOICES}; got {glyph!r}")
-    if not (float(glyph_width) > 0.0):
+    if arrow_length not in ("scaled", "uniform"):
+        raise ValueError("arrow_length must be 'scaled' or 'uniform'")
+    if not np.isfinite(arrow_scale) or float(arrow_scale) <= 0:
+        raise ValueError("arrow_scale must be finite and positive")
+    if not np.isfinite(threshold) or not 0 <= float(threshold) <= 1:
+        raise ValueError("threshold must be between zero and one")
+    if not np.isfinite(glyph_width) or not (float(glyph_width) > 0.0):
         raise ValueError(f"glyph_width must be positive; got {glyph_width!r}")
     frames = _frames_of(source, mesh, bool(mirror))
     if plot_type not in _PLOT_TYPES:
@@ -1600,6 +1796,10 @@ def show_field(
     elif frames.kind == "mode" and any(v is not None for v in (frame, t, f)):
         raise ValueError("use mode= to select an eigenmode")
     unit_scale = 1e3 if scale_mm else 1.0
+    if vmax is not None and (not np.isfinite(vmax) or vmax <= 0):
+        raise ValueError("vmax must be finite and positive")
+    if vmin is not None and (not np.isfinite(vmin) or (component in ("E", "H", "S") and vmin < 0)):
+        raise ValueError("vmin must be finite and nonnegative for a magnitude")
     view = _FieldView(
         frames=frames,
         component=component,
@@ -1607,6 +1807,7 @@ def show_field(
         frame=_resolve_frame(frames, frame, t, f),
         phase=float(phase_deg),
         vmax_fixed=vmax,
+        vmin_fixed=vmin,
         cmap=cmap,
         unit_scale=unit_scale,
         density=int(density),
@@ -1619,7 +1820,11 @@ def show_field(
         levels=levels,
         glyph=glyph,
         glyph_width=float(glyph_width),
+        arrow_length=arrow_length,
+        arrow_scale=float(arrow_scale),
     )
+    if vmin is not None and vmin >= view.vmax():
+        raise ValueError("vmin must be smaller than vmax")
     if volume is not None and not view.has_volume:
         raise ValueError(f"{frames.name!r} offers no volume to draw {volume!r} in")
     if volume in ("isosurface", "both") and not view.can_iso:
@@ -1634,6 +1839,7 @@ def show_field(
     notebook, render_mode, off_screen, target = _viewer._resolve_mode(render_mode, target)
     if mesh is None and frames.kind == "mode":
         mesh = source.mesh
+    boundary_mesh = mesh
     if frames.mirrored:
         # The frames span the whole model now; the mesh does not, so its
         # grid would cover half the picture.  Dropping it silently left
@@ -1656,6 +1862,9 @@ def show_field(
         show_wires=show_wires,
         show_grid=show_grid,
         show_labels=show_labels,
+        boundary_mesh=boundary_mesh,
+        show_boundaries=show_boundaries,
+        show_symmetry=show_symmetry,
         size=size,
         render_edges=False,
         edge_color="#202020",
