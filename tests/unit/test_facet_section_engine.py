@@ -821,14 +821,14 @@ class TestTangentPlaneBooksNothing:
 
     @pytest.mark.parametrize("bore_axis", ["x", "y"])
     @pytest.mark.parametrize("offset", TANGENT_OFFSETS)
-    def test_the_engine_declines_the_tangent_plane(self, bore_axis, offset):
+    def test_the_engine_books_nothing_on_the_tangent_plane(self, bore_axis, offset):
         shape = _cross_drilled(offset, bore_axis)
         engine = _engine(shape, TANGENT_DEFLECTION)
         assert engine.enabled and engine.facetted
         axis = "xyz".index(bore_axis)
         pos = offset + TANGENT_R
         assert not engine.can_fast(axis, pos)
-        assert engine.section(axis, pos) is None
+        assert engine.section(axis, pos) == []
 
     @pytest.mark.parametrize("bore_axis", ["x", "y"])
     @pytest.mark.parametrize("offset", TANGENT_OFFSETS)
@@ -847,6 +847,7 @@ class TestTangentPlaneBooksNothing:
     def test_the_fixture_manufactures_the_circle_without_the_screen(self, monkeypatch):
         """Guard on the guard: the plane really does reach the conic
         compression, so the test above would fail without the screen."""
+        monkeypatch.setenv("MAGNELIO_SURFACE_SECTIONS", "0")
         monkeypatch.setattr(
             _PlanarSectionEngine,
             "_cylinder_tangency",

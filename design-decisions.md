@@ -19176,6 +19176,21 @@ fixture deliberately left as built.
   trustworthy.  Widening the tangency band to the deflection would hand
   those planes to the kernel and make them worse — the second reason
   `_TANGENCY_ROUNDING` is a rounding guard and not a tolerance.
+  **Reference correction (2026-10-05).** The original measured ladder
+  reproduces, but its reference omitted the fixture's 0.7 mm cross-bore.
+  Correct areas at 1 um / 100 nm / 1 nm are 1.1667314e-6 / 3.6890429e-7 /
+  3.6889896e-8 m². The alleged 14% error is removed bore material; the
+  remaining facet losses are 25.1% / 49.7% at 100 nm / 1 nm. Raw kernel
+  curves collapse before assembly; facet topology misses a trim boundary
+  before lifting. Support-surface intersection recovers the cylinder
+  lines. DD-287 implements conditioned bounded-face sections, numerical
+  contracts and selective routing; production section/material and full
+  field-regression acceptance close KB-043. This historical decision
+  retains its rounding guard for the ordinary facet route. Full evidence
+  and rejected shortcuts:
+  `investigations/kb043-near-tangency/MEASUREMENTS.md` and `DERIVATION.md`
+  (internal records); continuations `PROTOTYPE.md` and `ADJACENCY.md`
+  in that internal dossier.
 - **The angular cap.**  `radians(5)·|c_n|` is now the binding constraint
   in every fixture tested; the corrected sagitta term never bites.  Its
   origin is undocumented and underived, so the facet/exact bit-identity
@@ -24104,3 +24119,83 @@ phasor cases. No production monitor or normalisation arithmetic changes.
 Methods and Tutorial 08 document staggered sampling, practical absorption
 limits and old-checkpoint continuation. Evidence and final suite status:
 `investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
+
+## DD-287 — Bounded-surface sections at geometric grazing planes
+
+**Date:** 2026-10-06. **Status:** implemented on `fix/near-tangent-sections`,
+accepted. Resolves KB-043.
+
+**Problem.** The stored cylinder/bore fixture loses material on two distinct
+routes. The Boolean section collapses before polygon assembly; lifted facet
+crossings do not reach a trim boundary. The historical reference omitted
+the bore and is corrected in KB-043. Genuine facet losses are 25.1% at
+100 nm and 49.7% at 1 nm. Neither widening delegation nor globally refining
+the triangulation supplies a reliable exact-plane remedy.
+
+**Decision.** Prepare a centred, power-of-two-scaled measurement copy of
+the completed B-Rep, without rebuilding construction or mutating operands.
+Find support-surface/plane traces, trim them against face pcurves, connect
+crossings through shared CAD edges and retain outward contour orientation.
+Closed/seamed and singular boundaries participate in the same adjacency
+model. Numerical curve/surface residuals consume at most 1/4096 of the
+common chord budget, above the relative double-rounding floor; knot-aware
+native curve tessellation uses a half-budget margin. A bounded increase of
+measurement scaling supplies kernel precision headroom. Unresolved sensitive
+curves or contours raise an actionable error rather than accepting a partial
+material region. Coplanar face-region and two-sided matrix-limit semantics
+remain on their established route.
+
+The trace-neighbourhood guard allows the geometric amplification
+`1 / sin(surface-plane angle)` of a kernel curve's surface-position error.
+A fixed multiple of the chord budget incorrectly rejects valid projections
+near grazing torus fillets; the quarter-coupler operand-invariance tests
+expose this at y = 0.0489975 m. This branch-selection guard does not relax
+the final curve/surface residual or shared-node consistency checks.
+
+**Selection and cost.** Ordinary analytic, facet and kernel cuts retain
+their existing paths. Analytic stationary coordinates and spline stationary
+points index potentially grazing planes. Rational Bernstein coordinate
+derivative numerators exclude knot spans that cannot contain a stationary
+point. Physical limiting normals at declared/within-tolerance poles exclude
+parameter-only singularities. The index uses face tolerance, not a remote
+Boolean edge's inflated tolerance. Prepared topology and face slabs are
+reused; corrected delegated planes are spliced into the compiled batch.
+An internal environment switch exists only for A/B acceptance.
+
+**Provenance and current acceptance.** The private bounded-face prototype
+passes 63 reference cuts and 320 signed cell references, including trimmed
+sphere/cone/torus/spline cases and separated bodies. The production material
+consumer probe restores area and epsilon weighting. New repository regressions
+cover inside/on/outside cylinder tangency, translations, compiled-batch
+equivalence, coplanar faces, regular-path selection, a real spline extremum
+and a parameter-only pole, plus the torus's inner tangent contact and its
+neighbouring cuts. Contact branches use a directed planar boundary walk;
+trace refinement inserts locally failing residual samples. Shared nodes
+must remain in the declared edge/incident-face/endpoint-vertex tolerance
+tube. This representation-consistency check is separate from the numerical
+residual budget. The spline test references the CAD Hessian at
+its sampled stationary point: an even 8-by-8 interpolation shifts the
+minimum by about 12 nm, so its ideal generating function is not a 1 nm
+reference. The initial full-suite contour failures were resolved by linking
+artificial domain ends on the same cyclic support curve and restricting
+closing-edge anchors to their actual trace neighbourhood; the existing
+operand-invariance and gallery pins pass without repinning.
+
+Final exact-source full-suite acceptance: **4405 passed, 39 skipped,
+132 warnings**, 4444 collected, 1197.95 s. All 31 new section regressions
+and both operand-invariance cases pass. The production operator also passes
+all 63 independent geometry-reference cases (worst relative area error
+3.087e-4, at a 1 nm sphere cap, within the existing 5e-4 gate).
+
+`validation/surface_section_tangency_certificate.py` independently checks
+direct/scalar sections and 320 material rectangles against bore-aware
+quadrature: worst absolute coverage/epsilon errors are 2.602e-6 at 100 nm
+and 1.879e-7 at 1 nm. The 30-case mesh stress sentinel and pair-ladder port
+certificate pass; worst S-parameter scale deviation is 3.256e-7 against
+a 1e-6 bound. Fresh offline HTML builds with gallery execution disabled;
+Ruff, formatting, public hygiene and API-surface gates pass.
+Evidence and scripts:
+`investigations/kb043-near-tangency/` (internal dossier), particularly
+`IMPLEMENTATION.md`, `final-acceptance-tests.log`, `surface-certificate.log`,
+`scale-certificate.log`, `port-pair-tolerance.log` and
+`full-stress-certificate.log`.

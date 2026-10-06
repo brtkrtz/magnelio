@@ -452,6 +452,19 @@ waveguide port supporting all 6 domain faces. Features:
 
 ## 6. Mesh Generation (Grid Line Algorithm)
 
+Sensitive cross-sections use a lazily prepared bounded-surface operator
+(`geo/_surface_sections.py`, DD-287). Tangency positions are indexed from
+analytic stationary coordinates and knot-span-filtered spline stationary
+points, with limiting physical normals at declared/within-tolerance poles.
+Regular cuts retain the existing analytic/facet/kernel paths. Sensitive
+curves are measured on a centred power-of-two-scaled copy, trimmed in face
+parameter domains and joined through shared CAD edges, with outward winding.
+Numerical curve/surface residuals consume at most 1/4096 of the section's
+chord budget above a relative double-rounding floor. Native spline-aware
+tessellation retains the common chord budget. Coplanar face-region and
+two-sided material-limit semantics remain separate. Unresolved sensitive
+sections fail explicitly rather than returning partial coverage.
+
 ### 6.1 Algorithm
 
 ```

@@ -42,6 +42,11 @@ from magnelio.constants import C0
 # long as the interface cells dominate it, then jumps.  Any other
 # mesh setting your model needs (``min_cell_size``,
 # ``max_edge_refinement``, …) goes in here too and stays fixed.
+# Keep the CAD model fixed across the ladder. Nearly tangent cuts at curved
+# walls are handled automatically when conformal material fractions are built.
+# If meshing reports an unresolved sensitive section, inspect the CAD body's
+# validity and boundary tolerances before comparing the rungs: refinement
+# cannot restore a material region missing from the stored CAD geometry.
 
 
 def rung(mnpw):

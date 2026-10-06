@@ -16,7 +16,7 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-10-05: KB-038 and KB-043.**
+**One entry is open as of 2026-10-06: KB-038.**
 Everything else is struck through and resolved.
 
 ## KB-052: ~~Project watching can omit the final writer state~~ — Resolved (2026-10-05)
@@ -177,44 +177,28 @@ kernel-path model (5.44–5.87 s → 6.07–6.61 s, self + children), and
 re-pins every artefact with a curved face.  Internal record:
 `investigations/kb042-analytic-facets/MEASUREMENTS.md`.
 
-## KB-043: Neither section path is trustworthy within about 1e-7 m of a cylinder generatrix — Open (2026-09-01)
+## KB-043: ~~Neither section path is trustworthy near a cylinder generatrix~~ — Resolved (DD-287, 2026-10-06)
 
-Pre-existing, surfaced while certifying the DD-240 tangency screen, and
-**not one-sided**: close in to a generatrix the exact kernel is the
-worse of the two paths.  Measured on a cylinder of r = 2.30 mm at a
-section deflection of 2.5e-6, sectioned at a distance `d` from the
-generatrix, against the closed-form area of the sliver:
+The Boolean section lost curves before polygon assembly; lifted facet
+crossings missed a trim boundary. With the corrected bore-aware reference,
+the facet path lost 25.1% / 49.7% at 100 nm / 1 nm, while the kernel returned
+zero. The historical alleged 14% loss at 1 um omitted the bore and was not
+a defect.
 
-    d       facet        kernel       true
-    1e-6    1.1668e-06   1.1668e-06   1.3563e-06
-    1e-7    2.7619e-07   0.0          4.2895e-07
-    1e-9    1.8544e-08   0.0          4.2895e-08
+Sensitive cuts now use conditioned bounded CAD-surface traces, face trims
+and shared-edge contour assembly. Holes retain their signed winding;
+ordinary fast paths and coplanar interface semantics remain. Final residual,
+CAD boundary-tube and closure checks reject unresolved sensitive sections
+explicitly. Implemented on `fix/near-tangent-sections`.
 
-At `d` = 1e-6 the two paths agree with each other and sit 14 % below
-truth; from 1e-7 inward the kernel collapses to zero while the facet
-path still books 44–64 % of it — there the *facetted* answer is the more
-accurate one.  A model whose grid lands that close to a bore loses
-cross-section silently, and swapping the path does not save it.
-
-**This is the second reason DD-240's tangency band is a rounding guard
-rather than a physical band.**  The exactly tangent plane itself is
-closed: `_screen_facets` now carries the cylinder-tangency test the
-analytic screen already had, so a tangent plane is delegated instead of
-sectioned — before that, the facet compression manufactured a full
-circle out of a degenerate trace and booked
-1.5386530746873848e-06 m² = π r_bore² where both the kernel and the
-pre-repair tree book 0.0 (a radius sweep 1.5–3.0 mm at deflection 2.5e-6
-fired 4 of 16 cases before, 0 of 16 after), and the mesher does place a
-grid plane bit-exactly on a tangent generatrix (measured |δ| =
-0.000e+00).  The band that delegates it is a *relative*
-`_TANGENCY_ROUNDING = 1e-12`, needed because one case missed at a
-residual of 4.337e-19, half an ulp on 4.4 mm.  Widening it to the
-deflection would hand the whole ladder above to the kernel, i.e. to the
-less accurate of the two answers, so the band was deliberately left at
-the rounding guard.
-
-Closing it means a section operator that stays accurate through
-tangency on *both* paths; nothing measured here says how.
+Acceptance: 31 new regressions, 63 independent production section cases,
+320 material rectangles, mesh stress, port and S-parameter scale certificates.
+Worst absolute coverage/epsilon errors are 2.602e-6 at 100 nm and 1.879e-7
+at 1 nm. Full suite: **4405 passed, 39 skipped, no failures**.
+Evidence: `investigations/kb043-near-tangency/IMPLEMENTATION.md` (internal
+record). Reproduction, corrected references and rejected shortcuts remain
+in that internal dossier; the repository certificate is
+`validation/surface_section_tangency_certificate.py`.
 
 ## KB-042: ~~Cone, sphere and torus faces of a facetted shape keep the KB-041 reach defect~~ — Resolved (DD-242, 2026-09-02)
 

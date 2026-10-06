@@ -1857,6 +1857,13 @@ def cross_section_polygons(
         degenerate plane and are re-taken a nudge away, never
         implicitly closed (see ``_tessellate`` below).
     """
+    axis = {"x": 0, "y": 1, "z": 2}.get(plane_normal)
+    if axis is not None and os.environ.get("MAGNELIO_SURFACE_SECTIONS", "").strip() != "0":
+        from magnelio.geo._surface_sections import _sensitive_section  # noqa: PLC0415
+
+        resolved = _sensitive_section(shape, axis, plane_position, deflection, scale, slab)
+        if resolved is not None:
+            return resolved
     plane_position = plane_position * scale
     nudge_step = (deflection if nudge is None else nudge) * scale
     deflection = max(deflection * scale, 1e-7)
@@ -2552,6 +2559,8 @@ class _PlanarSectionEngine:
 
     def __init__(self, shape, scale: float = 1.0, deflection: float | None = None) -> None:
         self.enabled = False
+        self._source_shape = shape
+        self._surface_router = None
         #: DD-120 model scale of the shape: the engine's internal arrays
         #: live entirely in scaled units; ``can_fast``/``section`` take
         #: meter positions and return meter polygons.
@@ -3894,7 +3903,33 @@ class _PlanarSectionEngine:
             self._c_t,
             v_sorted,
         )
-        return _PackedSections(order, *packed)
+        result = _PackedSections(order, *packed)
+        overrides = {}
+        for i, position in enumerate(positions):
+            if result.status[result.rank[i]] == _sk.ANSWERED:
+                continue
+            resolved = self._sensitive_section(axis, float(position))
+            if resolved is not None:
+                overrides[i] = resolved
+        if not overrides:
+            return result
+        status = result.status.copy()
+        poly_ptr, vert_ptr, vertices = [0], [0], []
+        for k, caller in enumerate(order):
+            polygons = overrides.get(int(caller), result.polygons(int(caller)))
+            if polygons is not None:
+                status[k] = _sk.ANSWERED
+                for poly in polygons:
+                    vertices.append(poly)
+                    vert_ptr.append(vert_ptr[-1] + len(poly))
+            poly_ptr.append(len(vert_ptr) - 1)
+        return _PackedSections(
+            order,
+            status,
+            np.asarray(poly_ptr, dtype=np.int64),
+            np.asarray(vert_ptr, dtype=np.int64),
+            np.concatenate(vertices) if vertices else np.empty((0, 2)),
+        )
 
     def sections(self, axis: int, positions) -> list[list[np.ndarray] | None]:
         """:meth:`section` for every plane of *axis* at *positions* [m]
@@ -3921,9 +3956,28 @@ class _PlanarSectionEngine:
             return out
         return self.sections_packed(axis, positions).annotated()
 
+    def _sensitive_section(self, axis: int, pos: float) -> list[np.ndarray] | None:
+        if self.slab is None or self._deflection is None:
+            return None
+        if os.environ.get("MAGNELIO_SURFACE_SECTIONS", "").strip() == "0":
+            return None
+        from magnelio.geo._surface_sections import _SurfaceRouter  # noqa: PLC0415
+
+        if self._surface_router is None:
+            self._surface_router = _SurfaceRouter(
+                self._source_shape, self._scale, self._deflection / self._scale, self.slab
+            )
+        if self._surface_router.sensitive(axis, pos):
+            return self._surface_router.section(axis, pos)
+        return None
+
     def section(self, axis: int, pos: float) -> list[np.ndarray] | None:
         """Section polygons [m] for the plane at *pos* [m], or ``None``
         to delegate to the OCC path."""
+        if self.facetted or self._screen(axis, pos * self._scale) is None:
+            resolved = self._sensitive_section(axis, pos)
+            if resolved is not None:
+                return resolved
         pos = pos * self._scale
         if self.facetted:
             if not self._screen_facets(axis, pos):

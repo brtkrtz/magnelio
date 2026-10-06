@@ -11,6 +11,11 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Nearly tangent cuts through curved and trimmed CAD faces retain thin
+  material regions in conformal meshes. Shared-edge contour assembly preserves
+  holes, while unresolved sensitive cuts report an error instead of silently
+  accepting incomplete coverage.
+
 - Project watching delivers the final state when a writer finishes while
   the consumer is processing the previous update.
 

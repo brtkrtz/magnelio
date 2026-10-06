@@ -272,12 +272,16 @@ class TestCylinderSectionEngine:
         assert engine.section(2, 1.0e-3) is None
         assert engine.section(1, 0.1e-3) is None
 
-    def test_degenerate_planes_are_declined(self):
+    def test_degenerate_planes_keep_their_region_semantics(self):
         air, posts = _post_row()
         for body in (air, posts):
             engine = ob._PlanarSectionEngine(body._occ_shape(1.0), scale=1.0, deflection=DEFLECTION)
             assert engine.section(1, 0.0) is None  # the seams lie in y = 0
-            assert engine.section(1, RADIUS) is None  # tangent to every post
+            tangent = engine.section(1, RADIUS)
+            assert tangent is not None
+            area = abs(sum(polygon_area(p) for p in tangent))
+            expected = 4 * PITCH * 6e-3 if body is air else 0.0
+            assert area == pytest.approx(expected, rel=1e-12, abs=1e-20)
             assert engine.section(2, HEIGHT) is None  # in the top caps
             assert engine.section(2, 0.5 * HEIGHT) is not None
             assert engine.section(0, PITCH) is not None
