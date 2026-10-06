@@ -96,6 +96,16 @@ orientations. The computation uses a centred, scaled copy of the completed
 body; construction, placement and mesh coordinates retain their geometry.
 Ordinary cuts keep the existing fast paths.
 
+An imprint or construction edge embedded inside a CAD face does not create
+another material boundary. Sections follow the bounding wires, including
+holes and periodic seams. Boundary curves can differ slightly at a shared
+vertex within the stored CAD tolerances; the interval classification uses
+another transversal direction when a test ray cannot give a consistent
+closed-boundary count. Trimmed periodic surfaces retain their native support
+domain for the intersection, while periodic parameter wrapping follows the
+underlying surface. Refinement preserves the closed support trace's identity
+so artificial parameter-domain ends can still be connected.
+
 The curve-position residual budget is a small fraction of the section's
 chord budget, with a floating-point resolution floor. This controls the
 geometric evaluation; it does not bound the electromagnetic discretisation

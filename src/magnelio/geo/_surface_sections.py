@@ -15,7 +15,7 @@ from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCC.Core.BRepTools import breptools
 from OCC.Core.GCPnts import GCPnts_TangentialDeflection
-from OCC.Core.Geom import Geom_Plane, Geom_TrimmedCurve
+from OCC.Core.Geom import Geom_Plane, Geom_RectangularTrimmedSurface, Geom_TrimmedCurve
 from OCC.Core.Geom2d import Geom2d_Curve, Geom2d_Line, Geom2d_TrimmedCurve
 from OCC.Core.Geom2dAdaptor import geom2dadaptor
 from OCC.Core.Geom2dAPI import (
@@ -38,11 +38,12 @@ from OCC.Core.GeomAPI import GeomAPI_IntCS, GeomAPI_Interpolate, GeomAPI_Project
 from OCC.Core.GeomConvert import GeomConvert_BSplineSurfaceToBezierSurface
 from OCC.Core.GeomInt import GeomInt_IntSS
 from OCC.Core.gp import gp_Dir, gp_Dir2d, gp_Pln, gp_Pnt, gp_Pnt2d, gp_Trsf, gp_Vec, gp_Vec2d
+from OCC.Core.IntRes2d import IntRes2d_End, IntRes2d_Head, IntRes2d_Undecided
 from OCC.Core.ProjLib import ProjLib_ProjectedCurve
 from OCC.Core.ShapeAnalysis import ShapeAnalysis_Surface
 from OCC.Core.TColgp import TColgp_HArray1OfPnt, TColgp_HArray1OfPnt2d
 from OCC.Core.TColStd import TColStd_Array1OfReal, TColStd_HArray1OfReal
-from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_REVERSED
+from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_EXTERNAL, TopAbs_INTERNAL, TopAbs_REVERSED
 from OCC.Core.TopExp import TopExp_Explorer, topexp
 from OCC.Core.TopoDS import topods
 from OCC.Core.TopTools import TopTools_IndexedMapOfShape
@@ -249,6 +250,7 @@ class _SurfaceRouter:
         face_tol = max((BRep_Tool.Tolerance(f) for f in self.slabs.faces), default=1e-7)
         self.band = max(8 * self.deflection * self.scale, 4 * face_tol, 4e-7)
         self.engine = None
+        self._engines = {}
         entries = [[], [], []]
         for fi, face in enumerate(self.slabs.faces):
             surface = BRepAdaptor_Surface(face)
@@ -363,15 +365,22 @@ class _SurfaceRouter:
     def resolved_section(self, axis, position):
         if self.engine is None:
             self.engine = _SurfaceSectionEngine(self.shape, self.scale)
-        for attempt in range(4):
+        self._engines[self.engine.conditioning] = self.engine
+        # Kernel accuracy need not improve monotonically with measurement scale.
+        # Keep four bounded choices and retry the baseline before increasing scale.
+        choices = [self.engine.conditioning]
+        choices.extend(c for c in (1, 4, 16, 64) if c not in choices)
+        for index, conditioning in enumerate(choices):
+            if conditioning not in self._engines:
+                self._engines[conditioning] = _SurfaceSectionEngine(
+                    self.shape, self.scale, conditioning
+                )
+            self.engine = self._engines[conditioning]
             try:
                 return self.engine.section(axis, position, self.deflection * 0.1)[0]
             except _PrecisionFailure:
-                if attempt == 3:
+                if index == len(choices) - 1:
                     raise
-                self.engine = _SurfaceSectionEngine(
-                    self.shape, self.scale, self.engine.conditioning * 4
-                )
 
 
 class _PreparedGeometry:
@@ -380,7 +389,14 @@ class _PreparedGeometry:
         self.slabs = _FaceSlabIndex(occ)
         self.edges = TopTools_IndexedMapOfShape()
         topexp.MapShapes(occ, TopAbs_EDGE, self.edges)
-        self.surfaces = [BRep_Tool.Surface(face) for face in self.slabs.faces]
+        self.surfaces = []
+        for face in self.slabs.faces:
+            surface = BRep_Tool.Surface(face)
+            # Keep the native support domain for intersection; use its basis
+            # periodicity only when evaluating and wrapping face pcurves.
+            while surface.DynamicType().Name() == "Geom_RectangularTrimmedSurface":
+                surface = Geom_RectangularTrimmedSurface.DownCast(surface).BasisSurface()
+            self.surfaces.append(surface)
         self.bounds = [breptools.UVBounds(face) for face in self.slabs.faces]
         self.borders = []
         for face in self.slabs.faces:
@@ -389,6 +405,9 @@ class _PreparedGeometry:
             while ex.More():
                 edge = topods.Edge(ex.Current())
                 ex.Next()
+                # Embedded coedges are imprint data, not material trim boundaries.
+                if edge.Orientation() in (TopAbs_INTERNAL, TopAbs_EXTERNAL):
+                    continue
                 pc, first, last = BRep_Tool.CurveOnSurface(edge, face)
                 if pc is not None and last > first:
                     borders.append(
@@ -435,36 +454,67 @@ def _tessellate(curve, lo, hi, budget):
 
 
 def _strict_inside(face, u, v, tol, borders=None):
-    ray = Geom2d_Line(gp_Pnt2d(u, 0), gp_Dir2d(0, 1))
+    # Only a transverse, even full-line crossing count defines a closed trim.
+    # Try another direction when a ray hits a tangent, vertex gap or overlap.
+    bounds = breptools.UVBounds(face)
+    if u < bounds[0] - tol or u > bounds[1] + tol or v < bounds[2] - tol or v > bounds[3] + tol:
+        return False
     if borders is None:
         borders = []
-        ex = TopExp_Explorer(face, TopAbs_EDGE)
-        while ex.More():
-            edge = topods.Edge(ex.Current())
-            ex.Next()
+        explorer = TopExp_Explorer(face, TopAbs_EDGE)
+        while explorer.More():
+            edge = topods.Edge(explorer.Current())
+            explorer.Next()
+            if edge.Orientation() in (TopAbs_INTERNAL, TopAbs_EXTERNAL):
+                continue
             pc, first, last = BRep_Tool.CurveOnSurface(edge, face)
             if pc is not None and last > first:
                 borders.append((-1, pc, first, last, Geom2d_TrimmedCurve(pc, first, last)))
-    crossings = []
-    for _, pc, first, last, border in borders:
-        result = Geom2dAPI_InterCurveCurve(border, ray, tol)
-        algo = result.Intersector()
-        if not algo.IsDone():
-            raise _SectionFailure("UV parity intersection failed")
-        for i in range(1, result.NbPoints() + 1):
-            point = algo.Point(i)
-            t = point.ParamOnFirst()
-            y = point.Value().Y()
-            delta = max((last - first) * 1e-06, 1e-12)
-            if pc.IsPeriodic() and last - first >= pc.Period() - tol:
-                left = pc.Value(t - delta).X() >= u
-                right = pc.Value(t + delta).X() >= u
-            else:
-                left = pc.Value(max(t - delta, first)).X() >= u
-                right = pc.Value(min(t + delta, last)).X() >= u
-            if left != right and y > v:
-                crossings.append(y)
-    return len(crossings) % 2 == 1
+    for dx, dy in (
+        (0, 1),
+        (1, 0),
+        (1, 1),
+        (1, -1),
+        (1, 2),
+        (2, -1),
+        (1, np.sqrt(2)),
+        (np.sqrt(3), 1),
+    ):
+        direction = gp_Dir2d(dx, dy)
+        ray = Geom2d_Line(gp_Pnt2d(u, v), direction)
+        total = forward = 0
+        ambiguous = False
+        for _, pc, first, last, border in borders:
+            result = Geom2dAPI_InterCurveCurve(border, ray, tol)
+            algo = result.Intersector()
+            if not algo.IsDone():
+                raise _SectionFailure("UV parity intersection failed")
+            if result.NbSegments():
+                ambiguous = True
+                break
+            for i in range(1, result.NbPoints() + 1):
+                point = algo.Point(i)
+                transition = point.TransitionOfFirst()
+                if transition.IsTangent() or transition.TransitionType() == IntRes2d_Undecided:
+                    ambiguous = True
+                    break
+                position = transition.PositionOnCurve()
+                count = True
+                if position in (IntRes2d_Head, IntRes2d_End):
+                    p, tangent = gp_Pnt2d(), gp_Vec2d()
+                    pc.D1(first if position == IntRes2d_Head else last, p, tangent)
+                    side = -direction.Y() * tangent.X() + direction.X() * tangent.Y()
+                    if abs(side) <= 64 * np.finfo(float).eps * tangent.Magnitude():
+                        ambiguous = True
+                        break
+                    count = side > 0 if position == IntRes2d_Head else side < 0
+                total += int(count)
+                forward += int(count and point.ParamOnSecond() > tol)
+            if ambiguous:
+                break
+        if not ambiguous and total % 2 == 0:
+            return bool(forward % 2)
+    raise _SectionFailure("No unambiguous UV parity ray")
 
 
 def _checked_pcurve(curve, surface, lo, hi, tol, coupled=None):
@@ -592,7 +642,8 @@ def _refine_trace(curve, surface, seed_curve, lo, hi, axis, position, tol, budge
                 p, du, dv = gp_Pnt(), gp_Vec(), gp_Vec()
                 surface.D1(float(uv[0]), float(uv[1]), p, du, dv)
                 residual = p.Coord(axis + 1) - position
-                if abs(residual) <= tol:
+                # Leave residual headroom for interpolation between solved samples.
+                if abs(residual) <= tol / 16:
                     break
                 gradient = np.array((du.Coord(axis + 1), dv.Coord(axis + 1)))
                 denominator = float(np.dot(gradient, gradient))
@@ -629,8 +680,13 @@ def _refine_trace(curve, surface, seed_curve, lo, hi, axis, position, tol, budge
             array2.SetValue(i + 1, gp_Pnt2d(*uv))
             array3.SetValue(i + 1, gp_Pnt(*point))
             parameters.SetValue(i + 1, float(t))
+        point_spacing = float(np.min(np.linalg.norm(np.diff(points, axis=0), axis=1)))
+        if point_spacing == 0:
+            raise _PrecisionFailure("Trace interpolation samples coincide at measurement precision")
+        # OCC's constructor tolerance checks sample coincidence, not curve accuracy.
+        # Retain distinct adaptive samples; residual checks below keep the same budget.
         fit2 = Geom2dAPI_Interpolate(array2, parameters, False, 1e-14)
-        fit3 = GeomAPI_Interpolate(array3, parameters, False, tol * 0.01)
+        fit3 = GeomAPI_Interpolate(array3, parameters, False, min(tol * 0.01, point_spacing / 4))
         fit2.Perform()
         fit3.Perform()
         if not fit2.IsDone() or not fit3.IsDone():
@@ -753,7 +809,7 @@ def _trimmed_segments(occ, axis, position, tol=1e-12, budget=2.5e-08, uv_tol=1e-
             continue
         surface = prepared.surfaces[index]
         solver = GeomInt_IntSS()
-        solver.Perform(surface, plane, tol, True, True, True)
+        solver.Perform(BRep_Tool.Surface(face), plane, tol, True, True, True)
         if not solver.IsDone():
             raise _SectionFailure(f"Support intersection failed on face {index}")
         bounds = prepared.bounds[index]
@@ -886,6 +942,11 @@ def _trimmed_segments(occ, axis, position, tol=1e-12, budget=2.5e-08, uv_tol=1e-
                             "edge_tags": endpoint_tags,
                             "direction": direction,
                             "axis": axis,
+                            "support_closed": kernel_curve.IsClosed(),
+                            "support_range": (
+                                kernel_curve.FirstParameter(),
+                                kernel_curve.LastParameter(),
+                            ),
                         }
                     )
                     accepted.append((t0, t1))
@@ -1004,7 +1065,9 @@ def _endpoint_partners(records):
                 unused.remove(j)
                 pairs.append((i, j))
         else:
-            raise _SectionFailure(
+            # A trim crossing can disappear at the kernel's absolute precision.
+            # Retry the same CAD/plane on the existing higher-scale measurement copy.
+            raise _PrecisionFailure(
                 f"Shared edge {edge_id}, crossing {rank}: {len(endpoints)} endpoints"
             )
         for i, j in pairs:
@@ -1014,9 +1077,9 @@ def _endpoint_partners(records):
     cyclic = defaultdict(set)
     for i, record in enumerate(records):
         curve = record["curve"]
-        if not curve.IsClosed():
+        if not record.get("support_closed", curve.IsClosed()):
             continue
-        first, last = curve.FirstParameter(), curve.LastParameter()
+        first, last = record.get("support_range", (curve.FirstParameter(), curve.LastParameter()))
         rounding = 64 * np.finfo(float).eps * max(1, abs(first), abs(last))
         for end in (0, 1):
             if record["edge_tags"][end]:
@@ -1033,15 +1096,18 @@ def _endpoint_partners(records):
         if not record["edge_tags"][0] and (not record["edge_tags"][1]):
             curve = record["curve"]
             span = record["params"][1] - record["params"][0]
-            full_range = curve.LastParameter() - curve.FirstParameter()
+            support_lo, support_hi = record.get(
+                "support_range", (curve.FirstParameter(), curve.LastParameter())
+            )
+            full_range = support_hi - support_lo
             p = _coordinates(curve.Value(curve.FirstParameter()))
             q = _coordinates(curve.Value(curve.LastParameter()))
             closes_at_rounding = np.linalg.norm(p - q) <= 64 * np.finfo(float).eps * max(
                 np.linalg.norm(p), np.linalg.norm(q)
             )
-            if (curve.IsClosed() or closes_at_rounding) and abs(span - full_range) <= 64 * np.finfo(
-                float
-            ).eps * max(1, abs(span)):
+            if (record.get("support_closed", curve.IsClosed()) or closes_at_rounding) and abs(
+                span - full_range
+            ) <= 64 * np.finfo(float).eps * max(1, abs(span)):
                 candidates[2 * i].add(2 * i + 1)
                 candidates[2 * i + 1].add(2 * i)
     partners = np.full(2 * len(records), -1, dtype=int)

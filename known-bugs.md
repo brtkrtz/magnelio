@@ -17,7 +17,26 @@ that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
 **One entry is open as of 2026-10-06: KB-038.**
-Everything else is struck through and resolved.
+All other entries are struck through and resolved.
+
+## KB-053: ~~Bounded-surface sections reject the repeated coaxial-cell CAD model~~ — Resolved (DD-287, 2026-10-06)
+
+The new section route rejected a valid 51-cell source at a three-endpoint
+shared edge. Embedded coedges and within-tolerance trim-vertex gaps corrupted
+UV membership; subsequent cuts exposed dense interpolation samples, hidden
+periodicity, lost cyclic trace identity and nonmonotonic scale retries.
+The repair preserves native support domains, actual material wires and original
+closed traces, and retains the existing residual/topology/CAD-tube checks.
+
+The complete unchanged 51-cell / 102-port input now meshes: 92 × 92 × 1014,
+8,582,496 cells, bit-identical grid coordinates. All 361 recorded failing cuts,
+46 section regressions, 63 independent area references and the 320-cell material
+certificate pass. Full suite: 4446 passed / 13 skipped / no failures. The repair
+smoke run takes 1811.762 s versus the parent's 641.465 s; concurrent test work
+and missing repeats prevent a controlled slowdown estimate. No global physical
+surface or electromagnetic error percentage is established. Evidence:
+`investigations/near-tangent-meshing-performance/hesr/REPAIR_MEASUREMENTS.md`
+and `REPAIR_DERIVATION.md` (internal dossier).
 
 ## KB-052: ~~Project watching can omit the final writer state~~ — Resolved (2026-10-05)
 

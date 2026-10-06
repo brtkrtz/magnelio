@@ -24123,7 +24123,8 @@ limits and old-checkpoint continuation. Evidence and final suite status:
 ## DD-287 — Bounded-surface sections at geometric grazing planes
 
 **Date:** 2026-10-06. **Status:** implemented on `fix/near-tangent-sections`,
-accepted. Resolves KB-043.
+accepted on the audited fixtures and complete repeated coaxial-cell model.
+Resolves KB-043 and the subsequent valid-CAD regression KB-053.
 
 **Problem.** The stored cylinder/bore fixture loses material on two distinct
 routes. The Boolean section collapses before polygon assembly; lifted facet
@@ -24162,6 +24163,74 @@ Boolean edge's inflated tolerance. Prepared topology and face slabs are
 reused; corrected delegated planes are spliced into the compiled batch.
 An internal environment switch exists only for A/B acceptance.
 
+**Measured build cost (2026-10-06).** Exact-source comparison of direct parent
+`86796160` with `1456c584`, five retained fresh-process builds per arm after one
+excluded warm-up, serial alternating order, production section-pool policy:
+large planar Lange/patch models (up to 3.69 million cells and 5,387 CAD faces)
+change +0.4%/−0.3%; 240 ordinary cylindrical posts change +1.5%. Drilled/lofted
+16/64-station banks cost +59.4%/+56.6%; the matching 16-station unforced-grid
+control costs +59.7%, so forced grazing anchors are not required for that
+geometry's overhead. Deliberate torus contact/grazing and spline-extremum banks
+cost +249.6% and +115.9%. All grid coordinates are bit-identical between arms;
+ordinary-family material/mask arrays are also bit-identical. Median main-worker
+peak RSS increases by at most 30.9 MiB; pooled-child aggregate RSS is not measured.
+Separate diagnostics locate 7.26 s/356 corrected cuts in the drilled bank,
+49.13 s/330 cuts in the torus bank, and 7.16 s/178 cuts plus 4.48 s of stationary
+index preparation in the spline bank. Nested pass times are not additive; the
+diagnostics preload the surface module and are excluded from the primary timing
+statistics. The independent bore-aware certificate passes on the after snapshot
+and rejects the before snapshot. These measured classes establish a significant
+geometry-dependent cost, not a general small-overhead guarantee for arbitrary
+CAD or much larger meshes. Scripts, raw samples, full ranges, paired statistics,
+array differences and exact-source checks are maintained in
+`investigations/near-tangent-meshing-performance/` (internal dossier), with the
+comparison in `MEASUREMENTS.md`.
+
+**Applicability follow-up (KB-053).** The full 51-cell coaxial-cell input
+builds 8.58 million cells in 641.465 s on the parent, but the new route rejects
+it during classification at x = 0.020255821494276557 m: shared edge 907 has
+three contour endpoints. The source passes OCC's B-Rep validity check;
+uninstrumented meshing and an isolated archived-source cut reproduce the
+failure. This was a functional regression, repaired below; the failed duration is not a build time.
+Same-budget production tests still show the intended local correctness gain:
+at 100 nm inward the drilled scalar section error falls from −25.13% to
++0.001274%, and the worst cell-coverage error from 85.79 to 0.01880 percentage
+points; at 1 nm, −49.73% to +0.00003178% and 8.579 to 0.00007517 percentage
+points (requested deflection 2.5 μm, scale 1). These are local CAD/material
+errors, not HESR field or S-parameter error bounds. Evidence and the isolated
+regression source: `investigations/near-tangent-meshing-performance/hesr/`
+(internal dossier), particularly `MEASUREMENTS.md` and `reproduce_section.py`.
+
+**Valid-CAD repair acceptance (KB-053).** Embedded INTERNAL/EXTERNAL
+coedges do not bound material. Strict UV membership uses real trim transitions,
+a half-open vertex rule and another transversal direction when the full-line
+count is ambiguous. Rectangular support wrappers remain on the intersection
+solver; their basis supplies periodic wrapping/evaluation. Refinement retains
+the original closed support identity and adapts the sample-coincidence threshold
+without relaxing residual checks. Precision retries cache the fixed 1/4/16/64
+choices, including the baseline: kernel accuracy is not monotonic in scaling.
+No endpoint is dropped and topology/CAD tolerance tubes remain unchanged.
+
+The unchanged 51-cell / 102-port input completes: 8,582,496 cells with all grid
+arrays bit-identical to the parent. All 361 recorded cuts and both bodies of
+the earlier parallel-prefill failure pass. Fifteen added independent regressions
+bring the section tests to 46; all 63 area references and 320 material cells
+still pass. Repair full suite: **4446 passed, 13 skipped, no failures**, 4459
+collected, 132 warnings, 1150.80 s. Offline HTML (gallery disabled), Ruff,
+formatting, public hygiene and DD-reference gates pass.
+
+A diagnostic full build takes 1811.762 s versus 641.465 s on the parent;
+main peak RSS is 6852.691 versus 6441.480 MiB, sampled tree peak 10.677 versus
+10.309 GiB. Concurrent tests and brief read-only stack sampling exclude this
+run from controlled performance statistics; no repeat spread is available.
+The mu/face phase grows from 119.025 to 1133.762 s; selected bounded sections
+consume 1124.772 s/858 main-process calls (nested timings are not additive).
+Only integrated face category/PEC/free/jump areas change; electric edge arrays
+remain bit-identical. These differences do not define a global physical-surface
+or S-parameter error percentage. Exact repair hashes, scripts and transcripts:
+`investigations/near-tangent-meshing-performance/hesr/REPAIR_MEASUREMENTS.md`
+and `REPAIR_DERIVATION.md` (internal dossier).
+
 **Provenance and current acceptance.** The private bounded-face prototype
 passes 63 reference cuts and 320 signed cell references, including trimmed
 sphere/cone/torus/spline cases and separated bodies. The production material
@@ -24181,7 +24250,7 @@ artificial domain ends on the same cyclic support curve and restricting
 closing-edge anchors to their actual trace neighbourhood; the existing
 operand-invariance and gallery pins pass without repinning.
 
-Final exact-source full-suite acceptance: **4405 passed, 39 skipped,
+Initial exact-source full-suite acceptance: **4405 passed, 39 skipped,
 132 warnings**, 4444 collected, 1197.95 s. All 31 new section regressions
 and both operand-invariance cases pass. The production operator also passes
 all 63 independent geometry-reference cases (worst relative area error
