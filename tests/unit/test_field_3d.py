@@ -576,6 +576,19 @@ def _actor(pl, name):
 
 
 class TestVolume:
+    def test_cut_disabled_shows_the_whole_volume(self):
+        grid = _grid()
+        pl = _field(grid).show(render_mode="none", cut=False, volume="arrows", density=6)
+        arrows = _actor(pl, "field_volume_arrows")
+        assert arrows.GetVisibility()
+        points = arrows.mapper.dataset.points
+        assert points[:, 2].min() < LZ * 1e3 / 2
+        assert points[:, 2].max() > LZ * 1e3 / 2
+        sheet = pl.renderer.actors.get("field_cut")
+        assert sheet is None or not sheet.GetVisibility()
+        assert "field_arrows" not in pl.renderer.actors
+        pl.close()
+
     def test_volume_loader_matches_cell_centred(self):
         grid = _grid()
         fs = _field(grid)

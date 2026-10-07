@@ -23729,6 +23729,17 @@ Browser checks and test/build outputs are recorded in
 **Documentation.** `docs/methods/ports.md`, `docs/methods/viewer.md` and Tutorials
 02/03/04/10 cover the selected solves, phase/time plots and viewer controls.
 
+**Tutorial follow-up (2026-10-07).** Field `show()` accepts `cut=False` to
+start with the existing cut-off state; `volume="arrows"` then draws the
+whole recorded region. The cut remains available through the toolbar.
+Existing cut and volume defaults are unchanged. Tutorial 01 illustrates
+the live toolbar, Tutorial 05 opens mode 0 without a cut and explains
+symmetry parity selection, and Tutorial 18 uses a transparent magnitude
+sheet for a vectors-only cut. The ring-down Q how-to records 41 E-field
+frames on its mid-height plane in the coupled lossless run only.
+`TestVolume.test_cut_disabled_shows_the_whole_volume` checks vectors on
+both sides of the mid-plane with no visible cut actors.
+
 ## DD-281 — Gaussian upper-edge attenuation and shorter initial delay
 
 **Date:** 2026-10-05

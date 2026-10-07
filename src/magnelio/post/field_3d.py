@@ -1528,6 +1528,7 @@ def show_field(
     *,
     normal: str | None = None,
     position: float | None = None,
+    cut: bool = True,
     flip: bool = False,
     plot_type: str = "vector",
     frame: int | None = None,
@@ -1603,6 +1604,10 @@ def show_field(
     position : float, optional
         Initial plane position along *normal* [m].  Default: the middle
         of the recorded region.
+    cut : bool, default True
+        Enable the initial cutting plane.  ``False`` starts with the
+        cut off, showing the whole region with ``volume="arrows"`` or
+        ``volume="isosurface"``.  The toolbar can enable the cut later.
     flip : bool, default False
         Which half the cut removes (see the geometry viewer).
     plot_type : {"vector", "color"}
@@ -1639,7 +1644,8 @@ def show_field(
     threshold : float, default 0.02
         Arrows below this fraction of *vmax* are not drawn.
     opacity : float, default 1.0
-        Opacity of the field sheet.
+        Opacity of the field sheet.  ``0.0`` leaves only the vectors
+        visible when ``plot_type="vector"``.
     arrow_color : str, optional
         One colour for every arrow.  Default: the arrows are coloured by
         their magnitude on the sheet's colour scale.  Either way an
@@ -1856,7 +1862,7 @@ def show_field(
     scene = _viewer._build_scene(
         geometry,
         mesh=mesh,
-        cut=(normal, float(position)),
+        cut=(normal, float(position)) if cut else None,
         flip=flip,
         show_ports=show_ports,
         show_wires=show_wires,

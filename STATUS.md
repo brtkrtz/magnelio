@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-10-05.*  **Released v0.8.2** (2026-09-09): **DD-270**
+*Last updated: 2026-10-07.*  **Released v0.8.2** (2026-09-09): **DD-270**
 the Poynting vector as a derived view of any recorded field (`poynting()`,
 `"S"` in the component vocabulary), **DD-271** three more readings of an
 S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
@@ -280,25 +280,24 @@ to its pinned class.  The band-DTBC length law is the same defect: in
 single the floor loses 4.75 dB (worst) / 6.35 dB (median) per doubling
 of the run, in double it is flat (−149.12 → −149.13 dB).
 
-**Documentation portal (DD-116):** Sphinx/MyST site under `docs/`
-(`pip install -e .[docs]`, `sphinx-build -b html docs
-docs/_build/html`; warning-free — verified with `sphinx -E`, a cached
-rebuild proves nothing).  Pillars: Tutorials (from
-`examples/tutorials/*.py`, 01–18 and 20 released, 21–27 on the foundation branch; of which
-tutorial 13, the DR-filter capstone, is ~5.5 min), API reference,
-Numerical methods (thirteen chapters, every method cited, in-house
-derivations marked in prose), Bibliography.  `docs/references.bib`
-holds 63 entries, bibliographic data only; the citation-confidence
-bookkeeping lives exclusively in the maintainers' internal record
-`reference_docs/provenance-ledger.md`.  Conventions: no DD references
-in docstrings, API pages or error messages; Magnelio is a *library*
-for full-wave 3D EM simulation, never a "suite" and never identified
-with FIT; a feature is finished only once the prose documents it (the
-rule symmetry planes established); and **a tutorial derives plot
-scales from the data, never from an absolute constant** — only CI
-catches a stale `vmax`, since sphinx-gallery re-executes a tutorial
-when *its script* changes, not when the library under it does
-(`build_docs.sh --clean` locally).
+**Documentation portal (DD-116):** Sphinx/MyST site under `docs/`;
+`examples/tutorials/` and `examples/howto/` are the editable gallery
+sources. Generated Python, notebooks and pages under `docs/tutorials/`
+and `docs/howto/` are overwritten by builds. Public prose documents
+concepts and limits; plot scales derive from recorded data. Fresh builds
+are required because gallery caches do not track library changes.
+Bibliographic confidence remains in the maintainers' internal ledger.
+On `docs/tutorial-viewer-guidance`, Tutorial 01 includes the supplied
+toolbar screenshot and monitor hint; Tutorial 05 opens mode 0 with
+`cut=False, volume="arrows"` and explains symmetry parity selection.
+Tutorial 18 and the ring-down Q how-to show vectors-only cuts via
+`opacity=0.0`; the how-to records 41 E-field frames at mid-height in
+the coupled lossless run. The additive `cut=False` option uses the
+existing viewer cut-off state (DD-280 follow-up). All 65 field-viewer
+unit tests pass; build evidence is in
+`investigations/tutorial-viewer-docs/` (internal record).
+Fresh offline HTML passes with all four changed examples executed;
+Ruff, format, hygiene and DD-reference gates pass. RAM reserve: ≥9.04 GiB.
 
 **Two published documentation channels (DD-171):** `/stable/` (from a
 `v*` tag) and `/dev/` (from main), root redirecting to stable, one

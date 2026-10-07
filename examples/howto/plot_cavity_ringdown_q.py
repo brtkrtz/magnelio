@@ -42,7 +42,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import magnelio as mio
-from magnelio import geo, ports, post, sources
+from magnelio import geo, monitors, ports, post, sources
 from magnelio.constants import EPS0
 
 # %%
@@ -121,7 +121,7 @@ def te101_field(x, y, z):
     return np.zeros_like(e_y), e_y, np.zeros_like(e_y)
 
 
-def ring_down(model, t_end, *, name="mode0", wall_sigma=None):
+def ring_down(model, t_end, *, name="mode0", wall_sigma=None, record_fields=False):
     """March from the resonator's mode and return the result.
 
     ``wall_sigma`` turns the metal from perfect conductor into a
@@ -132,7 +132,19 @@ def ring_down(model, t_end, *, name="mode0", wall_sigma=None):
     mesh = mio.Mesh.from_geometry(model, mio.MeshControl(min_nodes_per_wavelength=10), f_max=F_MAX)
     source = sources.SourceFieldInitial.from_function(mesh.grid, name=name, E=te101_field)
     walls = {"wall_model": "sibc", "wall_sigma": wall_sigma} if wall_sigma else {}
-    analysis = mio.AnalysisTD(mesh=mesh.with_sources([source]), verbose=False, **walls)
+    field_monitors = []
+    if record_fields:
+        field_monitors.append(
+            monitors.MonitorFieldTime(
+                corners=((None, B / 2, None), (None, B / 2, None)),
+                times=np.linspace(0.0, 2e-9, 41),
+                fields=["E"],
+                name="midplane",
+            )
+        )
+    analysis = mio.AnalysisTD(
+        mesh=mesh.with_sources([source]), monitors=field_monitors, verbose=False, **walls
+    )
     return analysis.run(excitations=[name], t_end=t_end, energy_stop_db=None), mesh
 
 
@@ -198,7 +210,8 @@ runs["sealed, lossy fill"], mesh_sealed = ring_down(resonator(coupled=False, los
 runs["sealed, copper walls"], _ = ring_down(
     resonator(coupled=False, lossy=False), 150e-9, wall_sigma=SIGMA_CU
 )
-runs["coupled, lossless"], _ = ring_down(resonator(coupled=True, lossy=False), 60e-9)
+model_coupled = resonator(coupled=True, lossy=False)
+runs["coupled, lossless"], mesh_coupled = ring_down(model_coupled, 60e-9, record_fields=True)
 runs["coupled, lossy fill"], _ = ring_down(resonator(coupled=True, lossy=True), 60e-9)
 
 f_loaded = loaded_frequency(runs["coupled, lossless"], "out")
@@ -280,6 +293,25 @@ ax.set_ylim(-20, 2)
 ax.grid(alpha=0.3)
 ax.legend(loc="upper right", fontsize=9)
 fig.tight_layout()
+
+# %%
+# Inspecting the field
+# --------------------
+#
+# The coupled, lossless result also carries a field monitor on the
+# horizontal mid-plane, y = B/2.  It records the first 2 ns, enough to
+# see the initial cavity field radiate into the feed.  Open that
+# recording in the viewer and use the time slider or play button:
+# only the electric-field vectors are visible on the cut, with the
+# magnitude sheet made transparent by ``opacity=0.0``.
+
+runs["coupled, lossless"].monitors["midplane"].show(
+    geometry=model_coupled,
+    mesh=mesh_coupled,
+    normal="y",
+    position=B / 2,
+    opacity=0.0,
+)
 
 # %%
 # What the number sees

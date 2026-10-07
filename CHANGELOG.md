@@ -58,6 +58,10 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Field viewers accept `cut=False` to open a whole-volume field view.
+  Tutorials include the viewer controls, whole-mode inspection and
+  vectors-only cuts; the ring-down Q guide records a mid-height field view.
+
 - The field viewer's Colour scale menu accepts minimum and maximum limits
   in field units, remembers them per component, and restores automatic
   scaling. `vmin=` complements the existing `vmax=` argument.

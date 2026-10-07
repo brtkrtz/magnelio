@@ -108,6 +108,13 @@ for name, kr, g in levels:
 # Looking at a mode
 # -----------------
 #
+# Use the interactive viewer first to get an overview of the modes.
+# Start with mode 0, the cut disabled and electric-field vectors
+# throughout the cavity; the mode slider lets you explore the others.
+
+result.show(mode=0, cut=False, volume="arrows", geometry=model)
+
+# %%
 # ``result.plot()`` draws any mode on an axis-aligned slice through
 # the cavity: ``normal`` and ``position`` select the plane,
 # ``component`` the field quantity, and ``plot_type`` switches between
@@ -170,3 +177,17 @@ fig.tight_layout()
 # through the cavity.  The next tutorials turn to the toolbox around
 # the solvers — starting with field monitors, which record fields
 # *during* a driven simulation.
+#
+# Symmetry planes reduce computation time and filter out modes with
+# unwanted field parity.  For example, declare a magnetic symmetry
+# plane through the sphere's centre when constructing the model:
+#
+# .. code-block:: python
+#
+#     model = mio.GeometryModel(background="pec", boundary_conditions={"xmin": "SymmetryPMC"})
+#
+# This selects modes with tangential E and normal H at x = 0; a
+# ``"SymmetryPEC"`` plane selects the opposite parity.  Add the sphere
+# and remesh after choosing the symmetry.  Only the selected parity
+# is solved, so the full triplet and quintet above are no longer returned.
+# See :doc:`/methods/boundaries` for the symmetry conventions.
