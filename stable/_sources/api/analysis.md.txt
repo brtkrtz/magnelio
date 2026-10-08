@@ -7,7 +7,7 @@ against either. Four of its accessors (`phase`, `plot_s`,
 `to_touchstone`, `to_skrf`) are shared verbatim between the two and are
 listed on each class below through inheritance.  `TDResult` is what
 the general time-domain analysis returns — the recorded signals of one
-march — and what `Project.result(name)` rebuilds for any stored run.
+march — and what `Project.result(run)` rebuilds for any stored run.
 
 ```{eval-rst}
 .. automodule:: magnelio.analysis

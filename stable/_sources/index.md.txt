@@ -48,6 +48,7 @@ tutorials/index
 :caption: How-to guides
 
 howto/index
+howto-voltage-integrals
 ```
 
 ```{toctree}
@@ -68,6 +69,8 @@ methods/index
 :maxdepth: 1
 :caption: Upgrading
 
+migration-api-naming
+migration-geometry
 migration-0.8
 migration-0.7
 migration-0.6

@@ -216,13 +216,13 @@ plate, lumped port bridging the gap on the axis.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 36 cells
+      mesh | 14 x 14 x 36 = 7,056 cells | 2.2 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 14 x 14 x 38 cells
+      mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
     line impedance on this grid: 47.31 Ohm (-8.4 %)
 
 
@@ -319,7 +319,7 @@ of 180° at the low end of the band.
 
     --- current settings — tune until this meets your spec ---
     worst |S11| in band :  -19.5 dB
-    |S11| < -20 dB up to:  14.18 GHz
+    |S11| < -20 dB up to:  14.25 GHz
     max |phase error|   :  28.97 deg
 
 
@@ -364,7 +364,7 @@ resolution or band changes, run this page again.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.491 seconds)
+   **Total running time of the script:** (0 minutes 0.808 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_tuning_coax.py:

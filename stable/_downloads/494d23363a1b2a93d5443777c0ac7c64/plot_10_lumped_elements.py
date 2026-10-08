@@ -56,7 +56,7 @@ w50 = 1.10e-3  # 50 ohm line width
 w70 = 0.60e-3  # 70.7 ohm arm width
 r_mean = 3.2e-3  # mean ring radius (quarter-wave arms at 5 GHz)
 gap = 0.40e-3  # resistor gap at the ring top
-z_c = 5.5e-3  # ring centre
+z_c = 5.5e-3  # ring center
 H_box = 5.0e-3  # shield height
 W_box = 14.0e-3  # shield width
 f_max = 9.0e9
@@ -201,7 +201,7 @@ fig, ax = model.plot_cross_section("y", h_sub + t_met / 2, mesh=mesh, title="Wil
 # ceiling.
 
 analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
-report = analysis.solve_ports()["port1"]
+report = analysis.solve_ports(["port1"])["port1"]
 print(report)
 
 # %%

@@ -141,6 +141,15 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 model.show(mesh=mesh, cut=("y", 0.0))
 
 # %%
+# In a notebook or browser, the viewer includes camera controls, the
+# cutting-plane controls and the *Show* menu pictured below.  During
+# post-processing, recorded monitor fields can be inspected in the
+# same viewer with ``monitor.show()`` (see :ref:`sphx_glr_tutorials_plot_06_field_monitors.py`).
+#
+# .. image:: /_static/tutorial_01_viewer.png
+#    :alt: Parallel-plate viewer with camera and cutting-plane controls and the Show menu
+#    :width: 100 %
+#
 # The 2D cross-section is the exact companion — a section through the
 # CAD model with the grid lines overlaid.
 
@@ -179,7 +188,7 @@ print(f"relative deviation: {abs(z_line / z_analytic - 1):.2e}")
 # The transverse mode profile confirms what a TEM plate mode should
 # look like — a uniform vertical E field:
 
-fig, ax = report.modes[0].plot(field="E", title="TEM mode, transverse E")
+fig, ax = report.modes[0].plot(component="E", title="TEM mode, transverse E")
 
 # %%
 # Run and S-parameters

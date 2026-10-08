@@ -328,7 +328,7 @@ windows = np.array([4.0e-3, 6.0e-3, 8.0e-3, 10.0e-3])
 k_values, f_centres = np.array([coupling_of(w) for w in windows]).T
 
 for w, k, fc in zip(windows, k_values, f_centres):
-    print(f"window {w * 1e3:4.1f} mm ->  k = {k:.5f},  centre {fc / 1e9:.4f} GHz")
+    print(f"window {w * 1e3:4.1f} mm ->  k = {k:.5f},  center {fc / 1e9:.4f} GHz")
 
 # %%
 # The ratio meets its tolerance where the frequency does not
@@ -415,7 +415,7 @@ def probe_fixture(r_probe, iris_window):
 #
 # Here it cannot be taken for granted.  The structure is lossless
 # apart from the port, and the puck's higher modes do not couple to an
-# off-centre pin at all — they ring indefinitely and hold the stored
+# off-center pin at all — they ring indefinitely and hold the stored
 # energy far above the level the energy stop criterion waits for.  The
 # port-signal criterion does not step in either: it watches
 # modal-port envelopes and stands down on a lumped-only run.  So the
@@ -507,7 +507,7 @@ R_PROBE = float(np.interp(np.log(QE_TARGET), np.log(qe_values), radii))
 print(f"\nprobe radius for Qe = {QE_TARGET:.1f}: {R_PROBE * 1e3:.2f} mm")
 
 # The probe also loads the resonator, so the frequency the filter will
-# centre on is the loaded one at this radius — not the bare puck's.
+# center on is the loaded one at this radius — not the bare puck's.
 F0_LOADED = float(np.interp(R_PROBE, radii, f_probe))
 print(f"loaded resonator at that radius: {F0_LOADED / 1e9:.4f} GHz")
 
@@ -528,8 +528,10 @@ def filter_model(iris_window, r_probe):
     x_puck = -SPACING / 2
     x_pin = x_puck - r_probe
 
-    pucks = puck(x_puck).mirrored(normal="x", copy=True)
-    pins = feed_pin(x_pin).mirrored(normal="x", copy=True)
+    left_puck = puck(x_puck)
+    left_pin = feed_pin(x_pin)
+    pucks = [left_puck, left_puck.mirrored(normal="x")]
+    pins = [left_pin, left_pin.mirrored(normal="x")]
 
     model = assemble(housing(iris_window), [*pucks, *pins])
     for name, x in (("p1", x_pin), ("p2", -x_pin)):
@@ -559,15 +561,15 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} = {mesh.Nx * mesh.Ny * mesh.Nz} 
 # also produces a ParaView session (see "Looking inside" below).  A
 # monitor needs its frequencies before the run, so the band is
 # predicted up front from what the design already knows: the loaded
-# resonator's frequency as the centre, half the design bandwidth to
+# resonator's frequency as the center, half the design bandwidth to
 # either side — values the S-parameter evaluation afterwards
 # confirms.  ``interval`` is what makes a volume monitor affordable,
 # and it is sized from the *band edge* rather than from the monitor's
 # own frequency — see there.
 F_TOP = 3.4e9
-POLES = F0_LOADED * np.array([1 - FBW / 2, 1.0, 1 + FBW / 2])  # lower edge, centre, upper
+POLES = F0_LOADED * np.array([1 - FBW / 2, 1.0, 1 + FBW / 2])  # lower edge, center, upper
 pattern = monitors.MonitorFieldFrequency(
-    freqs=POLES,
+    frequencies=POLES,
     fields=["E", "H"],
     interval=1.0 / (20 * F_TOP),
     name="volume_pattern",
@@ -626,7 +628,7 @@ reference = chebyshev_response(band, f0=f_centre, fbw=fbw_achieved, n=N_POLES, r
 in_band = (band >= f_lo) & (band <= f_hi)
 deviation = np.abs(s21 - reference)[in_band]
 
-print(f"band centre     {f_centre / 1e9:.4f} GHz   (loaded resonator {F0_LOADED / 1e9:.4f} GHz)")
+print(f"band center     {f_centre / 1e9:.4f} GHz   (loaded resonator {F0_LOADED / 1e9:.4f} GHz)")
 print(f"ripple bandwidth {100 * fbw_achieved:.2f} %      (target {100 * FBW:.2f} %)")
 print(f"worst in-band insertion loss {-s21[in_band].min():.3f} dB")
 print(f"deviation from the synthesised response: max {deviation.max():.2f} dB")
@@ -705,11 +707,11 @@ fig.tight_layout()
 # housing and compare the phases.
 
 spectrum = pattern.spectrum
-x_cells = spectrum.cell_centres[0]
+x_cells = spectrum.cell_centers[0]
 left, right = x_cells < 0.0, x_cells >= 0.0
 print("  f [GHz]   phase L    phase R   difference")
-for i, f in enumerate(spectrum.frequencies):
-    ez = spectrum.cell_centred(["Ez"], frame=i, squeeze=True)["Ez"]
+for i, f in enumerate(spectrum.f_axis):
+    ez = spectrum.cell_centered(["Ez"], frame=i, squeeze=True)["Ez"]
     phi_l = np.degrees(np.angle(ez[left].sum()))
     phi_r = np.degrees(np.angle(ez[right].sum()))
     delta = (phi_r - phi_l + 180.0) % 360.0 - 180.0

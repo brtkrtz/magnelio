@@ -79,7 +79,7 @@ model.add_source(
 
 c0 = 299_792_458.0
 ka_values = np.linspace(0.6, 3.0, 25)
-freqs = ka_values * c0 / (2 * np.pi * a)
+frequencies = ka_values * c0 / (2 * np.pi * a)
 f_max = 6.5e9
 
 mesh = mio.Mesh.from_geometry(model, mio.MeshControl(min_nodes_per_wavelength=20), f_max=f_max)
@@ -95,7 +95,7 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # later quantify.
 
 t0 = 8.0 / f_max  # the incident pulse has passed the box by then
-farfield = monitors.MonitorFarFieldFrequency(freqs=freqs, name="farfield")
+farfield = monitors.MonitorFarFieldFrequency(frequencies=frequencies, name="farfield")
 movie = monitors.MonitorFieldTime(
     corners=((None, 0.0, None), (None, 0.0, None)),
     times=[t0 * 0.9, t0 * 1.15, t0 * 1.5],
@@ -157,10 +157,10 @@ movie.show(component="E", t=movie.t[-1], geometry=model, mesh=mesh, flip=True)
 # wave of unit amplitude, the pulse spectrum is divided out.  On a
 # scattering analysis this happens automatically, with the excited
 # port's waveform; the general analysis leaves it to you, because with
-# several drives there is no single reference.  ``renormalize`` names
+# several drives there is no single reference.  ``normalize_to_excitation`` names
 # the excitation the monitors refer to from now on.
 
-result.renormalize("pw")
+result.normalize_to_excitation("pw")
 
 # %%
 # The monostatic (backscatter) RCS follows from the far-zone amplitude
@@ -193,7 +193,7 @@ def mie_rcs_pec(ka, n_terms=40):
 
 
 sigma_sim = np.empty_like(ka_values)
-for i, f in enumerate(freqs):
+for i, f in enumerate(frequencies):
     pattern = farfield.result(f, theta=[np.pi], phi=[0.0])
     sigma = 4 * np.pi * (abs(pattern.E_theta[0, 0]) ** 2 + abs(pattern.E_phi[0, 0]) ** 2)
     sigma_sim[i] = sigma / (np.pi * a**2)
@@ -202,7 +202,7 @@ sigma_mie = np.array([mie_rcs_pec(k) for k in ka_values])
 print(f"{'ka':>4}  {'f [GHz]':>8}  {'σ/πa² sim':>10}  {'σ/πa² Mie':>10}  {'error':>7}")
 for i in (5, 10, 15, 20, 24):
     print(
-        f"{ka_values[i]:4.1f}  {freqs[i] / 1e9:8.3f}  {sigma_sim[i]:10.3f}  "
+        f"{ka_values[i]:4.1f}  {frequencies[i] / 1e9:8.3f}  {sigma_sim[i]:10.3f}  "
         f"{sigma_mie[i]:10.3f}  {100 * (sigma_sim[i] / sigma_mie[i] - 1):+6.1f} %"
     )
 i_peak = int(np.argmax(sigma_mie))
@@ -243,7 +243,7 @@ fig.tight_layout()
 
 fig, ax = plt.subplots(subplot_kw={"projection": "polar"}, figsize=(5, 5))
 for i in (5, 15, 24):
-    pattern = farfield.result(freqs[i])
+    pattern = farfield.result(frequencies[i])
     angles, u = pattern.cut(plane="phi", angle=0.0, quantity="U")
     ax.plot(angles, 10 * np.log10(u / u.max()), label=f"ka = {ka_values[i]:.0f}")
 ax.set_theta_zero_location("N")

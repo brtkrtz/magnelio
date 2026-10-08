@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,23 +26,23 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=dbee5847"></script>
+    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -52,7 +51,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/ports';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -114,7 +113,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -163,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -175,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -190,6 +189,27 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -231,7 +251,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -262,15 +282,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -307,7 +327,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -316,7 +336,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -361,6 +381,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -370,6 +397,20 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -441,15 +482,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -484,7 +525,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -503,7 +544,7 @@
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Waveguide ports and S-parameter extraction</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Waveguide ports and S-parameter extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
@@ -512,6 +553,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -868,12 +910,18 @@ waves they keep, and what <code class="docutils literal notranslate"><span class
 detail is this section.</p>
 <p>Either way the decision is published per channel, so it can be
 inspected before a run is paid for:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">([</span><span class="s2">"port1"</span><span class="p">])</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
     <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">termination</span><span class="p">,</span>
               <span class="n">mode</span><span class="o">.</span><span class="n">chain_spread</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">chain_floor_db</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Pass a list of port names to solve only those ports, or one string for
+one port. The returned dictionary follows the requested order. Omitting
+the selection solves all ports. This computes the two-dimensional port
+modes without a time-domain run; shared mesh preparation still takes
+place. To launch a single time-domain excitation, <code class="docutils literal notranslate"><span class="pre">analysis.run(excited=&quot;port1&quot;)</span></code>
+is equivalent to <code class="docutils literal notranslate"><span class="pre">analysis.run(excited=[&quot;port1&quot;])</span></code> (mode 0).</p>
 <p><code class="docutils literal notranslate"><span class="pre">termination</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;dtbc&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;mur&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">chain_spread</span></code> is the
 cross-section measurement behind that decision.  <code class="docutils literal notranslate"><span class="pre">chain_floor_db</span></code> is
 the reflection bound the spread implies, and it is published only
@@ -991,7 +1039,7 @@ below its cut-on is <code class="docutils literal notranslate"><span class="pre"
 power, so it counts as zero rather than poisoning the sum.</p>
 <p><code class="docutils literal notranslate"><span class="pre">plot_smith()</span></code> traces the reflection channels on a Smith chart, where
 the impedance is readable off the circles of constant normalised
-resistance and reactance and a matched frequency sits at the centre.
+resistance and reactance and a matched frequency sits at the center.
 The chart holds against <strong>one</strong> normalisation.  A dispersive
 waveguide mode’s reference impedance moves with frequency, so its
 circles hold nowhere in particular; call <code class="docutils literal notranslate"><span class="pre">renormalize(50)</span></code> first, and
@@ -1003,6 +1051,59 @@ whose magnitude is not bounded by one.</p>
 <code class="docutils literal notranslate"><span class="pre">ax=</span></code> to compose a figure; <code class="docutils literal notranslate"><span class="pre">mark=[f1,</span> <span class="pre">f2,</span> <span class="pre">…]</span></code> puts labelled dots on the
 named frequencies of a trace, which is how a resonance or a band edge
 gets pointed at.</p>
+</section>
+<section id="magnitude-phase-and-time-signals">
+<h3>Magnitude, phase and time signals<a class="headerlink" href="#magnitude-phase-and-time-signals" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">plot_s()</span></code> defaults to a magnitude in dB. Select another representation
+without changing the channel selection:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">"port2"</span><span class="p">,</span> <span class="s2">"port1"</span><span class="p">),</span> <span class="n">representation</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">)</span>
+<span class="n">result</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">"port2"</span><span class="p">,</span> <span class="s2">"port1"</span><span class="p">),</span> <span class="n">representation</span><span class="o">=</span><span class="s2">"phase"</span><span class="p">)</span>
+<span class="n">result</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">"port2"</span><span class="p">,</span> <span class="s2">"port1"</span><span class="p">),</span> <span class="n">representation</span><span class="o">=</span><span class="s2">"phase"</span><span class="p">,</span> <span class="n">phase_unit</span><span class="o">=</span><span class="s2">"rad"</span><span class="p">,</span> <span class="n">unwrap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Phase is wrapped and in degrees by default. Unwrapping removes jumps of
+2π along frequency; it does not make phase near a zero of S meaningful.
+<code class="docutils literal notranslate"><span class="pre">floor_db</span></code> clips only a dB plot. The existing <code class="docutils literal notranslate"><span class="pre">db=True</span></code> / <code class="docutils literal notranslate"><span class="pre">db=False</span></code>
+spelling remains supported; use either <code class="docutils literal notranslate"><span class="pre">db</span></code> or <code class="docutils literal notranslate"><span class="pre">representation</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">plot_time_signals()</span></code> shows the incident <code class="docutils literal notranslate"><span class="pre">a(t)</span></code> and outgoing <code class="docutils literal notranslate"><span class="pre">b(t)</span></code> power
+waves, including at discrete ports. Both have units √W and use the
+same calibrated decomposition as <code class="docutils literal notranslate"><span class="pre">a()</span></code> / <code class="docutils literal notranslate"><span class="pre">b()</span></code>, including stagger
+corrections. They are not the total port voltage or the source waveform.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span><span class="o">.</span><span class="n">plot_time_signals</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port2"</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="s2">"port1"</span><span class="p">)</span>
+<span class="n">result</span><span class="o">.</span><span class="n">plot_time_signals</span><span class="p">((</span><span class="s2">"port2"</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">excited</span><span class="o">=</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"b"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Omit the observed ports to plot every recorded channel. <code class="docutils literal notranslate"><span class="pre">kind=&quot;a&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;both&quot;</span></code> selects the waves; a port keeps one colour, with solid
+lines for a and dashed lines for b. Omit <code class="docutils literal notranslate"><span class="pre">excited</span></code> only for a single
+excitation run. <code class="docutils literal notranslate"><span class="pre">ax=</span></code> accepts existing matplotlib axes. Stored project
+results provide the same plotting methods. Band-port results currently
+have no calibrated time-domain a/b decomposition and reject these plots.</p>
+</section>
+<section id="finite-records-and-decay-stopping">
+<h3>Finite records and decay stopping<a class="headerlink" href="#finite-records-and-decay-stopping" title="Link to this heading">#</a></h3>
+<p>The default modal-port run stops when stored energy has fallen 70 dB
+below its peak <strong>or</strong> the interval port-voltage envelope has fallen 60 dB
+below its peak. Energy stopping waits until all finite excitations have
+reached their nominal ends, including delays and synthesised port-drive
+buffers; plane waves also include retardation at their injection faces.
+Port stopping also waits for a generous domain transit margin.
+An explicit <code class="docutils literal notranslate"><span class="pre">total_time_steps</span></code> remains a bound on the run.</p>
+<p>These thresholds measure transient decay. They do not prescribe an
+S-parameter error: the omitted response spectrum is divided by the
+incident spectrum, which can be weak at a band edge. Waveguide content
+near cutoff can also decay slowly after the source has finished. Tighten
+both <code class="docutils literal notranslate"><span class="pre">energy_stop_db</span></code> and <code class="docutils literal notranslate"><span class="pre">port_signal_stop_db</span></code> when checking a longer
+record; changing one leaves the other stopping path active.</p>
+<p>Compare complex S-parameters over the frequencies and channels relevant
+to the device. Small changes over short time windows can miss narrow
+resonances and delayed responses. Include expected ringing times in the
+recording plan, and resolve narrow features on the frequency axis.
+For lossless closed structures, power balance is an additional check.</p>
+<p>The result settings record the stopping reason and the final checked
+port-voltage level. Energy-stopped runs report the current check interval.
+Port stopping remains available when trapped field energy has no coupling
+to the measured ports and therefore never reaches the energy threshold.</p>
 </section>
 <section id="running-out-of-time-continuing-a-truncated-record">
 <h3>Running out of time: continuing a truncated record<a class="headerlink" href="#running-out-of-time-continuing-a-truncated-record" title="Link to this heading">#</a></h3>
@@ -1271,6 +1372,19 @@ path given without an extension gets the matching one, so
 <code class="docutils literal notranslate"><span class="pre">to_touchstone(&quot;wr90&quot;)</span></code> writes <code class="docutils literal notranslate"><span class="pre">wr90.s2p</span></code>.</p>
 </section>
 </section>
+<section id="quantity-and-anchor-vocabulary">
+<h2>Quantity and anchor vocabulary<a class="headerlink" href="#quantity-and-anchor-vocabulary" title="Link to this heading">#</a></h2>
+<p>Both <code class="docutils literal notranslate"><span class="pre">ModeReport</span></code> and <code class="docutils literal notranslate"><span class="pre">Mode</span></code> evaluate <code class="docutils literal notranslate"><span class="pre">gamma</span></code>, <code class="docutils literal notranslate"><span class="pre">z_wave</span></code> and <code class="docutils literal notranslate"><span class="pre">z_modal</span></code> at a
+frequency in Hz. A <code class="docutils literal notranslate"><span class="pre">Mode</span></code> requires <code class="docutils literal notranslate"><span class="pre">f=</span></code> explicitly; its <code class="docutils literal notranslate"><span class="pre">omega_c</span></code> cutoff
+remains in rad/s. <code class="docutils literal notranslate"><span class="pre">ModeReport.plot(component=&quot;E&quot;)</span></code> draws the existing
+transverse E profile; <code class="docutils literal notranslate"><span class="pre">component=&quot;H&quot;</span></code> draws H.</p>
+<p>Rectangular analytical declarations use <code class="docutils literal notranslate"><span class="pre">origin</span></code>, the minimum tangential
+corner, with <code class="docutils literal notranslate"><span class="pre">width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code> in ascending global tangential-axis order.
+<code class="docutils literal notranslate"><span class="pre">PortAnalytical</span></code> accepts a world 3D point; <code class="docutils literal notranslate"><span class="pre">PortSpecRectWG</span></code> accepts the two
+coordinates in that tangential order. Coax declarations use <code class="docutils literal notranslate"><span class="pre">center</span></code> for the
+axis. Passing a wrong-family anchor is rejected. The anchor names do not
+change placements on minimum or maximum domain faces.</p>
+</section>
 </section>
 
 
@@ -1341,6 +1455,8 @@ path given without an extension gets the matching one, so
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#s-parameters">S-parameters</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-an-s-matrix">Reading an S-matrix</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnitude-phase-and-time-signals">Magnitude, phase and time signals</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#finite-records-and-decay-stopping">Finite records and decay stopping</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-out-of-time-continuing-a-truncated-record">Running out of time: continuing a truncated record</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#band-ports-one-decomposition-per-frequency-dd-235">Band ports: one decomposition per frequency (DD-235)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-plane-shift-de-embedding-dd-187">Reference-plane shift (de-embedding, DD-187)</a></li>
@@ -1349,6 +1465,7 @@ path given without an extension gets the matching one, so
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-touchstone-export-covers-dd-184">What a Touchstone export covers (DD-184)</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantity-and-anchor-vocabulary">Quantity and anchor vocabulary</a></li>
 </ul>
   </nav></div>
 
@@ -1374,8 +1491,8 @@ path given without an extension gets the matching one, so
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1396,7 +1513,6 @@ path given without an extension gets the matching one, so
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -1409,7 +1525,7 @@ path given without an extension gets the matching one, so
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

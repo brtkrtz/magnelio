@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,30 +26,30 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=dbee5847"></script>
+    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/plots';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -112,7 +111,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -160,6 +159,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     API reference
@@ -173,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -188,6 +187,27 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -229,7 +249,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -260,15 +280,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -305,7 +325,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -314,7 +334,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -358,6 +378,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     API reference
@@ -368,6 +395,20 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -439,15 +480,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -482,7 +523,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -511,7 +552,7 @@
 <li class="toctree-l1"><a class="reference internal" href="solver.html"><code class="docutils literal notranslate"><span class="pre">magnelio.solver</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="analysis.html"><code class="docutils literal notranslate"><span class="pre">magnelio.analysis</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="post.html"><code class="docutils literal notranslate"><span class="pre">magnelio.post</span></code></a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.plots</span></code></a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.plots</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html"><code class="docutils literal notranslate"><span class="pre">magnelio.io</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="constants.html"><code class="docutils literal notranslate"><span class="pre">magnelio.constants</span></code></a></li>
 </ul>
@@ -582,6 +623,24 @@
 <code class="docutils literal notranslate"><span class="pre">monitor.plot()</span></code>, <code class="docutils literal notranslate"><span class="pre">result.plot_s()</span></code>); this module is their public
 home for direct use on objects you assembled yourself.</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="magnelio.plots.configure_viewer">
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">configure_viewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.configure_viewer" title="Link to this definition">#</a></dt>
+<dd><p>Choose where subsequent 3D views open in this Python process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> (<em>{&quot;auto&quot;</em><em>, </em><em>&quot;inline&quot;</em><em>, </em><em>&quot;browser&quot;</em><em>, </em><em>&quot;native&quot;}</em><em>, </em><em>default &quot;auto&quot;</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> embeds the viewer in JupyterLab/JupyterHub and opens it
+in the browser in scripts and Zed.  <code class="docutils literal notranslate"><span class="pre">&quot;browser&quot;</span></code> is also useful
+for other editor REPLs which run an IPython kernel but do not render
+ipywidgets.  The other choices force a notebook widget or the native
+VTK window.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.plot_cross_section">
 <span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outline_transparent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_cross_section" title="Link to this definition">#</a></dt>
 <dd><p>Plot a 2D cross-section of 3D geometry at an axis-aligned plane.</p>
@@ -608,7 +667,7 @@ it and as a ring where the cut passes through it.</p>
 <li><p><strong>flip</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <em>True</em>, swap the horizontal and vertical axes.  Useful for
 structures that are tall and narrow in the default (u, v) layout
 (e.g. a long transmission line sliced at <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">const</span></code>).</p></li>
-<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Existing axes to draw into.  A new figure is created when <em>None</em>.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.2)"><em>matplotlib.axes.Axes</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Existing axes to draw into.  A new figure is created when <em>None</em>.</p></li>
 <li><p><strong>title</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Plot title.  Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;Cross-section</span> <span class="pre">at</span> <span class="pre">&lt;axis&gt;</span> <span class="pre">=</span> <span class="pre">&lt;pos&gt;</span> <span class="pre">&lt;unit&gt;&quot;</span></code>.</p></li>
 <li><p><strong>deflection</strong> (<em>float</em><em>, </em><em>optional</em>) – Chordal deflection for curve tessellation [m].  Passed through to
 <code class="xref py py-func docutils literal notranslate"><span class="pre">cross_section_polygons()</span></code>.</p></li>
@@ -657,8 +716,8 @@ cell fill.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xc</strong> (<em>np.ndarray</em>) – Cell-centre coordinates of the two in-plane axes.</p></li>
-<li><p><strong>yc</strong> (<em>np.ndarray</em>) – Cell-centre coordinates of the two in-plane axes.</p></li>
+<li><p><strong>xc</strong> (<em>np.ndarray</em>) – Cell-center coordinates of the two in-plane axes.</p></li>
+<li><p><strong>yc</strong> (<em>np.ndarray</em>) – Cell-center coordinates of the two in-plane axes.</p></li>
 <li><p><strong>values</strong> (<em>np.ndarray</em>) – Real-valued 2D array, shape <code class="docutils literal notranslate"><span class="pre">(len(xc),</span> <span class="pre">len(yc))</span></code>.</p></li>
 <li><p><strong>xlabel</strong> (<em>str</em>) – Axis labels (without unit suffix).</p></li>
 <li><p><strong>ylabel</strong> (<em>str</em>) – Axis labels (without unit suffix).</p></li>
@@ -673,7 +732,7 @@ cell fill.</p></li>
 <li><p><strong>contour_levels</strong> (<em>int</em>) – Number of contour levels (contour mode only).</p></li>
 <li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes.</p></li>
 <li><p><strong>geometry</strong> (<em>GeometryOverlay</em>) – Optional geometry overlay.</p></li>
-<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.2)"><em>matplotlib.axes.Axes</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>colorbar</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
@@ -703,15 +762,15 @@ component <em>w</em> is given, arrow colour encodes the full 3D magnitude,
 and grid points whose vector tilts out of the plane by more than
 ~72° (<code class="docutils literal notranslate"><span class="pre">|w|</span> <span class="pre">&gt;=</span> <span class="pre">3x</span></code> the in-plane part, at significant magnitude)
 are drawn as circle markers instead of unreadable foreshortened
-arrows: a filled circle with a centre dot (⊙) where the field
+arrows: a filled circle with a center dot (⊙) where the field
 points along the positive normal axis, with a cross (⊗) along the
 negative one.  Without <em>w</em> the plot shows the in-plane projection
 only and the colour bar is labelled accordingly.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xc</strong> (<em>np.ndarray</em>) – Cell-centre coordinates of the two in-plane axes.</p></li>
-<li><p><strong>yc</strong> (<em>np.ndarray</em>) – Cell-centre coordinates of the two in-plane axes.</p></li>
+<li><p><strong>xc</strong> (<em>np.ndarray</em>) – Cell-center coordinates of the two in-plane axes.</p></li>
+<li><p><strong>yc</strong> (<em>np.ndarray</em>) – Cell-center coordinates of the two in-plane axes.</p></li>
 <li><p><strong>u</strong> (<em>np.ndarray</em>) – In-plane vector components, shape <code class="docutils literal notranslate"><span class="pre">(len(xc),</span> <span class="pre">len(yc))</span></code>.</p></li>
 <li><p><strong>v</strong> (<em>np.ndarray</em>) – In-plane vector components, shape <code class="docutils literal notranslate"><span class="pre">(len(xc),</span> <span class="pre">len(yc))</span></code>.</p></li>
 <li><p><strong>w</strong> (<em>np.ndarray</em><em> or </em><em>None</em>) – Out-of-plane (normal) component on the same grid.  Enables the
@@ -746,7 +805,7 @@ fixed-scale animations).  Overrides <em>auto_scale</em>.</p></li>
 <li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes.</p></li>
 <li><p><strong>geometry</strong> (<em>GeometryOverlay</em>) – Optional geometry overlay.</p></li>
 <li><p><strong>title</strong> (<em>str</em>)</p></li>
-<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.2)"><em>matplotlib.axes.Axes</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>scale_mm</strong> (<em>bool</em>)</p></li>
 <li><p><strong>cmap</strong> (<em>str</em>)</p></li>
 <li><p><strong>colorbar</strong> (<em>bool</em>)</p></li>
@@ -781,7 +840,7 @@ area of the primal faces normal to the cut, in the node plane
 nearest to it, as measured by the sub-cell classifier — every cell
 in the colour of its classified material, blended towards PEC grey
 by that share.  <code class="docutils literal notranslate"><span class="pre">&quot;material&quot;</span></code> shows the cell classification: the
-material containing each cell’s centre, on the real cell size.  It
+material containing each cell’s center, on the real cell size.  It
 is the staircase baseline the sub-cell values override on every
 cut cell, not the accuracy of the discretisation, and thin sheets
 do not appear in it.  <code class="docutils literal notranslate"><span class="pre">&quot;conformal&quot;</span></code> shows the dual faces of the
@@ -807,7 +866,7 @@ nearest to it.</p></li>
 <a class="reference internal" href="#magnelio.plots.plot_cross_section" title="magnelio.plots.plot_cross_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">fill=False</span></code>).</p></li>
 <li><p><strong>scale_mm</strong> (<em>bool</em><em>, </em><em>optional</em>) – Display axes in millimetres (default) or metres.</p></li>
 <li><p><strong>flip</strong> (<em>bool</em><em>, </em><em>optional</em>) – Swap the horizontal and vertical axes.</p></li>
-<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Existing axes to draw into.  A new figure is created when <em>None</em>.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.2)"><em>matplotlib.axes.Axes</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Existing axes to draw into.  A new figure is created when <em>None</em>.</p></li>
 <li><p><strong>title</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Plot title.  Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;Mesh</span> <span class="pre">section</span> <span class="pre">at</span> <span class="pre">&lt;axis&gt;</span> <span class="pre">=</span> <span class="pre">&lt;pos&gt;</span> <span class="pre">&lt;unit&gt;&quot;</span></code>.</p></li>
 <li><p><strong>fill</strong> (<em>{&quot;coverage&quot;</em><em>, </em><em>&quot;material&quot;</em><em>, </em><em>&quot;conformal&quot;</em><em>, </em><em>None}</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;coverage&quot;</span></code> (default) shades every cell by its exact
 PEC-covered area; <code class="docutils literal notranslate"><span class="pre">&quot;material&quot;</span></code> colours every cell by its
@@ -858,7 +917,7 @@ indentations.</p>
 <li><p><strong>db</strong> (<em>bool</em><em>, </em><em>default True</em>) – Radius from the dB value (with <em>floor_db</em>) instead of linear.</p></li>
 <li><p><strong>floor_db</strong> (<em>float</em><em>, </em><em>default -40.0</em>) – Radius origin for the dB display.</p></li>
 <li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>optional</em>) – Colormap for the radius shading (default <code class="docutils literal notranslate"><span class="pre">&quot;viridis&quot;</span></code>).</p></li>
-<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="(in Matplotlib v3.11.1)"><em>mpl_toolkits.mplot3d.axes3d.Axes3D</em></a><em>, </em><em>optional</em>) – 3D axes to draw into; a new figure is created otherwise.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="(in Matplotlib v3.11.2)"><em>mpl_toolkits.mplot3d.axes3d.Axes3D</em></a><em>, </em><em>optional</em>) – 3D axes to draw into; a new figure is created otherwise.</p></li>
 <li><p><strong>title</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
@@ -887,7 +946,7 @@ directivity).</p></li>
 <li><p><strong>db</strong> (<em>bool</em><em>, </em><em>default True</em>) – Radial axis in dB (with <em>floor_db</em>) instead of linear.</p></li>
 <li><p><strong>floor_db</strong> (<em>float</em><em>, </em><em>default -40.0</em>) – Clip floor and radial-axis minimum for the dB display.</p></li>
 <li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – Legend label for this trace.</p></li>
-<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/projections/polar.html#matplotlib.projections.polar.PolarAxes" title="(in Matplotlib v3.11.1)"><em>matplotlib.projections.polar.PolarAxes</em></a><em>, </em><em>optional</em>) – Polar axes to draw into; a new figure is created otherwise.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/projections/polar.html#matplotlib.projections.polar.PolarAxes" title="(in Matplotlib v3.11.2)"><em>matplotlib.projections.polar.PolarAxes</em></a><em>, </em><em>optional</em>) – Polar axes to draw into; a new figure is created otherwise.</p></li>
 <li><p><strong>title</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
@@ -903,7 +962,7 @@ directivity).</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.show_field">
-<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iso_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'arrow'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mirror</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_field" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_deg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iso_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'arrow'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'scaled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mirror</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_symmetry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_field" title="Link to this definition">#</a></dt>
 <dd><p>Interactive 3D view of a field, or a field monitor, on a cutting plane.</p>
 <p>The view is the geometry viewer’s (<a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>)
 with the field laid on the cutting plane: the cell layer the cut
@@ -925,7 +984,7 @@ continued across them, so the picture is the whole model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>source</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a><em>, </em><em>monitor</em><em>, </em><a class="reference internal" href="solver.html#magnelio.solver.EigenmodeResult" title="magnelio.solver.EigenmodeResult"><em>EigenmodeResult</em></a><em>, or </em><em>a project's monitor reader</em>) – What to show.  A monitor must have recorded (or be read from a
+<li><p><strong>source</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a><em>, </em><em>monitor</em><em>, </em><a class="reference internal" href="analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.analysis.EigenmodeResult"><em>EigenmodeResult</em></a><em>, or </em><em>a project's monitor reader</em>) – What to show.  A monitor must have recorded (or be read from a
 project); a <a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a> is one frame; an
 eigenmode result’s modes are its frames.</p></li>
 <li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for the magnitude sheet (with arrows when
@@ -936,6 +995,9 @@ which the region has the fewest cells — for a plane monitor, its
 own normal.</p></li>
 <li><p><strong>position</strong> (<em>float</em><em>, </em><em>optional</em>) – Initial plane position along <em>normal</em> [m].  Default: the middle
 of the recorded region.</p></li>
+<li><p><strong>cut</strong> (<em>bool</em><em>, </em><em>default True</em>) – Enable the initial cutting plane.  <code class="docutils literal notranslate"><span class="pre">False</span></code> starts with the
+cut off, showing the whole region with <code class="docutils literal notranslate"><span class="pre">volume=&quot;arrows&quot;</span></code> or
+<code class="docutils literal notranslate"><span class="pre">volume=&quot;isosurface&quot;</span></code>.  The toolbar can enable the cut later.</p></li>
 <li><p><strong>flip</strong> (<em>bool</em><em>, </em><em>default False</em>) – Which half the cut removes (see the geometry viewer).</p></li>
 <li><p><strong>plot_type</strong> (<em>{&quot;vector&quot;</em><em>, </em><em>&quot;color&quot;}</em>) – Arrows over the magnitude sheet, or the sheet alone.  A single
 component is always drawn as a sheet.</p></li>
@@ -944,21 +1006,27 @@ component is always drawn as a sheet.</p></li>
 (frequency monitors); the nearest recorded one is used.</p></li>
 <li><p><strong>f</strong> (<em>float</em><em>, </em><em>optional</em>) – Initial frame by time [s] (time monitors) or frequency [Hz]
 (frequency monitors); the nearest recorded one is used.</p></li>
-<li><p><strong>phase</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Instant [degrees] at which a complex field is shown:
-<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(+j·phase))</span></code>, the pattern at <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">t</span> <span class="pre">=</span> <span class="pre">phase</span></code>.  The
+<li><p><strong>phase_deg</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Instant [degrees] at which a complex field is shown:
+<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(+j·phase_deg))</span></code>, the pattern at <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">t</span> <span class="pre">=</span> <span class="pre">phase_deg</span></code>.  The
 phase advances with time, so the play button walks a travelling
 wave the way it ran in the simulation — away from the port that
 launched it.</p></li>
 <li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – Ceiling of the colour scale and of the arrow length.  Default:
 the peak over every frame and layer of the region, so that the
 colours stay comparable while sliding through time.</p></li>
+<li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – Lower colour limit in field units. Default: zero for magnitude,
+minus <em>vmax</em> for a signed component. Magnitude limits must be
+nonnegative; <em>vmax</em> must be positive and greater than <em>vmin</em>.
+The Colour scale submenu edits both limits or restores automatic
+scaling. Values beyond the limits saturate without changing data.</p></li>
 <li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>optional</em>) – Colour map; default <code class="docutils literal notranslate"><span class="pre">&quot;viridis&quot;</span></code> for a magnitude, <code class="docutils literal notranslate"><span class="pre">&quot;RdBu_r&quot;</span></code>
 for a signed component.</p></li>
 <li><p><strong>density</strong> (<em>int</em><em>, </em><em>default 20</em>) – Arrows along the longer in-plane axis of the cut, and along the
 longest axis of the region in the volume; the other axes get
 the count that keeps the lattice even.</p></li>
 <li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>default 0.02</em>) – Arrows below this fraction of <em>vmax</em> are not drawn.</p></li>
-<li><p><strong>opacity</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Opacity of the field sheet.</p></li>
+<li><p><strong>opacity</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Opacity of the field sheet.  <code class="docutils literal notranslate"><span class="pre">0.0</span></code> leaves only the vectors
+visible when <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;vector&quot;</span></code>.</p></li>
 <li><p><strong>arrow_color</strong> (<em>str</em><em>, </em><em>optional</em>) – One colour for every arrow.  Default: the arrows are coloured by
 their magnitude on the sheet’s colour scale.  Either way an
 arrow’s length grows with its magnitude, from three tenths of
@@ -981,6 +1049,10 @@ component gets each level with both signs.</p></li>
 not given.</p></li>
 <li><p><strong>glyph</strong> (<em>{&quot;arrow&quot;</em><em>, </em><em>&quot;cone&quot;}</em>) – The shape of the field vectors, centred on their sample points.</p></li>
 <li><p><strong>glyph_width</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Thickness of the vectors relative to the default.</p></li>
+<li><p><strong>arrow_length</strong> (<em>{&quot;scaled&quot;</em><em>, </em><em>&quot;uniform&quot;}</em><em>, </em><em>default &quot;scaled&quot;</em>) – Scale lengths by magnitude (with a readability floor), or draw
+equal lengths. Colour can still encode magnitude in either mode.
+Zero vectors are never drawn.</p></li>
+<li><p><strong>arrow_scale</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Length multiplier relative to the arrow lattice spacing.</p></li>
 <li><p><strong>mirror</strong> (<em>bool</em><em>, </em><em>default True</em>) – Continue the field across the model’s symmetry planes, so the
 view shows the whole model (as every other field picture does).
 Needs <em>mesh</em> (an eigenmode result brings its own), whose
@@ -996,8 +1068,15 @@ planes are read from it (<em>mirror</em>).</p></li>
 <li><p><strong>show_ports</strong> (<em>bool</em><em>, </em><em>default True</em>) – As in the geometry viewer.</p></li>
 <li><p><strong>show_wires</strong> (<em>bool</em><em>, </em><em>default True</em>) – As in the geometry viewer.</p></li>
 <li><p><strong>show_labels</strong> (<em>bool</em><em>, </em><em>default True</em>) – As in the geometry viewer.</p></li>
+<li><p><strong>show_boundaries</strong> (<em>bool</em><em>, </em><em>default False</em>) – Initially show domain boundary conditions or symmetry planes.
+They remain independently available in the Show menu.</p></li>
+<li><p><strong>show_symmetry</strong> (<em>bool</em><em>, </em><em>default False</em>) – Initially show domain boundary conditions or symmetry planes.
+They remain independently available in the Show menu.</p></li>
 <li><p><strong>show_grid</strong> (<em>bool</em><em>, </em><em>default False</em>) – With <em>mesh</em>: draw the grid cells on the cut under the field.</p></li>
-<li><p><strong>mode</strong> (<em>str</em><em> | </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
+<li><p><strong>render_mode</strong> (<em>str</em><em> | </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
+widget’s height in the notebook, the toolbar’s pop-out button
+opens the same view in a browser tab of its own.</p></li>
+<li><p><strong>target</strong> (<em>str</em><em> | </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
 widget’s height in the notebook, the toolbar’s pop-out button
 opens the same view in a browser tab of its own.</p></li>
 <li><p><strong>size</strong> (<em>tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
@@ -1009,13 +1088,21 @@ opens the same view in a browser tab of its own.</p></li>
 <li><p><strong>scale_mm</strong> (<em>bool</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
 widget’s height in the notebook, the toolbar’s pop-out button
 opens the same view in a browser tab of its own.</p></li>
-<li><p><strong>camera</strong> (<em>Any</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
-widget’s height in the notebook, the toolbar’s pop-out button
-opens the same view in a browser tab of its own.</p></li>
+<li><p><strong>camera</strong> (<em>str</em><em> or </em><em>list</em><em> or </em><em>tuple</em><em>, </em><em>default &quot;iso&quot;</em>) – Initial view: <code class="docutils literal notranslate"><span class="pre">&quot;iso&quot;</span></code> is isometric; <code class="docutils literal notranslate"><span class="pre">&quot;xy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xz&quot;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&quot;yz&quot;</span></code> look at those coordinate planes. A custom camera is
+<code class="docutils literal notranslate"><span class="pre">[position,</span> <span class="pre">focal_point,</span> <span class="pre">view_up]</span></code>, each a three-vector.
+Position and focal point use display coordinates: millimetres
+with <code class="docutils literal notranslate"><span class="pre">scale_mm=True</span></code>, metres otherwise. <code class="docutils literal notranslate"><span class="pre">view_up</span></code> is a
+dimensionless vector towards the top of the image and must not
+be parallel to the viewing direction. The scene is fitted
+automatically, preserving direction and up while adjusting
+position, focal point and zoom. The cutting-plane <em>position</em>
+still uses metres.</p></li>
+<li><p><strong>mode</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The plotter when <code class="docutils literal notranslate"><span class="pre">mode=&quot;none&quot;</span></code>; otherwise the view is displayed
+<dd class="field-even"><p>The plotter when <code class="docutils literal notranslate"><span class="pre">render_mode=&quot;none&quot;</span></code>; otherwise the view is displayed
 as a side effect.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -1031,12 +1118,12 @@ export, pop-out, help),
 <em>Field on cut</em>, <em>Vectors on cut</em>, <em>Field vectors</em> (in the volume)
 and <em>Isosurfaces</em> beside the geometry’s groups.  The second row
 holds the field: play and frame slider with the frame’s time,
-frequency or mode; play and phase slider for complex data; the
+frequency or mode; play and phase_deg slider for complex data; the
 <em>Field</em> selector; the isosurface level and the arrow density.  The
 mouse in the browser: left drag orbits, middle drag (or shift +
 left) pans, right drag or the wheel zooms, ctrl + left rolls; the
 help button lists the same.</p>
-<p>Every sample is a cell-centre average of the staggered components
+<p>Every sample is a cell-center average of the staggered components
 — the picture stands for a layer of cells, not for a plane — and
 the isosurfaces interpolate those cell values to the nodes before
 they are contoured.</p>
@@ -1044,7 +1131,7 @@ they are contoured.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.show_geometry">
-<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#202020'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surface_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_geometry" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_symmetry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#202020'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surface_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_geometry" title="Link to this definition">#</a></dt>
 <dd><p>Interactive 3D view of a <a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.geo.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a>.</p>
 <p>Solids are coloured by material (air and vacuum bodies are drawn as
 faint translucent shells), thin wires, ports, lumped elements and
@@ -1072,27 +1159,41 @@ points to; <code class="docutils literal notranslate"><span class="pre">True</sp
 <li><p><strong>show_wires</strong> (<em>bool</em><em>, </em><em>default True</em>) – Draw ports and lumped elements, and thin wires.</p></li>
 <li><p><strong>show_grid</strong> (<em>bool</em><em>, </em><em>default True</em>) – With <code class="docutils literal notranslate"><span class="pre">mesh</span></code>: draw the grid cells on the cutting plane.</p></li>
 <li><p><strong>show_labels</strong> (<em>bool</em><em>, </em><em>default True</em>) – Write the names of ports and lumped elements next to them.</p></li>
-<li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – Where to render in a notebook: <code class="docutils literal notranslate"><span class="pre">&quot;client&quot;</span></code> (default) renders
+<li><p><strong>show_boundaries</strong> (<em>bool</em><em>, </em><em>default False</em>) – Initially show domain boundary conditions or symmetry planes.
+Both remain independently available in the Show menu.</p></li>
+<li><p><strong>show_symmetry</strong> (<em>bool</em><em>, </em><em>default False</em>) – Initially show domain boundary conditions or symmetry planes.
+Both remain independently available in the Show menu.</p></li>
+<li><p><strong>render_mode</strong> (<em>str</em><em>, </em><em>optional</em>) – Where to render in a notebook: <code class="docutils literal notranslate"><span class="pre">&quot;client&quot;</span></code> (default) renders
 in the browser and needs no OpenGL in the kernel; <code class="docutils literal notranslate"><span class="pre">&quot;server&quot;</span></code>
 renders in the kernel and streams images; <code class="docutils literal notranslate"><span class="pre">&quot;trame&quot;</span></code> offers
 both with a toggle; <code class="docutils literal notranslate"><span class="pre">&quot;static&quot;</span></code> embeds a screenshot;
 <code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> builds the scene without showing it and returns the
-plotter.  Outside a notebook the value is ignored: a script
-opens an interactive window, a documentation build takes a
-screenshot.</p></li>
+plotter.</p></li>
+<li><p><strong>target</strong> (<em>{&quot;auto&quot;</em><em>, </em><em>&quot;inline&quot;</em><em>, </em><em>&quot;browser&quot;</em><em>, </em><em>&quot;native&quot;}</em><em>, </em><em>optional</em>) – Where the view is displayed.  The configured default is inline
+in JupyterLab/JupyterHub and an external browser in scripts and
+Zed.  <code class="docutils literal notranslate"><span class="pre">&quot;browser&quot;</span></code>
+opens the complete toolbar in editor REPLs that cannot render
+widgets; <code class="docutils literal notranslate"><span class="pre">&quot;native&quot;</span></code> opens the PyVista/VTK window.</p></li>
 <li><p><strong>size</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Widget or window size in pixels.  Default: full cell width.</p></li>
 <li><p><strong>render_edges</strong> (<em>bool</em><em>, </em><em>default False</em>) – Draw the tessellation edges on every solid.</p></li>
 <li><p><strong>edge_color</strong> (<em>str</em><em>, </em><em>default &quot;#202020&quot;</em>) – Colour of those edges.</p></li>
 <li><p><strong>quality</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Tessellation fineness; values above 1 give finer triangles.</p></li>
 <li><p><strong>scale_mm</strong> (<em>bool</em><em>, </em><em>default True</em>) – Display in millimetres (<code class="docutils literal notranslate"><span class="pre">False</span></code>: metres).</p></li>
-<li><p><strong>camera</strong> (<em>str</em><em> or </em><em>sequence</em><em>, </em><em>default &quot;iso&quot;</em>) – Initial camera: a PyVista preset (<code class="docutils literal notranslate"><span class="pre">&quot;iso&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xz&quot;</span></code>,
-<code class="docutils literal notranslate"><span class="pre">&quot;yz&quot;</span></code>) or an explicit <code class="docutils literal notranslate"><span class="pre">[position,</span> <span class="pre">focal_point,</span> <span class="pre">view_up]</span></code>.</p></li>
+<li><p><strong>camera</strong> (<em>str</em><em> or </em><em>list</em><em> or </em><em>tuple</em><em>, </em><em>default &quot;iso&quot;</em>) – Initial view: <code class="docutils literal notranslate"><span class="pre">&quot;iso&quot;</span></code> is isometric; <code class="docutils literal notranslate"><span class="pre">&quot;xy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xz&quot;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&quot;yz&quot;</span></code> look at those coordinate planes. A custom camera is
+<code class="docutils literal notranslate"><span class="pre">[position,</span> <span class="pre">focal_point,</span> <span class="pre">view_up]</span></code>, each a three-vector.
+Position and focal point use display coordinates: millimetres
+with <code class="docutils literal notranslate"><span class="pre">scale_mm=True</span></code>, metres otherwise. <code class="docutils literal notranslate"><span class="pre">view_up</span></code> is a
+dimensionless vector towards the top of the image and must not
+be parallel to the viewing direction. The scene is fitted
+automatically: direction and up are preserved, but position,
+focal point and zoom are adjusted to show the scene.</p></li>
 <li><p><strong>current_frame</strong> (<em>int</em>)</p></li>
 <li><p><strong>current_density</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The plotter when <code class="docutils literal notranslate"><span class="pre">mode=&quot;none&quot;</span></code>; otherwise the view is displayed
+<dd class="field-even"><p>The plotter when <code class="docutils literal notranslate"><span class="pre">render_mode=&quot;none&quot;</span></code>; otherwise the view is displayed
 as a side effect and <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -1110,8 +1211,22 @@ left) pans, right drag or the wheel zooms, alt + shift + left
 rolls.  The help button lists the same.</p>
 <p>The widget needs the <code class="docutils literal notranslate"><span class="pre">trame</span></code> stack (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">magnelio[jupyter]</span></code>
 or the conda-forge packages <code class="docutils literal notranslate"><span class="pre">trame</span></code>, <code class="docutils literal notranslate"><span class="pre">trame-vtk</span></code>,
-<code class="docutils literal notranslate"><span class="pre">trame-vuetify</span></code>).  Without it the view falls back to a static
-image with a warning.</p>
+<code class="docutils literal notranslate"><span class="pre">trame-vuetify</span></code>).  Without it a browser target falls back to the
+native VTK window with a warning; an inline target falls back to a
+static image.</p>
+<p class="rubric">Examples</p>
+<p>Open a coordinate-plane view or a cut with visible tessellation edges:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xy"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xz"</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">render_edges</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Define an oblique direction in display coordinates, with z pointing up:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">camera</span><span class="o">=</span><span class="p">[(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span>
+<span class="gp">... </span>    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">900</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>
@@ -1163,6 +1278,7 @@ image with a warning.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.configure_viewer"><code class="docutils literal notranslate"><span class="pre">configure_viewer()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_field_scalar"><code class="docutils literal notranslate"><span class="pre">plot_field_scalar()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_field_vector"><code class="docutils literal notranslate"><span class="pre">plot_field_vector()</span></code></a></li>
@@ -1196,8 +1312,8 @@ image with a warning.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1218,7 +1334,6 @@ image with a warning.</p>
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -1231,7 +1346,7 @@ image with a warning.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

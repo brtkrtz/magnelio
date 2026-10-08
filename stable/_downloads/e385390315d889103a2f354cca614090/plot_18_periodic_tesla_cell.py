@@ -23,7 +23,6 @@ elliptical arc, a straight wall and a circular arc joined tangentially
 """
 
 # sphinx_gallery_thumbnail_number = 3
-
 # %%
 # The cell
 # --------
@@ -57,7 +56,6 @@ elliptical arc, a straight wall and a circular arc joined tangentially
 # placed, the straight wall is their common tangent.  A short root
 # search finds the point on the ellipse whose tangent line touches the
 # circle.
-
 import math
 import warnings
 
@@ -67,6 +65,7 @@ from scipy.optimize import brentq
 
 import magnelio as mio
 from magnelio import geo, plots
+from magnelio.geo import Profile
 
 R_EQ, R_IRIS, R_ARC = 103.3e-3, 35.0e-3, 42.0e-3
 A_IRIS, B_IRIS = 12.0e-3, 19.0e-3
@@ -91,7 +90,7 @@ def ellipse_tangent(theta):
 
 
 def tangent_gap(theta):
-    """Distance of the circle centre from the ellipse's tangent line, minus R_ARC."""
+    """Distance of the circle center from the ellipse's tangent line, minus R_ARC."""
     p, t = on_ellipse(theta), ellipse_tangent(theta)
     normal = (t[1], -t[0])
     return (c_eq[0] - p[0]) * normal[0] + (c_eq[1] - p[1]) * normal[1] - R_ARC
@@ -117,7 +116,7 @@ print(f"wall angle from the radial direction: {wall_angle:.2f} deg")
 # retraces the same three segments mirrored for the second half of the
 # cell.  Two details from tutorial 14 apply:
 #
-# - each arc names its centre and a ``normal`` to fix which way round
+# - each arc names its center and a ``normal`` to fix which way round
 #   it goes; on the way *back* the turning sense reverses, so the
 #   equator arcs take ``normal=(0, -1, 0)`` where the iris arcs take
 #   ``"y"``;
@@ -137,7 +136,7 @@ def mirrored(zr):
     return (PERIOD - zr[0], zr[1])
 
 
-outline = (
+outline = Profile.from_wires(
     geo.Path(xz((0.0, R_IRIS)))
     .ellipse_to(
         xz(p_ell), center=xz(c_iris), semi_axes=(A_IRIS, B_IRIS), major_axis="z", normal="y"
@@ -153,10 +152,9 @@ outline = (
         major_axis="z",
         normal="y",
     )
-    .line_to(xz((PERIOD, R_IRIS - 2e-3)))
-    .line_to(xz((0.0, R_IRIS - 2e-3)))
+    .line_to(xz((PERIOD, R_IRIS - 0.002)))
+    .line_to(xz((0.0, R_IRIS - 0.002)))
     .closed()
-    .covered()
 )
 ring = outline.revolved(axis="z", material="air")
 tube = geo.Cylinder(origin=(0, 0, 0), radius=R_IRIS, height=PERIOD, axis="z", material="air")
@@ -237,14 +235,14 @@ print(f"magnetic walls on the iris planes (pi-mode): {f_pi_walls / 1e9:.4f} GHz"
 # without anything to configure.
 
 phases = np.linspace(0.0, 180.0, 7)
-freqs = []
+frequencies = []
 for deg in phases:
     result = mio.AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False, phase_advance_deg=deg)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
-        freqs.append(result.run().frequencies[0])
-    print(f"phase advance {deg:5.1f} deg: {freqs[-1] / 1e9:.4f} GHz")
-freqs = np.array(freqs)
+        frequencies.append(result.run().frequencies[0])
+    print(f"phase advance {deg:5.1f} deg: {frequencies[-1] / 1e9:.4f} GHz")
+frequencies = np.array(frequencies)
 
 # %%
 # The dispersion diagram
@@ -265,13 +263,13 @@ freqs = np.array(freqs)
 
 phi = np.radians(phases)
 design = np.column_stack([np.ones_like(phi), -np.cos(phi)])
-coef, *_ = np.linalg.lstsq(design, freqs**2, rcond=None)
+coef, *_ = np.linalg.lstsq(design, frequencies**2, rcond=None)
 f_half = math.sqrt(coef[0])
 k_cell = coef[1] / coef[0]
 phi_fine = np.linspace(0.0, math.pi, 181)
 f_fit = f_half * np.sqrt(1.0 - k_cell * np.cos(phi_fine))
 
-print(f"pi-mode:              {freqs[-1] / 1e9:.4f} GHz (design 1.3000 GHz)")
+print(f"pi-mode:              {frequencies[-1] / 1e9:.4f} GHz (design 1.3000 GHz)")
 print(f"cell-to-cell coupling: {100 * k_cell:.2f} % (published 1.87 %)")
 
 fig, ax = plt.subplots(figsize=(6.4, 4.4))
@@ -281,7 +279,7 @@ ax.plot(
     color="0.6",
     label="$f_{\\pi/2}\\sqrt{1 - k\\cos\\varphi}$ fit",
 )
-ax.plot(phases, freqs / 1e9, "o", label="periodic eigenmode solves")
+ax.plot(phases, frequencies / 1e9, "o", label="periodic eigenmode solves")
 ax.plot(
     [0.0, 180.0],
     [f_0_walls / 1e9, f_pi_walls / 1e9],
@@ -343,13 +341,14 @@ fig.tight_layout()
 
 # %%
 # The same mode in three dimensions: ``show()`` on the result opens the
-# cell along a cutting plane with the field laid on it.  The quarter
+# cell along a cutting plane with only field vectors on it
+# (``opacity=0.0`` hides the magnitude sheet).  The quarter
 # model was solved, but the picture is the whole cell — the result
 # carries its mesh, whose declaration names the two symmetry planes,
 # and the field is continued across them with the parity of each
 # component.
 
-pi_mode.show(geometry=model, normal="y", position=0.0, glyph="cone", density=14)
+pi_mode.show(geometry=model, normal="y", position=0.0, opacity=0.0, glyph="cone", density=14)
 
 # %%
 # Where to go next

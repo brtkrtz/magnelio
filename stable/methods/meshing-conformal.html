@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,23 +26,23 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=dbee5847"></script>
+    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -52,7 +51,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/meshing-conformal';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -114,7 +113,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -163,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -175,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -190,6 +189,27 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -231,7 +251,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -262,15 +282,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -307,7 +327,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -316,7 +336,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -361,6 +381,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -370,6 +397,20 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -441,15 +482,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -484,7 +525,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -501,7 +542,7 @@
 <li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Mesh generation and conformal geometry</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
@@ -512,6 +553,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -580,13 +622,13 @@
 <section id="geometry-kernel-and-material-filling">
 <h2>Geometry kernel and material filling<a class="headerlink" href="#geometry-kernel-and-material-filling" title="Link to this heading">#</a></h2>
 <p>Solid geometry is authored through a CSG layer (<code class="docutils literal notranslate"><span class="pre">geometry/</span></code>) backed by
-the Open CASCADE kernel via <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code> (DD-003, DD-016).
+the Open CASCADE kernel via <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code>.
 Material assignment on the grid uses exact boundary-representation
 queries (solid classification, 3D face–solid intersection, planar
 cross-sections) rather than voxel sampling.  This is engineering
 infrastructure on top of a third-party kernel, not a numerical-methods
 contribution.</p>
-<p>The planar cross-sections that feed the conformal fractions are taken
+<p>Regular planar cross-sections that feed the conformal fractions are taken
 three ways.  Planar faces are sectioned exactly by an in-house engine
 (intersection points on straight edges, segments stitched through
 shared edges).  Free-form faces — parametric surfaces, lofts, imported
@@ -654,14 +696,74 @@ bookkeeping — a crossing on a face outline, as on every edge that runs
 along a conductor’s corner — classifies its sub-segment midpoints on
 probe lines of their own, and a midpoint within tolerance of a face
 counts as conductor, as the kernel’s classifier would have it.</p>
+<section id="nearly-tangent-cuts">
+<h3>Nearly tangent cuts<a class="headerlink" href="#nearly-tangent-cuts" title="Link to this heading">#</a></h3>
+<p>A plane that almost touches a curved wall can intersect a thin but nonzero
+material region. Losing that region changes the conformal material matrices,
+even if the bulk cell classification looks reasonable. Comparing two
+approximations is insufficient: both may lose the same region.</p>
+<p>The default section paths favour fast mesh construction and can miss very
+thin material regions near tangency. An optional in-house bounded-surface
+section is available through <code class="docutils literal notranslate"><span class="pre">MeshControl(robust_sections=True)</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+
+<span class="n">control</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">robust_sections</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">5e9</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">robust_sections</span></code> defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>. Enabling it selects the bounded-surface
+route for geometrically sensitive planes, including cuts computed by parallel
+mesh workers. It can substantially increase build time on curved CAD models;
+keep the selection fixed across a convergence ladder. There is no automatic
+warning or switch for a silently missed thin region. Preserving that region
+does not by itself establish an improvement in S-parameters or conductor
+losses: wall losses also depend on the sampled tangential magnetic field and
+the wall reconstruction. Assess those quantities separately when relevant.</p>
+<p>The optional route intersects the stored CAD surfaces with the requested plane,
+clips the resulting curves to their actual face boundaries and connects
+them through shared CAD edges. Outer boundaries and holes keep opposite
+orientations. The computation uses a centred, scaled copy of the completed
+body; construction, placement and mesh coordinates retain their geometry.
+Ordinary cuts keep the existing fast paths.</p>
+<p>An imprint or construction edge embedded inside a CAD face does not create
+another material boundary. Sections follow the bounding wires, including
+holes and periodic seams. Repeated parameter-domain representations of one
+seam endpoint identify one boundary crossing. Boundary curves can differ slightly at a shared
+vertex within the stored CAD tolerances; the interval classification uses
+another transversal direction when a test ray cannot give a consistent
+closed-boundary count. Trimmed periodic surfaces retain their native support
+domain for the intersection, while periodic parameter wrapping follows the
+underlying surface. Refinement preserves the closed support trace’s identity
+so artificial parameter-domain ends can still be connected.</p>
+<p>The curve-position residual budget is a small fraction of the section’s
+chord budget, with a floating-point resolution floor. This controls the
+geometric evaluation; it does not bound the electromagnetic discretisation
+error or recover features absent from the stored CAD model. In particular,
+a sampled parametric surface is the interpolated CAD surface, whose extrema
+need not equal those of the function between its supplied samples.</p>
+<p>Near tangency differs from a material interface coincident with the
+integration plane. Coincident interfaces retain their two-sided material
+limits, and domain boundaries retain the interior-sided limit. A tangent
+boundary with no area is empty; a coplanar material face keeps its area.
+When a sensitive section cannot satisfy the curve, boundary or closure
+checks, mesh creation reports the cut coordinate and the reason instead of
+accepting partial material coverage. Check the body’s validity, units and
+boundary tolerances before treating mesh refinement as a remedy.</p>
+</section>
 </section>
 <section id="graded-cartesian-mesh">
 <h2>Graded Cartesian mesh<a class="headerlink" href="#graded-cartesian-mesh" title="Link to this heading">#</a></h2>
+<p>The final meshing progress line reports the three grid dimensions, total
+cell count and memory held by the mesh’s NumPy buffers. Shared buffers are
+counted once; units are binary (<code class="docutils literal notranslate"><span class="pre">GiB</span> <span class="pre">=</span> <span class="pre">2³⁰</span> <span class="pre">bytes</span></code>). This is the completed
+mesh’s array storage, excluding CAD objects, Python-object overhead and
+temporary meshing allocations. Analysis setup and time integration need
+additional memory.</p>
 <p>The mesh generator (<code class="docutils literal notranslate"><span class="pre">mesh/mesher.py</span></code>) produces a graded (non-uniform)
 Cartesian tensor-product grid: geometry-derived fixpoints (“anchors”,
-plane clustering, DD-059…DD-062) plus feature-based two-scale
+plane clustering) plus feature-based two-scale
 refinement (<code class="docutils literal notranslate"><span class="pre">h_fine</span></code> near features, <code class="docutils literal notranslate"><span class="pre">h_coarse</span></code> in bulk, geometric
-grading between them, DD-028).  Graded Cartesian meshes and the
+grading between them).  Graded Cartesian meshes and the
 accuracy trade-offs of local grading are standard FDTD/FIT practice
 <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.</p>
@@ -672,7 +774,7 @@ tensor-product grid the question is <em>which</em> λ.  A grid line spans the
 whole domain, so the finest sensible resolution is per <em>slab</em>: each
 interval between two grid planes on an axis is a slab of the domain,
 and the densest material whose bounding box reaches into that slab
-sets the slab’s wavelength (DD-192, the default
+sets the slab’s wavelength (the default
 <code class="docutils literal notranslate"><span class="pre">MeshControl(wavelength_rule=&quot;local&quot;)</span></code>).  The air box around a small
 ceramic is meshed at the air wavelength on every axis interval the
 ceramic does not reach; the slabs the ceramic occupies — and every
@@ -686,7 +788,7 @@ rule — the densest material anywhere sets one bulk size for the
 whole domain.</p>
 <p>The two rules differ only far from material interfaces.  Feature
 refinement (<code class="docutils literal notranslate"><span class="pre">min_cells_per_feature</span></code>), the geometric grading from an
-interface into the bulk, the DD-107 domain-face buffer and the edge
+interface into the bulk, the domain-face buffer and the edge
 floor below are the same under both; the edge floor keeps the
 densest material’s wavelength as its reference, because it bounds
 the time step, and the time step follows the smallest cell anywhere.
@@ -698,7 +800,7 @@ settings; the slab-wise form is its consequence on a tensor grid.</p>
 <p>Grid planes come from two passes over the CAD model.  The <em>face</em> pass
 places a plane on every planar face with an axis-parallel normal and
 on the axis-normal tangent positions of cylinders and spheres — the
-material boundaries.  The <em>edge</em> pass (DD-191) places a plane wherever
+material boundaries.  The <em>edge</em> pass places a plane wherever
 a B-rep edge lies flat in an axis-normal plane: the circle where a
 chamfer cone meets a cylinder, the straight line where a fillet leaves
 a box face, the section curves of a loft, the iris and equator
@@ -812,7 +914,7 @@ the primal faces of the node plane nearest to the cut; each cell in
 the colour of its material, blended towards conductor grey by that
 share.  A round conductor is a round disc here.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fill=&quot;material&quot;</span></code> — the classification: the material whose volume
-contains the cell centre.  This is the staircase <em>baseline</em> that the
+contains the cell center.  This is the staircase <em>baseline</em> that the
 sub-cell values override on every cut cell, not the accuracy of the
 discretisation; thin sheets do not appear in it.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">fill=&quot;conformal&quot;</span></code> — the permittivity <span class="math notranslate nohighlight">\(\bar\varepsilon\)</span> the electric
@@ -844,7 +946,7 @@ shows as <code class="docutils literal notranslate"><span class="pre">-&gt;</spa
 staircasing: per primal edge the classifier stores an averaged
 <span class="math notranslate nohighlight">\(\bar\varepsilon\)</span>, a free (non-PEC) length fraction and a free dual-face
 area fraction; per dual face a corresponding <span class="math notranslate nohighlight">\(\bar\mu\)</span> and free-area
-data (unified per-edge/per-face sub-cell classification, DD-051).
+data (unified per-edge/per-face sub-cell classification).
 This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
@@ -866,18 +968,17 @@ see it.  Where the edge floor drops that plane, the mesher says so.</p>
 <p>For perfectly conducting boundaries the classifier additionally
 shortens partially-PEC edges (free-length weighting), which is the
 conformal-PEC idea of Dey and Mittra <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id16" title="Supriyo Dey and Raj Mittra. A locally conformal finite-difference time-domain (FDTD) algorithm for modeling three-dimensional perfectly conducting objects. IEEE Microwave and Guided Wave Letters, 7(9):273–275, 1997. doi:10.1109/75.622536.">8</a>]</span>
-(DD-036, since generalised into the unified classifier of DD-051).</p>
+(generalised into the unified sub-cell classifier).</p>
 <p>Two refinements are in-house:</p>
 <ul class="simple">
-<li><p><strong>LC-consistent pair coupling</strong> (DD-053, <code class="docutils literal notranslate"><span class="pre">couple_face_material_pairs</span></code>):
+<li><p><strong>LC-consistent pair coupling</strong> (<code class="docutils literal notranslate"><span class="pre">couple_face_material_pairs</span></code>):
 on dual faces with a locally translation-invariant ladder direction,
 the averaged <span class="math notranslate nohighlight">\(\bar\mu\)</span> is replaced by the value that makes the
 co-located product <span class="math notranslate nohighlight">\(M_\varepsilon M_\mu\)</span> equal the exact
 transmission-line value <span class="math notranslate nohighlight">\(\varepsilon_0\mu_0\,\varepsilon\mu\,d\tilde d\)</span>,
 so a discrete travelling wave on a uniform line is exact
-(derivation in <code class="docutils literal notranslate"><span class="pre">design-decisions.md</span></code> DD-053).</p></li>
-<li><p><strong>Enlarged-cell donor</strong> (DD-058, implemented but dormant — measured
-neutral): stabilising strongly cut cells by borrowing area from the
+(in-house derivation).</p></li>
+<li><p><strong>Enlarged-cell donor</strong> (currently inactive): stabilising strongly cut cells by borrowing area from the
 uncut neighbour.  The published antecedent is the family of
 uniformly stable conformal schemes / enlarged-cell techniques, e.g.
 Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id17" title="Igor Zagorodnov, Rolf Schuhmann, and Thomas Weiland. A uniformly stable conformal FDTD-method in Cartesian grids. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 16(2):127–141, 2003. doi:10.1002/jnm.488.">9</a>]</span>.</p></li>
@@ -886,8 +987,8 @@ Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a cla
 <section id="thin-conducting-sheets">
 <h2>Thin conducting sheets<a class="headerlink" href="#thin-conducting-sheets" title="Link to this heading">#</a></h2>
 <p>Zero-thickness or sub-cell metallisation is detected before gridding
-(DD-035, DD-059) and represented as PEC edge masks on the primal grid
-(<code class="docutils literal notranslate"><span class="pre">apply_thin_pec_sheet</span></code>, DD-017) — the standard thin-sheet treatment
+and represented as PEC edge masks on the primal grid
+(<code class="docutils literal notranslate"><span class="pre">apply_thin_pec_sheet</span></code>) — the standard thin-sheet treatment
 in Cartesian time-domain solvers <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>
 (subcell thin-sheet models are ch. 10 there; the
 detection pipeline itself is in-house).  The footprint a sheet paints
@@ -905,7 +1006,7 @@ plane.</p>
 <h2>Thin-wire sub-cell model<a class="headerlink" href="#thin-wire-sub-cell-model" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">ThinWire(curve,</span> <span class="pre">radius)</span></code> embeds a conductor thinner than a cell as a
 PEC edge chain with corrected surrounding material matrices
-(<code class="docutils literal notranslate"><span class="pre">mesh/thin_wire.py</span></code>, DD-080).  The model is the classic thin-wire
+(<code class="docutils literal notranslate"><span class="pre">mesh/thin_wire.py</span></code>).  The model is the classic thin-wire
 sub-cell treatment of Holland and Simpson <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id18" title="Richard Holland and Larry Simpson. Finite-difference analysis of EMP coupling to thin struts and wires. IEEE Transactions on Electromagnetic Compatibility, 23(2):88–97, 1981. doi:10.1109/TEMC.1981.303899.">10</a>]</span>,
 realised in the paired <span class="math notranslate nohighlight">\((m, 1/m)\)</span> encoding of
 Noda and Yokoyama <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id19" title="Taku Noda and Shigeru Yokoyama. Thin wire representation in finite difference time domain surge simulation. IEEE Transactions on Power Delivery, 17(3):840–847, 2002. doi:10.1109/TPWRD.2002.1022813.">11</a>]</span>:
@@ -956,10 +1057,9 @@ insulated wires are outside the model.</p>
 </section>
 <section id="mesh-quality-safeguards">
 <h2>Mesh quality safeguards<a class="headerlink" href="#mesh-quality-safeguards" title="Link to this heading">#</a></h2>
-<p>Hard minimum cell size with floor-aware refits and a longitudinal
-series-<span class="math notranslate nohighlight">\(\varepsilon\)</span> correction (DD-060), per-axis fine resolution
-(DD-061), a permanent 30-case stress sentinel (DD-062) and the
-reported edge floor (DD-191) are in-house engineering.</p>
+<p>Hard minimum cell size with floor-aware refits, a longitudinal
+series-<span class="math notranslate nohighlight">\(\varepsilon\)</span> correction, per-axis fine resolution and the
+reported edge floor are in-house engineering.</p>
 </section>
 </section>
 
@@ -1010,7 +1110,10 @@ reported edge floor (DD-191) are in-house engineering.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-kernel-and-material-filling">Geometry kernel and material filling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-kernel-and-material-filling">Geometry kernel and material filling</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nearly-tangent-cuts">Nearly tangent cuts</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#graded-cartesian-mesh">Graded Cartesian mesh</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-wavelength-sets-the-bulk-cell-size">Which wavelength sets the bulk cell size</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-geometry-gets-a-grid-plane">Which geometry gets a grid plane</a></li>
@@ -1050,8 +1153,8 @@ reported edge floor (DD-191) are in-house engineering.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1072,7 +1175,6 @@ reported edge floor (DD-191) are in-house engineering.</p>
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -1085,7 +1187,7 @@ reported edge floor (DD-191) are in-house engineering.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

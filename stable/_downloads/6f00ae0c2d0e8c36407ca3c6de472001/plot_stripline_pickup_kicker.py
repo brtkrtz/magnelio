@@ -102,14 +102,16 @@ def build_coupler(h):
         radius=B, origin=(0, 0, -L_PIPE), axis="z", height=L + 2 * L_PIPE, material="air"
     )
     pit = (
-        geo.Face(
-            normal="x",
-            points=((0, -G_PIT), (0, L + G_PIT), (r_pit, L + G_PIT), (r_pit, -G_PIT)),
+        geo.Profile.polygon(
+            [
+                (0.0, u, v)
+                for u, v in ((0, -G_PIT), (0, L + G_PIT), (r_pit, L + G_PIT), (r_pit, -G_PIT))
+            ],
             material="pec",
         )
         .revolved(axis="z", angle_deg=pit_deg)
         .rotated(axis="z", angle_deg=-pit_deg / 2)
-        .filleted(edges="all", radius=1e-3)
+        .filleted(edges="all", radius=0.001)
     )
     coax = geo.Cylinder(
         origin=(0, 0, -G_FEED), axis="y", height=y_top, radius=R_OUT, material="air"
@@ -118,7 +120,9 @@ def build_coupler(h):
         origin=(0, r_pit, -G_FEED), axis="y", height=L_COAX, radius=R_IN, material="pec"
     )
     strip = (
-        geo.Face(normal="x", points=((B, 0), (B, L), (B + T, L), (B + T, 0)), material="pec")
+        geo.Profile.polygon(
+            [(0.0, u, v) for u, v in ((B, 0), (B, L), (B + T, L), (B + T, 0))], material="pec"
+        )
         .revolved(axis="z", angle_deg=PHI_DEG)
         .rotated(axis="z", angle_deg=-PHI_DEG / 2)
     )
@@ -257,7 +261,7 @@ print(f"design: Z_strip = {Z_SUM:.1f} ohm (sum), {Z_DIFF:.1f} ohm (difference)")
 # field picture on the mid-plane at the design frequency.  Where that
 # line sits matters: on the electric wall :math:`E_z` vanishes, and the
 # transverse analysis below needs its *gradient* — so the line is asked
-# for close to the axis, and the monitor reports the cell centre it
+# for close to the axis, and the monitor reports the cell center it
 # actually landed on.
 
 FREQS = np.arange(0.1e9, F_MAX, 0.05e9)
@@ -283,10 +287,10 @@ def kicker_run(mode):
         f_max=F_MAX,
     )
     line = monitors.MonitorFieldFrequency(
-        freqs=FREQS, fields=["Ez"], corners=((0, 1e-3, -FAR), (0, 1e-3, FAR)), name="Ez_line"
+        frequencies=FREQS, fields=["Ez"], corners=((0, 1e-3, -FAR), (0, 1e-3, FAR)), name="Ez_line"
     )
     plane = monitors.MonitorFieldFrequency(
-        freqs=[F0], fields=["E"], corners=((0, None, None), (0, None, None)), name="E_plane"
+        frequencies=[F0], fields=["E"], corners=((0, None, None), (0, None, None)), name="E_plane"
     )
     analysis = mio.AnalysisScatteringTD(mesh=mesh, monitors=[line, plane], verbose=False)
     z_port = analysis.solve_ports()["downstream"].z_line_num
@@ -298,8 +302,8 @@ model, mesh, result, line, plane, Z_PORT = kicker_run("PEC")
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 print(f"coax port impedance on the grid: {Z_PORT:.1f} ohm")
 print(
-    f"field line recorded at y = {line.spectrum.cell_centres[1][0] * 1e3:.2f} mm, "
-    f"{len(line.spectrum.cell_centres[2])} points"
+    f"field line recorded at y = {line.spectrum.cell_centers[1][0] * 1e3:.2f} mm, "
+    f"{len(line.spectrum.cell_centers[2])} points"
 )
 
 fig, ax = plt.subplots(figsize=(9.0, 3.6))
@@ -366,9 +370,9 @@ def beam_voltage(ez, z, f, beta=1.0, direction=+1):
 
 P_IN = 2.0
 V_K = math.sqrt(2 * Z_PORT * P_IN)
-z_line = line.spectrum.cell_centres[2]
-y_line = line.spectrum.cell_centres[1][0]
-ez_diff = line.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"]
+z_line = line.spectrum.cell_centers[2]
+y_line = line.spectrum.cell_centers[1][0]
+ez_diff = line.spectrum.cell_centered(["Ez"], squeeze=True)["Ez"]
 
 v_forward = beam_voltage(ez_diff, z_line, FREQS, direction=+1)
 v_backward = beam_voltage(ez_diff, z_line, FREQS, direction=-1)
@@ -449,8 +453,8 @@ r_perp = Z_PORT * k_perp**2
 
 model_sum, mesh_sum, result_sum, line_sum, _, Z_PORT_SUM = kicker_run("PMC")
 v_sum = beam_voltage(
-    line_sum.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"],
-    line_sum.spectrum.cell_centres[2],
+    line_sum.spectrum.cell_centered(["Ez"], squeeze=True)["Ez"],
+    line_sum.spectrum.cell_centers[2],
     FREQS,
     direction=+1,
 )

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,30 +26,30 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=dbee5847"></script>
+    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/viewer';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -112,7 +111,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -161,6 +160,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -173,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -188,6 +187,27 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -229,7 +249,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -260,15 +280,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -305,7 +325,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -314,7 +334,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -359,6 +379,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -368,6 +395,20 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -439,15 +480,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -482,7 +523,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -510,8 +551,9 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">3D viewer</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
@@ -581,7 +623,7 @@ declared features, and — with a mesh — the FIT grid.  The same call
 serves three situations:</p>
 <ul class="simple">
 <li><p>in a <strong>Jupyter notebook</strong> it is a widget, rendered in the browser;</p></li>
-<li><p>in a <strong>script</strong> it opens a window;</p></li>
+<li><p>in a <strong>script</strong> it opens the full viewer in the system browser;</p></li>
 <li><p>in a <strong>documentation build</strong> it becomes a figure with two tabs: a
 screenshot, and the same scene as a rotatable view in the browser
 (this is how the 3D figures in the tutorials are made).  The browser
@@ -591,6 +633,22 @@ tab has no toolbar — the cutting plane stays where the script put it.</p></li>
 <span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>         <span class="c1"># opened along y = 0, grid cells on the cut</span>
 </pre></div>
 </div>
+<p>An editor REPL can run an IPython kernel without implementing Jupyter’s
+widget display.  Magnelio recognises Zed’s REPL and opens the browser
+automatically.  For another editor that only prints <code class="docutils literal notranslate"><span class="pre">VBox()</span></code>, select the
+browser once for that Python process; every later <code class="docutils literal notranslate"><span class="pre">show()</span></code> uses it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">plots</span>
+
+<span class="n">plots</span><span class="o">.</span><span class="n">configure_viewer</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">"browser"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The destination can also be selected for one call with
+<code class="docutils literal notranslate"><span class="pre">model.show(target=&quot;browser&quot;)</span></code>.  Use <code class="docutils literal notranslate"><span class="pre">target=&quot;inline&quot;</span></code> for the Jupyter
+widget and <code class="docutils literal notranslate"><span class="pre">target=&quot;native&quot;</span></code> for PyVista’s native VTK window.  The default
+<code class="docutils literal notranslate"><span class="pre">target=&quot;auto&quot;</span></code> means inline in JupyterLab/JupyterHub, browser in Zed and
+browser outside a kernel.  The process setting is the deliberate switch for
+other editor REPLs whose kernels cannot identify their frontend.</p>
 <section id="what-is-drawn">
 <h2>What is drawn<a class="headerlink" href="#what-is-drawn" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -615,17 +673,58 @@ tab has no toolbar — the cutting plane stays where the script put it.</p></li>
 <tr class="row-even"><td><p>Waveguide ports</p></td>
 <td><p>A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name written in the window’s plane.</p></td>
 </tr>
-<tr class="row-odd"><td><p>Symmetry planes</p></td>
-<td><p>Tinted sheets on the declared symmetry planes (<code class="docutils literal notranslate"><span class="pre">SymmetryPEC</span></code> blue, <code class="docutils literal notranslate"><span class="pre">SymmetryPMC</span></code> green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge.</p></td>
+<tr class="row-odd"><td><p>Boundary conditions</p></td>
+<td><p>Initially hidden sheets on the domain faces: PEC blue, PMC green, CPML orange and periodic purple. Separate from symmetry planes in <em>Show</em>. With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code>, the faces follow the mesh extent, including the absorbing buffer.</p></td>
 </tr>
-<tr class="row-even"><td><p>Domain box</p></td>
+<tr class="row-even"><td><p>Symmetry planes</p></td>
+<td><p>Initially hidden tinted sheets on the declared symmetry planes (<code class="docutils literal notranslate"><span class="pre">SymmetryPEC</span></code> blue, <code class="docutils literal notranslate"><span class="pre">SymmetryPMC</span></code> green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Domain box</p></td>
 <td><p>Outline of the computational domain — the grid extent when a mesh is given, including the absorbing buffer at open faces; the bounds of the solids and the field otherwise.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">show_boundaries=True</span></code> or <code class="docutils literal notranslate"><span class="pre">show_symmetry=True</span></code> to turn these overlays
+on initially, including in screenshots. Both are off by default and can
+be toggled independently in <em>Show</em>. A mirrored field still shows boundary
+conditions on the actually simulated mesh domain.</p>
 <p>Lengths are shown in millimetres (<code class="docutils literal notranslate"><span class="pre">scale_mm=False</span></code> for metres).  The
 projection is parallel, as in engineering drawings.</p>
+</section>
+<section id="setting-the-initial-camera">
+<h2>Setting the initial camera<a class="headerlink" href="#setting-the-initial-camera" title="Link to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">camera=&quot;iso&quot;</span></code> for the default isometric view, or <code class="docutils literal notranslate"><span class="pre">&quot;xy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xz&quot;</span></code>
+or <code class="docutils literal notranslate"><span class="pre">&quot;yz&quot;</span></code> to look at one of the coordinate planes. The same camera
+options work on geometry and field <code class="docutils literal notranslate"><span class="pre">show()</span></code> calls:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xy"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="s2">"xz"</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">camera</span><span class="o">=</span><span class="s2">"xy"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For an oblique view, pass three vectors: the camera position, the point
+it looks towards, and the direction that should point up in the image.
+The up vector is dimensionless and must not be parallel to the viewing
+direction. The example looks towards the origin with z pointing up:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="p">[(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>The first two vectors use <strong>display coordinates</strong>: millimetres by
+default, or metres with <code class="docutils literal notranslate"><span class="pre">scale_mm=False</span></code>. This is different from a
+cutting-plane position, which always uses metres. The equivalent view
+in metre coordinates is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span>
+    <span class="n">camera</span><span class="o">=</span><span class="p">[(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span>
+    <span class="n">scale_mm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The viewer fits the scene into the window automatically after setting
+the camera. A custom camera therefore sets its initial viewing direction
+and up vector; its exact position, focal point and zoom are adjusted
+to show the scene. Use the viewer’s camera controls to pan or zoom after
+opening it. <code class="docutils literal notranslate"><span class="pre">size=(900,</span> <span class="pre">600)</span></code> sets the view size in pixels, and
+<code class="docutils literal notranslate"><span class="pre">target=&quot;browser&quot;</span></code> opens it in the browser.</p>
 </section>
 <section id="the-cutting-plane">
 <h2>The cutting plane<a class="headerlink" href="#the-cutting-plane" title="Link to this heading">#</a></h2>
@@ -634,13 +733,26 @@ along that axis, and a side to remove.  In the widget it lives in the
 toolbar:</p>
 <ul class="simple">
 <li><p><strong>Cut</strong> — <code class="docutils literal notranslate"><span class="pre">off</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code>;</p></li>
-<li><p>the <strong>position slider</strong> across the domain extent;</p></li>
+<li><p>the <strong>position slider</strong> across the domain extent and a coordinate
+<strong>input field</strong> in the displayed unit;</p></li>
+<li><p><strong>− / +</strong> — previous or next mesh plane; in field views, previous or
+next recorded cell layer; without either, a small step across the extent;</p></li>
 <li><p><strong>Flip</strong> — remove the other half;</p></li>
 <li><p><strong>undo</strong> (last change) and <strong>reset</strong> (initial state);</p></li>
 <li><p><strong>Show</strong> — a menu of the object groups (solids, grid on cut, ports,
-lumped elements, wires, labels, symmetry planes, domain box); untick
+lumped elements, wires, labels, symmetry planes, boundary conditions,
+domain box); untick
 a group to hide it.</p></li>
 </ul>
+<p>The <strong>Solids</strong> submenu lists individual bodies under their geometry group
+paths, with a visibility checkbox for each body. Search matches body and
+group names; <strong>Show all</strong> and <strong>Hide all</strong> apply to every body, including
+those outside the search results. The global <em>Show → Solids</em> switch hides
+the group without forgetting the individual choices. Group paths survive
+project storage; older projects without this metadata list their bodies
+under <em>Ungrouped</em>. Bodies are selected only through this menu.</p>
+<p>Both toolbar rows wrap when the window is narrow. The arrow settings live
+in a submenu so the cutting plane and field selector remain accessible.</p>
 <p>Before the cut controls sit the camera buttons: reset, isometric view,
 a view along x, y or z, and the projection toggle (parallel, as the
 scene opens, or perspective).  Then a <strong>ruler</strong> (a measured box around
@@ -674,9 +786,11 @@ position slider walks that layer through the recorded volume.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>                                   <span class="c1"># |E| with arrows, mid-plane of the region</span>
 <span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>     <span class="c1"># one signed component, diverging colours</span>
 <span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span>          <span class="c1"># with the solids; metal cut out of the sheet</span>
-<span class="n">pattern</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>                 <span class="c1"># a frequency monitor at a phase</span>
+<span class="n">pattern</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">,</span> <span class="n">phase_deg</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>                 <span class="c1"># a frequency monitor at a phase</span>
 <span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>                  <span class="c1"># an eigenmode result: a slider over the modes</span>
-<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">frame</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">"cone"</span><span class="p">)</span>                <span class="c1"># starting at mode 2, cones instead of arrows</span>
+<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">"cone"</span><span class="p">)</span>                <span class="c1"># starting at mode 2, cones instead of arrows</span>
+<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">volume</span><span class="o">=</span><span class="s2">"arrows"</span><span class="p">)</span>   <span class="c1"># whole mode, without a cutting plane</span>
+<span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>      <span class="c1"># vectors on the cut, no magnitude sheet</span>
 </pre></div>
 </div>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -690,7 +804,7 @@ position slider walks that layer through the recorded volume.</p>
 <td><p>The exposed layer of cells, each coloured by the magnitude of <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code> (dark to bright) or by one signed component (<code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Hz</span></code>, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; <code class="docutils literal notranslate"><span class="pre">vmax=</span></code> fixes it.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Vectors</p></td>
-<td><p>For <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code>: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet’s scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;color&quot;</span></code> drops them, <code class="docutils literal notranslate"><span class="pre">arrow_color=</span></code> paints them one colour, <code class="docutils literal notranslate"><span class="pre">glyph=&quot;cone&quot;</span></code> draws cones and <code class="docutils literal notranslate"><span class="pre">glyph_width=</span></code> sets the thickness.</p></td>
+<td><p>For <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code>: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet’s scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;color&quot;</span></code> drops them, <code class="docutils literal notranslate"><span class="pre">arrow_color=</span></code> paints them one colour, <code class="docutils literal notranslate"><span class="pre">glyph=&quot;cone&quot;</span></code> draws cones and <code class="docutils literal notranslate"><span class="pre">glyph_width=</span></code> sets the thickness. <code class="docutils literal notranslate"><span class="pre">arrow_length=&quot;uniform&quot;</span></code> uses equal lengths; <code class="docutils literal notranslate"><span class="pre">arrow_scale=</span></code> multiplies the length in either mode. Zero vectors are never shown.</p></td>
 </tr>
 <tr class="row-even"><td><p>Metal</p></td>
 <td><p>With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code>, cells buried in a perfect conductor are cut out of the sheet, so the solids’ cut faces show through where no field is defined.</p></td>
@@ -726,6 +840,55 @@ the frames, labelled with index and eigenfrequency (degenerate pairs
 share the frequency, so the index leads), the amplitudes in arbitrary
 units; a complex Bloch mode is turned to the instant of its maximum
 energy first, the phase slider turns it from there.</p>
+<section id="colour-limits">
+<h3>Colour limits<a class="headerlink" href="#colour-limits" title="Link to this heading">#</a></h3>
+<p>The <strong>Colour scale</strong> submenu provides <strong>Minimum</strong> and <strong>Maximum</strong> in the
+selected field’s physical units. Enter both limits and press <strong>Apply</strong> or
+Enter; <strong>Automatic</strong> restores the peak over all recorded frames and layers
+(zero to peak for magnitudes, minus peak to peak for signed components).
+Manual settings are remembered separately for each selected field component
+while the viewer stays open.</p>
+<p>A strong local peak, for example near an edge, can hide the colour contrast
+of the region of interest. Lower <strong>Maximum</strong> to that region’s useful range:
+values above it saturate at the highest colour. This changes the display,
+not the recorded fields. <strong>Minimum</strong> sets the lower colour limit, not an
+arrow visibility cutoff. The upper limit also sets the magnitude-scaled
+arrow lengths, the relative arrow hiding threshold and relative isosurface
+levels; equal-length arrows retain their length. Fixed-colour arrows still
+use the upper limit for lengths and hiding.</p>
+<p>Initial limits can also be set in the public API:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">500.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The maximum must be finite, positive and greater than the minimum.
+Magnitudes require a nonnegative minimum; signed components permit negative
+and asymmetric limits. Invalid menu entries leave the current picture in
+place and show an explanation.</p>
+</section>
+<section id="arrow-readability">
+<h3>Arrow readability<a class="headerlink" href="#arrow-readability" title="Link to this heading">#</a></h3>
+<p>The <strong>Arrows</strong> submenu controls length (magnitude or equal lengths),
+length scale, thickness, density, the fraction of the colour ceiling below
+which vectors are hidden, and magnitude colouring versus a fixed colour.
+These settings apply to arrows on the cut and in the volume.</p>
+<p>Density counts samples along the longest axis, not across a narrow gap;
+the other axes keep approximately the same spatial spacing. Long, thin
+structures therefore need a higher density to show several rows across
+their width. The menu permits up to 200 samples on the longest axis (or
+an initially higher <code class="docutils literal notranslate"><span class="pre">density=</span></code>). Volume arrows grow cubically with density
+and can be expensive. These are display samples interpolated from the
+field; increasing density does not refine the simulation mesh.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">glyph_width</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+             <span class="n">arrow_length</span><span class="o">=</span><span class="s2">"uniform"</span><span class="p">,</span> <span class="n">arrow_scale</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+             <span class="n">arrow_color</span><span class="o">=</span><span class="s2">"blue"</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.005</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Equal lengths make directions easier to read while magnitude colouring
+can retain the strength information. With a fixed colour, strength is no
+longer encoded by the arrows in this mode. <code class="docutils literal notranslate"><span class="pre">threshold=0</span></code> retains every
+nonzero vector. In the default magnitude mode, the minimum length remains
+30 % of the lattice spacing for readability.</p>
+</section>
 </section>
 <section id="fields-in-the-volume">
 <h2>Fields in the volume<a class="headerlink" href="#fields-in-the-volume" title="Link to this heading">#</a></h2>
@@ -755,14 +918,16 @@ too, in the two forms every 3D field plot offers.</p>
 <p>Both are entries of the <em>Show</em> menu whenever the source is a volume
 (isosurfaces need at least two cells along every axis, so a plane
 monitor offers arrows only); <code class="docutils literal notranslate"><span class="pre">volume=</span></code> only chooses what is on at
-first.  Without a cut (<em>Cut</em> set to <em>off</em>) the whole region is drawn.
+first.  Without a cut (<em>Cut</em> set to <em>off</em>, or <code class="docutils literal notranslate"><span class="pre">cut=False</span></code> on the field
+<code class="docutils literal notranslate"><span class="pre">show()</span></code> call) the whole region is drawn.  The toolbar can enable a
+cutting plane later.
 A volume representation costs the whole region per frame instead of
 one layer — a large monitor plays slower with it on.  The cell values
 are interpolated to the grid nodes before the surfaces are contoured,
 so a surface is as fine as the grid.  Volume rendering with an opacity
 ramp is not offered: the browser renderer takes only uniform image
 data, and a graded grid resampled onto one would lose its resolution.</p>
-<p>One thing the picture is not: a plane.  Every value is the cell-centre
+<p>One thing the picture is not: a plane.  Every value is the cell-center
 average of the staggered components in one layer of cells, the same
 convention as the 2D slice plots.</p>
 <p>A monitor read back from a project store (<code class="docutils literal notranslate"><span class="pre">project.monitors[...]</span></code>)
@@ -771,9 +936,12 @@ slider moves, so a volume monitor of any size opens at once.</p>
 </section>
 <section id="rendering-modes">
 <h2>Rendering modes<a class="headerlink" href="#rendering-modes" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">target</span></code> chooses where the viewer appears; <code class="docutils literal notranslate"><span class="pre">render_mode</span></code> chooses where its
+picture is rendered.  The browser and inline targets offer the same Magnelio
+toolbar.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
-<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">mode</span></code></p></th>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">render_mode</span></code></p></th>
 <th class="head"><p>Where the picture is rendered</p></th>
 <th class="head"><p>When to use it</p></th>
 </tr>
@@ -819,13 +987,15 @@ stack:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"magnelio[jupyter]"</span>
 <span class="c1"># or, with conda-forge:</span>
 conda<span class="w"> </span>install<span class="w"> </span>trame<span class="w"> </span>trame-vtk<span class="w"> </span>trame-vuetify<span class="w"> </span>nest-asyncio2
+pip<span class="w"> </span>install<span class="w"> </span>trame-pyvista
 </pre></div>
 </div>
-<p>Without it the view falls back to a static image and says so.  The
-widget talks to the kernel over its own websocket on <code class="docutils literal notranslate"><span class="pre">localhost</span></code>; on a
+<p>Without it an inline view falls back to a static image; a browser target
+falls back to the native VTK window.  The viewer says so in either case.
+The widget talks to the kernel over its own websocket on <code class="docutils literal notranslate"><span class="pre">localhost</span></code>; on a
 remote JupyterHub set <code class="docutils literal notranslate"><span class="pre">PYVISTA_TRAME_JUPYTER_MODE</span></code> as described in the
 PyVista documentation.</p>
-<p>The first <code class="docutils literal notranslate"><span class="pre">plot()</span></code> in a kernel starts that websocket server on the
+<p>The first inline <code class="docutils literal notranslate"><span class="pre">show()</span></code> in a kernel starts that websocket server on the
 kernel’s own event loop and fills the cell’s output the moment the
 server is up — a fraction of a second after the cell returns when you
 run cells by hand.  Under <em>Run All</em> the cells queued behind it hold the
@@ -847,6 +1017,19 @@ volume — not as a volume rendering; the
 <li><p>The camera presets do not turn the flat labels: they face the
 camera the view opened with.</p></li>
 </ul>
+</section>
+<section id="renderer-and-physical-selection">
+<h2>Renderer and physical selection<a class="headerlink" href="#renderer-and-physical-selection" title="Link to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">render_mode</span></code> for <code class="docutils literal notranslate"><span class="pre">&quot;client&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;server&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;trame&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;static&quot;</span></code> or
+<code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code>. <code class="docutils literal notranslate"><span class="pre">mode</span></code> selects a physical eigenmode through <code class="docutils literal notranslate"><span class="pre">field</span></code>, <code class="docutils literal notranslate"><span class="pre">plot</span></code> and
+<code class="docutils literal notranslate"><span class="pre">show</span></code>; for example, <code class="docutils literal notranslate"><span class="pre">result.show(mode=2,</span> <span class="pre">render_mode=&quot;none&quot;)</span></code> builds the
+scene for eigenmode 2. Time/frequency recordings instead use <code class="docutils literal notranslate"><span class="pre">frame</span></code> for an
+index or <code class="docutils literal notranslate"><span class="pre">t</span></code>/<code class="docutils literal notranslate"><span class="pre">f</span></code> for a physical value. Choose exactly one selector.
+Degree-valued field-picture phases use <code class="docutils literal notranslate"><span class="pre">phase_deg</span></code>.</p>
+<p>Both a model and a project’s loaded geometry use <code class="docutils literal notranslate"><span class="pre">show()</span></code> for interactive
+3D. Their <code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code> remains a matplotlib picture. The camera,
+units and notebook/browser/native destination rules above also apply to
+loaded geometry.</p>
 </section>
 </section>
 
@@ -898,12 +1081,18 @@ camera the view opened with.</p></li>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-is-drawn">What is drawn</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-the-initial-camera">Setting the initial camera</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-cutting-plane">The cutting plane</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-on-the-cut">Fields on the cut</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-on-the-cut">Fields on the cut</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#colour-limits">Colour limits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#arrow-readability">Arrow readability</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-in-the-volume">Fields in the volume</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rendering-modes">Rendering modes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements">Requirements</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitations">Limitations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#renderer-and-physical-selection">Renderer and physical selection</a></li>
 </ul>
   </nav></div>
 
@@ -929,8 +1118,8 @@ camera the view opened with.</p></li>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -951,7 +1140,6 @@ camera the view opened with.</p></li>
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -964,7 +1152,7 @@ camera the view opened with.</p></li>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

@@ -202,13 +202,13 @@ behind the trace end as they would in a real layout.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 16 cells
+      mesh | 24 x 23 x 16 = 8,832 cells | 2.7 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 24 x 23 x 22 cells
+      mesh | 24 x 23 x 22 = 12,144 cells | 3.7 MiB
     line impedance on this grid: 50.23 Ohm
 
 
@@ -219,7 +219,7 @@ behind the trace end as they would in a real layout.
 The test fixture
 ----------------
 
-A cut along the propagation direction, through the trace centre:
+A cut along the propagation direction, through the trace center:
 the waveguide port on the left, the trace ending at
 ``end_position`` relative to the reference plane, the vertical
 lumped port from the trace end down to the ground plane, and the
@@ -300,7 +300,7 @@ of 180° at the low end of the band.
     --- current settings — tune until this meets your spec ---
     worst |S11| in band :  -14.4 dB
     |S11| < -20 dB up to:   5.97 GHz
-    max |phase error|   :  23.73 deg
+    max |phase error|   :  23.76 deg
 
 
 
@@ -344,7 +344,7 @@ resolution or band changes, run this page again.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 3.131 seconds)
+   **Total running time of the script:** (0 minutes 1.393 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_tuning_microstrip.py:

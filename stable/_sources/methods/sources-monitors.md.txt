@@ -45,8 +45,8 @@ independent run, listed in `run(excited=...)` — and derives the
 waveform per excited mode from the analysis band: a Gaussian
 pulse over `[0, f_max]` for TEM and lumped ports, a modulated
 Gaussian over `[max(f_cutoff, f_min), f_max]` above a mode's
-cut-off, so that no pulse energy sits below cut-off where it would
-be totally reflected.  `AnalysisScatteringTD(waveform=...)` overrides
+cut-off, reducing below-cutoff spectral content that would be
+totally reflected.  `AnalysisScatteringTD(waveform=...)` overrides
 that choice with any waveform; a waveform reaching above the
 analysis band warns.  Simultaneous excitations of several ports and
 sources in one run (`excitations=[Excitation(...), ...]`) are the
@@ -57,6 +57,64 @@ At the component level a bound waveform is what a port operator or
 a source injects: `operator.set_excitation(mode, waveform)` and
 `source.set_excitation(waveform, amplitude=..., delay=...)` — the
 solver-facing form of the same triad.
+
+### Gaussian pulse width and duration
+
+Both Gaussian classes accept `edge_attenuation_db`, a positive amplitude
+attenuation in dB, default **25**. It sets the ideal continuous spectrum
+at the upper band edge:
+
+$$
+\frac{|G(f_\mathrm{max})|}{|G(f_\mathrm{ref})|}
+=10^{-D/20},\qquad D=\texttt{edge\_attenuation\_db}.
+$$
+
+The reference is DC for `WaveformGaussian` and the carrier centre
+`(f_min + f_max)/2` for `WaveformGaussianModulated`. The modulated
+definition includes both mirrored lobes of its real-valued spectrum.
+Near DC those lobes overlap, strengthening excitation at the lower
+edge; equal attenuation at both edges is therefore not generally possible.
+The carrier centre is the specified reference, even when overlap shifts
+the exact spectral maximum slightly. Baseband and modulated pulses are
+different shapes; choosing a positive lower edge switches to the latter.
+
+At 25 dB the edge has about 5.6% of the reference spectral amplitude.
+Increasing the attenuation lengthens the pulse and reduces out-of-band
+excitation, while making the S-parameter normalisation more sensitive to
+residual record error at the edge. A Gaussian has spectral tails beyond
+its nominal band. The attenuation describes excitation coverage, not
+the accuracy of a measured S parameter. Weak edges and cutoff ringdown
+can require extending the record despite an energy or port-signal stop.
+
+The envelope is
+
+$$
+g(t)=\exp[-((t-t_\mathrm{peak})/\tau)^2],\qquad
+t_\mathrm{peak}=4.5\tau,\qquad t_\mathrm{end}=9\tau.
+$$
+
+`tau` is the envelope time constant, with statistical standard deviation
+`tau/sqrt(2)`. The endpoint envelope is about $1.6\cdot10^{-9}$ of its
+peak. `t_end` is an effective duration: evaluation continues along the
+Gaussian tail afterwards. The analysis derives its duration estimate
+from this value, including each excitation's delay and phase delay.
+
+```python
+from magnelio import AnalysisScatteringTD, signals
+
+pulse = signals.WaveformGaussian(f_max=6e9, edge_attenuation_db=25)
+analysis = AnalysisScatteringTD(mesh=mesh, waveform=pulse)
+# Read the physical timing without assuming a fixed number of periods.
+peak_time, duration = pulse.peak_time, pulse.t_end
+
+band_pulse = signals.WaveformGaussianModulated(
+    f_min=8.2e9, f_max=12.4e9, edge_attenuation_db=30
+)
+```
+
+Stored runs retain their resolved width and peak time. Continuing an older
+project preserves the original pulse, including the earlier timing,
+while newly constructed waveforms use the current defaults.
 
 ## The general time-domain analysis
 
@@ -77,13 +135,20 @@ Three rules follow from the waveforms:
   generous number of diagonal transits of the domain.  The estimate
   sets the energy-check cadence and the checkpoint stride; the run
   itself ends on the energy or port-signal criterion.
+- Energy decay can end a run only after every finite excitation has
+  reached its nominal end, including its effective delay. Frequency-
+  tracked port drives also complete their synthesised buffers. A plane
+  wave includes spatial retardation at its injection faces. The
+  port-signal criterion retains its additional transit margin. These
+  guards also apply when continuing a stored run; an explicit duration
+  or step bound can deliberately end a run sooner.
 - A continuous-wave waveform (`WaveformSine`, a `WaveformStep`
   without `fall_time`) never decays, so such a run needs an explicit
   length — `run(t_end=…)` in seconds or `total_time_steps=` — and
   the decay criteria are switched off.
 - Frequency-domain monitors keep their raw transient bins.  With
   several drives there is no single reference spectrum to divide out,
-  so `result.renormalize(name)` names the excitation the monitors
+  so `result.normalize_to_excitation(name)` names the excitation the monitors
   should refer to; the scattering analysis does this for you with the
   excited channel's waveform.
 
@@ -293,6 +358,16 @@ charge anywhere else — to the last bit of double precision.  An open
 current path *is* a consistent oscillating dipole, with the right
 near-zone electrostatic part; there is nothing to clean up.
 
+A unipolar pulse on an open path leaves opposite charges at its ends
+after the current finishes. The resulting electrostatic field does not
+decay. A finite rectangular Fourier record cuts off that field and can
+contaminate a far-field pattern, even after the radiating transient has
+left the box. For a transient measurement of an AC radiation pattern,
+use a modulated pulse whose net time-integrated current is negligible,
+and record its complete response. This finite-record limitation follows
+from the endpoint-charge identity above (in-house analysis); the far-field
+monitor does not automatically complete a static tail.
+
 Edges the solver holds at zero — inside a perfect conductor, or
 tangential to a PEC wall — cannot take an impressed current.  A path
 crossing such a region radiates less than it was asked to, and says so
@@ -315,7 +390,7 @@ averaged until a picture asks for it:
 
 - **`FieldState`** — one snapshot: the six components at their own
   positions (`component`, `positions`), at arbitrary points (`at`),
-  averaged onto cell centres (`cell_centred`), sliced (`plot`), in 3D
+  averaged onto cell centres (`cell_centered`), sliced (`plot`), in 3D
   (`show`), continued across the model's symmetry planes
   (`mirrored`), and written back into a run as an initial field.
   Eigenmodes hand one out per mode.
@@ -325,7 +400,7 @@ averaged until a picture asks for it:
   `FieldState`s, `component(name)` the whole stack; a frame becomes
   the start of a new run (`SourceFieldInitial.from_recording`).
 - **`FieldSpectrum`** — complex frames, one per frequency:
-  `at_frequency(f)` is the complex pattern, `snapshot(f, phase=…)` its
+  `at_frequency(f)` is the complex pattern, `snapshot(f, phase_deg=…)` its
   real field at an instant.
 
 Both series may hold a subset of the six components (`components`);
@@ -429,7 +504,7 @@ A field monitor records the *grid quantities on the Yee positions* of
 its region — a copy of the solver's own samples, nothing averaged — and
 hands them out as a `FieldRecording` (`monitor.recording`) or, for the
 running transform, a `FieldSpectrum` (`monitor.spectrum`); a
-cell-centred array is one call away (`recording.cell_centred(...)`),
+cell-centred array is one call away (`recording.cell_centered(...)`),
 but nothing is averaged until asked for.  The recording's
 `times` are the instants of the electric field, `times_h` those of the
 magnetic one, half a step later.  A project store keeps the same
@@ -441,7 +516,7 @@ it through the recorded volume — see [the viewer chapter](viewer.md).
 
 A plotted field plane is one *layer* of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
-title is the cell-centre coordinate the request snapped to.  Geometry
+title is the cell-center coordinate the request snapped to.  Geometry
 overlays follow the same rule: thin wires, discrete ports and lumped
 elements are drawn when they lie inside the displayed layer, so a wire
 declared on the grid nodes half a cell away still appears in the
@@ -508,7 +583,7 @@ time monitor (`<monitor>/t_0000.vtr`, …) or per frequency of a
 frequency monitor (`f_0000.vtr`, …), collected by a `<monitor>.pvd`
 whose axis is the frame's electric instant, or its frequency.  The
 files hold *cell data*: the recorded components averaged onto the
-cell centres at export time — the numbers `recording.cell_centred()`
+cell centres at export time — the numbers `recording.cell_centered()`
 returns — and the vectors `E` and `H` where a group was recorded
 whole.  ParaView reads plain VTK and never touches the staggered
 frames in `results.h5` or `fields_freq.h5`.  The copy takes about as
@@ -601,3 +676,22 @@ filter — the generated script shims that for `paraview --script` and
 for the bake, but a state file opened on such a build cannot be
 helped, since ParaView's own filter preamble runs before any script of
 ours.  Use `paraview --script=` there, or a newer ParaView.
+
+## Coordinates, sampled axes and phase inputs
+
+Requested frequency samples on monitors are `frequencies`; returned sampled
+spectral axes are `f_axis`, including `FieldSpectrum` and `Signal1D`.
+Eigenmode results retain `frequencies` for their physical eigenfrequencies.
+Use `frame` for a recording index and `t` or `f` for a physical frame choice;
+conflicting selectors fail. Degree-valued excitation, sine-wave and display
+inputs are `phase_deg`, with the same sign and delay convention as before.
+
+`normalize_to_excitation(signal)` changes a frequency monitor's response
+reference and can replace it later. `is_normalized_to_excitation` reports
+that state. Raw bins and `spectrum_raw` retain their original values.
+Networks separately use `renormalize(z_ref)` to produce a new S-matrix.
+
+A surface record's `normal_positions` holds layer coordinates in metres.
+`ComponentRecord.at(..., position=...)` and
+`FaceRecord.resample(..., position=...)` interpolate at that coordinate;
+`normal` remains an axis or vector in APIs that describe orientation.

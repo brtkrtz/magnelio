@@ -60,7 +60,7 @@ into any script.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 35-45
+.. GENERATED FROM PYTHON SOURCE LINES 35-53
 
 Block 1 — before: one number drives both mesh scales
 ----------------------------------------------------
@@ -72,8 +72,16 @@ wavelength knob alone produces the same grid rung after rung as
 long as the interface cells dominate it, then jumps.  Any other
 mesh setting your model needs (``min_cell_size``,
 ``max_edge_refinement``, …) goes in here too and stays fixed.
+Keep the CAD model fixed across the ladder. Nearly tangent cuts at curved
+walls can lose thin material regions on the default fast section paths.
+For the optional bounded-CAD route, set robust_sections=True in rung() and
+keep it fixed on every rung. It can substantially increase meshing time;
+assess wall losses separately from S-parameters when they matter.
+If meshing reports an unresolved sensitive section, inspect the CAD body's
+validity and boundary tolerances before comparing the rungs: refinement
+cannot restore a material region missing from the stored CAD geometry.
 
-.. GENERATED FROM PYTHON SOURCE LINES 45-57
+.. GENERATED FROM PYTHON SOURCE LINES 53-66
 
 .. code-block:: Python
 
@@ -84,6 +92,7 @@ mesh setting your model needs (``min_cell_size``,
         return mio.MeshControl(
             min_nodes_per_wavelength=mnpw,
             min_cells_per_feature=max(2, mnpw // 4),
+            robust_sections=False,
         )
 
 
@@ -96,7 +105,7 @@ mesh setting your model needs (``min_cell_size``,
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 58-69
+.. GENERATED FROM PYTHON SOURCE LINES 67-78
 
 Your simulation — wrapped in a function
 ---------------------------------------
@@ -110,7 +119,7 @@ in the middle: a shunt capacitance that reflects a good deal more
 than the −30 dB termination floor of a quasi-TEM port, so the
 S-parameters are the device's, not the port's.
 
-.. GENERATED FROM PYTHON SOURCE LINES 69-97
+.. GENERATED FROM PYTHON SOURCE LINES 78-106
 
 .. code-block:: Python
 
@@ -149,7 +158,7 @@ S-parameters are the device's, not the port's.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 98-120
+.. GENERATED FROM PYTHON SOURCE LINES 107-129
 
 Block 2 — after: the number and the stop rule
 ---------------------------------------------
@@ -174,7 +183,7 @@ is within tolerance of the next finer one, and the rung after that
 confirms the agreement was not a coincidence.  ``converged_rung``
 below is that rule.
 
-.. GENERATED FROM PYTHON SOURCE LINES 120-166
+.. GENERATED FROM PYTHON SOURCE LINES 129-175
 
 .. code-block:: Python
 
@@ -238,49 +247,49 @@ below is that rule.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 11 x 17 x 15 cells
-       8    2805    0.7 s
+      mesh | 11 x 17 x 15 = 2,805 cells | 923 KiB
+       8    2805    0.3 s
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 15 x 21 x 22 cells
-      12    6930    1.3 s     0.1289     0.0216  
+      mesh | 15 x 21 x 22 = 6,930 cells | 2.2 MiB
+      12    6930    0.6 s     0.1277     0.0220  
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 16 x 24 x 27 cells
-      16   10368    1.9 s     0.0431     0.0114  
+      mesh | 16 x 24 x 27 = 10,368 cells | 3.2 MiB
+      16   10368    0.9 s     0.0427     0.0115  
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 21 x 27 x 42 cells
-      24   23814    3.9 s     0.0458     0.0129  
+      mesh | 21 x 27 x 42 = 23,814 cells | 7.2 MiB
+      24   23814    2.1 s     0.0463     0.0121  
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 25 x 31 x 54 cells
-      32   41850    7.4 s     0.0158     0.0036  ok
+      mesh | 25 x 31 x 54 = 41,850 cells | 13 MiB
+      32   41850    4.3 s     0.0158     0.0037  ok
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 32 x 38 x 81 cells
-      48   98496   27.1 s     0.0164     0.0050  ok
+      mesh | 32 x 38 x 81 = 98,496 cells | 29 MiB
+      48   98496   17.9 s     0.0169     0.0045  ok
     converged: mnpw 32 (ΔS < 0.02 on this rung and the next)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 167-174
+.. GENERATED FROM PYTHON SOURCE LINES 176-183
 
 The curves behind the number
 ----------------------------
@@ -290,7 +299,7 @@ up as the ladder climbs.  Bottom: :math:`|\Delta S|` against
 frequency for each pair of rungs, with the threshold drawn in.
 Where the deviation sits tells you what still moves.
 
-.. GENERATED FROM PYTHON SOURCE LINES 174-192
+.. GENERATED FROM PYTHON SOURCE LINES 183-201
 
 .. code-block:: Python
 
@@ -324,7 +333,7 @@ Where the deviation sits tells you what still moves.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 193-221
+.. GENERATED FROM PYTHON SOURCE LINES 202-230
 
 What the number sees
 --------------------
@@ -355,7 +364,7 @@ frequency* has converged to a fraction of a percent.  A resonator or
 a narrow-band filter is judged on its frequencies — the second
 half of this page.
 
-.. GENERATED FROM PYTHON SOURCE LINES 223-235
+.. GENERATED FROM PYTHON SOURCE LINES 232-244
 
 The same ladder around a resonance
 ----------------------------------
@@ -370,7 +379,7 @@ partially filled cells, not by a staircase.  The ladder starts at
 12 because a driven run tolerates a coarser grid than an eigenmode
 of a curved cavity.
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-277
+.. GENERATED FROM PYTHON SOURCE LINES 244-286
 
 .. code-block:: Python
 
@@ -431,42 +440,42 @@ of a curved cavity.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 12 x 12 x 4 cells
-      12    11.4057      576    0.1 s            -0.60 %  
+      mesh | 12 x 12 x 4 = 576 cells | 209 KiB
+      12    11.4057      576    0.0 s            -0.60 %  
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 15 x 15 x 5 cells
+      mesh | 15 x 15 x 5 = 1,125 cells | 392 KiB
       16    11.2897     1125    0.1 s   1.02 %   -1.61 %  
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 23 x 23 x 7 cells
-      24    11.3901     3703    0.4 s   0.89 %   -0.73 %  ok
+      mesh | 23 x 23 x 7 = 3,703 cells | 1.2 MiB
+      24    11.3901     3703    0.3 s   0.89 %   -0.73 %  ok
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 30 x 30 x 9 cells
-      32    11.4487     8100    2.2 s   0.51 %   -0.22 %  ok
+      mesh | 30 x 30 x 9 = 8,100 cells | 2.6 MiB
+      32    11.4487     8100    1.3 s   0.51 %   -0.22 %  ok
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 45 x 45 x 14 cells
-      48    11.4889    28350   40.4 s   0.35 %   +0.13 %  ok
+      mesh | 45 x 45 x 14 = 28,350 cells | 8.7 MiB
+      48    11.4889    28350   23.2 s   0.35 %   +0.13 %  ok
     converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 278-298
+.. GENERATED FROM PYTHON SOURCE LINES 287-307
 
 Reading the ladder — and extrapolating it
 -----------------------------------------
@@ -489,7 +498,7 @@ error component that does not scale as :math:`h^2`.  Take the
 extrapolation as an estimate and the change between rungs as the
 criterion.
 
-.. GENERATED FROM PYTHON SOURCE LINES 298-318
+.. GENERATED FROM PYTHON SOURCE LINES 307-327
 
 .. code-block:: Python
 
@@ -531,7 +540,7 @@ criterion.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 319-330
+.. GENERATED FROM PYTHON SOURCE LINES 328-339
 
 Two more things a resonance ladder teaches.  A high-contrast
 dielectric body (a ceramic puck with εᵣ = 45) run through the same
@@ -545,7 +554,7 @@ because both carry nearly the same discretisation error.  Tutorial
 you actually design with, and read it against that quantity's own
 tolerance.
 
-.. GENERATED FROM PYTHON SOURCE LINES 332-352
+.. GENERATED FROM PYTHON SOURCE LINES 341-361
 
 What the ladder cannot see
 --------------------------
@@ -568,7 +577,7 @@ disturbed.  Run the ladder on the sharp-edged model to judge the
 resolution, then add the features back.  The mechanism is explained
 under :doc:`../methods/meshing-conformal`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 352-354
+.. GENERATED FROM PYTHON SOURCE LINES 361-363
 
 .. code-block:: Python
 
@@ -584,7 +593,7 @@ under :doc:`../methods/meshing-conformal`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 25.988 seconds)
+   **Total running time of the script:** (0 minutes 51.232 seconds)
 
 
 .. _sphx_glr_download_howto_plot_mesh_convergence.py:

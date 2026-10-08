@@ -134,7 +134,7 @@ all of it, and the mesh is sized for the top of the band.
 
     c0 = 299_792_458.0
     ka_values = np.linspace(0.6, 3.0, 25)
-    freqs = ka_values * c0 / (2 * np.pi * a)
+    frequencies = ka_values * c0 / (2 * np.pi * a)
     f_max = 6.5e9
 
     mesh = mio.Mesh.from_geometry(model, mio.MeshControl(min_nodes_per_wavelength=20), f_max=f_max)
@@ -152,9 +152,9 @@ all of it, and the mesh is sized for the top of the band.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (1.1 s)
+      mesh | conformal cells | done (0.6 s)
       mesh | PEC masks
-      mesh | 94 x 94 x 94 cells (1.4 s total)
+      mesh | 94 x 94 x 94 = 830,584 cells | 242 MiB (0.8 s total)
     grid: 94 x 94 x 94 cells
 
 
@@ -176,7 +176,7 @@ later quantify.
 
 
     t0 = 8.0 / f_max  # the incident pulse has passed the box by then
-    farfield = monitors.MonitorFarFieldFrequency(freqs=freqs, name="farfield")
+    farfield = monitors.MonitorFarFieldFrequency(frequencies=frequencies, name="farfield")
     movie = monitors.MonitorFieldTime(
         corners=((None, 0.0, None), (None, 0.0, None)),
         times=[t0 * 0.9, t0 * 1.15, t0 * 1.5],
@@ -227,7 +227,7 @@ and the scattered ring-down have left through the absorber.
 
  .. code-block:: none
 
-    901 steps, stopped on the energy criterion
+    701 steps, stopped on the energy criterion
 
 
 
@@ -323,7 +323,7 @@ folded with the pulse — to obtain the response to a monochromatic
 wave of unit amplitude, the pulse spectrum is divided out.  On a
 scattering analysis this happens automatically, with the excited
 port's waveform; the general analysis leaves it to you, because with
-several drives there is no single reference.  ``renormalize`` names
+several drives there is no single reference.  ``normalize_to_excitation`` names
 the excitation the monitors refer to from now on.
 
 .. GENERATED FROM PYTHON SOURCE LINES 162-165
@@ -331,7 +331,7 @@ the excitation the monitors refer to from now on.
 .. code-block:: Python
 
 
-    result.renormalize("pw")
+    result.normalize_to_excitation("pw")
 
 
 
@@ -377,7 +377,7 @@ interferes with the specular return from the front.
 
 
     sigma_sim = np.empty_like(ka_values)
-    for i, f in enumerate(freqs):
+    for i, f in enumerate(frequencies):
         pattern = farfield.result(f, theta=[np.pi], phi=[0.0])
         sigma = 4 * np.pi * (abs(pattern.E_theta[0, 0]) ** 2 + abs(pattern.E_phi[0, 0]) ** 2)
         sigma_sim[i] = sigma / (np.pi * a**2)
@@ -386,7 +386,7 @@ interferes with the specular return from the front.
     print(f"{'ka':>4}  {'f [GHz]':>8}  {'σ/πa² sim':>10}  {'σ/πa² Mie':>10}  {'error':>7}")
     for i in (5, 10, 15, 20, 24):
         print(
-            f"{ka_values[i]:4.1f}  {freqs[i] / 1e9:8.3f}  {sigma_sim[i]:10.3f}  "
+            f"{ka_values[i]:4.1f}  {frequencies[i] / 1e9:8.3f}  {sigma_sim[i]:10.3f}  "
             f"{sigma_mie[i]:10.3f}  {100 * (sigma_sim[i] / sigma_mie[i] - 1):+6.1f} %"
         )
     i_peak = int(np.argmax(sigma_mie))
@@ -403,38 +403,38 @@ interferes with the specular return from the front.
 
  .. code-block:: none
 
-    UserWarning: far-field monitor 'farfield' at 1.145 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 2.328e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 1.336 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 4.171e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 1.527 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 6.432e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 1.718 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 8.689e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 1.909 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.051e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 2.099 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.157e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 1.145 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 2.324e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 1.336 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 4.137e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 1.527 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 6.42e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 1.718 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 8.732e-06 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 1.909 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.055e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 2.099 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.156e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
     UserWarning: far-field monitor 'farfield' at 2.29 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.186e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
     UserWarning: far-field monitor 'farfield' at 2.481 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.172e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 2.672 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.146e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 2.863 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.119e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 3.054 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.098e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 3.245 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.093e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 3.435 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.104e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 3.626 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.119e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 3.817 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.131e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 4.008 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.136e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 4.199 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.133e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 4.39 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.125e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 4.58 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.117e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 4.771 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.108e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 4.962 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.103e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 5.153 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.101e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 5.344 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.099e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
-    UserWarning: far-field monitor 'farfield' at 5.535 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.101e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 2.672 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.143e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 2.863 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.114e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 3.054 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.097e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 3.245 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.095e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 3.435 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.106e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 3.626 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.12e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 3.817 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.132e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 4.008 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.137e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 4.199 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.134e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 4.39 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.126e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 4.58 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.115e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 4.771 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.106e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 4.962 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.101e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 5.153 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.099e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 5.344 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.1e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
+    UserWarning: far-field monitor 'farfield' at 5.535 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.102e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
     UserWarning: far-field monitor 'farfield' at 5.726 GHz: the pattern radiates 0.000 of the power leaving the recording box (surface_power 1.102e-05 W, P_rad 0 W).  The box sits at the absorbing boundary and samples the radiator's near zone too closely; realized gain and gain are off by that factor (directivity is not).  Give the model more clearance to the absorbing faces — half a wavelength or more between the radiator and the boundary restores the balance.
       ka   f [GHz]   σ/πa² sim   σ/πa² Mie    error
-     1.1     2.099       3.499       3.548    -1.4 %
-     1.6     3.054       0.604       0.573    +5.4 %
-     2.1     4.008       1.336       1.445    -7.5 %
-     2.6     4.962       1.258       1.389    -9.5 %
-     3.0     5.726       0.602       0.521   +15.7 %
-    resonance peak at ka = 1.0: 3.662 simulated vs 3.638 exact
+     1.1     2.099       3.544       3.548    -0.1 %
+     1.6     3.054       0.586       0.573    +2.2 %
+     2.1     4.008       1.359       1.445    -5.9 %
+     2.6     4.962       1.330       1.389    -4.2 %
+     3.0     5.726       0.483       0.521    -7.3 %
+    resonance peak at ka = 1.0: 3.630 simulated vs 3.638 exact
 
 
 
@@ -495,7 +495,7 @@ scattered power as its reflection.
 
     fig, ax = plt.subplots(subplot_kw={"projection": "polar"}, figsize=(5, 5))
     for i in (5, 15, 24):
-        pattern = farfield.result(freqs[i])
+        pattern = farfield.result(frequencies[i])
         angles, u = pattern.cut(plane="phi", angle=0.0, quantity="U")
         ax.plot(angles, 10 * np.log10(u / u.max()), label=f"ka = {ka_values[i]:.0f}")
     ax.set_theta_zero_location("N")
@@ -517,7 +517,7 @@ scattered power as its reflection.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f2be60663d0>
+    <matplotlib.legend.Legend object at 0x7f3a16aaa450>
 
 
 
@@ -537,7 +537,7 @@ only requires that its direction follows a grid axis.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 25.921 seconds)
+   **Total running time of the script:** (0 minutes 53.431 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_20_plane_wave_scattering.py:

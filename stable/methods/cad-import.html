@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,30 +26,30 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=dbee5847"></script>
+    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/cad-import';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -112,7 +111,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -161,6 +160,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -173,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -188,6 +187,27 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -229,7 +249,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -260,15 +280,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -305,7 +325,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -314,7 +334,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -359,6 +379,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -368,6 +395,20 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -439,15 +480,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -482,7 +523,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -497,7 +538,7 @@
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">CAD import</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
@@ -510,6 +551,7 @@
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -579,13 +621,13 @@
 exists in a CAD system is read in with
 <a class="reference internal" href="../api/io.html#magnelio.io.import_step" title="magnelio.io.import_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_step()</span></code></a> (or, for the kernel’s own dump,
 <a class="reference internal" href="../api/io.html#magnelio.io.import_brep" title="magnelio.io.import_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_brep()</span></code></a>), and what comes back is ordinary
-geometry: solids that carry a material, take part in Boolean
-operations, accept the chainable verbs and go into a
+geometry: solids and standalone sheets with distinct dimensional
+semantics. Solids take part in Boolean operations and go into a
 <a class="reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a> like anything built with the
-primitives (<code class="docutils literal notranslate"><span class="pre">io/cad.py</span></code>, DD-178).</p>
+primitives.</p>
 <section id="what-an-exchange-format-carries-and-what-it-does-not">
 <h2>What an exchange format carries, and what it does not<a class="headerlink" href="#what-an-exchange-format-carries-and-what-it-does-not" title="Link to this heading">#</a></h2>
-<p>A boundary-representation exchange file records finished solids.  The
+<p>A boundary-representation exchange file records finished bodies.  The
 construction history that produced them — the sketch, the parameters,
 the feature tree — is not part of the file and cannot be recovered from
 it.  An imported solid is therefore not editable the way a
@@ -603,8 +645,8 @@ assignment (below).</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Geometry</p></td>
-<td><p>exact</p></td>
-<td><p>exact</p></td>
+<td><p>exact solids and free sheets</p></td>
+<td><p>exact solids and free sheets</p></td>
 </tr>
 <tr class="row-odd"><td><p>Length unit</p></td>
 <td><p>in the file</p></td>
@@ -619,7 +661,11 @@ assignment (below).</p>
 <td><p>no</p></td>
 </tr>
 <tr class="row-even"><td><p>Assembly structure</p></td>
-<td><p>yes</p></td>
+<td><p>yes; flattened on import</p></td>
+<td><p>no</p></td>
+</tr>
+<tr class="row-odd"><td><p>Material physics and named topology</p></td>
+<td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
 </tbody>
@@ -642,18 +688,25 @@ permittivity, permeability and conductivity a field solver needs, so
 assigning materials on import is not a shortcoming of the reader — it
 is where the physics enters the model.</p>
 </section>
-<section id="only-solids-are-imported">
-<h2>Only solids are imported<a class="headerlink" href="#only-solids-are-imported" title="Link to this heading">#</a></h2>
-<p>A material fills a volume, so only solid bodies can become part of a
-model.  Surface bodies in the file (free faces, unstitched shells) are
-reported and skipped; if a file contains nothing else, the import
-fails rather than returning an empty model.  Turn such bodies into
-solids in the CAD system first.</p>
+<section id="solids-and-free-sheets">
+<h2>Solids and free sheets<a class="headerlink" href="#solids-and-free-sheets" title="Link to this heading">#</a></h2>
+<p>Free faces and faces of open shells import as independent
+<a class="reference internal" href="../api/geo.html#magnelio.geo.ImportedSheet" title="magnelio.geo.ImportedSheet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSheet</span></code></a> members. Faces that bound a solid
+remain part of that solid and are never duplicated as free sheets. A
+shell with several faces becomes several sheet members, so each can be
+given a separate thickness. Free curves and points are skipped with a
+warning; a file containing no solid or free face is rejected.</p>
+<p>An imported sheet has <strong>zero physical thickness</strong>. Giving it a material
+does not make it directly meshable. Construct a resolved solid first,
+for example <code class="docutils literal notranslate"><span class="pre">sheet.thickened(35e-6,</span> <span class="pre">material=&quot;pec&quot;)</span></code> for a conductor
+with 35 µm thickness, and add that solid to the model. Curved sheets
+need a thickness compatible with their curvature; the CAD kernel may
+reject an offset that folds or cannot close.</p>
 </section>
 <section id="assigning-materials-by-name">
 <h2>Assigning materials by name<a class="headerlink" href="#assigning-materials-by-name" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">materials</span></code> accepts a single material, applied to every solid, or a
-dict keyed by the names the solids carry in the file:</p>
+<p><code class="docutils literal notranslate"><span class="pre">materials</span></code> accepts a single material, applied to every solid and free
+sheet, or a dict keyed by the body names in the file:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
     <span class="s2">"connector.step"</span><span class="p">,</span>
     <span class="p">{</span>
@@ -681,32 +734,37 @@ have no material, which makes them usable as Boolean operands but
 rejects them at
 <a class="reference internal" href="../api/core.html#magnelio.GeometryModel.add" title="magnelio.GeometryModel.add"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add()</span></code></a>.  That is deliberate — a
 half-mapped assembly should not mesh as if the unmapped parts were
-vacuum.  Importing without any mapping is the way to see what is in a
+vacuum. Sheets may remain materialless until their thickness is chosen.
+Importing without any mapping is the way to see what is in a
 file:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">"connector.step"</span><span class="p">)</span><span class="o">.</span><span class="n">members</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">solid</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">())</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">"connector.step"</span><span class="p">)</span><span class="o">.</span><span class="n">members</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">body</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">body</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">body</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">())</span>
 </pre></div>
 </div>
 </section>
 <section id="assemblies">
 <h2>Assemblies<a class="headerlink" href="#assemblies" title="Link to this heading">#</a></h2>
-<p>An assembly is flattened on import.  Every solid comes back placed
+<p>An assembly is flattened on import. Every body comes back placed
 where it sits in the assembly, as a member of one
 <a class="reference internal" href="../api/geo.html#magnelio.geo.Group" title="magnelio.geo.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a>; the tree structure itself is not
 reproduced, because a Group is what the rest of the API consumes — it
 distributes transformations over its members, keeps each member’s
 material, and is flattened again when the model takes it.</p>
 <p>Names come from the component instance where there is one, and from
-the part it refers to otherwise.  A part that contains several solids
-is split into <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_1</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_2</span></code>, …; a part with no name at all
-becomes <code class="docutils literal notranslate"><span class="pre">solid_1</span></code>, <code class="docutils literal notranslate"><span class="pre">solid_2</span></code>, … in file order.</p>
+the part it refers to otherwise. A part with several bodies is split
+into <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_1</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_2</span></code>, …; an unnamed body gets a generated
+<code class="docutils literal notranslate"><span class="pre">solid_…</span></code> or <code class="docutils literal notranslate"><span class="pre">sheet_…</span></code> name. Repeated instances may share a name;
+one material mapping key then applies to all of them. Distinguish
+instances by their world positions or give them unique CAD names.</p>
 </section>
 <section id="colours">
 <h2>Colours<a class="headerlink" href="#colours" title="Link to this heading">#</a></h2>
 <p>A colour read from a STEP file is display information and nothing
-else: it selects the hue a solid is drawn with in
-<a class="reference internal" href="../api/core.html#magnelio.GeometryModel.plot" title="magnelio.GeometryModel.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code></a> and in the ParaView export, and
-it survives a project store round-trip.  It never touches the physics,
+else: it selects the hue an imported solid is drawn with in
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code> and in the ParaView export, and
+it survives that solid’s project store round-trip. An imported sheet
+retains its CAD colour while it is a sheet; thickening it creates a new
+solid. Colour never touches the physics,
 and it never overrides a colour prescribed by the material — a
 material with an explicit <code class="docutils literal notranslate"><span class="pre">color</span></code> keeps it.  Opacity stays with the
 material as well, so metals remain opaque and dielectrics translucent
@@ -729,10 +787,54 @@ it stays opt-in.</p>
 carries on, naming the solid.  Meshing it may or may not give sensible
 results — the warning is there so a strange mesh has an explanation.</p>
 </section>
+<section id="exporting-selected-geometry">
+<h2>Exporting selected geometry<a class="headerlink" href="#exporting-selected-geometry" title="Link to this heading">#</a></h2>
+<p><a class="reference internal" href="../api/io.html#magnelio.io.export_step" title="magnelio.io.export_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">export_step()</span></code></a> and <a class="reference internal" href="../api/io.html#magnelio.io.export_brep" title="magnelio.io.export_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">export_brep()</span></code></a>
+write one Solid, Sheet, Group or an iterable of them. They flatten
+Groups and preserve each selected body’s world placement. Free curves
+are not accepted. Both accept an output unit (<code class="docutils literal notranslate"><span class="pre">&quot;mm&quot;</span></code> is the STEP
+default; BREP requires <code class="docutils literal notranslate"><span class="pre">unit=</span></code>). STEP records the unit,
+names and display colours. BREP records only exact geometry, so keep
+the chosen unit beside the file for the next reader. Neither format
+records Magnelio materials, construction history or named-selection
+replay; use a Magnelio project for those. Face ordering may change
+across exchange.</p>
+<p>Both exporters refuse to replace an existing path unless
+<code class="docutils literal notranslate"><span class="pre">overwrite=True</span></code> is given. They write to a temporary file first, so
+a failed write does not truncate the previous file.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImportedSheet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_step</span><span class="p">,</span> <span class="n">import_step</span>
+
+<span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">"mixed.step"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"housing"</span><span class="p">:</span> <span class="s2">"pec"</span><span class="p">,</span> <span class="s2">"trace"</span><span class="p">:</span> <span class="s2">"pec"</span><span class="p">})</span>
+<span class="n">housing</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">body</span> <span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">parts</span><span class="o">.</span><span class="n">members</span><span class="p">()</span> <span class="k">if</span> <span class="n">body</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"housing"</span><span class="p">)</span>
+<span class="n">trace</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">body</span> <span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">parts</span><span class="o">.</span><span class="n">members</span><span class="p">()</span> <span class="k">if</span> <span class="n">body</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"trace"</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">ImportedSheet</span><span class="p">)</span>
+<span class="n">trace_solid</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">thickened</span><span class="p">(</span><span class="mf">35e-6</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">housing</span><span class="p">,</span> <span class="n">trace_solid</span><span class="p">))</span>
+<span class="n">export_step</span><span class="p">(</span><span class="s2">"selected.step"</span><span class="p">,</span> <span class="p">(</span><span class="n">housing</span><span class="p">,</span> <span class="n">trace</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"mm"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The exported <code class="docutils literal notranslate"><span class="pre">trace</span></code> is still a sheet: the <code class="docutils literal notranslate"><span class="pre">trace_solid</span></code> exists only in
+the simulation model. Export that solid instead when its resolved
+thickness belongs in the CAD handoff.</p>
+</section>
 <section id="limits">
 <h2>Limits<a class="headerlink" href="#limits" title="Link to this heading">#</a></h2>
-<p>Sheet bodies, stitching surfaces into solids, and formats other than
-STEP and BREP (IGES, mesh formats) are not supported.</p>
+<p>Stitching surfaces into solids, free-curve exchange, and formats other
+than STEP and BREP (IGES, mesh formats) are not supported. Sheet
+materials have no thin-sheet mesh law; give a sheet resolved thickness
+before meshing.</p>
+</section>
+<section id="raw-brep-versus-cad-exchange">
+<h2>Raw BREP versus CAD exchange<a class="headerlink" href="#raw-brep-versus-cad-exchange" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">read_brep(path)</span></code> reads an ordered list of OpenCascade shapes in metres;
+<code class="docutils literal notranslate"><span class="pre">write_brep(shapes,</span> <span class="pre">path)</span></code> writes that sequence in its given order. This raw
+pair carries no material or named-topology metadata. The CAD-exchange pair
+<code class="docutils literal notranslate"><span class="pre">import_brep(path,</span> <span class="pre">units=...)</span></code> / <code class="docutils literal notranslate"><span class="pre">export_brep(path,</span> <span class="pre">geometry,</span> <span class="pre">units=...)</span></code>
+works with Magnelio geometry and explicit exchange units. Use that pair for
+user CAD workflows. The raw writer’s <code class="docutils literal notranslate"><span class="pre">shapes,</span> <span class="pre">path</span></code> and CAD export’s
+<code class="docutils literal notranslate"><span class="pre">path,</span> <span class="pre">geometry</span></code> argument order are deliberate exceptions.</p>
 </section>
 </section>
 
@@ -784,12 +886,14 @@ STEP and BREP (IGES, mesh formats) are not supported.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-an-exchange-format-carries-and-what-it-does-not">What an exchange format carries, and what it does not</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#only-solids-are-imported">Only solids are imported</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#solids-and-free-sheets">Solids and free sheets</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#assigning-materials-by-name">Assigning materials by name</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#assemblies">Assemblies</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#colours">Colours</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#healing">Healing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exporting-selected-geometry">Exporting selected geometry</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limits">Limits</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#raw-brep-versus-cad-exchange">Raw BREP versus CAD exchange</a></li>
 </ul>
   </nav></div>
 
@@ -815,8 +919,8 @@ STEP and BREP (IGES, mesh formats) are not supported.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -837,7 +941,6 @@ STEP and BREP (IGES, mesh formats) are not supported.</p>
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -850,7 +953,7 @@ STEP and BREP (IGES, mesh formats) are not supported.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

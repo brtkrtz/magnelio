@@ -88,7 +88,7 @@ set below.
     t_au = 5e-6  # metallisation thickness
     h_box = 2.0e-3  # shield height above the ground plane
     z0 = 50.0  # system impedance
-    f0 = 10.0e9  # centre frequency
+    f0 = 10.0e9  # center frequency
     f_min, f_max = 6.0e9, 14.0e9
     coupling_db = -3.0  # target coupling at f0
     k_fingers = 4
@@ -255,97 +255,97 @@ well under a second each.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 55 x 26 cells
+      mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 55 x 26 cells
+      mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 56 x 26 cells
+      mesh | 5 x 56 x 26 = 7,280 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 57 x 26 cells
+      mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 55 x 26 cells
+      mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 55 x 26 cells
+      mesh | 5 x 55 x 26 = 7,150 cells | 2.3 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 56 x 26 cells
+      mesh | 5 x 56 x 26 = 7,280 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 57 x 26 cells
+      mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 57 x 26 cells
+      mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 57 x 26 cells
+      mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 58 x 26 cells
+      mesh | 5 x 58 x 26 = 7,540 cells | 2.5 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 59 x 26 cells
+      mesh | 5 x 59 x 26 = 7,670 cells | 2.5 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 57 x 26 cells
+      mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 57 x 26 cells
+      mesh | 5 x 57 x 26 = 7,410 cells | 2.4 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 58 x 26 cells
+      mesh | 5 x 58 x 26 = 7,540 cells | 2.5 MiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 5 x 59 x 26 cells
+      mesh | 5 x 59 x 26 = 7,670 cells | 2.5 MiB
     w =  12 um, s =  20 um: Z_even =  181.7, Z_odd =  49.0 ohm, ratio 3.71, mean  94.4 ohm
     w =  12 um, s =  25 um: Z_even =  177.7, Z_odd =  52.7 ohm, ratio 3.37, mean  96.8 ohm
     w =  12 um, s =  30 um: Z_even =  174.7, Z_odd =  56.6 ohm, ratio 3.08, mean  99.5 ohm
@@ -617,9 +617,8 @@ on top.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (0.5 s)
       mesh | PEC masks
-      mesh | 119 x 57 x 33 cells (0.8 s total)
+      mesh | 119 x 57 x 33 = 223,839 cells | 66 MiB
     grid: 119 x 57 x 33 = 0.22 M cells
 
     (-0.25, 0.25)
@@ -764,7 +763,7 @@ the lead-to-finger joint is not one.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 26.728 seconds)
+   **Total running time of the script:** (0 minutes 58.770 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lange_coupler.py:

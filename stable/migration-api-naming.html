@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Upgrading to 0.9: API naming &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=c83e6b79" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
+
+    <script src="_static/documentation_options.js?v=39bb1c6d"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'migration-api-naming';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/migration-api-naming.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Upgrading to 0.9: geometry construction" href="migration-geometry.html" />
+    <link rel="prev" title="Implementation engineering (non-method)" href="methods/implementation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#" aria-current="page">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#" aria-current="page">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Upgrading to 0.9: API naming</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="upgrading-to-0-9-api-naming">
+<h1>Upgrading to 0.9: API naming<a class="headerlink" href="#upgrading-to-0-9-api-naming" title="Link to this heading">#</a></h1>
+<p>Magnelio 0.9 makes physical quantities and operation scope explicit.
+Update Python calls together; removed spellings have no compatibility aliases.
+It does not change numerical methods, phasor conventions or the interpretation
+of supported stored projects. For the geometry construction changes in the
+same release, see <a class="reference internal" href="migration-geometry.html"><span class="std std-doc">Upgrading geometry construction</span></a>.</p>
+<section id="complete-mapping">
+<h2>Complete mapping<a class="headerlink" href="#complete-mapping" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Previous spelling or meaning</p></th>
+<th class="head"><p>Current spelling and meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Mode.gamma(omega)</span></code>, <code class="docutils literal notranslate"><span class="pre">z_wave(omega)</span></code>, <code class="docutils literal notranslate"><span class="pre">z_modal(omega)</span></code> in rad/s</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gamma(f=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">z_wave(f=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">z_modal(f=...)</span></code> in Hz; keyword-only on <code class="docutils literal notranslate"><span class="pre">Mode</span></code>. <code class="docutils literal notranslate"><span class="pre">ModeReport</span></code> also evaluates Hz.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SurfaceCurrent.current_through()</span></code></p></td>
+<td><p>Removed without replacement: its area integral had units A·m, not A. Read <code class="docutils literal notranslate"><span class="pre">vector()</span></code>, <code class="docutils literal notranslate"><span class="pre">magnitude()</span></code>, <code class="docutils literal notranslate"><span class="pre">select()</span></code> and independent <code class="docutils literal notranslate"><span class="pre">power_loss()</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p>Field monitor or <code class="docutils literal notranslate"><span class="pre">TDResult.renormalize(...)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">normalize_to_excitation(...)</span></code>; state is <code class="docutils literal notranslate"><span class="pre">is_normalized_to_excitation</span></code>. Network <code class="docutils literal notranslate"><span class="pre">renormalize(z_ref)</span></code> retains its different meaning and returns a new result.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Rectangular <code class="docutils literal notranslate"><span class="pre">PortAnalytical(...,</span> <span class="pre">center=...)</span></code> and <code class="docutils literal notranslate"><span class="pre">PortSpecRectWG(...,</span> <span class="pre">center=...)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">origin=...</span></code>, the minimum tangential corner. Coax ports retain <code class="docutils literal notranslate"><span class="pre">center=...</span></code>. Wrong-family anchors are rejected.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ComponentRecord.at(...,</span> <span class="pre">normal=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">FaceRecord.resample(...,</span> <span class="pre">normal=...)</span></code>, <code class="docutils literal notranslate"><span class="pre">ComponentRecord.normals</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">position=...</span></code> and <code class="docutils literal notranslate"><span class="pre">normal_positions</span></code>; these are coordinates in metres, not normal vectors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Project.monitor()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">watch_panel()</span></code>: immediate widget with <code class="docutils literal notranslate"><span class="pre">stop()</span></code>. <code class="docutils literal notranslate"><span class="pre">watch()</span></code> still iterates or calls a callback; <code class="docutils literal notranslate"><span class="pre">follow()</span></code> still blocks while displaying progress.</p></td>
+</tr>
+<tr class="row-even"><td><p>Viewer <code class="docutils literal notranslate"><span class="pre">mode=&quot;client&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;server&quot;</span></code> / …</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">render_mode=...</span></code>; <code class="docutils literal notranslate"><span class="pre">mode</span></code> selects a physical eigenmode through <code class="docutils literal notranslate"><span class="pre">field</span></code>, <code class="docutils literal notranslate"><span class="pre">plot</span></code> and <code class="docutils literal notranslate"><span class="pre">show</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GeometryModel.plot()</span></code>, <code class="docutils literal notranslate"><span class="pre">LoadedGeometry.plot()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">show()</span></code> for interactive 3D. <code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code> remains matplotlib; <code class="docutils literal notranslate"><span class="pre">interact()</span></code> remains a notebook slider plot.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">t_index=...</span></code>, <code class="docutils literal notranslate"><span class="pre">f_index=...</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">frame=...</span></code> for a recording index, <code class="docutils literal notranslate"><span class="pre">t=...</span></code> or <code class="docutils literal notranslate"><span class="pre">f=...</span></code> for a physical selection. Conflicting selectors are rejected.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ModeReport.plot(field=&quot;E&quot;)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">plot(component=&quot;E&quot;)</span></code>; supported transverse E/H profiles are unchanged.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tag_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_faces</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_edge</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_edges</span></code>, <code class="docutils literal notranslate"><span class="pre">tag_vertex</span></code>, <code class="docutils literal notranslate"><span class="pre">imprint</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">tagged_face</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_faces</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_edge</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_edges</span></code>, <code class="docutils literal notranslate"><span class="pre">tagged_vertex</span></code>, <code class="docutils literal notranslate"><span class="pre">imprinted</span></code>; each returns an immutable owner. Model <code class="docutils literal notranslate"><span class="pre">add*</span></code> still mutates; <code class="docutils literal notranslate"><span class="pre">Path.forward</span></code> and <code class="docutils literal notranslate"><span class="pre">section</span></code> retain their names.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">n_actual_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">MemoryEstimate.runs</span></code></p></td>
+<td><p>Single-run <code class="docutils literal notranslate"><span class="pre">n_steps</span></code>; aggregate <code class="docutils literal notranslate"><span class="pre">max_run_steps</span></code> and <code class="docutils literal notranslate"><span class="pre">n_steps_by_run</span></code>; count <code class="docutils literal notranslate"><span class="pre">n_runs</span></code>. Collections remain <code class="docutils literal notranslate"><span class="pre">runs</span></code>. <code class="docutils literal notranslate"><span class="pre">RunSettings.n_steps</span></code> requires an identified run.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Project.result(name=...)</span></code>, reader/resume <code class="docutils literal notranslate"><span class="pre">excited=...</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">run=...</span></code> selects an existing run; <code class="docutils literal notranslate"><span class="pre">name=...</span></code> names a new general run; scattering <code class="docutils literal notranslate"><span class="pre">excited=...</span></code> selects actual excitations.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PortSpecRectWG.width_a</span></code>, <code class="docutils literal notranslate"><span class="pre">height_b</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">width</span></code>, <code class="docutils literal notranslate"><span class="pre">height</span></code> in global tangential axis order.</p></td>
+</tr>
+<tr class="row-even"><td><p>Missing curated geometry exports</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">geo.Bend</span></code>, <code class="docutils literal notranslate"><span class="pre">geo.Wrap</span></code>, <code class="docutils literal notranslate"><span class="pre">geo.ImportedSheet</span></code> are included in the generated reference and <code class="docutils literal notranslate"><span class="pre">geo.__all__</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Uncurated returned surface/loss types</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fields.SurfaceCurrent</span></code>, <code class="docutils literal notranslate"><span class="pre">post.WallLossQ</span></code>, preserving class identity.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">solver.EigenmodeResult</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">analysis.EigenmodeResult</span></code>, preserving the implementation and class identity.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Whole-axis <code class="docutils literal notranslate"><span class="pre">.f</span></code>, sampled-axis <code class="docutils literal notranslate"><span class="pre">FieldSpectrum.frequencies</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.f_axis</span></code> for sampled spectral/result axes, including <code class="docutils literal notranslate"><span class="pre">Signal1D</span></code>; <code class="docutils literal notranslate"><span class="pre">frequencies</span></code> for requested recording samples and eigenfrequencies; <code class="docutils literal notranslate"><span class="pre">f</span></code> for a selected frequency.</p></td>
+</tr>
+<tr class="row-even"><td><p>Surface-impedance <code class="docutils literal notranslate"><span class="pre">f_lo</span></code>, <code class="docutils literal notranslate"><span class="pre">f_hi</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">f_min</span></code>, <code class="docutils literal notranslate"><span class="pre">f_max</span></code> in Hz; working, guard and evaluation bands retain their distinct meanings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">centre</span></code>, <code class="docutils literal notranslate"><span class="pre">cell_centres</span></code>, <code class="docutils literal notranslate"><span class="pre">cell_centred</span></code>, <code class="docutils literal notranslate"><span class="pre">cell_centred_layer</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">center</span></code>, <code class="docutils literal notranslate"><span class="pre">cell_centers</span></code>, <code class="docutils literal notranslate"><span class="pre">cell_centered</span></code>, <code class="docutils literal notranslate"><span class="pre">cell_centered_layer</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p>Degree-valued <code class="docutils literal notranslate"><span class="pre">phase=...</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">phase_deg=...</span></code>; <code class="docutils literal notranslate"><span class="pre">angle_deg</span></code>, <code class="docutils literal notranslate"><span class="pre">twist_deg</span></code>, <code class="docutils literal notranslate"><span class="pre">draft_deg</span></code>, <code class="docutils literal notranslate"><span class="pre">phase_advance_deg</span></code> and the S-parameter output selector <code class="docutils literal notranslate"><span class="pre">phase(deg=...)</span></code> remain.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AnalysisTD.estimate()</span></code>, inherited scattering <code class="docutils literal notranslate"><span class="pre">estimate()</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">estimate_memory()</span></code>, returning a <code class="docutils literal notranslate"><span class="pre">MemoryEstimate</span></code> with <code class="docutils literal notranslate"><span class="pre">n_runs</span></code>; scenario assumptions do not configure a later run.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Mesh.from_grid(regions=[(material,</span> <span class="pre">six_value_bbox)])</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">regions=[(material,</span> <span class="pre">((x0,</span> <span class="pre">y0,</span> <span class="pre">z0),</span> <span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">z1)))]</span></code>; assignment still uses cell centers and later regions overwrite earlier ones.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Raw and CAD BREP pairs</p></td>
+<td><p>Both retained: ordered raw metre-space <code class="docutils literal notranslate"><span class="pre">read_brep(path)</span></code> / <code class="docutils literal notranslate"><span class="pre">write_brep(shapes,</span> <span class="pre">path)</span></code> and geometry-object CAD <code class="docutils literal notranslate"><span class="pre">import_brep(path,</span> <span class="pre">units=...)</span></code> / <code class="docutils literal notranslate"><span class="pre">export_brep(path,</span> <span class="pre">geometry,</span> <span class="pre">units=...)</span></code>. Their argument order differs deliberately.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="physical-frequency-and-anchors">
+<h2>Physical frequency and anchors<a class="headerlink" href="#physical-frequency-and-anchors" title="Link to this heading">#</a></h2>
+<p>Previously an angular frequency was passed to a <code class="docutils literal notranslate"><span class="pre">Mode</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mode</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mf">10e9</span><span class="p">)</span>  <span class="c1"># previous API</span>
+</pre></div>
+</div>
+<p>Now the evaluation boundary takes Hz and converts once internally:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mode</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">)</span>
+<span class="n">mode</span><span class="o">.</span><span class="n">z_modal</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">omega_c</span></code> remains a stored angular cutoff in rad/s. Old positional and
+<code class="docutils literal notranslate"><span class="pre">omega=</span></code> evaluations fail, preventing a silent factor of 2π error.</p>
+<p>A rectangular declaration’s former <code class="docutils literal notranslate"><span class="pre">center</span></code> was already its corner, so copy
+its value unchanged:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">ports</span>
+
+<span class="n">port</span> <span class="o">=</span> <span class="n">ports</span><span class="o">.</span><span class="n">PortAnalytical</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"input"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"zmin"</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="s2">"rect_wg"</span><span class="p">,</span>
+    <span class="n">width</span><span class="o">=</span><span class="mf">22.86e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">10.16e-3</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">3e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The declaration uses world 3D coordinates. A <code class="docutils literal notranslate"><span class="pre">PortSpecRectWG</span></code> uses the two
+coordinates along the global tangential axes, ordered by axis number.
+Neither form denotes a midpoint. Coax declarations continue using <code class="docutils literal notranslate"><span class="pre">center</span></code>.</p>
+</section>
+<section id="normalization-selection-and-counts">
+<h2>Normalization, selection and counts<a class="headerlink" href="#normalization-selection-and-counts" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">monitor.normalize_to_excitation(signal)</span></code> changes the reference used to read
+its field response. Calling it again replaces that reference. Raw DFT bins
+and <code class="docutils literal notranslate"><span class="pre">spectrum_raw</span></code> remain unchanged. <code class="docutils literal notranslate"><span class="pre">result.renormalize(50)</span></code> instead returns
+a network referenced to 50 Ω and leaves the original network untouched.</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">recording.plot(frame=2)</span></code> or <code class="docutils literal notranslate"><span class="pre">recording.plot(t=1e-9)</span></code>; use
+<code class="docutils literal notranslate"><span class="pre">spectrum.plot(f=10e9,</span> <span class="pre">phase_deg=90)</span></code> for a complex field picture. Eigenmode
+results use <code class="docutils literal notranslate"><span class="pre">result.show(mode=2,</span> <span class="pre">render_mode=&quot;none&quot;)</span></code> to build a scene for
+physical mode 2 without displaying it. Supported field choices are unchanged.</p>
+<p><code class="docutils literal notranslate"><span class="pre">project.result(run=&quot;run_2&quot;)</span></code>, <code class="docutils literal notranslate"><span class="pre">project.monitors_for(run=&quot;run_2&quot;)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">magnelio.resume(project,</span> <span class="pre">run=&quot;run_2&quot;)</span></code> select a stored run. An exact run
+name takes precedence; scattering <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code> selectors remain supported.
+A sole run may be implicit, but multiple runs require an unambiguous choice.</p>
+<p><code class="docutils literal notranslate"><span class="pre">n_steps_by_run</span></code> exposes each aggregate run’s solver count. <code class="docutils literal notranslate"><span class="pre">max_run_steps</span></code>
+is their maximum, never their sum. To inspect one stored run’s settings, use
+<code class="docutils literal notranslate"><span class="pre">project.result(run=...).settings.n_steps</span></code>. Combined settings do not silently
+report a representative run’s count. Signal extrapolation length is separate
+from the number of steps the solver actually marched.</p>
+</section>
+<section id="stored-projects-and-cad-exchange">
+<h2>Stored projects and CAD exchange<a class="headerlink" href="#stored-projects-and-cad-exchange" title="Link to this heading">#</a></h2>
+<p>Supported files keep their existing schema and stable disk vocabulary.
+Readers and reconstruction recipes map legacy <code class="docutils literal notranslate"><span class="pre">center</span></code>, <code class="docutils literal notranslate"><span class="pre">width_a</span></code>, <code class="docutils literal notranslate"><span class="pre">height_b</span></code>,
+<code class="docutils literal notranslate"><span class="pre">phase</span></code>, <code class="docutils literal notranslate"><span class="pre">freqs</span></code> and surface-layer coordinate keys explicitly. Corner values,
+degree units, angular cutoffs, excitation identities, raw bins and checkpoints
+retain their meaning. File compatibility does not restore old Python calls.
+Unsupported file versions still fail explicitly.</p>
+<p>For CAD workflows use <code class="docutils literal notranslate"><span class="pre">import_brep</span></code> / <code class="docutils literal notranslate"><span class="pre">export_brep</span></code> with explicit units and
+Magnelio geometry objects; see the <a class="reference internal" href="methods/cad-import.html"><span class="std std-doc">CAD exchange guide</span></a>.
+Use raw <code class="docutils literal notranslate"><span class="pre">read_brep</span></code> / <code class="docutils literal notranslate"><span class="pre">write_brep</span></code> only when transporting an ordered sequence
+of OpenCascade shapes already expressed in metres. Raw I/O preserves sequence
+order and carries no material or named-topology metadata.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="methods/implementation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Implementation engineering (non-method)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="migration-geometry.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Upgrading to 0.9: geometry construction</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#complete-mapping">Complete mapping</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#physical-frequency-and-anchors">Physical frequency and anchors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#normalization-selection-and-counts">Normalization, selection and counts</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stored-projects-and-cad-exchange">Stored projects and CAD exchange</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/migration-api-naming.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -39,7 +39,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The first tutorial &lt;plot_01_parallel_plate&gt; needed no geometry at all — one air brick, and every conductor was a boundary face.  This one builds a real three-dimensional structure: a short piece of RG-58 class coaxial cable, modelled from solid primitives and a boolean operation.  Along the way it introduces the second way of declaring a port — by naming the analytical family of its cross-section — and the habit of reading a port report that carries both a numerical and a reference impedance.">
+    <div class="sphx-glr-thumbcontainer" tooltip="The first tutorial needed no geometry at all — one air brick, and every conductor was a boundary face.  This one builds a real three-dimensional structure: a short piece of RG-58 class coaxial cable, modelled from solid primitives and a boolean operation.  Along the way it introduces the second way of declaring a port — by naming the analytical family of its cross-section — and the habit of reading a port report that carries both a numerical and a reference impedance.">
 
 .. only:: html
 
@@ -56,7 +56,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The lines simulated so far were uniform and matched, so a single excitation told the whole story.  This tutorial puts a real discontinuity into the coaxial line of the previous tutorial &lt;plot_02_coax_line&gt; — a short air gap in the dielectric — and asks the questions that need the complete scattering matrix: how much reflects from each side, and is the device symmetric and reciprocal?  One run call with both ports excited delivers the full matrix; a three-section transmission-line cascade provides the closed-form reference.">
+    <div class="sphx-glr-thumbcontainer" tooltip="The lines simulated so far were uniform and matched, so a single excitation told the whole story.  This tutorial puts a real discontinuity into the coaxial line of the previous tutorial — a short air gap in the dielectric — and asks the questions that need the complete scattering matrix: how much reflects from each side, and is the device symmetric and reciprocal?  One run call with both ports excited delivers the full matrix; a three-section transmission-line cascade provides the closed-form reference.">
 
 .. only:: html
 
@@ -243,7 +243,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Bricks, cylinders, cones and spheres carry most models, and Boolean operations carry most of the rest.  Sooner or later a part resists both: a curved electrode that is a slice of a tube, a pad with one rounded end, a track that follows a route, a taper between two different cross-sections.  Cutting those out of primitives means inventing tool bodies whose only purpose is to be subtracted, and getting their dimensions right by hand.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Start with a primitive when it fits. For everything else, Magnelio offers curves, profiles, owned faces and CAD operations. This visual tour builds useful shapes with short recipes. The geometry methods guide explains their full contracts and limits.">
 
 .. only:: html
 
@@ -254,7 +254,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Profiles: shapes the primitives do not cover</div>
+      <div class="sphx-glr-thumbnail-title">Geometry toolbox</div>
     </div>
 
 
@@ -272,40 +272,6 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Antenna symmetry: a half-wave dipole as a half model</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Not every model is drawn in Magnelio.  A connector, a housing, a machined part — anything with a mechanical drawing behind it — already exists in a CAD system, and rebuilding it with primitives is both work and a source of discrepancies between the simulated and the manufactured part.">
-
-.. only:: html
-
-  .. image:: /tutorials/images/thumb/sphx_glr_plot_16_cad_import_thumb.png
-    :alt:
-
-  :doc:`/tutorials/plot_16_cad_import`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Importing a CAD model</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Tutorial 09 built a microstrip line out of three bricks.  That works for a line, and stops working the moment the board has more than one trace on it: a real layout is drawn in a layout tool, and redrawing it with primitives is both work and a fresh source of discrepancies between what was simulated and what was manufactured.">
-
-.. only:: html
-
-  .. image:: /tutorials/images/thumb/sphx_glr_plot_17_pcb_import_thumb.png
-    :alt:
-
-  :doc:`/tutorials/plot_17_pcb_import`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Importing a circuit board</div>
     </div>
 
 
@@ -385,8 +351,6 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_13_dielectric_filter
    /tutorials/plot_14_profile_geometry
    /tutorials/plot_15_dipole_farfield
-   /tutorials/plot_16_cad_import
-   /tutorials/plot_17_pcb_import
    /tutorials/plot_18_periodic_tesla_cell
    /tutorials/19_cassegrain_reflector
    /tutorials/plot_20_plane_wave_scattering

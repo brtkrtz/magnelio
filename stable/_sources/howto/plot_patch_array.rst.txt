@@ -45,7 +45,7 @@ New compared with the antenna tutorials and the coupler pages:
 - **in-phase feeding of a second row without a meander**: the two rows
   face each other across the distribution line, which would feed them
   in anti-phase; sliding that line a quarter of a guided wavelength
-  off the array centre makes one arm half a wavelength longer than
+  off the array center makes one arm half a wavelength longer than
   the other and restores the phase — every arm stays straight;
 - a **microstrip port in an absorbing wall**: the array's 50 Ω trunk
   enters the model through a short shielded launch on the CPML face,
@@ -248,19 +248,19 @@ edge refinement of the Lange page, at several times the run time.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 3 x 22 x 22 cells
+      mesh | 3 x 22 x 22 = 1,452 cells | 527 KiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 3 x 26 x 22 cells
+      mesh | 3 x 26 x 22 = 1,716 cells | 621 KiB
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 3 x 26 x 22 cells
+      mesh | 3 x 26 x 22 = 1,716 cells | 621 KiB
     grid: trunk 44.7 ohm, transformer 63.2 ohm, arm 86.7 ohm
           arm/trunk = 1.94 (2), transformer/trunk = 1.41 (1.414)
           quarter wave (transformer) 5.51 mm, arm lambda_g 22.34 mm
@@ -303,7 +303,7 @@ are referenced to the line's own impedance on this grid.
 
 
     def trace(x0, y0, x1, y1, width):
-        """A trace of ``width`` along the centre line (x0, y0) -> (x1, y1), square ends."""
+        """A trace of ``width`` along the center line (x0, y0) -> (x1, y1), square ends."""
         x0, x1 = sorted((x0, x1))
         y0, y1 = sorted((y0, y1))
         return rect(x0 - width / 2, y0 - width / 2, x1 + width / 2, y1 + width / 2)
@@ -413,7 +413,7 @@ quarter wave before the column node, and splits again there into
 the two 100 Ω arms that feed the column's patches — the lower one
 from its top edge, the upper one from its bottom edge.  Fed like
 that, the rows radiate in anti-phase; the crossbar therefore sits
-:math:`\lambda_g/4` *below* the array centre, so the arm to the upper
+:math:`\lambda_g/4` *below* the array center, so the arm to the upper
 row is :math:`\lambda_g/2` longer than the arm to the lower row and
 the half-wave of line undoes the half-turn of the mirror.
 
@@ -423,7 +423,7 @@ the half-wave of line undoes the half-turn of the mirror.
 
 
     l_line = 5e-3  # element: feed line from the pin to the patch
-    delta = lam_g_arm / 4  # crossbar offset below the array centre
+    delta = lam_g_arm / 4  # crossbar offset below the array center
 
 
     def element(L, y_inset):
@@ -485,7 +485,7 @@ box's own power, is unaffected.
 
     def simulate(model):
         mesh = mio.Mesh.from_geometry(model, mesh_control, f_max=f_max)
-        farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
+        farfield = monitors.MonitorFarFieldFrequency(frequencies=[f0], name="farfield")
         analysis = mio.AnalysisScatteringTD(mesh=mesh, f_min=f_min, monitors=(farfield,), verbose=False)
         result = analysis.run(f_axis=f_axis, excited=["feed"])
         s11 = result.S("feed", "feed")
@@ -590,53 +590,53 @@ first would hand the trim a moving target.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 78 x 69 x 31 cells
+      mesh | 78 x 69 x 31 = 166,842 cells | 49 MiB
     --- element, cavity-model length, inset 0.25 L ---
     |S11| at f0      :   -2.6 dB
-    dip              :  -17.3 dB at 9.57 GHz
-    -10 dB band      : 9.45 - 9.68 GHz (2.3 %)
-    peak directivity :   7.06 dBi
-    realized gain    :   3.40 dBi
-    length 9.653 -> 9.238 mm
+    dip              :  -17.9 dB at 9.56 GHz
+    -10 dB band      : 9.44 - 9.68 GHz (2.4 %)
+    peak directivity :   7.05 dBi
+    realized gain    :   3.32 dBi
+    length 9.653 -> 9.229 mm
 
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 78 x 73 x 31 cells
+      mesh | 78 x 73 x 31 = 176,514 cells | 52 MiB
     --- element, trimmed length, inset 0.20 L ---
-    |S11| at f0      :  -12.6 dB
-    dip              :  -12.6 dB at 10.00 GHz
-    -10 dB band      : 9.89 - 10.10 GHz (2.1 %)
+    |S11| at f0      :  -13.1 dB
+    dip              :  -13.1 dB at 10.00 GHz
+    -10 dB band      : 9.89 - 10.11 GHz (2.2 %)
     peak directivity :   7.49 dBi
-    realized gain    :   7.35 dBi
+    realized gain    :   7.26 dBi
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 78 x 69 x 31 cells
+      mesh | 78 x 69 x 31 = 166,842 cells | 49 MiB
     --- element, trimmed length, inset 0.25 L ---
-    |S11| at f0      :  -15.9 dB
-    dip              :  -20.7 dB at 9.94 GHz
-    -10 dB band      : 9.82 - 10.07 GHz (2.5 %)
+    |S11| at f0      :  -17.0 dB
+    dip              :  -22.2 dB at 9.95 GHz
+    -10 dB band      : 9.82 - 10.08 GHz (2.6 %)
     peak directivity :   7.43 dBi
-    realized gain    :   7.40 dBi
+    realized gain    :   7.32 dBi
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 78 x 68 x 31 cells
+      mesh | 78 x 68 x 31 = 164,424 cells | 49 MiB
     --- element, trimmed length, inset 0.30 L ---
-    |S11| at f0      :   -8.3 dB
-    dip              :  -20.3 dB at 9.87 GHz
-    -10 dB band      : 9.76 - 9.97 GHz (2.1 %)
+    |S11| at f0      :   -8.7 dB
+    dip              :  -19.3 dB at 9.87 GHz
+    -10 dB band      : 9.77 - 9.97 GHz (2.0 %)
     peak directivity :   7.33 dBi
-    realized gain    :   6.64 dBi
+    realized gain    :   6.60 dBi
 
-    element: L = 9.24 mm, inset 2.31 mm
+    element: L = 9.23 mm, inset 2.31 mm
 
 
 
@@ -728,30 +728,28 @@ trims the length only.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (0.7 s)
       mesh | PEC masks
-      mesh | 134 x 123 x 39 cells (1.1 s total)
+      mesh | 134 x 123 x 39 = 642,798 cells | 189 MiB (0.7 s total)
     grid: 134 x 123 x 39 = 0.64 M cells
     --- array, element length ---
-    |S11| at f0      :  -14.3 dB
-    dip              :  -14.7 dB at 10.04 GHz
-    -10 dB band      : 9.87 - 10.21 GHz (3.4 %)
-    peak directivity :  12.92 dBi
-    realized gain    :  12.81 dBi
+    |S11| at f0      :  -14.8 dB
+    dip              :  -15.9 dB at 10.06 GHz
+    -10 dB band      : 9.87 - 10.26 GHz (3.9 %)
+    peak directivity :  12.80 dBi
+    realized gain    :  12.48 dBi
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (0.7 s)
       mesh | PEC masks
-      mesh | 134 x 123 x 39 cells (1.2 s total)
+      mesh | 134 x 123 x 39 = 642,798 cells | 189 MiB (0.7 s total)
     --- array, trimmed (L = 9.28 mm) ---
-    |S11| at f0      :  -14.4 dB
-    dip              :  -14.4 dB at 10.00 GHz
-    -10 dB band      : 9.84 - 10.17 GHz (3.3 %)
-    peak directivity :  12.99 dBi
-    realized gain    :  12.89 dBi
-    array gain over the element: 5.6 dB (four sources: 6.0 dB)
+    |S11| at f0      :  -15.6 dB
+    dip              :  -15.6 dB at 10.00 GHz
+    -10 dB band      : 9.82 - 10.20 GHz (3.8 %)
+    peak directivity :  12.90 dBi
+    realized gain    :  12.61 dBi
+    array gain over the element: 5.5 dB (four sources: 6.0 dB)
 
 
 
@@ -860,7 +858,7 @@ straight one used here.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (14 minutes 39.430 seconds)
+   **Total running time of the script:** (5 minutes 23.895 seconds)
 
 
 .. _sphx_glr_download_howto_plot_patch_array.py:

@@ -114,18 +114,58 @@ derived from the stored port signals: `proj.S("port1", "port3")`,
 `proj.plot_s(...)`.  The general time-domain analysis has no S-matrix;
 its runs are read through `run.result()`.
 
+### Selecting results from a large project
+
+Request the ports and excitation you want to inspect:
+
+```python
+proj.plot_s(("port1", "port3"), ("port4", "port3"))
+proj.plot_time_signals("port1", "port4", excited="port3")
+s13 = proj.S("port1", "port3")
+```
+
+A single S-parameter uses the selected excitation run, the incident wave
+at its driven channel and the outgoing wave at the observed channel.
+Only the required port records are read and evaluated. For band ports,
+the coupled recording channels of each involved port are decomposed
+together; selecting a mode does not discard its coupled projections.
+`channels`, `excitations`, `dt`, `f_axis` and `settings` read metadata
+without evaluating S-parameters or loading the port time records.
+
+Finished runs reuse their calibrated port spectra across S, magnitude
+and phase queries, including repeated queries on the same custom
+frequency axis. Time plots reuse the corrected incident/outgoing wave
+pair. Spectrum, impedance, time-wave and matrix caches retain limited
+numbers of entries, so switching among many
+ports or frequency axes can cause an older calculation to be repeated.
+Fourier evaluation shares temporary blocks between records instead of
+allocating a complete frequency-by-time matrix for every record.
+
+`proj.s_params` requests the complete available S-matrix. A plot without
+port selections likewise requests all available entries. General
+impedance renormalization requires the coupled square S-matrix.
+`proj.signals` and `proj.result(run)` materialize their full requested
+time-domain records, so these broad reads can consume substantially more
+memory than selecting a few S-parameters or time signals.
+
+Running and aborted runs are read again rather than treated as final
+cached results. The common flushed prefix of all recorded streams is
+used even when only some ports are selected. This keeps the selected
+signals consistent with the excitation while a writer is appending data.
+
 
 ## A project that is still being written
 
 Every energy sample the solver takes goes to disk at once, and the run
 index is replaced atomically whenever a run starts or ends, so a
 second process may open the project while the solver marches and see
-its current state.  Until the project is finished, the reader re-reads
+its current state.  The reader re-reads
 the index whenever the file changed — typing `proj` again shows the
 current step count, energy and elapsed time without any call on your
-side.  Once the project is `done` or `aborted` the parsed index is
-kept; {meth}`~magnelio.io.Project.refresh` re-reads it, for a run that
-was resumed elsewhere after you opened the project.
+side. A finished reader also notices an index change when a run is
+resumed elsewhere, and discards results derived from the earlier record.
+{meth}`~magnelio.io.Project.refresh` explicitly drops all cached result
+data while keeping the mesh and geometry.
 
 A `running` run's `elapsed` counts the time since its current march
 started on top of what earlier marches booked, so the clock in the
@@ -195,7 +235,7 @@ no criterion — because the first samples of a run are the empty grid,
 which in dB is a plunge to −3000 that would squash the decay into a
 line along the top; `floor_db=` pins the lower end by hand.
 
-`monitor()` returns a notebook widget — the run table above the
+`watch_panel()` returns a notebook widget — the run table above the
 energy plot — that a background thread refreshes every few seconds
 until the project is finished.  Left as the last expression of a
 cell, the cell returns at once and the panel keeps moving while other
@@ -247,3 +287,23 @@ prompt with what it is, how large it is and what state it is in — never
 with its arrays.  In a notebook the same summaries render as tables.
 The arrays are one attribute away (`result.energy_trace`,
 `s_params.matrix`); the summary is the part meant to be read.
+
+## Selecting a run and reading its count
+
+`name` names a new `AnalysisTD.run(name=...)`. Once stored, select it with
+`project.result(run=...)`, `monitors_for(run=...)`, `energy_trace(run=...)`,
+`checkpoint_state(run=...)` or `resume(project, run=...)`. An exact stored
+name wins over a scattering `(port, mode)` interpretation. A sole run can be
+implicit; multiple runs require a selector. `excited` on scattering launch
+and power-wave access continues to mean an actual excitation.
+
+A single `TDResult` and `Run` expose `n_steps`. Scattering aggregates expose
+`n_steps_by_run` and `max_run_steps`, the maximum count rather than a sum.
+`project.result(run=...).settings.n_steps` identifies one run;
+`project.settings.n_steps` is absent for a combined result. Extrapolating
+signals does not add solver steps to their provenance.
+
+For observation, `watch_panel()` immediately returns a notebook widget with
+`stop()`. `watch()` supplies a generator or callback, while `follow()` blocks
+and displays progress. See the [naming migration](../migration-api-naming.md)
+when upgrading existing scripts.

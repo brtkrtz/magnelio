@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,23 +26,23 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=dbee5847"></script>
+    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -52,7 +51,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/sources-monitors';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -114,7 +113,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -163,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -175,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -190,6 +189,27 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -231,7 +251,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -262,15 +282,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -307,7 +327,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -316,7 +336,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -361,6 +381,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -370,6 +397,20 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -441,15 +482,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -484,7 +525,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -507,11 +548,12 @@
 <li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="projects-and-runs.html">Projects and runs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-planning.html">Memory planning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -622,8 +664,8 @@ independent run, listed in <code class="docutils literal notranslate"><span clas
 waveform per excited mode from the analysis band: a Gaussian
 pulse over <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">f_max]</span></code> for TEM and lumped ports, a modulated
 Gaussian over <code class="docutils literal notranslate"><span class="pre">[max(f_cutoff,</span> <span class="pre">f_min),</span> <span class="pre">f_max]</span></code> above a mode’s
-cut-off, so that no pulse energy sits below cut-off where it would
-be totally reflected.  <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD(waveform=...)</span></code> overrides
+cut-off, reducing below-cutoff spectral content that would be
+totally reflected.  <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD(waveform=...)</span></code> overrides
 that choice with any waveform; a waveform reaching above the
 analysis band warns.  Simultaneous excitations of several ports and
 sources in one run (<code class="docutils literal notranslate"><span class="pre">excitations=[Excitation(...),</span> <span class="pre">...]</span></code>) are the
@@ -633,6 +675,58 @@ analysis, which rejects the argument.</p>
 a source injects: <code class="docutils literal notranslate"><span class="pre">operator.set_excitation(mode,</span> <span class="pre">waveform)</span></code> and
 <code class="docutils literal notranslate"><span class="pre">source.set_excitation(waveform,</span> <span class="pre">amplitude=...,</span> <span class="pre">delay=...)</span></code> — the
 solver-facing form of the same triad.</p>
+<section id="gaussian-pulse-width-and-duration">
+<h3>Gaussian pulse width and duration<a class="headerlink" href="#gaussian-pulse-width-and-duration" title="Link to this heading">#</a></h3>
+<p>Both Gaussian classes accept <code class="docutils literal notranslate"><span class="pre">edge_attenuation_db</span></code>, a positive amplitude
+attenuation in dB, default <strong>25</strong>. It sets the ideal continuous spectrum
+at the upper band edge:</p>
+<div class="math notranslate nohighlight">
+\[
+\frac{|G(f_\mathrm{max})|}{|G(f_\mathrm{ref})|}
+=10^{-D/20},\qquad D=\texttt{edge\_attenuation\_db}.
+\]</div>
+<p>The reference is DC for <code class="docutils literal notranslate"><span class="pre">WaveformGaussian</span></code> and the carrier centre
+<code class="docutils literal notranslate"><span class="pre">(f_min</span> <span class="pre">+</span> <span class="pre">f_max)/2</span></code> for <code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated</span></code>. The modulated
+definition includes both mirrored lobes of its real-valued spectrum.
+Near DC those lobes overlap, strengthening excitation at the lower
+edge; equal attenuation at both edges is therefore not generally possible.
+The carrier centre is the specified reference, even when overlap shifts
+the exact spectral maximum slightly. Baseband and modulated pulses are
+different shapes; choosing a positive lower edge switches to the latter.</p>
+<p>At 25 dB the edge has about 5.6% of the reference spectral amplitude.
+Increasing the attenuation lengthens the pulse and reduces out-of-band
+excitation, while making the S-parameter normalisation more sensitive to
+residual record error at the edge. A Gaussian has spectral tails beyond
+its nominal band. The attenuation describes excitation coverage, not
+the accuracy of a measured S parameter. Weak edges and cutoff ringdown
+can require extending the record despite an energy or port-signal stop.</p>
+<p>The envelope is</p>
+<div class="math notranslate nohighlight">
+\[
+g(t)=\exp[-((t-t_\mathrm{peak})/\tau)^2],\qquad
+t_\mathrm{peak}=4.5\tau,\qquad t_\mathrm{end}=9\tau.
+\]</div>
+<p><code class="docutils literal notranslate"><span class="pre">tau</span></code> is the envelope time constant, with statistical standard deviation
+<code class="docutils literal notranslate"><span class="pre">tau/sqrt(2)</span></code>. The endpoint envelope is about <span class="math notranslate nohighlight">\(1.6\cdot10^{-9}\)</span> of its
+peak. <code class="docutils literal notranslate"><span class="pre">t_end</span></code> is an effective duration: evaluation continues along the
+Gaussian tail afterwards. The analysis derives its duration estimate
+from this value, including each excitation’s delay and phase delay.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalysisScatteringTD</span><span class="p">,</span> <span class="n">signals</span>
+
+<span class="n">pulse</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussian</span><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="mf">6e9</span><span class="p">,</span> <span class="n">edge_attenuation_db</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">waveform</span><span class="o">=</span><span class="n">pulse</span><span class="p">)</span>
+<span class="c1"># Read the physical timing without assuming a fixed number of periods.</span>
+<span class="n">peak_time</span><span class="p">,</span> <span class="n">duration</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">peak_time</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">t_end</span>
+
+<span class="n">band_pulse</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussianModulated</span><span class="p">(</span>
+    <span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">,</span> <span class="n">edge_attenuation_db</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Stored runs retain their resolved width and peak time. Continuing an older
+project preserves the original pulse, including the earlier timing,
+while newly constructed waveforms use the current defaults.</p>
+</section>
 </section>
 <section id="the-general-time-domain-analysis">
 <h2>The general time-domain analysis<a class="headerlink" href="#the-general-time-domain-analysis" title="Link to this heading">#</a></h2>
@@ -652,13 +746,20 @@ excitation has died out, <code class="docutils literal notranslate"><span class=
 generous number of diagonal transits of the domain.  The estimate
 sets the energy-check cadence and the checkpoint stride; the run
 itself ends on the energy or port-signal criterion.</p></li>
+<li><p>Energy decay can end a run only after every finite excitation has
+reached its nominal end, including its effective delay. Frequency-
+tracked port drives also complete their synthesised buffers. A plane
+wave includes spatial retardation at its injection faces. The
+port-signal criterion retains its additional transit margin. These
+guards also apply when continuing a stored run; an explicit duration
+or step bound can deliberately end a run sooner.</p></li>
 <li><p>A continuous-wave waveform (<code class="docutils literal notranslate"><span class="pre">WaveformSine</span></code>, a <code class="docutils literal notranslate"><span class="pre">WaveformStep</span></code>
 without <code class="docutils literal notranslate"><span class="pre">fall_time</span></code>) never decays, so such a run needs an explicit
 length — <code class="docutils literal notranslate"><span class="pre">run(t_end=…)</span></code> in seconds or <code class="docutils literal notranslate"><span class="pre">total_time_steps=</span></code> — and
 the decay criteria are switched off.</p></li>
 <li><p>Frequency-domain monitors keep their raw transient bins.  With
 several drives there is no single reference spectrum to divide out,
-so <code class="docutils literal notranslate"><span class="pre">result.renormalize(name)</span></code> names the excitation the monitors
+so <code class="docutils literal notranslate"><span class="pre">result.normalize_to_excitation(name)</span></code> names the excitation the monitors
 should refer to; the scattering analysis does this for you with the
 excited channel’s waveform.</p></li>
 </ul>
@@ -845,6 +946,15 @@ precisely the time integral of its current on its two end nodes and no
 charge anywhere else — to the last bit of double precision.  An open
 current path <em>is</em> a consistent oscillating dipole, with the right
 near-zone electrostatic part; there is nothing to clean up.</p>
+<p>A unipolar pulse on an open path leaves opposite charges at its ends
+after the current finishes. The resulting electrostatic field does not
+decay. A finite rectangular Fourier record cuts off that field and can
+contaminate a far-field pattern, even after the radiating transient has
+left the box. For a transient measurement of an AC radiation pattern,
+use a modulated pulse whose net time-integrated current is negligible,
+and record its complete response. This finite-record limitation follows
+from the endpoint-charge identity above (in-house analysis); the far-field
+monitor does not automatically complete a static tail.</p>
 <p>Edges the solver holds at zero — inside a perfect conductor, or
 tangential to a PEC wall — cannot take an impressed current.  A path
 crossing such a region radiates less than it was asked to, and says so
@@ -866,7 +976,7 @@ averaged until a picture asks for it:</p>
 <ul class="simple">
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldState</span></code></strong> — one snapshot: the six components at their own
 positions (<code class="docutils literal notranslate"><span class="pre">component</span></code>, <code class="docutils literal notranslate"><span class="pre">positions</span></code>), at arbitrary points (<code class="docutils literal notranslate"><span class="pre">at</span></code>),
-averaged onto cell centres (<code class="docutils literal notranslate"><span class="pre">cell_centred</span></code>), sliced (<code class="docutils literal notranslate"><span class="pre">plot</span></code>), in 3D
+averaged onto cell centres (<code class="docutils literal notranslate"><span class="pre">cell_centered</span></code>), sliced (<code class="docutils literal notranslate"><span class="pre">plot</span></code>), in 3D
 (<code class="docutils literal notranslate"><span class="pre">show</span></code>), continued across the model’s symmetry planes
 (<code class="docutils literal notranslate"><span class="pre">mirrored</span></code>), and written back into a run as an initial field.
 Eigenmodes hand one out per mode.</p></li>
@@ -876,7 +986,7 @@ later, for the magnetic one; <code class="docutils literal notranslate"><span cl
 <code class="docutils literal notranslate"><span class="pre">FieldState</span></code>s, <code class="docutils literal notranslate"><span class="pre">component(name)</span></code> the whole stack; a frame becomes
 the start of a new run (<code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_recording</span></code>).</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code></strong> — complex frames, one per frequency:
-<code class="docutils literal notranslate"><span class="pre">at_frequency(f)</span></code> is the complex pattern, <code class="docutils literal notranslate"><span class="pre">snapshot(f,</span> <span class="pre">phase=…)</span></code> its
+<code class="docutils literal notranslate"><span class="pre">at_frequency(f)</span></code> is the complex pattern, <code class="docutils literal notranslate"><span class="pre">snapshot(f,</span> <span class="pre">phase_deg=…)</span></code> its
 real field at an instant.</p></li>
 </ul>
 <p>Both series may hold a subset of the six components (<code class="docutils literal notranslate"><span class="pre">components</span></code>);
@@ -977,7 +1087,7 @@ at the excitation source) is in-house bookkeeping (DD-085).</p>
 its region — a copy of the solver’s own samples, nothing averaged — and
 hands them out as a <code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code> (<code class="docutils literal notranslate"><span class="pre">monitor.recording</span></code>) or, for the
 running transform, a <code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code> (<code class="docutils literal notranslate"><span class="pre">monitor.spectrum</span></code>); a
-cell-centred array is one call away (<code class="docutils literal notranslate"><span class="pre">recording.cell_centred(...)</span></code>),
+cell-centred array is one call away (<code class="docutils literal notranslate"><span class="pre">recording.cell_centered(...)</span></code>),
 but nothing is averaged until asked for.  The recording’s
 <code class="docutils literal notranslate"><span class="pre">times</span></code> are the instants of the electric field, <code class="docutils literal notranslate"><span class="pre">times_h</span></code> those of the
 magnetic one, half a step later.  A project store keeps the same
@@ -988,7 +1098,7 @@ field lies on the viewer’s cutting plane and the position slider walks
 it through the recorded volume — see <a class="reference internal" href="viewer.html"><span class="std std-doc">the viewer chapter</span></a>.</p>
 <p>A plotted field plane is one <em>layer</em> of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
-title is the cell-centre coordinate the request snapped to.  Geometry
+title is the cell-center coordinate the request snapped to.  Geometry
 overlays follow the same rule: thin wires, discrete ports and lumped
 elements are drawn when they lie inside the displayed layer, so a wire
 declared on the grid nodes half a cell away still appears in the
@@ -1052,7 +1162,7 @@ time monitor (<code class="docutils literal notranslate"><span class="pre">&lt;m
 frequency monitor (<code class="docutils literal notranslate"><span class="pre">f_0000.vtr</span></code>, …), collected by a <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;.pvd</span></code>
 whose axis is the frame’s electric instant, or its frequency.  The
 files hold <em>cell data</em>: the recorded components averaged onto the
-cell centres at export time — the numbers <code class="docutils literal notranslate"><span class="pre">recording.cell_centred()</span></code>
+cell centres at export time — the numbers <code class="docutils literal notranslate"><span class="pre">recording.cell_centered()</span></code>
 returns — and the vectors <code class="docutils literal notranslate"><span class="pre">E</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code> where a group was recorded
 whole.  ParaView reads plain VTK and never touches the staggered
 frames in <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> or <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code>.  The copy takes about as
@@ -1135,6 +1245,23 @@ helped, since ParaView’s own filter preamble runs before any script of
 ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview</span> <span class="pre">--script=</span></code> there, or a newer ParaView.</p>
 </section>
 </section>
+<section id="coordinates-sampled-axes-and-phase-inputs">
+<h2>Coordinates, sampled axes and phase inputs<a class="headerlink" href="#coordinates-sampled-axes-and-phase-inputs" title="Link to this heading">#</a></h2>
+<p>Requested frequency samples on monitors are <code class="docutils literal notranslate"><span class="pre">frequencies</span></code>; returned sampled
+spectral axes are <code class="docutils literal notranslate"><span class="pre">f_axis</span></code>, including <code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code> and <code class="docutils literal notranslate"><span class="pre">Signal1D</span></code>.
+Eigenmode results retain <code class="docutils literal notranslate"><span class="pre">frequencies</span></code> for their physical eigenfrequencies.
+Use <code class="docutils literal notranslate"><span class="pre">frame</span></code> for a recording index and <code class="docutils literal notranslate"><span class="pre">t</span></code> or <code class="docutils literal notranslate"><span class="pre">f</span></code> for a physical frame choice;
+conflicting selectors fail. Degree-valued excitation, sine-wave and display
+inputs are <code class="docutils literal notranslate"><span class="pre">phase_deg</span></code>, with the same sign and delay convention as before.</p>
+<p><code class="docutils literal notranslate"><span class="pre">normalize_to_excitation(signal)</span></code> changes a frequency monitor’s response
+reference and can replace it later. <code class="docutils literal notranslate"><span class="pre">is_normalized_to_excitation</span></code> reports
+that state. Raw bins and <code class="docutils literal notranslate"><span class="pre">spectrum_raw</span></code> retain their original values.
+Networks separately use <code class="docutils literal notranslate"><span class="pre">renormalize(z_ref)</span></code> to produce a new S-matrix.</p>
+<p>A surface record’s <code class="docutils literal notranslate"><span class="pre">normal_positions</span></code> holds layer coordinates in metres.
+<code class="docutils literal notranslate"><span class="pre">ComponentRecord.at(...,</span> <span class="pre">position=...)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">FaceRecord.resample(...,</span> <span class="pre">position=...)</span></code> interpolate at that coordinate;
+<code class="docutils literal notranslate"><span class="pre">normal</span></code> remains an axis or vector in APIs that describe orientation.</p>
+</section>
 </section>
 
 
@@ -1184,7 +1311,10 @@ ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sources-waveforms-and-excitations">Sources, waveforms and excitations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sources-waveforms-and-excitations">Sources, waveforms and excitations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gaussian-pulse-width-and-duration">Gaussian pulse width and duration</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-general-time-domain-analysis">The general time-domain analysis</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#incident-fields-on-a-total-field-scattered-field-box">Incident fields on a total-field/scattered-field box</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#initial-fields">Initial fields</a></li>
@@ -1202,6 +1332,7 @@ ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-of-the-two-files-to-open">Which of the two files to open</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#coordinates-sampled-axes-and-phase-inputs">Coordinates, sampled axes and phase inputs</a></li>
 </ul>
   </nav></div>
 
@@ -1227,8 +1358,8 @@ ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1249,7 +1380,6 @@ ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -1262,7 +1392,7 @@ ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

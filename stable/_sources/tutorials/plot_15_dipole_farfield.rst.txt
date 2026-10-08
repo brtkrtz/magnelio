@@ -163,7 +163,7 @@ symmetry plane automatically.
     )
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells, z from {mesh.grid.z[0] * 1e3:.0f} mm")
 
-    farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
+    farfield = monitors.MonitorFarFieldFrequency(frequencies=[f0], name="farfield")
 
     analysis = mio.AnalysisScatteringTD(
         mesh=mesh,
@@ -187,7 +187,7 @@ symmetry plane automatically.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 46 x 46 x 55 cells
+      mesh | 46 x 46 x 55 = 116,380 cells | 34 MiB
     grid: 46 x 46 x 55 cells, z from 0 mm
 
 
@@ -245,7 +245,7 @@ what keeps it away.
  .. code-block:: none
 
     resonance (Im Zin = 0): 2.45 GHz
-    feed resistance there:  75.4 Ohm (thin-dipole textbook: ~73)
+    feed resistance there:  74.5 Ohm (thin-dipole textbook: ~73)
 
 
 
@@ -289,9 +289,9 @@ and the peak lands at the half-wave dipole's 2.15 dBi.
 
  .. code-block:: none
 
-    peak directivity:   2.15 dBi
-    peak realized gain: 2.07 dBi
-    radiated power:     0.982 W per incident W
+    peak directivity:   2.14 dBi
+    peak realized gain: 2.10 dBi
+    radiated power:     0.991 W per incident W
 
 
 
@@ -338,7 +338,7 @@ full-model answers.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 26.573 seconds)
+   **Total running time of the script:** (0 minutes 16.138 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_15_dipole_farfield.py:

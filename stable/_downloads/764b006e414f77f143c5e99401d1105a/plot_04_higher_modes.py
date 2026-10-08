@@ -80,7 +80,7 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # ---------------
 
 analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
-report = analysis.solve_ports()["port1"]
+report = analysis.solve_ports(["port1"])["port1"]
 print(report)
 
 # %%
@@ -101,7 +101,7 @@ print(report)
 
 fig, axes = plt.subplots(1, 3, figsize=(12, 3.6))
 for m, ax in enumerate(axes):
-    report.modes[m].plot(field="E", ax=ax, title=report.modes[m].name, geometry=model)
+    report.modes[m].plot(component="E", ax=ax, title=report.modes[m].name, geometry=model)
 fig.tight_layout()
 
 # %%

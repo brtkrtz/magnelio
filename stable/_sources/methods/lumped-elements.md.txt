@@ -94,13 +94,29 @@ terminal signals stays a half-model quantity, so a directly measured
 $-V/I$ of a passive load in a magnetic plane reads the doubled
 device.
 
+(edge-path-rasterisation)=
 ## Edge-path rasterisation
 
 Lumped elements and thin wires ride on a canonical curve rasteriser
 that converts an arbitrary polyline/curve into an ordered, directed
 staircase of grid edges with per-edge orientation signs
-(`circuit/rasterize.py`, DD-076), plus the line integral
-`integrate_E` along the path.  This is in-house infrastructure.
+(`circuit.rasterize_curve`), plus the line integral
+`circuit.integrate_E` along the path. This is in-house infrastructure.
+
+The integral takes a physical `FieldState` in V/m and returns voltage:
+a real time-domain frame gives a `float`, a complex frequency-domain
+frame gives a `complex` phasor with its full phase. It sums
+$\sum_e s_e E_e\,\Delta l_e$ without conjugating the field. Reversing
+the path negates the result; integrating a snapshot at phase $\phi$
+gives $\mathrm{Re}(V e^{j\phi})$ under the library's phasor convention.
+The solver's raw edge voltages already include edge length and must
+not be passed as physical fields.
+
+In time-varying fields the integral can depend on the chosen path; it
+is not generally an endpoint potential difference. The curve is snapped
+to the grid and followed as a staircase, with the same geometric limits
+as the rasteriser. See [Measure voltage along a field path](../howto-voltage-integrals.md)
+for a frequency-monitor recipe and normalization rules.
 
 ## Paths: any direction, at a measured price
 

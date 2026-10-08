@@ -124,7 +124,7 @@ ax.set_title("Stored energy in the grid, one curve per run")
 # A panel that keeps itself current
 # ---------------------------------
 #
-# In a notebook, ``proj.monitor()`` returns a widget: the run table
+# In a notebook, ``proj.watch_panel()`` returns a widget: the run table
 # above the energy plot, refreshed from a background thread every few
 # seconds until the project is finished.  Leave it as the last
 # expression of a cell; the cell returns at once and the panel keeps
@@ -134,7 +134,7 @@ ax.set_title("Stored energy in the grid, one curve per run")
 # assembled here, not shown.
 
 try:
-    panel = proj.monitor(interval=2.0)
+    panel = proj.watch_panel(interval=2.0)
 except ImportError:
     panel = None
 else:

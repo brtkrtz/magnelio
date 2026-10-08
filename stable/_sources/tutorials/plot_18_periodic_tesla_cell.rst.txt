@@ -40,7 +40,7 @@ advance on the eigenmode analysis, and the cell's outline — an
 elliptical arc, a straight wall and a circular arc joined tangentially
 — drawn with :class:`~magnelio.geo.Path`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-26
+.. GENERATED FROM PYTHON SOURCE LINES 24-25
 
 .. code-block:: Python
    :dedent: 1
@@ -53,8 +53,7 @@ elliptical arc, a straight wall and a circular arc joined tangentially
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 28-60
+.. GENERATED FROM PYTHON SOURCE LINES 27-59
 
 The cell
 --------
@@ -89,10 +88,9 @@ placed, the straight wall is their common tangent.  A short root
 search finds the point on the ellipse whose tangent line touches the
 circle.
 
-.. GENERATED FROM PYTHON SOURCE LINES 60-110
+.. GENERATED FROM PYTHON SOURCE LINES 59-109
 
 .. code-block:: Python
-
 
     import math
     import warnings
@@ -103,6 +101,7 @@ circle.
 
     import magnelio as mio
     from magnelio import geo, plots
+    from magnelio.geo import Profile
 
     R_EQ, R_IRIS, R_ARC = 103.3e-3, 35.0e-3, 42.0e-3
     A_IRIS, B_IRIS = 12.0e-3, 19.0e-3
@@ -127,7 +126,7 @@ circle.
 
 
     def tangent_gap(theta):
-        """Distance of the circle centre from the ellipse's tangent line, minus R_ARC."""
+        """Distance of the circle center from the ellipse's tangent line, minus R_ARC."""
         p, t = on_ellipse(theta), ellipse_tangent(theta)
         normal = (t[1], -t[0])
         return (c_eq[0] - p[0]) * normal[0] + (c_eq[1] - p[1]) * normal[1] - R_ARC
@@ -158,7 +157,7 @@ circle.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-128
+.. GENERATED FROM PYTHON SOURCE LINES 110-127
 
 Drawing the profile
 -------------------
@@ -169,7 +168,7 @@ the ellipse, the wall and the equator arc to the mid-plane, then
 retraces the same three segments mirrored for the second half of the
 cell.  Two details from tutorial 14 apply:
 
-- each arc names its centre and a ``normal`` to fix which way round
+- each arc names its center and a ``normal`` to fix which way round
   it goes; on the way *back* the turning sense reverses, so the
   equator arcs take ``normal=(0, -1, 0)`` where the iris arcs take
   ``"y"``;
@@ -178,7 +177,7 @@ cell.  Two details from tutorial 14 apply:
   ring, and united with a plain cylinder that supplies the beam tube
   and the axis.
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-167
+.. GENERATED FROM PYTHON SOURCE LINES 127-165
 
 .. code-block:: Python
 
@@ -194,7 +193,7 @@ cell.  Two details from tutorial 14 apply:
         return (PERIOD - zr[0], zr[1])
 
 
-    outline = (
+    outline = Profile.from_wires(
         geo.Path(xz((0.0, R_IRIS)))
         .ellipse_to(
             xz(p_ell), center=xz(c_iris), semi_axes=(A_IRIS, B_IRIS), major_axis="z", normal="y"
@@ -210,10 +209,9 @@ cell.  Two details from tutorial 14 apply:
             major_axis="z",
             normal="y",
         )
-        .line_to(xz((PERIOD, R_IRIS - 2e-3)))
-        .line_to(xz((0.0, R_IRIS - 2e-3)))
+        .line_to(xz((PERIOD, R_IRIS - 0.002)))
+        .line_to(xz((0.0, R_IRIS - 0.002)))
         .closed()
-        .covered()
     )
     ring = outline.revolved(axis="z", material="air")
     tube = geo.Cylinder(origin=(0, 0, 0), radius=R_IRIS, height=PERIOD, axis="z", material="air")
@@ -233,7 +231,7 @@ cell.  Two details from tutorial 14 apply:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 168-178
+.. GENERATED FROM PYTHON SOURCE LINES 166-176
 
 Unit cell, quarter model
 ------------------------
@@ -246,7 +244,7 @@ interest have their electric field in the r-z plane, which is
 *tangential* to the planes x = 0 and y = 0, so the correct wall there
 is the magnetic one (tutorial 09).
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-200
+.. GENERATED FROM PYTHON SOURCE LINES 176-198
 
 .. code-block:: Python
 
@@ -284,15 +282,15 @@ is the magnetic one (tutorial 09).
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (2.9 s)
+      mesh | conformal cells | done (1.4 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (3.2 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.6 s total)
     grid: 26 x 26 x 30 cells
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 201-212
+.. GENERATED FROM PYTHON SOURCE LINES 199-210
 
 Band edges the classical way
 ----------------------------
@@ -306,7 +304,7 @@ flips sign from cell to cell, :math:`E_z` is *odd* across the iris
 plane and the wall there is magnetic.  Two ordinary cavity solves,
 nothing periodic about them:
 
-.. GENERATED FROM PYTHON SOURCE LINES 212-227
+.. GENERATED FROM PYTHON SOURCE LINES 210-225
 
 .. code-block:: Python
 
@@ -337,24 +335,23 @@ nothing periodic about them:
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (2.5 s)
+      mesh | conformal cells | done (1.1 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (2.7 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.2 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (0.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (2.8 s)
+      mesh | conformal cells | done (1.3 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (3.5 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.7 s total)
     electric walls on the iris planes (0-mode):  1.2774 GHz
     magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 228-238
+.. GENERATED FROM PYTHON SOURCE LINES 226-236
 
 The sweep
 ---------
@@ -367,20 +364,20 @@ problem is real; in between the mode fields are complex — travelling
 waves — and the solver switches to a complex Hermitian formulation
 without anything to configure.
 
-.. GENERATED FROM PYTHON SOURCE LINES 238-249
+.. GENERATED FROM PYTHON SOURCE LINES 236-247
 
 .. code-block:: Python
 
 
     phases = np.linspace(0.0, 180.0, 7)
-    freqs = []
+    frequencies = []
     for deg in phases:
         result = mio.AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False, phase_advance_deg=deg)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            freqs.append(result.run().frequencies[0])
-        print(f"phase advance {deg:5.1f} deg: {freqs[-1] / 1e9:.4f} GHz")
-    freqs = np.array(freqs)
+            frequencies.append(result.run().frequencies[0])
+        print(f"phase advance {deg:5.1f} deg: {frequencies[-1] / 1e9:.4f} GHz")
+    frequencies = np.array(frequencies)
 
 
 
@@ -401,7 +398,7 @@ without anything to configure.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 250-265
+.. GENERATED FROM PYTHON SOURCE LINES 248-263
 
 The dispersion diagram
 ----------------------
@@ -419,20 +416,20 @@ parameters to the computed points checks the curve's *shape*; the
 published values are 1.300 GHz for the :math:`\pi`-mode and
 :math:`k = 1.87\,\%`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 265-301
+.. GENERATED FROM PYTHON SOURCE LINES 263-299
 
 .. code-block:: Python
 
 
     phi = np.radians(phases)
     design = np.column_stack([np.ones_like(phi), -np.cos(phi)])
-    coef, *_ = np.linalg.lstsq(design, freqs**2, rcond=None)
+    coef, *_ = np.linalg.lstsq(design, frequencies**2, rcond=None)
     f_half = math.sqrt(coef[0])
     k_cell = coef[1] / coef[0]
     phi_fine = np.linspace(0.0, math.pi, 181)
     f_fit = f_half * np.sqrt(1.0 - k_cell * np.cos(phi_fine))
 
-    print(f"pi-mode:              {freqs[-1] / 1e9:.4f} GHz (design 1.3000 GHz)")
+    print(f"pi-mode:              {frequencies[-1] / 1e9:.4f} GHz (design 1.3000 GHz)")
     print(f"cell-to-cell coupling: {100 * k_cell:.2f} % (published 1.87 %)")
 
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
@@ -442,7 +439,7 @@ published values are 1.300 GHz for the :math:`\pi`-mode and
         color="0.6",
         label="$f_{\\pi/2}\\sqrt{1 - k\\cos\\varphi}$ fit",
     )
-    ax.plot(phases, freqs / 1e9, "o", label="periodic eigenmode solves")
+    ax.plot(phases, frequencies / 1e9, "o", label="periodic eigenmode solves")
     ax.plot(
         [0.0, 180.0],
         [f_0_walls / 1e9, f_pi_walls / 1e9],
@@ -478,7 +475,7 @@ published values are 1.300 GHz for the :math:`\pi`-mode and
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 302-329
+.. GENERATED FROM PYTHON SOURCE LINES 300-327
 
 The band edges from the periodic solves land on the wall-type solves
 — the same two numbers by two routes, to a fraction of a permille
@@ -508,7 +505,7 @@ the real snapshot of its electric field next to the
 The standing wave is symmetric about the cell's mid-plane; the
 travelling wave is not, and no combination of walls would produce it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 329-344
+.. GENERATED FROM PYTHON SOURCE LINES 327-342
 
 .. code-block:: Python
 
@@ -539,21 +536,22 @@ travelling wave is not, and no combination of walls would produce it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-351
+.. GENERATED FROM PYTHON SOURCE LINES 343-350
 
 The same mode in three dimensions: ``show()`` on the result opens the
-cell along a cutting plane with the field laid on it.  The quarter
+cell along a cutting plane with only field vectors on it
+(``opacity=0.0`` hides the magnitude sheet).  The quarter
 model was solved, but the picture is the whole cell — the result
 carries its mesh, whose declaration names the two symmetry planes,
 and the field is continued across them with the parity of each
 component.
 
-.. GENERATED FROM PYTHON SOURCE LINES 351-354
+.. GENERATED FROM PYTHON SOURCE LINES 350-353
 
 .. code-block:: Python
 
 
-    pi_mode.show(geometry=model, normal="y", position=0.0, glyph="cone", density=14)
+    pi_mode.show(geometry=model, normal="y", position=0.0, opacity=0.0, glyph="cone", density=14)
 
 
 
@@ -589,7 +587,7 @@ component.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 355-367
+.. GENERATED FROM PYTHON SOURCE LINES 354-366
 
 Where to go next
 ----------------
@@ -607,7 +605,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 59.042 seconds)
+   **Total running time of the script:** (2 minutes 13.260 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

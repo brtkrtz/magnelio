@@ -82,10 +82,10 @@ quantity                      value
 frequency                     10 GHz
 focal length :math:`F`        180 mm
 aperture diameter :math:`D`   240 mm (8 λ)
-aperture centre offset        150 mm
+aperture center offset        150 mm
 subreflector diameter         70 mm
 subreflector before focus     50 mm
-feed phase centre :math:`P`   (−20, 0, 40) mm
+feed phase center :math:`P`   (−20, 0, 40) mm
 ============================  ==========
 
 .. GENERATED FROM PYTHON SOURCE LINES 65-86
@@ -102,10 +102,10 @@ feed phase centre :math:`P`   (−20, 0, 40) mm
     wavelength = 3.0e8 / f0
     focal = 0.18  # paraboloid focal length
     diameter = 0.24  # aperture diameter
-    offset = 0.15  # aperture centre, off the paraboloid axis
+    offset = 0.15  # aperture center, off the paraboloid axis
     d_sub = 0.07  # subreflector diameter
     s_from_focus = 0.05  # subreflector on the central ray, this far before the focus
-    p_feed = np.array([-0.02, 0.0, 0.04])  # feed phase centre
+    p_feed = np.array([-0.02, 0.0, 0.04])  # feed phase center
     t_shell = 5.0e-3  # reflector shell thickness — two cells or more
 
     focus = np.array([0.0, 0.0, focal])
@@ -145,7 +145,7 @@ The main reflector
 
 The dish is the paraboloid :math:`z = (x^2 + y^2)/4F` over a circular
 aperture centred at ``offset``.  Parametrising the map in **polar
-coordinates about the aperture centre** — radius and angle, not
+coordinates about the aperture center** — radius and angle, not
 :math:`x` and :math:`y` — makes the rim of the patch an exact circle
 without any trimming afterwards.  The sheet is sampled on a 32 × 64
 grid and interpolated; the extrusion along −z gives it a thickness.
@@ -271,7 +271,7 @@ pyramidal horn whose mouth is at :math:`P` — standard horn numbers,
 not optimised.  Outer and inner lofts make the walls; the neck is a
 pair of bricks.
 
-.. GENERATED FROM PYTHON SOURCE LINES 213-262
+.. GENERATED FROM PYTHON SOURCE LINES 213-255
 
 .. code-block:: Python
 
@@ -287,15 +287,8 @@ pair of bricks.
 
 
     def rectangle(x, a, b, grow=0.0):
-        return geo.Face(
-            normal="x",
-            points=(
-                (yc - a / 2 - grow, zc - b / 2 - grow),
-                (yc + a / 2 + grow, zc - b / 2 - grow),
-                (yc + a / 2 + grow, zc + b / 2 + grow),
-                (yc - a / 2 - grow, zc + b / 2 + grow),
-            ),
-            position=x,
+        return geo.Profile.rectangle(
+            (x, yc, zc), (a + 2 * grow, b + 2 * grow), normal="x", x_direction="y"
         )
 
 
@@ -325,7 +318,7 @@ pair of bricks.
     horn = geo.Difference(geo.Union(neck_outer, horn_outer), neck_inner, horn_inner)
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 263-274
+.. GENERATED FROM PYTHON SOURCE LINES 256-267
 
 The box and the port
 --------------------
@@ -339,7 +332,7 @@ walls (the ports chapter states the rule).  Behind the window the
 absorber is switched off, so the mode meets the port's own
 termination.
 
-.. GENERATED FROM PYTHON SOURCE LINES 274-297
+.. GENERATED FROM PYTHON SOURCE LINES 267-290
 
 .. code-block:: Python
 
@@ -367,7 +360,7 @@ termination.
     model.show()
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 298-305
+.. GENERATED FROM PYTHON SOURCE LINES 291-298
 
 The assembled antenna — horn on the left, the subreflector on its
 axis, the dish behind and below it, the beam leaving obliquely
@@ -377,7 +370,7 @@ upward:
    :width: 90 %
    :alt: Offset Cassegrain antenna: horn, subreflector and dish in the open box
 
-.. GENERATED FROM PYTHON SOURCE LINES 307-321
+.. GENERATED FROM PYTHON SOURCE LINES 300-314
 
 Mesh
 ----
@@ -394,7 +387,7 @@ own.  2 M cells for this box, about a minute to mesh.  The 5 mm
 shells are three cells thick, comfortably above the two-cell rule of
 the geometry chapter.
 
-.. GENERATED FROM PYTHON SOURCE LINES 321-328
+.. GENERATED FROM PYTHON SOURCE LINES 314-321
 
 .. code-block:: Python
 
@@ -406,13 +399,13 @@ the geometry chapter.
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 329-332
+.. GENERATED FROM PYTHON SOURCE LINES 322-325
 
 The port report shows the neck's TE10 mode; its cut-off lands
 within a few percent of WR-90's 6.56 GHz on this coarse neck (13
 cells across the broad wall).
 
-.. GENERATED FROM PYTHON SOURCE LINES 332-336
+.. GENERATED FROM PYTHON SOURCE LINES 325-329
 
 .. code-block:: Python
 
@@ -421,7 +414,7 @@ cells across the broad wall).
     print(analysis.solve_ports()["feed"])
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 337-345
+.. GENERATED FROM PYTHON SOURCE LINES 330-338
 
 Run and far field
 -----------------
@@ -432,12 +425,12 @@ absorber interface, the neck's interior is left out of the surface,
 and the normalisation refers to the incident power the TE10 port
 launched at each frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-370
+.. GENERATED FROM PYTHON SOURCE LINES 338-363
 
 .. code-block:: Python
 
 
-    farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
+    farfield = monitors.MonitorFarFieldFrequency(frequencies=[f0], name="farfield")
     analysis = mio.AnalysisScatteringTD(mesh=mesh, f_min=8.5e9, monitors=(farfield,), verbose=False)
     f_axis = np.linspace(8.5e9, 11.5e9, 31)
     result = analysis.run(f_axis=f_axis, excited=["feed"])
@@ -462,7 +455,7 @@ launched at each frequency.
     print(f"radiated / accepted power: {pattern.P_rad / (1 - np.interp(f0, f_axis, s11) ** 2):.2f}")
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 371-376
+.. GENERATED FROM PYTHON SOURCE LINES 364-369
 
 The pattern: a cut through the plane of the tilt (the :math:`xz`
 plane, :math:`\varphi = 0`) and the full radiation surface.  The main
@@ -470,7 +463,7 @@ beam sits where the paraboloid's axis points after the turn; the
 sidelobes and the spillover past the subreflector are what an 8 λ
 dish and a 2 λ subreflector cannot avoid.
 
-.. GENERATED FROM PYTHON SOURCE LINES 376-380
+.. GENERATED FROM PYTHON SOURCE LINES 369-373
 
 .. code-block:: Python
 
@@ -479,7 +472,7 @@ dish and a 2 λ subreflector cannot avoid.
     fig, ax = pattern.plot_3d(title="Cassegrain radiation surface")
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 381-388
+.. GENERATED FROM PYTHON SOURCE LINES 374-381
 
 .. image:: /_static/tutorial_19_pattern_cut.png
    :width: 80 %
@@ -489,7 +482,7 @@ dish and a 2 λ subreflector cannot avoid.
    :width: 80 %
    :alt: Three-dimensional radiation surface of the Cassegrain antenna
 
-.. GENERATED FROM PYTHON SOURCE LINES 390-421
+.. GENERATED FROM PYTHON SOURCE LINES 383-414
 
 The measured run
 ----------------
@@ -503,7 +496,7 @@ quantity                                  value
 peak directivity                          19.2 dBi
 aperture bound :math:`(\pi D/\lambda)^2`  28.0 dBi
 beam direction, measured vs designed      2° apart
-|S11| over 8.5–11.5 GHz                   −12 … −19 dB
+``|S11|`` over 8.5–11.5 GHz               −12 … −19 dB
 radiated / accepted power                 0.93
 power balance of the far-field box        1.005
 ========================================  ==========
@@ -523,7 +516,7 @@ flux to 0.5 % (``pattern.power_balance``) — the box's half-wavelength
 clearance is enough for this radiator; the missing power never
 crosses it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 423-436
+.. GENERATED FROM PYTHON SOURCE LINES 416-429
 
 What to take away
 -----------------

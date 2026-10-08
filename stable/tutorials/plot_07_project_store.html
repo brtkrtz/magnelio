@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -27,30 +26,30 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="../_static/documentation_options.js?v=dbee5847"></script>
+    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/plot_07_project_store';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -112,7 +111,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -161,6 +160,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -173,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
-    Upgrading from 0.7.x
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -188,6 +187,27 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
     Upgrading from 0.6.x
@@ -229,7 +249,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -260,15 +280,15 @@
         <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -305,7 +325,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -314,7 +334,7 @@
   
 
   
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -359,6 +379,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -368,6 +395,20 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-api-naming.html">
+    Upgrading to 0.9: API naming
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-geometry.html">
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -439,15 +480,15 @@
           <div class="navbar-item">
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
     <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
     <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
     <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -482,7 +523,7 @@
   </div>
   
     <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
   <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
     <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
   </svg>
@@ -501,17 +542,15 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_04_higher_modes.html">Higher-order modes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_05_eigenmode_sphere.html">Eigenmode analysis: a spherical cavity</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_06_field_monitors.html">Field monitors: watching a magic tee work</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Using disk storage: monitors at scale, resume, ParaView</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Using disk storage: monitors at scale, resume, ParaView</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_08_open_boundary.html">Open boundaries: a monopole antenna</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_09_microstrip_line.html">Microstrip lines: quasi-TEM ports</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_10_lumped_elements.html">Lumped elements: a Wilkinson power divider</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_11_losses.html">Conductor and dielectric losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_12_sweep_optimize.html">Parameter sweeps and optimisation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_13_dielectric_filter.html">Capstone: a two-pole dielectric resonator filter</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Profiles: shapes the primitives do not cover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Geometry toolbox</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_15_dipole_farfield.html">Antenna symmetry: a half-wave dipole as a half model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 <li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_20_plane_wave_scattering.html">Plane-wave scattering: the radar cross section of a sphere</a></li>
@@ -592,55 +631,53 @@ happen in another script, on another day — or in ParaView.</p>
 <p>The device is the magic tee from the previous tutorial, this time
 carrying a full-volume 3D field monitor — exactly the kind of data
 you do not want to keep in memory, and the kind ParaView is made for.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="w">
+</span></pre></div></div>
 <section id="the-tee-again-in-one-block">
 <h2>The tee again, in one block<a class="headerlink" href="#the-tee-again-in-one-block" title="Link to this heading">#</a></h2>
 <p>Geometry, ports and mesh are unchanged from the previous tutorial —
 three WR-90 arms united into a tee, four single-mode ports, and the
 band-limited 8.2–12.4 GHz excitation.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">ports</span>
-
-<span class="n">a</span> <span class="o">=</span> <span class="mf">22.86e-3</span>  <span class="c1"># WR-90 broad wall</span>
-<span class="n">b</span> <span class="o">=</span> <span class="mf">10.16e-3</span>  <span class="c1"># WR-90 narrow wall</span>
-<span class="n">arm</span> <span class="o">=</span> <span class="mf">30.0e-3</span>  <span class="c1"># arm length beyond the junction</span>
-
-<span class="n">collinear</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
-    <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">arm</span><span class="p">),</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">arm</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span>
-<span class="p">)</span>
-<span class="n">h_arm</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">arm</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
-<span class="n">e_arm</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">b</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">+</span> <span class="n">arm</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
-
-<span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Union</span><span class="p">(</span><span class="n">collinear</span><span class="p">,</span> <span class="n">h_arm</span><span class="p">,</span> <span class="n">e_arm</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"tee"</span><span class="p">))</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"port1"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"xmin"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"port2"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"xmax"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"port3"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"ymax"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"port4"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"zmax"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-
-<span class="n">f_min</span><span class="p">,</span> <span class="n">f_max</span> <span class="o">=</span> <span class="mf">8.2e9</span><span class="p">,</span> <span class="mf">12.4e9</span>
-
-<span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span>
-    <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="mf">1.59e-3</span><span class="p">),</span>
-    <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">,</span>
-<span class="p">)</span>
-</pre></div>
-</div>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span><span class="w">
+</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="nn">.</span><span class="nn">pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span><span class="w">
+</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span><span class="w">
+</span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">ports</span><span class="w">
+</span><span class="w">
+</span><span class="n">a</span> <span class="o">=</span> <span class="mf">22.86e-3</span>  <span class="c1"># WR-90 broad wall</span><span class="w">
+</span><span class="n">b</span> <span class="o">=</span> <span class="mf">10.16e-3</span>  <span class="c1"># WR-90 narrow wall</span><span class="w">
+</span><span class="n">arm</span> <span class="o">=</span> <span class="mf">30.0e-3</span>  <span class="c1"># arm length beyond the junction</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">collinear</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">geo</span><span class="o">.</span><span class="n">Brick</span></a><span class="p">(</span><span class="w">
+</span>    <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">arm</span><span class="p">)</span><span class="p">,</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">arm</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">air</span><span class="s2">&quot;</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">h_arm</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">geo</span><span class="o">.</span><span class="n">Brick</span></a><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">arm</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">air</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">e_arm</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">geo</span><span class="o">.</span><span class="n">Brick</span></a><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">b</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">+</span> <span class="n">arm</span><span class="p">)</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">air</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span></a><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">pec</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.add" title="magnelio.GeometryModel.add"><span class="n">model</span><span class="o">.</span><span class="n">add</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class reference internal" href="../api/geo.html#magnelio.geo.Union" title="magnelio.geo.Union"><span class="n">geo</span><span class="o">.</span><span class="n">Union</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">collinear</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">h_arm</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><span class="n">e_arm</span></a><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">tee</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.add_port" title="magnelio.GeometryModel.add_port"><span class="n">model</span><span class="o">.</span><span class="n">add_port</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class reference internal" href="../api/ports.html#magnelio.ports.PortWaveguide" title="magnelio.ports.PortWaveguide"><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span></a><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">xmin</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.add_port" title="magnelio.GeometryModel.add_port"><span class="n">model</span><span class="o">.</span><span class="n">add_port</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class reference internal" href="../api/ports.html#magnelio.ports.PortWaveguide" title="magnelio.ports.PortWaveguide"><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span></a><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port2</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">xmax</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.add_port" title="magnelio.GeometryModel.add_port"><span class="n">model</span><span class="o">.</span><span class="n">add_port</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class reference internal" href="../api/ports.html#magnelio.ports.PortWaveguide" title="magnelio.ports.PortWaveguide"><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span></a><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">ymax</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.add_port" title="magnelio.GeometryModel.add_port"><span class="n">model</span><span class="o">.</span><span class="n">add_port</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class reference internal" href="../api/ports.html#magnelio.ports.PortWaveguide" title="magnelio.ports.PortWaveguide"><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span></a><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">zmax</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="n">f_min</span><span class="p">,</span> <span class="n">f_max</span> <span class="o">=</span> <span class="mf">8.2e9</span><span class="p">,</span> <span class="mf">12.4e9</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.Mesh.from_geometry" title="magnelio.Mesh.from_geometry"><span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span></a><span class="p">(</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.MeshControl" title="magnelio.MeshControl"><span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span></a><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="mf">1.59e-3</span><span class="p">)</span><span class="p">,</span><span class="w">
+</span>    <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">,</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mesh | feature planes
 mesh | grid lines
 mesh | materials
 mesh | conformal cells
 mesh | PEC masks
-mesh | 48 x 32 x 24 cells
+mesh | 48 x 32 x 24 = 36,864 cells | 11 MiB
 </pre></div>
 </div>
 </section>
@@ -664,29 +701,55 @@ resulting Nyquist frequency would fold onto the recorded bin.</p>
 temporary folder so this page can build anywhere; in real work you
 would pick a permanent location on fast local storage, because the
 solver writes into it continuously.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">volume</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span><span class="p">(</span>
-    <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">10.0e9</span><span class="p">],</span>
-    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">,</span> <span class="s2">"H"</span><span class="p">],</span>
-    <span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="n">f_max</span><span class="p">),</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">"volume_pattern"</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="n">proj_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(),</span> <span class="s2">"magic_tee"</span><span class="p">)</span>
-
-<span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span>
-    <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
-    <span class="n">f_min</span><span class="o">=</span><span class="n">f_min</span><span class="p">,</span>
-    <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">volume</span><span class="p">,),</span>
-    <span class="n">project</span><span class="o">=</span><span class="n">proj_dir</span><span class="p">,</span>
-    <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"port3"</span><span class="p">,</span> <span class="s2">"port4"</span><span class="p">],</span> <span class="n">port_signal_stop_db</span><span class="o">=</span><span class="mf">50.0</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project -&gt; done
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">volume</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span></a><span class="p">(</span><span class="w">
+</span>    <span class="n">frequencies</span><span class="o">=</span><span class="p">[</span><span class="mf">10.0e9</span><span class="p">]</span><span class="p">,</span><span class="w">
+</span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">H</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span><span class="w">
+</span>    <span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="n">f_max</span><span class="p">)</span><span class="p">,</span><span class="w">
+</span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">volume_pattern</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="n">proj_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">magic_tee</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">analysis</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD" title="magnelio.AnalysisScatteringTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span></a><span class="p">(</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span><span class="w">
+</span>    <span class="n">f_min</span><span class="o">=</span><span class="n">f_min</span><span class="p">,</span><span class="w">
+</span>    <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">volume</span></a><span class="p">,</span><span class="p">)</span><span class="p">,</span><span class="w">
+</span>    <span class="n">project</span><span class="o">=</span><span class="n">proj_dir</span><span class="p">,</span><span class="w">
+</span>    <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span><span class="w">
+</span>    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
+</section>
+<section id="check-the-allocation-budget-before-launching-the-runs">
+<h2>Check the allocation budget before launching the runs<a class="headerlink" href="#check-the-allocation-budget-before-launching-the-runs" title="Link to this heading">#</a></h2>
+<p>The estimate constructs no solver operators and writes no project files.
+Its phases include the mesh already held in RAM. The volume DFT monitor
+needs its complex accumulators in RAM even though its finished bins are
+saved to disk. Unknown port costs leave the overall upper budget open.
+See <a class="reference internal" href="../methods/memory-planning.html"><span class="doc">Memory planning</span></a> for finite time-recording budgets.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="nb">print</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.AnalysisTD.estimate_memory" title="magnelio.AnalysisTD.estimate_memory"><span class="n">analysis</span><span class="o">.</span><span class="n">estimate_memory</span></a><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><span class="n">result</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.AnalysisScatteringTD.run" title="magnelio.AnalysisScatteringTD.run"><span class="n">analysis</span><span class="o">.</span><span class="n">run</span></a><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="n">port_signal_stop_db</span><span class="o">=</span><span class="mf">50.0</span><span class="p">)</span><span class="w">
+</span><span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><span class="n">result</span></a><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">-&gt;</span><span class="s2">&quot;</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-property reference internal" href="../api/io.html#magnelio.io.Project.status" title="magnelio.io.Project.status"><span class="n">result</span><span class="o">.</span><span class="n">status</span></a><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Memory estimate | numpy | float32 | 2 run(s)
+  mesh already held: 11 MiB
+  fields: 905 KiB; coefficients: 2.7 MiB
+  material matrices: RAM 13 MiB - 32 MiB
+  CFL setup: RAM 39 MiB - 75 MiB
+  port/element setup: RAM &gt;= 13 MiB (upper unknown)
+  solver setup: RAM &gt;= 20 MiB (upper unknown)
+  time integration: RAM &gt;= 20 MiB (upper unknown)
+  monitor volume_pattern: 3.5 MiB/bin | bins &lt;= 1 | recording/run 3.5 MiB
+    RAM 3.5 MiB - 12 MiB | disk/run 3.5 MiB
+  field-monitor disk payload, all n_runs: 7.1 MiB
+  Note: Auto backend is unresolved: CPU scenario shown; pass backend='cupy' for GPU.
+  Note: CFL step unknown: time-to-step counts remain unresolved; dt= supplies a scenario.
+  Note: Automatic step cap depends on prepared ports/waveforms and is not solved here.
+  Note: Port/element modes, factorisation, convolution histories and signal records are unbudgeted.
+  Note: Ranges budget current allocation paths, not measured RSS or guaranteed process limits.
+  Note: CAD/native objects, Python metadata, allocator pools and checkpoint/I/O workspaces are excluded.
+Project -&gt; done
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">run()</span></code> on a project returns not an in-RAM result but a <em>reader</em>
@@ -694,24 +757,23 @@ over the directory it just wrote.  Both excitations now live on disk
 as separate named runs — including, unlike in the previous tutorial,
 both sets of monitor data.  A look at the files shows where
 everything went (sizes in kB):</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">_dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">)):</span>
-    <span class="n">rel</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">proj_dir</span><span class="p">)</span>
-    <span class="n">prefix</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">rel</span> <span class="o">==</span> <span class="s2">"."</span> <span class="k">else</span> <span class="n">rel</span> <span class="o">+</span> <span class="s2">"/"</span>
-    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
-        <span class="n">size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">name</span><span class="si">:</span><span class="s2">&lt;58</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">9.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">_dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">)</span><span class="p">)</span><span class="p">:</span><span class="w">
+</span>    <span class="n">rel</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">proj_dir</span><span class="p">)</span><span class="w">
+</span>    <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">rel</span> <span class="o">==</span> <span class="s2">&quot;</span><span class="s2">.</span><span class="s2">&quot;</span> <span class="k">else</span> <span class="n">rel</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="s2">/</span><span class="s2">&quot;</span><span class="w">
+</span>    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">files</span><span class="p">)</span><span class="p">:</span><span class="w">
+</span>        <span class="n">size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">name</span><span class="si">:</span><span class="s2">&lt;58</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">9.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>geometry.brep                                                    9.9
-geometry.json                                                    0.8
+geometry.json                                                    0.9
 mesh.h5                                                      11787.6
 project.json                                                     3.8
-runs/port3_mode0/checkpoint.h5                                1523.7
+runs/port3_mode0/checkpoint.h5                                1288.1
 runs/port3_mode0/fields_freq.h5                               5579.0
-runs/port3_mode0/results.h5                                    699.6
-runs/port4_mode0/checkpoint.h5                                1523.7
+runs/port3_mode0/results.h5                                    371.9
+runs/port4_mode0/checkpoint.h5                                1326.5
 runs/port4_mode0/fields_freq.h5                               5579.0
-runs/port4_mode0/results.h5                                    699.6
+runs/port4_mode0/results.h5                                    371.9
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">project.json</span></code> carries the run registry and the reconstruction
@@ -727,20 +789,33 @@ process gets from <a class="reference internal" href="../api/core.html#magnelio.
 needs the analysis, the mesh, or the solver.  This is the
 separation the store exists for: a cluster job computes, your
 laptop evaluates.  S-parameters are derived on read from the stored
-signals, with the accessors you already know:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ``open_project`` hands back the very same kind of object ``run()``</span>
-<span class="c1"># returned above — a reader over the directory — only initialised from</span>
-<span class="c1"># the path instead of by the run that wrote it.</span>
-<span class="n">result_loaded</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">result_loaded</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+signals, with the accessors you already know:
+An explicit pair reads and evaluates only its driven and observed
+ports in the selected run. Further pairs reuse the incident spectrum;
+<code class="docutils literal notranslate"><span class="pre">s_params</span></code> requests the entire matrix. Metadata such as <code class="docutils literal notranslate"><span class="pre">channels</span></code>
+and <code class="docutils literal notranslate"><span class="pre">excitations</span></code> does not trigger a spectral calculation.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="c1"># ``open_project`` hands back the very same kind of object ``run()``</span><span class="w">
+</span><span class="c1"># returned above — a reader over the directory — only initialised from</span><span class="w">
+</span><span class="c1"># the path instead of by the run that wrote it.</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><span class="n">result_loaded</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-function reference internal" href="../api/core.html#magnelio.open_project" title="magnelio.open_project"><span class="n">mio</span><span class="o">.</span><span class="n">open_project</span></a><span class="p">(</span><span class="n">proj_dir</span><span class="p">)</span><span class="w">
+</span><span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><span class="n">result_loaded</span></a><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">-&gt;</span><span class="s2">&quot;</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-property reference internal" href="../api/io.html#magnelio.io.Project.status" title="magnelio.io.Project.status"><span class="n">result_loaded</span><span class="o">.</span><span class="n">status</span></a><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.plot_s" title="magnelio.io.Project.plot_s"><span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_s</span></a><span class="p">(</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">Read back from the project store</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="c1"># Select an excitation for a time plot because this project has two runs.</span><span class="w">
+</span><span class="c1"># Both calibrated waves are obtained from the same port record; no</span><span class="w">
+</span><span class="c1"># S-parameter calculation is needed to display them.</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.plot_time_signals" title="magnelio.io.Project.plot_time_signals"><span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_time_signals</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">Port 1 time signals during the port 3 excitation</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<ul class="sphx-glr-horizontal">
+<li><img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-multi-img"/></li>
+<li><img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Port 1 time signals during the port 3 excitation" class = "sphx-glr-multi-img"/></li>
+</ul>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project -&gt; done
 
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port4"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port4"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">))</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Read back from the project store"</span><span class="p">)</span>
-</pre></div>
-</div>
-<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project -&gt; done
-
-Text(0.5, 1.0, 'Read back from the project store')
+Text(0.5, 1.0, 'Port 1 time signals during the port 3 excitation')
 </pre></div>
 </div>
 </section>
@@ -761,14 +836,13 @@ process — another shell, a notebook on your laptop — can
 the run live, without touching the job that is computing; the
 how-to <em>Watching a simulation that is still running</em> shows the
 loop, and the live panel for a notebook.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">()</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Energy in the grid during the two runs"</span><span class="p">)</span>
-
-<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">energy_trace</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"energy samples stored for the H-arm run: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the two runs" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored for the H-arm run: 65
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.plot_energy" title="magnelio.io.Project.plot_energy"><span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_energy</span></a><span class="p">(</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">Energy in the grid during the two runs</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">trace</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-property reference internal" href="../api/io.html#magnelio.io.Project.runs" title="magnelio.io.Project.runs"><span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span></a><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port3_mode0</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">energy_trace</span><span class="w">
+</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">energy samples stored for the H-arm run: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">trace</span></a><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<img src="../_images/sphx_glr_plot_07_project_store_003.png" srcset="../_images/sphx_glr_plot_07_project_store_003.png" alt="Energy in the grid during the two runs" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored for the H-arm run: 28
 </pre></div>
 </div>
 <p>The monitor data of <em>every</em> run is preserved — where the previous
@@ -779,20 +853,19 @@ stored pattern is a full 3D volume, the slice plane is chosen at
 <em>plot</em> time, not at declaration time — the H-arm drive on the
 mid-height cut, the E-arm drive on the vertical cut, both from data
 recorded in the same simulation:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mon_h</span> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">monitors_for</span><span class="p">((</span><span class="s2">"port3"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))[</span><span class="s2">"volume_pattern"</span><span class="p">]</span>
-<span class="n">mon_e</span> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">monitors_for</span><span class="p">((</span><span class="s2">"port4"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))[</span><span class="s2">"volume_pattern"</span><span class="p">]</span>
-
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">))</span>
-<span class="n">mon_h</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-    <span class="n">component</span><span class="o">=</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">b</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s2">"color"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="p">)</span>
-<span class="n">mon_e</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s2">"color"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"H-arm drive: $E_z$, mid-height slice"</span><span class="p">)</span>
-<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"E-arm drive: $E_z$, vertical slice"</span><span class="p">)</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
-</pre></div>
-</div>
-<img src="../_images/sphx_glr_plot_07_project_store_003.png" srcset="../_images/sphx_glr_plot_07_project_store_003.png" alt="H-arm drive: $E_z$, mid-height slice, E-arm drive: $E_z$, vertical slice" class = "sphx-glr-single-img"/><p>The volume can also be opened in the 3D viewer.  <code class="docutils literal notranslate"><span class="pre">show</span></code> lays the
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="n">mon_h</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.monitors_for" title="magnelio.io.Project.monitors_for"><span class="n">result_loaded</span><span class="o">.</span><span class="n">monitors_for</span></a><span class="p">(</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">volume_pattern</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
+</span><span class="n">mon_e</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.monitors_for" title="magnelio.io.Project.monitors_for"><span class="n">result_loaded</span><span class="o">.</span><span class="n">monitors_for</span></a><span class="p">(</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port4</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="p">)</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">volume_pattern</span><span class="s2">&quot;</span><span class="p">]</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><span class="n">mon_h</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="w">
+</span>    <span class="n">component</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">z</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">b</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">color</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="o">=</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="n">mon_e</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">Ez</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">color</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="o">=</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">H-arm drive: $E_z$, mid-height slice</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">E-arm drive: $E_z$, vertical slice</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<img src="../_images/sphx_glr_plot_07_project_store_004.png" srcset="../_images/sphx_glr_plot_07_project_store_004.png" alt="H-arm drive: $E_z$, mid-height slice, E-arm drive: $E_z$, vertical slice" class = "sphx-glr-single-img"/><p>The volume can also be opened in the 3D viewer.  <code class="docutils literal notranslate"><span class="pre">show</span></code> lays the
 field on the viewer’s cutting plane — here the E-arm drive, cut
 along the E-arm’s own symmetry plane, the tee’s metal drawn with it
 and the cells inside the walls cut out of the field sheet — and,
@@ -803,26 +876,25 @@ recorded volume, a phase slider turns the complex pattern, a level
 slider moves the surface, and the <em>Show</em> menu swaps the arrows on
 the cut for arrows on a lattice through the volume; a documentation
 build shows the frame the call asks for.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mon_e</span><span class="o">.</span><span class="n">show</span><span class="p">(</span>
-    <span class="n">component</span><span class="o">=</span><span class="s2">"E"</span><span class="p">,</span>
-    <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span>
-    <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-    <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
-    <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
-    <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">,</span>
-    <span class="n">volume</span><span class="o">=</span><span class="s2">"isosurface"</span><span class="p">,</span>
-<span class="p">)</span>
-</pre></div>
-</div>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="n">mon_e</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="w">
+</span>    <span class="n">component</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
+</span>    <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
+</span>    <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="w">
+</span>    <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span><span class="w">
+</span>    <span class="n">phase_deg</span><span class="o">=</span><span class="mf">90.0</span><span class="p">,</span><span class="w">
+</span>    <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><span class="n">volume</span></a><span class="o">=</span><span class="s2">&quot;</span><span class="s2">isosurface</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
 <div class="sd-tab-set docutils">
 <input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
 <label class="sd-tab-label" for="sd-tab-item-0">
 Static Scene</label><div class="sd-tab-content docutils">
-<img src="../_images/sphx_glr_plot_07_project_store_004.png" srcset="../_images/sphx_glr_plot_07_project_store_004.png" alt="plot 07 project store" class = "sphx-glr-single-img"/></div>
+<img src="../_images/sphx_glr_plot_07_project_store_005.png" srcset="../_images/sphx_glr_plot_07_project_store_005.png" alt="plot 07 project store" class = "sphx-glr-single-img"/></div>
 <input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
 <label class="sd-tab-label" for="sd-tab-item-1">
 Interactive Scene</label><div class="sd-tab-content docutils">
-<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_07_project_store_004.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_07_project_store_005.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
 </div>
 </section>
 <section id="running-longer-resume">
@@ -835,20 +907,17 @@ no restart.  That is the answer to three situations: a crashed or
 interrupted job, a stop criterion chosen too shallow, and the
 convergence question “would more ring-down change my S-parameters?”.
 Here we ask the third one, extending the H-arm run by 2000 steps:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_before</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">)</span>
-<span class="n">n_before</span> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">n_steps</span>
-
-<span class="n">result_resumed</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">resume</span><span class="p">(</span>
-    <span class="n">proj_dir</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="s2">"port3"</span><span class="p">,</span> <span class="n">total_time_steps</span><span class="o">=</span><span class="n">n_before</span> <span class="o">+</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-
-<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_after</span></a> <span class="o">=</span> <span class="n">result_resumed</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"steps: </span><span class="si">{</span><span class="n">n_before</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">n_before</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2000</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |dS13| from 2000 extra steps: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_after</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_before</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>steps: 6401 -&gt; 8401
-max |dS13| from 2000 extra steps: 3.7e-04
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s13_before</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.S" title="magnelio.io.Project.S"><span class="n">result_loaded</span><span class="o">.</span><span class="n">S</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="n">n_before</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-property reference internal" href="../api/io.html#magnelio.io.Project.runs" title="magnelio.io.Project.runs"><span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span></a><span class="p">[</span><span class="s2">&quot;</span><span class="s2">port3_mode0</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">n_steps</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><span class="n">result_resumed</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-function reference internal" href="../api/core.html#magnelio.resume" title="magnelio.resume"><span class="n">mio</span><span class="o">.</span><span class="n">resume</span></a><span class="p">(</span><span class="n">proj_dir</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">total_time_steps</span><span class="o">=</span><span class="n">n_before</span> <span class="o">+</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s13_after</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.S" title="magnelio.io.Project.S"><span class="n">result_resumed</span><span class="o">.</span><span class="n">S</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">port1</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">steps: </span><span class="si">{</span><span class="n">n_before</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">n_before</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2000</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">max |dS13| from 2000 extra steps: </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s13_after</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s13_before</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="p">)</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>steps: 2701 -&gt; 4701
+max |dS13| from 2000 extra steps: 1.0e-04
 </pre></div>
 </div>
 <p>The change is far below any engineering tolerance — the original
@@ -862,13 +931,12 @@ the same streams, the monitor volume along with them.)</p>
 volume invites the ones you don’t.  A project run can be handed to
 ParaView as a ready-made session — an export you ask for, since the
 VTK copy of a monitor takes about as much disk as the monitor itself:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">result_resumed</span><span class="o">.</span><span class="n">export_paraview</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="s2">"port3"</span><span class="p">)</span>
-<span class="n">run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">,</span> <span class="s2">"runs"</span><span class="p">,</span> <span class="s2">"port3_mode0"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">run_dir</span><span class="p">)):</span>
-    <span class="k">if</span> <span class="s2">"paraview"</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run_dir</span><span class="p">,</span> <span class="n">name</span><span class="p">)):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-</pre></div>
-</div>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.export_paraview" title="magnelio.io.Project.export_paraview"><span class="n">result_resumed</span><span class="o">.</span><span class="n">export_paraview</span></a><span class="p">(</span><span class="n">run</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">port3</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="n">run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">runs</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">port3_mode0</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
+</span><span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">run_dir</span><span class="p">)</span><span class="p">)</span><span class="p">:</span><span class="w">
+</span>    <span class="k">if</span> <span class="s2">&quot;</span><span class="s2">paraview</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run_dir</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="p">)</span><span class="p">:</span><span class="w">
+</span>        <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: no ParaView state file was baked: no 'pvpython' on PATH.  Name one in MAGNELIO_PVPYTHON or in export_paraview(pvpython=...) — a path, or the command that launches one, e.g. flatpak run --command=pvpython org.paraview.ParaView.  The session opens without a state file: paraview --script=paraview_open.py
 paraview_open.py
 </pre></div>
@@ -877,7 +945,7 @@ paraview_open.py
 frequency, collected by a <code class="docutils literal notranslate"><span class="pre">.pvd</span></code> whose axis is the frequency (for
 a time monitor, the instant).  They hold cell data — the staggered
 frames of <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code> averaged onto the cell centres at export
-time, the same numbers <code class="docutils literal notranslate"><span class="pre">spectrum.cell_centred()</span></code> returns — so
+time, the same numbers <code class="docutils literal notranslate"><span class="pre">spectrum.cell_centered()</span></code> returns — so
 ParaView reads plain VTK files and never opens the store itself.
 <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is a double-clickable state file (baked when
 <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> is on the path): geometry as translucent solids, and per
@@ -915,7 +983,7 @@ how-to <em>Watching a simulation that is still running</em> is that recipe.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 20.588 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 6.505 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>
@@ -980,6 +1048,7 @@ them the first antenna.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-tee-again-in-one-block">The tee again, in one block</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-3d-monitor-and-a-project-directory">A 3D monitor and a project directory</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#check-the-allocation-budget-before-launching-the-runs">Check the allocation budget before launching the runs</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluating-from-disk-in-a-different-session">Evaluating from disk — in a different session</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#watching-a-run-the-energy-trace">Watching a run: the energy trace</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-longer-resume">Running longer: resume</a></li>
@@ -1010,8 +1079,8 @@ them the first antenna.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1032,7 +1101,6 @@ them the first antenna.</p>
 
   <p class="sphinx-version">
     Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
-    <br/>
   </p>
 </div>
       
@@ -1045,7 +1113,7 @@ them the first antenna.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
 </p></div>
       
     </div>

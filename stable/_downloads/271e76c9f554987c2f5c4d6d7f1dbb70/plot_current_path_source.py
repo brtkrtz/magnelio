@@ -45,7 +45,7 @@ def air_box(boundaries, z0=-HALF, height=2 * HALF):
 def radiate(model, name):
     """One transient run; returns the far-field pattern at ``F0``."""
     mesh = mio.Mesh.from_geometry(model, mio.MeshControl(min_nodes_per_wavelength=12), f_max=F_MAX)
-    pattern = monitors.MonitorFarFieldFrequency(name="pattern", freqs=[F0], margin_cells=2)
+    pattern = monitors.MonitorFarFieldFrequency(name="pattern", frequencies=[F0], margin_cells=2)
     result = mio.AnalysisTD(mesh=mesh, monitors=[pattern], verbose=False).run(
         excitations=[
             mio.Excitation(name, waveform=signals.WaveformGaussian(f_max=F_MAX), amplitude=1.0)
@@ -53,7 +53,7 @@ def radiate(model, name):
         t_end=2000e-12,
         energy_stop_db=60,
     )
-    result.renormalize(name)
+    result.normalize_to_excitation(name)
     return pattern.result(F0)
 
 

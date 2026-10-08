@@ -67,7 +67,7 @@ that reached the grid is the current that was asked for.
     def radiate(model, name):
         """One transient run; returns the far-field pattern at ``F0``."""
         mesh = mio.Mesh.from_geometry(model, mio.MeshControl(min_nodes_per_wavelength=12), f_max=F_MAX)
-        pattern = monitors.MonitorFarFieldFrequency(name="pattern", freqs=[F0], margin_cells=2)
+        pattern = monitors.MonitorFarFieldFrequency(name="pattern", frequencies=[F0], margin_cells=2)
         result = mio.AnalysisTD(mesh=mesh, monitors=[pattern], verbose=False).run(
             excitations=[
                 mio.Excitation(name, waveform=signals.WaveformGaussian(f_max=F_MAX), amplitude=1.0)
@@ -75,7 +75,7 @@ that reached the grid is the current that was asked for.
             t_end=2000e-12,
             energy_stop_db=60,
         )
-        result.renormalize(name)
+        result.normalize_to_excitation(name)
         return pattern.result(F0)
 
 
@@ -120,7 +120,7 @@ declared, whatever the cell size.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 92 x 92 x 96 cells
+      mesh | 92 x 92 x 96 = 812,544 cells | 237 MiB
 
 
 
@@ -152,9 +152,9 @@ root-mean-square form of the textbook expression.
 
  .. code-block:: none
 
-    free space: P_rad / Hertzian    0.973   (target 1.00 +- 0.05)
-    free space: peak directivity    1.548   (1.50, see below)
-    free space: far-field closure   0.994   (target above 0.95)
+    free space: P_rad / Hertzian    0.984   (target 1.00 +- 0.05)
+    free space: peak directivity    1.518   (1.50, see below)
+    free space: far-field closure   0.991   (target above 0.95)
 
 
 
@@ -198,9 +198,9 @@ masked below the plane and the horizon directivity doubles.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 92 x 92 x 49 cells
-    ground plane: P_rad / monopole  0.960   (target 1.00 +- 0.05)
-    ground plane: peak directivity  3.135   (3.00, see below)
+      mesh | 92 x 92 x 49 = 414,736 cells | 122 MiB
+    ground plane: P_rad / monopole  0.970   (target 1.00 +- 0.05)
+    ground plane: peak directivity  3.077   (3.00, see below)
 
 
 
@@ -324,7 +324,7 @@ What to watch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 37.857 seconds)
+   **Total running time of the script:** (1 minutes 55.448 seconds)
 
 
 .. _sphx_glr_download_howto_plot_current_path_source.py:

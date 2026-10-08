@@ -31,6 +31,8 @@ Target: resonance in the 2.45 GHz ISM band.
 # faces** are declared CPML; the mesher appends the absorbing layer
 # outside the declared domain, so the air brick below is the usable
 # free-space region, not something the layer eats into.
+# Absorber profiles follow the electric and magnetic fields at their
+# staggered positions, so opposing layers share the same physical grading.
 #
 # The wire itself is a :class:`~magnelio.geo.ThinWire`: a sub-cell
 # conductor along a curve.  Its 0.5 mm radius is far below any
@@ -131,11 +133,11 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 nearfield = monitors.MonitorFieldFrequency(
     corners=((None, 0.0, None), (None, 0.0, None)),
-    freqs=[f0],
+    frequencies=[f0],
     fields=["E"],
     name="nearfield",
 )
-farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
+farfield = monitors.MonitorFarFieldFrequency(frequencies=[f0], name="farfield")
 
 analysis = mio.AnalysisScatteringTD(
     mesh=mesh,
@@ -227,7 +229,7 @@ fig.tight_layout()
 # as a number: the spectrum is in V/m per √W of incident power, and a
 # scale tied to the pattern's own peak keeps this plot honest no matter
 # what the drive level or the structure is.
-pattern = nearfield.spectrum.cell_centred()
+pattern = nearfield.spectrum.cell_centered()
 e_peak = np.sqrt(sum(np.abs(v) ** 2 for v in pattern.values())).max()
 
 fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
