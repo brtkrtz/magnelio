@@ -326,6 +326,14 @@ Polynomial grading (ρ ∈ [0, 1] = normalised depth):
 Default: `BoundaryConditions.cpml_thickness_cells = 8`; 16 is a
 common choice for waveguide port PML.
 
+DD-286 samples transverse E corrections at the normal-axis grid nodes and
+H corrections at cell centres, with physical depth measured from the
+interface on either side. Auxiliary shapes and global slab indices stay
+unchanged; E and H carry separate b/c/ck broadcasts and port-window masks.
+The checkpoint stores a numeric profile-sampling marker: 1 for staggered
+sampling, 0 for legacy cell-sampled E. A missing marker loads as 0 and
+retains the old rule, including on subsequent checkpoints.
+
 **PEC re-enforcement:** After all CPML E-corrections, PEC/PMC boundary
 conditions are re-applied to prevent PEC-wall violations inside PML regions.
 
@@ -443,6 +451,23 @@ waveguide port supporting all 6 domain faces. Features:
 ---
 
 ## 6. Mesh Generation (Grid Line Algorithm)
+
+With `MeshControl(robust_sections=True)`, sensitive cross-sections use a lazily prepared bounded-surface operator
+(`geo/_surface_sections.py`, DD-287). Tangency positions are indexed from
+analytic stationary coordinates and knot-span-filtered spline stationary
+points, with limiting physical normals at declared/within-tolerance poles.
+Regular cuts retain the existing analytic/facet/kernel paths. Sensitive
+curves are measured on a centred power-of-two-scaled copy, trimmed in face
+parameter domains and joined through shared CAD edges, with outward winding.
+Numerical curve/surface residuals consume at most 1/4096 of the section's
+chord budget above a relative double-rounding floor. Native spline-aware
+tessellation retains the common chord budget. Coplanar face-region and
+two-sided material-limit semantics remain separate. Unresolved sensitive
+sections fail explicitly rather than returning partial coverage.
+The default is `False`: the existing fast paths retain their known near-tangent
+coverage limitation. A per-build context selects the route without changing
+process environment variables; spawned section workers receive the selection
+explicitly. Nested contexts restore the caller's selection even on failure.
 
 ### 6.1 Algorithm
 
@@ -631,6 +656,13 @@ namespace; plumbing is not exported.  Every public name has exactly
 one documented home (`validation/tools/check_api_surface.py` enforces
 this, including the pinned core surface).
 
+`circuit.integrate_E(field, curve, grid)` integrates physical E samples
+in V/m along the canonical directed edge path (DD-284). Real fields
+retain the existing Python-float accumulation and return type; complex
+frequency frames return a Python complex voltage, without conjugation.
+The supplied grid belongs to the frame, including monitor subregions.
+It is a path integral and need not be an endpoint potential difference.
+
 DD-279 records the implemented naming revision: explicit physical units,
 coordinates, normalization, selectors, operation scope and public type homes.
 The version-neutral `docs/migration-api-naming.md` lists every breaking
@@ -818,9 +850,12 @@ Geometrically flat spline sheets are re-covered from exact boundaries. All
 operations preserve holes; Loft accepts mixed planar sections and closed Curve
 conveniences. Direct FaceRef construction keeps owner registrations on that
 original owner. Two-section tangent lofts construct corresponding hole tools
-under the same full-section centroid/normal conditions. Geometry volume measurement uses span-aware adaptive
-Gauss-Kronrod integration with spline spans, including composed/placed results
-and project read-back of rebuilt rational tangent surfaces.
+under the same full-section centroid/normal conditions. Geometry volume
+measurement uses span-aware adaptive Gauss-Kronrod integration on a centred
+copy scaled to a 128-unit diagonal with a power-of-two factor (DD-285).
+Dividing by that factor cubed restores the built shape's units. Construction
+and mesher topology remain unchanged; composed/placed results and project
+read-back of rebuilt rational tangent surfaces use the same measurement.
 
 Chamfer and fillet accept EdgeRef/EdgeSetRef inputs through `edges=` or
 FaceRef/FaceSetRef boundaries through `faces=`. Shell accepts face refs through

@@ -34,6 +34,7 @@ from magnelio.geo._line_kernels import (
     planar_point_state,
     segment_fractions,
 )
+from magnelio.geo._section_policy import robust_sections_enabled, worker_section_policy
 from magnelio.geo._topology_history import result as _history_result
 
 
@@ -1857,6 +1858,13 @@ def cross_section_polygons(
         degenerate plane and are re-taken a nudge away, never
         implicitly closed (see ``_tessellate`` below).
     """
+    axis = {"x": 0, "y": 1, "z": 2}.get(plane_normal)
+    if axis is not None and robust_sections_enabled():
+        from magnelio.geo._surface_sections import _sensitive_section  # noqa: PLC0415
+
+        resolved = _sensitive_section(shape, axis, plane_position, deflection, scale, slab)
+        if resolved is not None:
+            return resolved
     plane_position = plane_position * scale
     nudge_step = (deflection if nudge is None else nudge) * scale
     deflection = max(deflection * scale, 1e-7)
@@ -2552,6 +2560,8 @@ class _PlanarSectionEngine:
 
     def __init__(self, shape, scale: float = 1.0, deflection: float | None = None) -> None:
         self.enabled = False
+        self._source_shape = shape
+        self._surface_router = None
         #: DD-120 model scale of the shape: the engine's internal arrays
         #: live entirely in scaled units; ``can_fast``/``section`` take
         #: meter positions and return meter polygons.
@@ -3894,7 +3904,33 @@ class _PlanarSectionEngine:
             self._c_t,
             v_sorted,
         )
-        return _PackedSections(order, *packed)
+        result = _PackedSections(order, *packed)
+        overrides = {}
+        for i, position in enumerate(positions):
+            if result.status[result.rank[i]] == _sk.ANSWERED:
+                continue
+            resolved = self._sensitive_section(axis, float(position))
+            if resolved is not None:
+                overrides[i] = resolved
+        if not overrides:
+            return result
+        status = result.status.copy()
+        poly_ptr, vert_ptr, vertices = [0], [0], []
+        for k, caller in enumerate(order):
+            polygons = overrides.get(int(caller), result.polygons(int(caller)))
+            if polygons is not None:
+                status[k] = _sk.ANSWERED
+                for poly in polygons:
+                    vertices.append(poly)
+                    vert_ptr.append(vert_ptr[-1] + len(poly))
+            poly_ptr.append(len(vert_ptr) - 1)
+        return _PackedSections(
+            order,
+            status,
+            np.asarray(poly_ptr, dtype=np.int64),
+            np.asarray(vert_ptr, dtype=np.int64),
+            np.concatenate(vertices) if vertices else np.empty((0, 2)),
+        )
 
     def sections(self, axis: int, positions) -> list[list[np.ndarray] | None]:
         """:meth:`section` for every plane of *axis* at *positions* [m]
@@ -3921,9 +3957,28 @@ class _PlanarSectionEngine:
             return out
         return self.sections_packed(axis, positions).annotated()
 
+    def _sensitive_section(self, axis: int, pos: float) -> list[np.ndarray] | None:
+        if self.slab is None or self._deflection is None:
+            return None
+        if not robust_sections_enabled():
+            return None
+        from magnelio.geo._surface_sections import _SurfaceRouter  # noqa: PLC0415
+
+        if self._surface_router is None:
+            self._surface_router = _SurfaceRouter(
+                self._source_shape, self._scale, self._deflection / self._scale, self.slab
+            )
+        if self._surface_router.sensitive(axis, pos):
+            return self._surface_router.section(axis, pos)
+        return None
+
     def section(self, axis: int, pos: float) -> list[np.ndarray] | None:
         """Section polygons [m] for the plane at *pos* [m], or ``None``
         to delegate to the OCC path."""
+        if self.facetted or self._screen(axis, pos * self._scale) is None:
+            resolved = self._sensitive_section(axis, pos)
+            if resolved is not None:
+                return resolved
         pos = pos * self._scale
         if self.facetted:
             if not self._screen_facets(axis, pos):
@@ -6273,7 +6328,9 @@ def _section_worker_count() -> int:
     return min(8, os.cpu_count() or 1)
 
 
-def _section_worker_init(shape_blobs: list[tuple[int, bytes]]) -> None:
+def _section_worker_init(
+    shape_blobs: list[tuple[int, bytes]], robust_sections: bool = False
+) -> None:
     """Worker initializer: deserialize the broadcast shapes once.
 
     Each worker is a fresh ``spawn`` interpreter (never ``fork``: the
@@ -6283,6 +6340,7 @@ def _section_worker_init(shape_blobs: list[tuple[int, bytes]]) -> None:
     from OCC.Core.BRepTools import breptools  # noqa: PLC0415
     from OCC.Core.TopoDS import TopoDS_Shape  # noqa: PLC0415
 
+    worker_section_policy(robust_sections)
     for si, blob in shape_blobs:
         shape = TopoDS_Shape()
         breptools.ReadFromString(blob, shape)
@@ -6544,7 +6602,7 @@ def _parallel_section_prefill(
                 max_workers=n_workers,
                 mp_context=ctx,
                 initializer=_section_worker_init,
-                initargs=(blobs,),
+                initargs=(blobs, robust_sections_enabled()),
             ) as ex,
         ):
             chunk = max(1, len(tasks) // (n_workers * 32))
@@ -7909,14 +7967,41 @@ def occ_volume(shape) -> float:
     from OCC.Core.BRepGProp import brepgprop  # noqa: PLC0415
     from OCC.Core.GProp import GProp_GProps  # noqa: PLC0415
 
+    from magnelio.geo._scaling import fine_detail_scale  # noqa: PLC0415
+
+    occ = _require_occ()
+    box = occ["Bnd_Box"]()
+    occ["brepbndlib"].AddOptimal(shape, box, False, False)
+    if box.IsVoid():
+        return 0.0
+    xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
+    factor = fine_detail_scale((xmin, ymin, zmin), (xmax, ymax, zmax))
+    center = ((xmin + xmax) / 2, (ymin + ymax) / 2, (zmin + zmax) / 2)
+    trsf = occ["gp_Trsf"]()
+    trsf.SetValues(
+        factor,
+        0.0,
+        0.0,
+        -factor * center[0],
+        0.0,
+        factor,
+        0.0,
+        -factor * center[1],
+        0.0,
+        0.0,
+        factor,
+        -factor * center[2],
+    )
+    # DD-285: condition a copy for measurement; keep the construction intact.
+    measured = occ["Transform"](shape, trsf, True).Shape()
     props = GProp_GProps()
     # DD-275: the default fixed mass quadrature over-read rebuilt rational
     # tangent surfaces by 0.84%. Span-aware adaptive Gauss-Kronrod integration
     # also retains analytic precision for conics and trimmed curved sheets.
-    error = brepgprop.VolumePropertiesGK(shape, props, 1e-9, False, True)
+    error = brepgprop.VolumePropertiesGK(measured, props, 1e-9, False, True)
     if error < 0:
         raise RuntimeError("Geometry volume integration failed.")
-    return props.Mass()
+    return props.Mass() / factor**3
 
 
 def find_edges_on_nearest_face(shape, point, scale: float = 1.0):

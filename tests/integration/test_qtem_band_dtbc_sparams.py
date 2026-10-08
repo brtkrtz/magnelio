@@ -43,7 +43,7 @@ N_STEPS_BASE = 4064
 
 #: Kernel length, held FIXED across both record lengths on purpose:
 #: KB-038 established that the length law is a property of the
-#: convolution length and not of the kernel sizing (holding
+#: record length and not of the kernel sizing (holding
 #: n_kernel = 65536 while varying only the record reproduced the same
 #: floors to 0.1 dB), so scaling the kernel with the record would only
 #: mix a second variable into the rate measured here.
@@ -200,19 +200,20 @@ class TestBandDTBCSParams:
 
 
 class TestBandDTBCLengthLaw:
-    """Guard on how fast the port floor degrades with the record length.
+    """Guard on the port floor's measured envelope over record length.
 
     The floor of a band-DTBC port is *not* constant in the length of the
     run: in the production default precision it gets worse the longer
     the march continues, long after the excitation has passed.  That is
     a known, open defect (KB-038 in the internal register), so this
-    class deliberately does not assert an absolute floor -- that would
-    only re-state the defect and would have to be relaxed every time it
-    moved.  What is pinned instead is the *rate*: how many dB the floor
-    loses per doubling of the record.  The rate is what must not get
-    worse, and it is measurable in minutes, while the length at which
-    the defect breaks an absolute acceptance line (49152 steps at full
-    size) is far outside any CI budget.
+    class pins the measured single-precision envelope at two lengths,
+    not the double-precision acceptance floor. A ratio to the current
+    short-run floor can reject an improvement: on the historical source
+    and current environment, both floors improve but the median ratio
+    grows to 9.21 dB. Anchor the doubled-run budget to the recorded
+    baseline so cancellation in a better short run cannot fail it.
+    The short-run bound also prevents a common upward shift from passing
+    merely because its growth rate stays small.
 
     These fixtures run at ``precision="single"`` on purpose.  The rest
     of the suite is pinned to double by ``tests/conftest.py``, and in
@@ -234,20 +235,26 @@ class TestBandDTBCLengthLaw:
     and *gains* 0.72 dB.  The single-precision rate is the same order as
     the one the internal register records for the full-length layered
     line, about 7.5 dB per doubling -- not re-measured here.  The bounds
-    below pin the 4064 -> 8128 pair with roughly 1.7 / 2.3 dB of
-    margin.  They are one-sided on purpose: a *smaller* rate means the
-    defect got better, and must not fail.
+    below retain the original doubled-run ceilings with roughly
+    1.7 / 2.3 dB of margin and add a 2 dB short-run margin. They are
+    one-sided: a lower reflection floor must not fail. The 2026-10-05
+    audit and historical-source control are recorded in
+    ``investigations/test-health-2026-10-05/MEASUREMENTS.md`` (internal record).
     """
 
-    #: dB the median floor may lose per doubling of the record.
-    #: Measured 6.35 dB on 2026-09-01; see the class docstring.
+    BASE_MEDIAN_FLOOR_DB = -136.19
+    BASE_WORST_FLOOR_DB = -128.72
+    MAX_SHORT_SHIFT_DB = 2.0
+
+    #: Doubled-record budget relative to the recorded median baseline.
     MAX_MEDIAN_RATE_DB = 8.0
 
-    #: Same for the worst measurement point, which scatters more.
-    #: Measured 4.75 dB on 2026-09-01.
+    #: Same budget for the worst measurement point.
     MAX_WORST_RATE_DB = 7.0
 
-    def test_floor_degradation_per_doubling(self, band_run_single, band_run_single_doubled):
+    def test_floor_stays_within_pinned_length_envelope(
+        self, band_run_single, band_run_single_doubled
+    ):
         _, s_short, _ = band_run_single
         _, s_long, _ = band_run_single_doubled
         db_short = _s11_db(s_short)
@@ -255,21 +262,10 @@ class TestBandDTBCLengthLaw:
         assert np.all(np.isfinite(db_short))
         assert np.all(np.isfinite(db_long))
 
-        worst_rate = float(db_long.max() - db_short.max())
-        median_rate = float(np.median(db_long) - np.median(db_short))
-
-        assert median_rate < self.MAX_MEDIAN_RATE_DB, (
-            f"the band port floor now loses {median_rate:.2f} dB (median) per "
-            f"doubling of the record, against {self.MAX_MEDIAN_RATE_DB} dB "
-            f"pinned: {np.median(db_short):.2f} dB at {N_STEPS_BASE} steps, "
-            f"{np.median(db_long):.2f} dB at {2 * N_STEPS_BASE}"
-        )
-        assert worst_rate < self.MAX_WORST_RATE_DB, (
-            f"the band port floor now loses {worst_rate:.2f} dB (worst point) "
-            f"per doubling of the record, against {self.MAX_WORST_RATE_DB} dB "
-            f"pinned: {db_short.max():.2f} dB at {N_STEPS_BASE} steps, "
-            f"{db_long.max():.2f} dB at {2 * N_STEPS_BASE}"
-        )
+        assert np.median(db_short) < self.BASE_MEDIAN_FLOOR_DB + self.MAX_SHORT_SHIFT_DB
+        assert db_short.max() < self.BASE_WORST_FLOOR_DB + self.MAX_SHORT_SHIFT_DB
+        assert np.median(db_long) < self.BASE_MEDIAN_FLOOR_DB + self.MAX_MEDIAN_RATE_DB
+        assert db_long.max() < self.BASE_WORST_FLOOR_DB + self.MAX_WORST_RATE_DB
 
     def test_doubled_run_still_decays(self, band_run_single_doubled):
         # The rate above is only meaningful while the record really has

@@ -922,6 +922,21 @@ strips costs seconds rather than the minutes a single fuse of all of
 them takes.  The point set is the same either way; the face count is
 what the mesher sees.
 
+## Check a solid's volume
+
+`solid.volume()` measures the enclosed CAD geometry in cubic metres, including
+curved walls, Boolean cuts and intrinsic holes. It uses adaptive integration
+on a centred, uniformly scaled copy of the built shape, then converts the
+result back to the original units. This keeps the measurement accurate for
+small rational spline faces without changing the solid or its mesh. A
+`Group.volume()` sums member volumes and counts any overlap more than once.
+
+The result describes the kernel geometry: spline fitting and CAD import
+tolerances still limit agreement with an ideal mathematical surface. A
+volume check does not certify topology or mesh convergence. Leave the
+optional build `scale` unset for normal use. Tutorial 14 checks a hollow
+continuation against cross-section area times path length.
+
 ## Lofts: between profiles, and between faces
 
 Two constructors build a body that changes cross-section along its

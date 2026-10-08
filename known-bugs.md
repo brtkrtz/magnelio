@@ -16,8 +16,37 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Five entries are open as of 2026-10-05: KB-023, KB-038, KB-043,
-KB-046 and KB-047.** Everything else is struck through and resolved.
+**Two entries are open as of 2026-10-08: KB-038 and KB-043 on the default fast route.**
+KB-043 has an explicit opt-in mitigation; other entries are resolved.
+
+## KB-053: ~~Bounded-surface sections reject the repeated coaxial-cell CAD model~~ — Resolved (DD-287, 2026-10-06)
+
+The new section route rejected a valid 51-cell source at a three-endpoint
+shared edge. Embedded coedges and within-tolerance trim-vertex gaps corrupted
+UV membership; subsequent cuts exposed dense interpolation samples, hidden
+periodicity, lost cyclic trace identity and nonmonotonic scale retries.
+The repair preserves native support domains, actual material wires and original
+closed traces, and retains the existing residual/topology/CAD-tube checks.
+
+The complete unchanged 51-cell / 102-port input now meshes: 92 × 92 × 1014,
+8,582,496 cells, bit-identical grid coordinates. All 361 recorded failing cuts,
+46 section regressions, 63 independent area references and the 320-cell material
+certificate pass. Full suite: 4446 passed / 13 skipped / no failures. The repair
+smoke run takes 1811.762 s versus the parent's 641.465 s; concurrent test work
+and missing repeats prevent a controlled slowdown estimate. No global physical
+surface or electromagnetic error percentage is established. Evidence:
+`investigations/near-tangent-meshing-performance/hesr/REPAIR_MEASUREMENTS.md`
+and `REPAIR_DERIVATION.md` (internal dossier).
+
+## KB-052: ~~Project watching can omit the final writer state~~ — Resolved (2026-10-05)
+
+The generator checked terminal state after yielding a running update. If
+the writer completed while the consumer handled that update, iteration
+ended before yielding the completed state. A deterministic paused-consumer
+test reproduces the missing update. The terminal decision now precedes
+the yield, so completion during consumption is observed in the next
+iteration. All five watch tests pass. Discovery and reproduction:
+`investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
 
 ## KB-051: ~~Energy stopping can discard pending finite excitations~~ — Resolved (2026-10-05)
 
@@ -56,86 +85,30 @@ contrast at two curved-wall edges. DD-277 separates the two, routes those
 edges through the line-solid classifier, and restores the HESR coax port's
 exact DTBC certificate. Full diagnosis and measurement are in DD-277.
 
-## KB-047: `integrate_E` silently returns the real part of a complex field — Open (2026-09-08)
+## KB-047: ~~`integrate_E` silently returns the real part of a complex field~~ — Resolved (2026-10-05)
 
-**What was measured.**  `circuit.integrate_E` accumulates each sample as
-`v += sign * float(comp[axis][i, j, k]) * dl` (`circuit/rasterize.py`).
-`float()` on a complex value raises no error: it emits a `ComplexWarning`
-and drops the imaginary part.  Minimal case — a uniform
-`Ex = 3 + 4j` V/m integrated over 7 mm of x:
+DD-284 preserves the full complex voltage phasor while retaining the
+existing float result and accumulation for real fields. The 7 mm,
+`Ex=3+4j` counterexample now returns `0.021+0.028j` V. Uniform/graded
+three-axis paths, reversal, closed-loop circulation, frequency snapshots
+and real float32/float64 compatibility are covered. Physical FieldState
+units remain V/m; raw FIT edge voltages are not the input. Methods and
+the voltage-integral how-to document the contract. Initial discovery:
+`investigations/oblique-lumped-path/DERIVATION.md`; closure evidence:
+`investigations/kb047-complex-integrals/MEASUREMENTS.md` (internal records).
 
-    exact    2.100000e-02 + 2.800000e-02j
-    returned 0.021
+## KB-046: ~~Volume is quadrature-limited on rational B-spline faces~~ — Resolved (2026-10-05)
 
-The real part is exact, the imaginary part is gone, and the returned
-value is an ordinary float that looks like a valid answer.  On a
-monitor phasor the symptom is that every integral comes back at a
-phase of exactly 0 or 180 degrees.
-
-**Why it matters now.**  The function was written for real time-domain
-frames (DD-076, when that was the only kind).  A complex `FieldState`
-from a frequency monitor is the normal user object since DD-259, and
-`FieldSpectrum.at_frequency(f)` hands one over directly — so the
-natural call today is the one that fails.  Found while building the
-oblique-path probes, where the path integral of a monitor phasor is the
-measurement; record:
-`investigations/oblique-lumped-path/DERIVATION.md` (internal dossier).
-
-**Why it is open rather than fixed.**  The arithmetic fix is one line
-(drop the `float()` cast), but it changes the declared return type from
-`float` to "float or complex, following the input", which is a
-user-visible contract change and wants a changelog entry.  The
-alternatives — rejecting complex input outright, or splitting off a
-second entry point — are the same size of decision.  Nothing is
-silently wrong for a real field, so there is no urgency to pick one
-badly.
-
-**Not the same defect, fixed in passing:** the `field` parameter was
-documented as a `FieldArrays`, whose entries have been FIT grid
-quantities in volts since DD-085; multiplying those by `dl` again is
-wrong by a cell length.  The function is correct for the `FieldState`
-(V/m) a user actually holds, and duck-typing has been carrying it.
-The docstring now says so.
-
-## KB-046: `volume()` is quadrature-limited on rational B-spline faces — Open (2026-09-04)
-
-**What was measured.**  A `lofted(..., blend="tangent")` between two
-coaxial circles of radii 3 and 6 mm over 20 mm (DD-250) has the
-closed-form volume `π·l·(r₀² + r₀·Δr + Δr²·(9/5 − 2 + 4/7))` =
-1341.0113 mm³.  `Shape.volume()` reports **1352.86 mm³ (+0.88 %)**.
-The lateral face is the cone's own rational periodic B-spline (u-degree
-2, six poles, weights 1/0.5) with the DD-250 Hermite rows along v;
-OCC's fixed-order Gauss rule (`BRepGProp::VolumeProperties(shape,
-props)`) does not integrate it exactly.  The adaptive rule
-(`VolumeProperties(shape, props, 1e-9)`) reads 1341.0113 to 1.6e-8 —
-and is still not the fix: on the polar-parametrised paraboloid dish of
-`tests/unit/test_geo_surface.py` (degenerate pole at r = 0, target
-π(D/2)²·T) it drifts with its tolerance, −2.2e-3 at 1e-9 and −3.8e-4
-at 1e-12, where the fixed rule is right to 4e-6.  Inserting knots into
-the Hermite face does not converge the fixed rule either (v-spans
-2 / 4 / 8: +8.4e-4 / −1.6e-3 / +1.4e-4; u-splits change nothing).
-Record: `investigations/taper-tangency/MEASUREMENTS.md` §3 (internal
-dossier).
-
-**Scope.**  Rational B-spline faces only: the round-to-round tangent
-taper (a `Cone` or `Cylinder` lateral converted by `NurbsConvert`) and,
-presumably, rational surfaces arriving through CAD import.  Polynomial
-B-spline faces (the rectangle-to-circle taper, whose circle
-`ThruSections` approximates as a degree-7 polynomial; the parametric
-dish) and analytic faces are exact under the fixed rule — sphere,
-torus, filleted brick and the DD-144 swept elbow all agree with the
-adaptive rule to ≤ 1e-8.  Only `Shape.volume()` is affected: the mesher
-never integrates volumes over faces (it works on sections), so no
-simulated quantity moves.
-
-**Why it stays open.**  Neither rule is right everywhere, so the fix is
-not a switch of rule.  Candidates: choose per face (adaptive on
-`BRepAdaptor_Surface.IsURational()/IsVRational()` faces, fixed
-elsewhere), or a higher fixed integration order through
-`BRepGProp_Face`.  Closes when
-`TestTangentBlend::test_taper_between_two_circles_has_the_smoothstep_volume`
-passes through `volume()` at rel 1e-6 — today it integrates the shape
-adaptively itself.
+DD-275 WP4 replaced fixed volume quadrature with span-aware Gauss-Kronrod
+integration. DD-285 closes the remaining precision gap by measuring a
+centred, uniformly scaled copy of the completed CAD shape. The original
+3/6 mm smoothstep taper now agrees with its analytic volume to about
+1e-10 relative through public `volume()`, including automatic and explicit
+build scales. Increasing/decreasing tapers at three physical sizes and
+the polar paraboloid counterexample are covered. Construction and meshing
+retain their geometry. Original record:
+`investigations/taper-tangency/MEASUREMENTS.md`; closure:
+`investigations/kb046-volume-quadrature/MEASUREMENTS.md` (internal records).
 
 ## KB-045: ~~The band-DTBC port does not run on the CuPy backend~~ — Resolved (2026-09-03)
 
@@ -223,44 +196,32 @@ kernel-path model (5.44–5.87 s → 6.07–6.61 s, self + children), and
 re-pins every artefact with a curved face.  Internal record:
 `investigations/kb042-analytic-facets/MEASUREMENTS.md`.
 
-## KB-043: Neither section path is trustworthy within about 1e-7 m of a cylinder generatrix — Open (2026-09-01)
+## KB-043: Fast sections can lose material near a cylinder generatrix — Opt-in mitigation (DD-287)
 
-Pre-existing, surfaced while certifying the DD-240 tangency screen, and
-**not one-sided**: close in to a generatrix the exact kernel is the
-worse of the two paths.  Measured on a cylinder of r = 2.30 mm at a
-section deflection of 2.5e-6, sectioned at a distance `d` from the
-generatrix, against the closed-form area of the sliver:
+The Boolean section lost curves before polygon assembly; lifted facet
+crossings missed a trim boundary. With the corrected bore-aware reference,
+the facet path lost 25.1% / 49.7% at 100 nm / 1 nm, while the kernel returned
+zero. The historical alleged 14% loss at 1 um omitted the bore and was not
+a defect.
 
-    d       facet        kernel       true
-    1e-6    1.1668e-06   1.1668e-06   1.3563e-06
-    1e-7    2.7619e-07   0.0          4.2895e-07
-    1e-9    1.8544e-08   0.0          4.2895e-08
+With `MeshControl(robust_sections=True)`, sensitive cuts use conditioned bounded CAD-surface traces, face trims
+and shared-edge contour assembly. Holes retain their signed winding;
+ordinary fast paths and coplanar interface semantics remain. Final residual,
+CAD boundary-tube and closure checks reject unresolved sensitive sections
+explicitly. Implemented on `fix/near-tangent-sections`.
+The controlled repeated-cell comparison establishes substantial build cost
+with very small finite-record S/field changes. The route is opt-in as of
+2026-10-08; the default fast route remains affected. Actual wall-loss sensitivity
+has not been measured, and sampling-weight diagnostics cannot certify it.
 
-At `d` = 1e-6 the two paths agree with each other and sit 14 % below
-truth; from 1e-7 inward the kernel collapses to zero while the facet
-path still books 44–64 % of it — there the *facetted* answer is the more
-accurate one.  A model whose grid lands that close to a bore loses
-cross-section silently, and swapping the path does not save it.
-
-**This is the second reason DD-240's tangency band is a rounding guard
-rather than a physical band.**  The exactly tangent plane itself is
-closed: `_screen_facets` now carries the cylinder-tangency test the
-analytic screen already had, so a tangent plane is delegated instead of
-sectioned — before that, the facet compression manufactured a full
-circle out of a degenerate trace and booked
-1.5386530746873848e-06 m² = π r_bore² where both the kernel and the
-pre-repair tree book 0.0 (a radius sweep 1.5–3.0 mm at deflection 2.5e-6
-fired 4 of 16 cases before, 0 of 16 after), and the mesher does place a
-grid plane bit-exactly on a tangent generatrix (measured |δ| =
-0.000e+00).  The band that delegates it is a *relative*
-`_TANGENCY_ROUNDING = 1e-12`, needed because one case missed at a
-residual of 4.337e-19, half an ulp on 4.4 mm.  Widening it to the
-deflection would hand the whole ladder above to the kernel, i.e. to the
-less accurate of the two answers, so the band was deliberately left at
-the rounding guard.
-
-Closing it means a section operator that stays accurate through
-tangency on *both* paths; nothing measured here says how.
+Acceptance: 31 new regressions, 63 independent production section cases,
+320 material rectangles, mesh stress, port and S-parameter scale certificates.
+Worst absolute coverage/epsilon errors are 2.602e-6 at 100 nm and 1.879e-7
+at 1 nm. Full suite: **4405 passed, 39 skipped, no failures**.
+Evidence: `investigations/kb043-near-tangency/IMPLEMENTATION.md` (internal
+record). Reproduction, corrected references and rejected shortcuts remain
+in that internal dossier; the repository certificate is
+`validation/surface_section_tangency_certificate.py`.
 
 ## KB-042: ~~Cone, sphere and torus faces of a facetted shape keep the KB-041 reach defect~~ — Resolved (DD-242, 2026-09-02)
 
@@ -555,6 +516,17 @@ knowing when reading any of these numbers: the **median does not move**
 frequency point erodes, so a band-averaged figure of merit shows
 nothing.  This is now documented for users in
 `docs/methods/precision.md`.
+
+**Complete-suite audit, 2026-10-05.** The small fixture now reads median
+-145.77/-136.56 dB at 4064/8128 steps: both better than the recorded
+-136.19/-129.85 dB, but with a 9.21 dB difference. Historical source
+`19ac93d3` on the current environment reproduces that difference, so it
+does not establish a new code regression. The regression test retains the
+original doubled-run ceilings, anchored to the recorded baseline, and adds
+a short-run ceiling; cancellation lowering the short-run floor alone no
+longer fails it. This does not fix the interface-wordlength defect or
+establish its floor for arbitrary run lengths. Evidence:
+`investigations/test-health-2026-10-05/MEASUREMENTS.md` (internal record).
 
 ## KB-037: ~~Two builds of the same band port gave different Galerkin subspaces~~ — Resolved (2026-08-31)
 
@@ -928,33 +900,17 @@ Regression cover in `tests/unit/test_geometry.py::TestMissingOccSurfaces`:
 each site raises on `ImportError` and still skips on any other failure.
 Nothing changes on an install that has the dependency.
 
-## KB-023: CPML min and max faces are not mirror images — Open (2026-08-18)
+## KB-023: ~~CPML min and max faces are not mirror images~~ — Resolved (2026-10-05)
 
-The CPML profile (σ, κ, α) is sampled at cell centres and the same
-per-cell coefficient drives both the ψ recursion of the node-registered
-E components and the cell-registered H components.  On a staggered
-grid that puts the effective profile half a cell off its staggered
-sampling points, with opposite sign on min and max faces — so the two
-absorbers of one axis are not mirror images and their residual
-reflections differ.  The absorber still meets its `R_target`; only the
-*symmetry* between opposing faces is broken.
-
-Measured (internal record, DD-172 parity work): a mirror-symmetric
-thin-wire dipole in a CPML box shows a field-level mirror asymmetry of
-~1e-4 at the PML interface shortly after the pulse passes, growing to
-several percent of the (decaying) local field in the resonant tail —
-in double precision, so it is structural, not rounding.  Recycled
-through the high-Q antenna it floors the full-vs-half S11 parity of
-`validation/lumped_symmetry_parity_certificate.py` at ~2e-2 (gate B);
-the same comparison in an all-PEC cavity is exact to 5e-16 (gate A),
-and a plain vacuum port under CPML agrees to 3e-6 — the asymmetry only
-matters where a resonator re-amplifies the residual.
-
-Closing it means sampling the profile at the true staggered positions
-(E at nodes, H at cell centres, measured from the physical interface),
-which changes every CPML run's bit pattern and needs its own
-reflection-floor re-certification — deferred until a use case needs
-mirror-exact absorbers.
+DD-286 samples electric updates at nodes and magnetic updates at cell
+centres, using physical depth from the interface on graded grids. All
+three axes and both precisions pass independent mirror tests. The resonant
+full/half dipole max S11 difference improves from 0.02149 to 3.04e-5;
+its gate tightens from 5e-2 to 1e-4. The vacuum pulse certificate covers
+opposing faces and 8/16/24 cells in all three directions. Existing
+checkpoints retain their former profiles and resume bit-exactly against
+the original source; start a new run to use the corrected profiles.
+Evidence: `investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
 
 ## KB-022: ~~Pair coupling accepts ladder candidates 100x looser than the transparent-boundary gate~~ — Resolved (DD-228, 2026-08-30)
 

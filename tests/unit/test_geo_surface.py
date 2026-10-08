@@ -126,9 +126,10 @@ class TestParametricSampling:
 
 
 class TestExtrudeAndThicken:
-    def test_extruded_volume_is_projected_disc_times_length(self, dish):
+    @pytest.mark.parametrize("scale", [None, 1.0, 1000.0])
+    def test_extruded_volume_is_projected_disc_times_length(self, dish, scale):
         solid = dish.extruded(vector=(0.0, 0.0, -T), material="pec")
-        assert solid.volume() == pytest.approx(math.pi * (D / 2) ** 2 * T, rel=1e-4)
+        assert solid.volume(scale=scale) == pytest.approx(math.pi * (D / 2) ** 2 * T, rel=1e-4)
         assert solid.material.is_pec
 
     def test_extruding_a_construction_sheet_produces_a_boolean_tool(self, dish):

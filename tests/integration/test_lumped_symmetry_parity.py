@@ -142,14 +142,10 @@ def test_pec_crossing_exact_restriction_in_cavity(monkeypatch):
 def test_pec_crossing_full_half_parity_open_boundary():
     """Half dipole + SymmetryPEC feed == full dipole, not the monopole.
 
-    With CPML boundaries the parity is physics-level, not exact: the
-    min/max absorber profiles are sampled at cell centres for both the
-    node-registered E and the cell-registered H updates, so the two
-    faces are not mirror images and their residual reflections differ
-    (KB entry).  The resonant dipole recycles that ~1e-4 field-level
-    residual into ~1e-2 on S11 — the tolerance sits above it, and far
-    below the O(0.3) error of an unscaled feed (the monopole trap the
-    gate exists to catch).
+    Staggered CPML profiles preserve spatial mirror symmetry. The two
+    independently estimated time steps still differ slightly, so the
+    spectral comparison allows their small discretisation error. The
+    gate excludes both the old absorber defect and an unscaled feed.
     """
     span = 2 * H_CELLS
     nz = span + 2 * (PAD + PML)
@@ -173,13 +169,13 @@ def test_pec_crossing_full_half_parity_open_boundary():
     s_half = _s11(mesh_h, grid_h, i0, j0, 0.0, float(grid_h.z[1]), bc_half)
 
     err = np.max(np.abs(s_half - s_full))
-    assert err < 5e-2, f"max |S11_half - S11_full| = {err:.2e}"
+    assert err < 1e-4, f"max |S11_half - S11_full| = {err:.2e}"
 
     # The headline numbers users read: resonance and feed resistance.
     zin_full = Z0_FEED * (1 + s_full) / (1 - s_full)
     zin_half = Z0_FEED * (1 + s_half) / (1 - s_half)
     rel = np.max(np.abs(zin_half - zin_full) / np.abs(zin_full))
-    assert rel < 1e-1, f"max relative Z_in deviation = {rel:.2e}"
+    assert rel < 2e-4, f"max relative Z_in deviation = {rel:.2e}"
 
 
 GAP, WIDTH, LENGTH = 5e-3, 16e-3, 60e-3

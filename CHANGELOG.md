@@ -11,6 +11,27 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Nearly tangent cuts through curved and trimmed CAD faces retain thin
+  material regions in conformal meshes. Shared-edge contour assembly preserves
+  holes, while unresolved sensitive cuts report an error instead of silently
+  accepting incomplete coverage.
+
+- Project watching delivers the final state when a writer finishes while
+  the consumer is processing the previous update.
+
+- Opposing CPML boundaries sample electric and magnetic fields at their
+  staggered positions, removing the absorber asymmetry in symmetry-model
+  comparisons. Existing checkpoints retain their original profiles on resume.
+
+- CAD volume measurements accurately integrate small rational spline faces,
+  including smooth circular tapers, while retaining curved-sheet precision.
+
+- Electric-field line integrals retain the full complex voltage and phase
+  of frequency-domain fields. Real-valued fields still return a float.
+
+- S-parameter queries on stored general time-domain runs again explain
+  that a scattering analysis is required, instead of reporting a missing run.
+
 - Stored-result metadata and time plots no longer derive the full
   S-matrix. Individual S-parameter queries evaluate only the selected
   excitation and involved ports, reuse calibrated spectra on matching

@@ -40,23 +40,22 @@ def _run(source, probes):
     for src in src_list:
         model.add_source(src)
     mesh = mio.Mesh.from_geometry(model, mio.MeshControl(min_nodes_per_wavelength=10), f_max=F_MAX)
+    waveform = signals.WaveformGaussian(f_max=F_MAX)
+    sample_times = waveform.peak_time + np.array([13e-12, 43e-12])
     monitor_list = [
         monitors.MonitorFieldTime(
             name=name,
             corners=corners,
             fields=["E"],
-            # the Gaussian peaks at 267 ps; the box face is 13 ps away
-            times=[280e-12, 310e-12],
+            # Sample the pulse after propagation from the TF/SF box face.
+            times=sample_times,
         )
         for name, corners in probes.items()
     ]
     analysis = mio.AnalysisTD(mesh=mesh, monitors=monitor_list, verbose=False, backend="numpy")
     result = analysis.run(
-        excitations=[
-            mio.Excitation(src.name, waveform=signals.WaveformGaussian(f_max=F_MAX))
-            for src in src_list
-        ],
-        t_end=320e-12,
+        excitations=[mio.Excitation(src.name, waveform=waveform) for src in src_list],
+        t_end=max(waveform.t_end, sample_times[-1]) + 10e-12,
         energy_stop_db=None,
     )
     return {name: result.monitors[name].recording.cell_centered(squeeze=True) for name in probes}

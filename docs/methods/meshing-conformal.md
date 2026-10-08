@@ -3,14 +3,14 @@
 ## Geometry kernel and material filling
 
 Solid geometry is authored through a CSG layer (`geometry/`) backed by
-the Open CASCADE kernel via `pythonocc-core` (DD-003, DD-016).
+the Open CASCADE kernel via `pythonocc-core`.
 Material assignment on the grid uses exact boundary-representation
 queries (solid classification, 3D face–solid intersection, planar
 cross-sections) rather than voxel sampling.  This is engineering
 infrastructure on top of a third-party kernel, not a numerical-methods
 contribution.
 
-The planar cross-sections that feed the conformal fractions are taken
+Regular planar cross-sections that feed the conformal fractions are taken
 three ways.  Planar faces are sectioned exactly by an in-house engine
 (intersection points on straight edges, segments stitched through
 shared edges).  Free-form faces — parametric surfaces, lofts, imported
@@ -81,6 +81,66 @@ along a conductor's corner — classifies its sub-segment midpoints on
 probe lines of their own, and a midpoint within tolerance of a face
 counts as conductor, as the kernel's classifier would have it.
 
+### Nearly tangent cuts
+
+A plane that almost touches a curved wall can intersect a thin but nonzero
+material region. Losing that region changes the conformal material matrices,
+even if the bulk cell classification looks reasonable. Comparing two
+approximations is insufficient: both may lose the same region.
+
+The default section paths favour fast mesh construction and can miss very
+thin material regions near tangency. An optional in-house bounded-surface
+section is available through `MeshControl(robust_sections=True)`:
+
+```python
+import magnelio as mio
+
+control = mio.MeshControl(robust_sections=True)
+mesh = mio.Mesh.from_geometry(model, control, f_max=5e9)
+```
+
+`robust_sections` defaults to `False`. Enabling it selects the bounded-surface
+route for geometrically sensitive planes, including cuts computed by parallel
+mesh workers. It can substantially increase build time on curved CAD models;
+keep the selection fixed across a convergence ladder. There is no automatic
+warning or switch for a silently missed thin region. Preserving that region
+does not by itself establish an improvement in S-parameters or conductor
+losses: wall losses also depend on the sampled tangential magnetic field and
+the wall reconstruction. Assess those quantities separately when relevant.
+
+The optional route intersects the stored CAD surfaces with the requested plane,
+clips the resulting curves to their actual face boundaries and connects
+them through shared CAD edges. Outer boundaries and holes keep opposite
+orientations. The computation uses a centred, scaled copy of the completed
+body; construction, placement and mesh coordinates retain their geometry.
+Ordinary cuts keep the existing fast paths.
+
+An imprint or construction edge embedded inside a CAD face does not create
+another material boundary. Sections follow the bounding wires, including
+holes and periodic seams. Boundary curves can differ slightly at a shared
+vertex within the stored CAD tolerances; the interval classification uses
+another transversal direction when a test ray cannot give a consistent
+closed-boundary count. Trimmed periodic surfaces retain their native support
+domain for the intersection, while periodic parameter wrapping follows the
+underlying surface. Refinement preserves the closed support trace's identity
+so artificial parameter-domain ends can still be connected.
+
+The curve-position residual budget is a small fraction of the section's
+chord budget, with a floating-point resolution floor. This controls the
+geometric evaluation; it does not bound the electromagnetic discretisation
+error or recover features absent from the stored CAD model. In particular,
+a sampled parametric surface is the interpolated CAD surface, whose extrema
+need not equal those of the function between its supplied samples.
+
+Near tangency differs from a material interface coincident with the
+integration plane. Coincident interfaces retain their two-sided material
+limits, and domain boundaries retain the interior-sided limit. A tangent
+boundary with no area is empty; a coplanar material face keeps its area.
+When a sensitive section cannot satisfy the curve, boundary or closure
+checks, mesh creation reports the cut coordinate and the reason instead of
+accepting partial material coverage. Check the body's validity, units and
+boundary tolerances before treating mesh refinement as a remedy.
+
 ## Graded Cartesian mesh
 
 The final meshing progress line reports the three grid dimensions, total
@@ -92,9 +152,9 @@ additional memory.
 
 The mesh generator (`mesh/mesher.py`) produces a graded (non-uniform)
 Cartesian tensor-product grid: geometry-derived fixpoints ("anchors",
-plane clustering, DD-059…DD-062) plus feature-based two-scale
+plane clustering) plus feature-based two-scale
 refinement (`h_fine` near features, `h_coarse` in bulk, geometric
-grading between them, DD-028).  Graded Cartesian meshes and the
+grading between them).  Graded Cartesian meshes and the
 accuracy trade-offs of local grading are standard FDTD/FIT practice
 {cite}`taflovehagness2005`; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.
@@ -106,7 +166,7 @@ tensor-product grid the question is *which* λ.  A grid line spans the
 whole domain, so the finest sensible resolution is per *slab*: each
 interval between two grid planes on an axis is a slab of the domain,
 and the densest material whose bounding box reaches into that slab
-sets the slab's wavelength (DD-192, the default
+sets the slab's wavelength (the default
 `MeshControl(wavelength_rule="local")`).  The air box around a small
 ceramic is meshed at the air wavelength on every axis interval the
 ceramic does not reach; the slabs the ceramic occupies — and every
@@ -121,7 +181,7 @@ whole domain.
 
 The two rules differ only far from material interfaces.  Feature
 refinement (`min_cells_per_feature`), the geometric grading from an
-interface into the bulk, the DD-107 domain-face buffer and the edge
+interface into the bulk, the domain-face buffer and the edge
 floor below are the same under both; the edge floor keeps the
 densest material's wavelength as its reference, because it bounds
 the time step, and the time step follows the smallest cell anywhere.
@@ -133,7 +193,7 @@ settings; the slab-wise form is its consequence on a tensor grid.
 Grid planes come from two passes over the CAD model.  The *face* pass
 places a plane on every planar face with an axis-parallel normal and
 on the axis-normal tangent positions of cylinders and spheres — the
-material boundaries.  The *edge* pass (DD-191) places a plane wherever
+material boundaries.  The *edge* pass places a plane wherever
 a B-rep edge lies flat in an axis-normal plane: the circle where a
 chamfer cone meets a cylinder, the straight line where a fillet leaves
 a box face, the section curves of a loft, the iris and equator
@@ -284,7 +344,7 @@ Material boundaries that cut through grid cells are represented by
 staircasing: per primal edge the classifier stores an averaged
 $\bar\varepsilon$, a free (non-PEC) length fraction and a free dual-face
 area fraction; per dual face a corresponding $\bar\mu$ and free-area
-data (unified per-edge/per-face sub-cell classification, DD-051).
+data (unified per-edge/per-face sub-cell classification).
 This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
@@ -308,19 +368,18 @@ see it.  Where the edge floor drops that plane, the mesher says so.
 For perfectly conducting boundaries the classifier additionally
 shortens partially-PEC edges (free-length weighting), which is the
 conformal-PEC idea of Dey and Mittra {cite}`deymittra1997`
-(DD-036, since generalised into the unified classifier of DD-051).
+(generalised into the unified sub-cell classifier).
 
 Two refinements are in-house:
 
-- **LC-consistent pair coupling** (DD-053, `couple_face_material_pairs`):
+- **LC-consistent pair coupling** (`couple_face_material_pairs`):
   on dual faces with a locally translation-invariant ladder direction,
   the averaged $\bar\mu$ is replaced by the value that makes the
   co-located product $M_\varepsilon M_\mu$ equal the exact
   transmission-line value $\varepsilon_0\mu_0\,\varepsilon\mu\,d\tilde d$,
   so a discrete travelling wave on a uniform line is exact
-  (derivation in `design-decisions.md` DD-053).
-- **Enlarged-cell donor** (DD-058, implemented but dormant — measured
-  neutral): stabilising strongly cut cells by borrowing area from the
+  (in-house derivation).
+- **Enlarged-cell donor** (currently inactive): stabilising strongly cut cells by borrowing area from the
   uncut neighbour.  The published antecedent is the family of
   uniformly stable conformal schemes / enlarged-cell techniques, e.g.
   Zagorodnov, Schuhmann and Weiland {cite}`zagorodnov2003`.
@@ -328,8 +387,8 @@ Two refinements are in-house:
 ## Thin conducting sheets
 
 Zero-thickness or sub-cell metallisation is detected before gridding
-(DD-035, DD-059) and represented as PEC edge masks on the primal grid
-(`apply_thin_pec_sheet`, DD-017) — the standard thin-sheet treatment
+and represented as PEC edge masks on the primal grid
+(`apply_thin_pec_sheet`) — the standard thin-sheet treatment
 in Cartesian time-domain solvers {cite}`taflovehagness2005`
 (subcell thin-sheet models are ch. 10 there; the
 detection pipeline itself is in-house).  The footprint a sheet paints
@@ -347,7 +406,7 @@ plane.
 
 `ThinWire(curve, radius)` embeds a conductor thinner than a cell as a
 PEC edge chain with corrected surrounding material matrices
-(`mesh/thin_wire.py`, DD-080).  The model is the classic thin-wire
+(`mesh/thin_wire.py`).  The model is the classic thin-wire
 sub-cell treatment of Holland and Simpson {cite}`hollandsimpson1981`,
 realised in the paired $(m, 1/m)$ encoding of
 Noda and Yokoyama {cite}`nodayokoyama2002`:
@@ -398,7 +457,6 @@ insulated wires are outside the model.
 
 ## Mesh quality safeguards
 
-Hard minimum cell size with floor-aware refits and a longitudinal
-series-$\varepsilon$ correction (DD-060), per-axis fine resolution
-(DD-061), a permanent 30-case stress sentinel (DD-062) and the
-reported edge floor (DD-191) are in-house engineering.
+Hard minimum cell size with floor-aware refits, a longitudinal
+series-$\varepsilon$ correction, per-axis fine resolution and the
+reported edge floor are in-house engineering.

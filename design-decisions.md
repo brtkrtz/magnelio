@@ -4394,6 +4394,9 @@ model, and there the single-edge-vs-distributed-mode normalisation must be
 handled by the element, not the rasteriser.  Next: 3b lumped RLC on a
 single-edge curve fixture.
 
+DD-284 extends the original real-only integral contract to complex
+physical field frames, preserving the real accumulation and rasteriser.
+
 ---
 
 ## DD-077 — Trapezoidal RLC companion models (3b core); operator unification pending
@@ -11668,6 +11671,9 @@ asymmetry the gate uncovered (KB-023); an unscaled feed sits at
 O(0.3).  Gate C — a passive load in a magnetic plane presents the
 doubled trapezoidal impedance to 1.0e-7.
 
+**Absorber follow-up (2026-10-05):** [[DD-286]] resolves KB-023 with
+staggered profile sampling; gate B now measures 3.04e-5 and enforces 1e-4.
+
 **Files:** `src/magnelio/ports/_lumped/port_report.py` (new),
 `ports/_lumped/factory.py` (`_resolve_symmetry`, `_scaled_element`),
 `ports/_lumped/operator.py` (`port_report` field),
@@ -17457,6 +17463,20 @@ the Hertzian value with `D_max` 1.499 and a `sin θ` pattern.  The
 how-to *Impressed currents* adds the ground-plane monopole (P_rad
 0.960 of the analytic value, D 3.14 against 3.0).
 
+**Finite-record audit (2026-10-05).** The revised Gaussian exposed a
+fixture limitation: a unipolar open-path current leaves endpoint charge
+and a static E tail. Its rectangular finite DFT produces D_max 1.707,
+unchanged with energy stopping disabled. A modulated 4–6 GHz pulse with
+negligible net current gives 1.5073151. Independently extending only the
+unipolar probe's final static E samples by their exact geometric-series
+DFT tail gives 1.5073151 and the same radiated power to 2e-8 relative.
+The radiation test therefore uses the charge-balanced pulse and checks
+its sampled net current; the unipolar discrete-charge gate stays intact.
+No static-tail assumption is added to production monitors. Methods prose
+states this finite-record limit. Evidence and the probe `probe_sources.py`:
+`investigations/test-health-2026-10-05/DERIVATION.md` and `MEASUREMENTS.md`
+(internal records).
+
 **Limits.**  This is a source, not a wire: no sub-cell thin-wire
 model, no self-consistent current, no conductor.  The internal
 `mesh._thin_wire` machinery (used by the DD-173 antenna gates) stays
@@ -19156,6 +19176,21 @@ fixture deliberately left as built.
   trustworthy.  Widening the tangency band to the deflection would hand
   those planes to the kernel and make them worse — the second reason
   `_TANGENCY_ROUNDING` is a rounding guard and not a tolerance.
+  **Reference correction (2026-10-05).** The original measured ladder
+  reproduces, but its reference omitted the fixture's 0.7 mm cross-bore.
+  Correct areas at 1 um / 100 nm / 1 nm are 1.1667314e-6 / 3.6890429e-7 /
+  3.6889896e-8 m². The alleged 14% error is removed bore material; the
+  remaining facet losses are 25.1% / 49.7% at 100 nm / 1 nm. Raw kernel
+  curves collapse before assembly; facet topology misses a trim boundary
+  before lifting. Support-surface intersection recovers the cylinder
+  lines. DD-287 implements conditioned bounded-face sections, numerical
+  contracts and selective routing; production section/material and full
+  field-regression acceptance close KB-043. This historical decision
+  retains its rounding guard for the ordinary facet route. Full evidence
+  and rejected shortcuts:
+  `investigations/kb043-near-tangency/MEASUREMENTS.md` and `DERIVATION.md`
+  (internal records); continuations `PROTOTYPE.md` and `ADJACENCY.md`
+  in that internal dossier.
 - **The angular cap.**  `radians(5)·|c_n|` is now the binding constraint
   in every fixture tested; the corrected sagitta term never bites.  Its
   origin is undocumented and underived, so the facet/exact bit-identity
@@ -20223,6 +20258,8 @@ directions keep DD-144's `MakePipeShell` sweep unchanged.
   an offset one.  Volumes at 0.2 / 1/3 / 0.5 / 0.66 on the cone:
   1344.3 / 1353.0 / 1363.9 / 1374.4 mm³ (fixed rule), monotone.
 - **`volume()` is quadrature-limited on the rational face — KB-046.**
+  Historical measurement; resolved by [[DD-275]] WP4 and [[DD-285]].
+  The original taper gate now uses public `volume()` at rel 1e-6.
   OCC's fixed Gauss rule, which `occ_volume` uses, reads the cone taper
   **0.9 % too large** (1352.86 against 1341.01) while landing on every
   other shape measured — sphere, torus, filleted brick, the DD-144
@@ -23780,6 +23817,16 @@ private probes: `investigations/pulse-defaults/IMPLEMENTATION.md` (internal
 record). Public explanation and use: `docs/methods/sources-monitors.md`
 and Tutorial 03.
 
+**Complete-suite audit follow-up (2026-10-05).** Two incident-field gates
+still sampled the old 267 ps peak at 280/310 ps, after the new 162 ps
+pulse. They now derive their snapshots and run end from the waveform.
+Two project-store cap/resume gates used 120 steps, but the new pulse lets
+the unbounded reference finish on energy at 101 steps. Their cap now lies
+at the declared waveform peak, before finite-drive completion, so the
+warning, truncated record and resumed response are actually exercised.
+Evidence: `investigations/test-health-2026-10-05/MEASUREMENTS.md`
+(internal record).
+
 **Termination follow-up (2026-10-05).** Nine additional GPU runs and
 delayed-drive controls separate source completion from response convergence.
 Energy stopping can discard a later scheduled drive (KB-051); a source-end
@@ -23920,3 +23967,331 @@ Methods documentation and Tutorial 07 show selective evaluation.
 The read-only timing/comparison script `probe_result_access.py`,
 measurements and documentation build runner are in
 `investigations/time-signal-first-call/` (internal dossier).
+
+**Complete-suite audit follow-up (2026-10-05).** Selected S access again
+checks the scattering-only result contract before resolving its input run.
+The check uses the run index, with a metadata-only fallback for old entries,
+so it does not open unrelated run records. General multi-drive projects
+again raise the documented ValueError rather than a missing-run KeyError.
+The store round-trip/resume gate passes; the selective-access gate also
+rejects reading an unrelated header. Evidence:
+`investigations/test-health-2026-10-05/MEASUREMENTS.md` (internal record).
+
+---
+
+## DD-284 — Phase-preserving electric-field line integrals
+
+**Date:** 2026-10-05. **Status:** implemented, uncommitted.
+Resolves KB-047; extends DD-076 to the physical frames of DD-259.
+
+**Decision.** `circuit.integrate_E` accepts both real time-domain and
+complex frequency-domain `FieldState` samples in V/m. It returns a
+Python float for real samples and a Python complex voltage for complex
+samples, including a complex frame whose imaginary part is zero.
+Choose float/complex scalar conversion from each component's dtype before
+summing `sign * E * dl`. This preserves the existing real double-precision
+accumulation, including float32 inputs, while retaining phasor phase.
+The shared path rasteriser, orientation, cell-length weighting and units
+remain unchanged; raw FIT edge voltages are not physical input.
+
+**Rationale.** A frequency monitor naturally supplies a complex frame.
+Rejecting that frame or adding a second integrator would split one linear
+measurement by storage kind. The integral needs no complex conjugation:
+reversal negates it, and integrating a phase snapshot commutes with
+`Re(V * exp(+j phase))`. Conservative fields telescope to the endpoint
+potential difference; general time-varying fields may have nonzero
+closed-path circulation.
+
+**Compatibility.** Real inputs retain their return type and arithmetic.
+Complex inputs previously emitted ComplexWarning and silently returned
+the real part. Correcting that invalid result is an additive bug fix,
+recorded in the unreleased changelog; no release is performed.
+
+**Validation and documentation.** The rasteriser tests reproduce the
+7 mm, `Ex=3+4j` counterexample and cover purely imaginary and zero-imaginary
+complex fields, all three axes on uniform/graded grids, path reversal,
+closed-path circulation, frequency-frame snapshots at several phases and
+unchanged real float32/float64 accumulation. ComplexWarning is treated
+as an error. Methods prose states the physical units, path dependence,
+return kinds and phase convention; the voltage-integral how-to uses a
+frequency-monitor frame and its own grid. Evidence:
+`investigations/kb047-complex-integrals/MEASUREMENTS.md` (internal record).
+
+## DD-285 — Condition CAD volume integration independently of construction
+
+**Date:** 2026-10-05. **Status:** implemented, unreleased.
+
+**Problem.** KB-046's fixed quadrature over-read the rational circular
+tangent taper by 0.884%. DD-275 WP4 already replaced it with span-aware
+Gauss-Kronrod integration, preserving the polar paraboloid regression.
+The original taper gate still bypassed `volume()`, however: normal metre
+construction returns 1341.072956 mm³ against the independent smoothstep
+integral 1341.011264 mm³, a relative error of 4.60e-5. Tightening GK's
+tolerance from 1e-9 to 1e-15 does not change that discrepancy, despite its
+reported error near 2e-9. A transformed copy, including an identity-scale
+copy, removes the discrepancy; a plain topology/geometry copy does not.
+This is a kernel representation/measurement precision problem, not evidence
+that the smoothstep geometry or solver needs a different law.
+
+**Decision.** `occ_volume` measures a transformed copy centred on its
+geometry bounding box, with a power-of-two scale targeting a 128-unit
+diagonal using the existing fine-detail scaling rule. Integrate this copy
+with the existing span-aware GK rule and divide by the scale cubed. The
+input shape, construction scale, topology ownership and mesher geometry
+remain intact. This applies to all shapes, including imported, trimmed,
+Boolean and hollow geometry; no surface-kind or operation-specific switch
+is introduced. Empty geometry reports zero. The kernel error estimate is
+not a guarantee against geometric approximation error or cancellation.
+
+Rebuilding every construction at a larger scale was rejected: it changes
+construction behaviour and causes a previously loud folded-offset fixture
+to fail inside ShapeFix with a different kernel exception. Conditioning only
+the completed measurement copy avoids this regression. Tightening quadrature
+tolerance alone was also ineffective.
+
+**Acceptance.** The original taper gate now calls public `volume()` at
+rel 1e-6, with zero absolute tolerance, for increasing/decreasing radii,
+three physical sizes and automatic/explicit build scales. The original
+3/6 mm taper agrees to about 1e-10 relative. The polar paraboloid prism
+retains its existing 1e-4 gate across three build scales (measured error
+4.84e-6), unlike the old adaptive Gauss rule's 2.17e-3 discrepancy.
+The final modification/geometry run passes 491 tests; the adjacent geometry
+run passes 590 (overlapping selections). Fresh offline HTML executes Tutorial
+14 successfully. Ruff, format, hygiene, DD and API gates pass. Methods and
+Tutorial 14 explain physical volume and its approximation limits.
+Reproduction, rejected approach and acceptance logs:
+`investigations/kb046-volume-quadrature/MEASUREMENTS.md` (internal record).
+
+## DD-286 — Sample CPML profiles at the true staggered positions
+
+**Date:** 2026-10-05. **Status:** implemented, unreleased.
+
+**Problem.** KB-023 used one cell-centred stretching profile for both
+transverse E at normal-axis nodes and H at normal-axis cell centres.
+This shifts the electric profile in opposite directions at the two faces.
+A resonant full/half dipole comparison measures max complex S11 difference
+0.0214879 and relative input-impedance difference 0.0429919 in double.
+That is an absorber discretisation defect, not a precision floor.
+
+**Decision.** Keep the existing H profiles. Derive separate E b/c/ck
+coefficients from the physical node distance to the PML interface,
+accumulating graded cell widths from the interface outwards. All three
+normal axes use the same rule; the polynomial conductivity/stretch and
+frequency-shift laws and defaults remain unchanged. The E update uses
+node-sampled b/c/ck; H retains centre-sampled coefficients. Port footprints
+mask each component's appropriate profile, including when cleared or
+restored. Auxiliary shapes and global slab indices remain unchanged; the
+outer electric nodes are still PEC-backed. The interface has sigma = 0,
+kappa = 1, so no electric correction is needed there. Division at zero
+conductivity is guarded, including alpha_max = 0.
+
+**Checkpoint compatibility.** Store an integer `profile_sampling` marker
+alongside psi: 1 for the new rule, 0 for the former rule. Missing means 0.
+Loading restores the appropriate coefficients without resetting psi,
+PEC masks or port footprints, and subsequent checkpoints retain that marker.
+An actual pre-fix HDF5 checkpoint with nonzero psi resumes bit-exactly
+against the original source in both single and double precision. New-run
+checkpoint tests exercise the staggered rule. No public option is added for
+selecting the old rule; it exists for continuation of existing recordings.
+
+**Validation.** Independent node-coordinate coefficient checks include
+graded cells, all six faces and zero frequency shift. Twelve reflection-
+commutation cases cover all axes, uniform/graded meshes and float32/float64;
+all twelve fail with the archived original boundary and pass with the fix.
+The existing resonant parity fixture improves to max dS11 = 3.04105e-5
+and relative dZ = 7.51897e-5; its gates tighten to 1e-4 and 2e-4. The
+independent time-step estimates retain a small spectral difference.
+
+`validation/cpml_staggered_reflection_certificate.py` compares transverse
+vacuum pulses with a larger domain using the same analytic time step.
+Across x/y/z and opposing faces, worst 1--12 GHz reflection is -71.89 /
+-97.82 / -111.94 dB for 8/16/24 cells; gates are -65/-90/-100 dB.
+The original rule measures about -12.25/-18.68/-22.58 dB on that fixture.
+This is a reproducible fixture floor, not a universal R_target guarantee.
+The existing `validation/lumped_symmetry_parity_certificate.py` retains
+the PEC and PMC gates and tightens its CPML gate to 1e-4; all three pass.
+The restored mirror symmetry also exposes angular nulls in four far-field
+store comparisons. Transform/normalisation order differs by about 1e-17
+there, making a purely relative gate meaningless. Retain rtol = 1e-10 and
+add an absolute bound of 16 float64 eps times the reference pattern peak;
+raw surface bins must agree exactly for storage, resume and both legacy
+phasor cases. No production monitor or normalisation arithmetic changes.
+Methods and Tutorial 08 document staggered sampling, practical absorption
+limits and old-checkpoint continuation. Evidence and final suite status:
+`investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
+
+## DD-287 — Bounded-surface sections at geometric grazing planes
+
+**Date:** 2026-10-06. **Status:** implemented on `fix/near-tangent-sections`,
+accepted on the audited fixtures and complete repeated coaxial-cell model;
+explicit opt-in as of 2026-10-08. Mitigates KB-043 when selected and resolves
+the subsequent valid-CAD regression KB-053.
+
+**Opt-in decision (2026-10-08).** `MeshControl(robust_sections=False)` retains
+the established fast paths by default; `True` selects the bounded-surface route.
+Five controlled repeated-cell builds per arm measure638.6 ->1700.6s (+166.3%)
+with very small finite-record S/field changes. This does not establish useful
+global accuracy improvement for that model, or exclude relevance elsewhere.
+Actual wall losses were not measured; geometry/sampling-weight diagnostics
+expose strong curvature-correction outliers and cannot establish loss accuracy.
+The maintainer defers further investigation of double-precision late energy
+growth and representative geometries that could justify targeted warnings or
+automatic routing. Wall-loss relevance is explicitly included in that search.
+Record: `investigations/near-tangent-hesr-impact/FOLLOW_UP.md` (internal dossier).
+
+Selection is scoped to a mesh build with a context variable, restored on
+completion or exception; no process environment is mutated. Spawned section
+workers receive the resolved boolean explicitly. An internal environment switch
+remains for raw A/B probes outside a build; the public control is authoritative.
+
+Opt-in acceptance:255 focused tests pass, including independent grazing-area
+references, serial/spawned route selection, default material filling and nested/
+failed-build policy restoration. Ruff, formatting, hygiene, API and DD gates pass.
+Offline HTML builds with gallery execution disabled; external-inventory warnings
+reflect unavailable network access. Workspace import checking finds only73
+pre-existing imports in an archived test-health snapshot; active scripts resolve.
+No new full EM suite or model simulation is claimed for this policy-only change.
+Record: `investigations/near-tangent-hesr-impact/opt-in-tests.log` (internal dossier).
+
+**Problem.** The stored cylinder/bore fixture loses material on two distinct
+routes. The Boolean section collapses before polygon assembly; lifted facet
+crossings do not reach a trim boundary. The historical reference omitted
+the bore and is corrected in KB-043. Genuine facet losses are 25.1% at
+100 nm and 49.7% at 1 nm. Neither widening delegation nor globally refining
+the triangulation supplies a reliable exact-plane remedy.
+
+**Decision.** Prepare a centred, power-of-two-scaled measurement copy of
+the completed B-Rep, without rebuilding construction or mutating operands.
+Find support-surface/plane traces, trim them against face pcurves, connect
+crossings through shared CAD edges and retain outward contour orientation.
+Closed/seamed and singular boundaries participate in the same adjacency
+model. Numerical curve/surface residuals consume at most 1/4096 of the
+common chord budget, above the relative double-rounding floor; knot-aware
+native curve tessellation uses a half-budget margin. A bounded increase of
+measurement scaling supplies kernel precision headroom. Unresolved sensitive
+curves or contours raise an actionable error rather than accepting a partial
+material region. Coplanar face-region and two-sided matrix-limit semantics
+remain on their established route.
+
+The trace-neighbourhood guard allows the geometric amplification
+`1 / sin(surface-plane angle)` of a kernel curve's surface-position error.
+A fixed multiple of the chord budget incorrectly rejects valid projections
+near grazing torus fillets; the quarter-coupler operand-invariance tests
+expose this at y = 0.0489975 m. This branch-selection guard does not relax
+the final curve/surface residual or shared-node consistency checks.
+
+**Selection and cost.** Ordinary analytic, facet and kernel cuts retain
+their existing paths. Analytic stationary coordinates and spline stationary
+points index potentially grazing planes. Rational Bernstein coordinate
+derivative numerators exclude knot spans that cannot contain a stationary
+point. Physical limiting normals at declared/within-tolerance poles exclude
+parameter-only singularities. The index uses face tolerance, not a remote
+Boolean edge's inflated tolerance. Prepared topology and face slabs are
+reused; corrected delegated planes are spliced into the compiled batch.
+An internal environment switch exists only for A/B acceptance.
+
+**Measured build cost (2026-10-06).** Exact-source comparison of direct parent
+`86796160` with `1456c584`, five retained fresh-process builds per arm after one
+excluded warm-up, serial alternating order, production section-pool policy:
+large planar Lange/patch models (up to 3.69 million cells and 5,387 CAD faces)
+change +0.4%/−0.3%; 240 ordinary cylindrical posts change +1.5%. Drilled/lofted
+16/64-station banks cost +59.4%/+56.6%; the matching 16-station unforced-grid
+control costs +59.7%, so forced grazing anchors are not required for that
+geometry's overhead. Deliberate torus contact/grazing and spline-extremum banks
+cost +249.6% and +115.9%. All grid coordinates are bit-identical between arms;
+ordinary-family material/mask arrays are also bit-identical. Median main-worker
+peak RSS increases by at most 30.9 MiB; pooled-child aggregate RSS is not measured.
+Separate diagnostics locate 7.26 s/356 corrected cuts in the drilled bank,
+49.13 s/330 cuts in the torus bank, and 7.16 s/178 cuts plus 4.48 s of stationary
+index preparation in the spline bank. Nested pass times are not additive; the
+diagnostics preload the surface module and are excluded from the primary timing
+statistics. The independent bore-aware certificate passes on the after snapshot
+and rejects the before snapshot. These measured classes establish a significant
+geometry-dependent cost, not a general small-overhead guarantee for arbitrary
+CAD or much larger meshes. Scripts, raw samples, full ranges, paired statistics,
+array differences and exact-source checks are maintained in
+`investigations/near-tangent-meshing-performance/` (internal dossier), with the
+comparison in `MEASUREMENTS.md`.
+
+**Applicability follow-up (KB-053).** The full 51-cell coaxial-cell input
+builds 8.58 million cells in 641.465 s on the parent, but the new route rejects
+it during classification at x = 0.020255821494276557 m: shared edge 907 has
+three contour endpoints. The source passes OCC's B-Rep validity check;
+uninstrumented meshing and an isolated archived-source cut reproduce the
+failure. This was a functional regression, repaired below; the failed duration is not a build time.
+Same-budget production tests still show the intended local correctness gain:
+at 100 nm inward the drilled scalar section error falls from −25.13% to
++0.001274%, and the worst cell-coverage error from 85.79 to 0.01880 percentage
+points; at 1 nm, −49.73% to +0.00003178% and 8.579 to 0.00007517 percentage
+points (requested deflection 2.5 μm, scale 1). These are local CAD/material
+errors, not HESR field or S-parameter error bounds. Evidence and the isolated
+regression source: `investigations/near-tangent-meshing-performance/hesr/`
+(internal dossier), particularly `MEASUREMENTS.md` and `reproduce_section.py`.
+
+**Valid-CAD repair acceptance (KB-053).** Embedded INTERNAL/EXTERNAL
+coedges do not bound material. Strict UV membership uses real trim transitions,
+a half-open vertex rule and another transversal direction when the full-line
+count is ambiguous. Rectangular support wrappers remain on the intersection
+solver; their basis supplies periodic wrapping/evaluation. Refinement retains
+the original closed support identity and adapts the sample-coincidence threshold
+without relaxing residual checks. Precision retries cache the fixed 1/4/16/64
+choices, including the baseline: kernel accuracy is not monotonic in scaling.
+No endpoint is dropped and topology/CAD tolerance tubes remain unchanged.
+
+The unchanged 51-cell / 102-port input completes: 8,582,496 cells with all grid
+arrays bit-identical to the parent. All 361 recorded cuts and both bodies of
+the earlier parallel-prefill failure pass. Fifteen added independent regressions
+bring the section tests to 46; all 63 area references and 320 material cells
+still pass. Repair full suite: **4446 passed, 13 skipped, no failures**, 4459
+collected, 132 warnings, 1150.80 s. Offline HTML (gallery disabled), Ruff,
+formatting, public hygiene and DD-reference gates pass.
+
+A diagnostic full build takes 1811.762 s versus 641.465 s on the parent;
+main peak RSS is 6852.691 versus 6441.480 MiB, sampled tree peak 10.677 versus
+10.309 GiB. Concurrent tests and brief read-only stack sampling exclude this
+run from controlled performance statistics; no repeat spread is available.
+The mu/face phase grows from 119.025 to 1133.762 s; selected bounded sections
+consume 1124.772 s/858 main-process calls (nested timings are not additive).
+Only integrated face category/PEC/free/jump areas change; electric edge arrays
+remain bit-identical. These differences do not define a global physical-surface
+or S-parameter error percentage. Exact repair hashes, scripts and transcripts:
+`investigations/near-tangent-meshing-performance/hesr/REPAIR_MEASUREMENTS.md`
+and `REPAIR_DERIVATION.md` (internal dossier).
+
+**Provenance and current acceptance.** The private bounded-face prototype
+passes 63 reference cuts and 320 signed cell references, including trimmed
+sphere/cone/torus/spline cases and separated bodies. The production material
+consumer probe restores area and epsilon weighting. New repository regressions
+cover inside/on/outside cylinder tangency, translations, compiled-batch
+equivalence, coplanar faces, regular-path selection, a real spline extremum
+and a parameter-only pole, plus the torus's inner tangent contact and its
+neighbouring cuts. Contact branches use a directed planar boundary walk;
+trace refinement inserts locally failing residual samples. Shared nodes
+must remain in the declared edge/incident-face/endpoint-vertex tolerance
+tube. This representation-consistency check is separate from the numerical
+residual budget. The spline test references the CAD Hessian at
+its sampled stationary point: an even 8-by-8 interpolation shifts the
+minimum by about 12 nm, so its ideal generating function is not a 1 nm
+reference. The initial full-suite contour failures were resolved by linking
+artificial domain ends on the same cyclic support curve and restricting
+closing-edge anchors to their actual trace neighbourhood; the existing
+operand-invariance and gallery pins pass without repinning.
+
+Initial exact-source full-suite acceptance: **4405 passed, 39 skipped,
+132 warnings**, 4444 collected, 1197.95 s. All 31 new section regressions
+and both operand-invariance cases pass. The production operator also passes
+all 63 independent geometry-reference cases (worst relative area error
+3.087e-4, at a 1 nm sphere cap, within the existing 5e-4 gate).
+
+`validation/surface_section_tangency_certificate.py` independently checks
+direct/scalar sections and 320 material rectangles against bore-aware
+quadrature: worst absolute coverage/epsilon errors are 2.602e-6 at 100 nm
+and 1.879e-7 at 1 nm. The 30-case mesh stress sentinel and pair-ladder port
+certificate pass; worst S-parameter scale deviation is 3.256e-7 against
+a 1e-6 bound. Fresh offline HTML builds with gallery execution disabled;
+Ruff, formatting, public hygiene and API-surface gates pass.
+Evidence and scripts:
+`investigations/kb043-near-tangency/` (internal dossier), particularly
+`IMPLEMENTATION.md`, `final-acceptance-tests.log`, `surface-certificate.log`,
+`scale-certificate.log`, `port-pair-tolerance.log` and
+`full-stress-certificate.log`.

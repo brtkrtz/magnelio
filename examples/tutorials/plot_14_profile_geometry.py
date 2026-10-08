@@ -102,6 +102,8 @@ route = (
     .straight_to_plane(normal="x", position=20e-3)
 )
 extension = end.swept(route.curve())
+# Volume measures the curved, hollow CAD solid in cubic metres. Its
+# internal measurement scale is automatic; compare with area times length.
 assert math.isclose(extension.volume(), end.area * route.curve().length, rel_tol=1e-9)
 fig, ax = plots.plot_cross_section(
     [shield, extension], "z", 0, title="Named face swept to a domain plane"

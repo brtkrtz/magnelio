@@ -1,14 +1,13 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-10-05.*  **Released v0.8.2** (2026-09-09): **DD-270**
+*Last updated: 2026-10-06.*  **Released v0.8.2** (2026-09-09): **DD-270**
 the Poynting vector as a derived view of any recorded field (`poynting()`,
 `"S"` in the component vocabulary), **DD-271** three more readings of an
 S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
 `result.extrapolate()`, which continues a truncated record by its own poles,
 and **DD-273** the surface current `J_s = n × H`, read out of the wall-loss
 booking (`Mesh.pec_surface` removed with it — never read by anything).
-**Released v0.8.1** (2026-09-08):
-**DD-269** — a discrete port or lumped element follows an arbitrary path
+**Released v0.8.1** (2026-09-08): **DD-269** — a discrete port or lumped element follows an arbitrary path
 (oblique, bent, or a curve) instead of an axis-parallel pair of
 terminals, through the same canonical rasteriser thin wires already use;
 its polarity now follows the declared direction (a behaviour change
@@ -25,12 +24,11 @@ grid quantities and derive every view at access time (store schema 3.0),
 energy and flux are identities on a recording, fields in the volume of
 the 3D viewer; **DD-257** (CPU kernels 1.2× faster, bit-identical);
 **DD-256** (a thin wire on a thin sheet).  Before it: **v0.6.0**
-(2026-09-05, `Project.runs` hands out `Run` objects, DD-249…255) and **v0.5.0–v0.5.2**
-(2026-09-02…04, the API grammar, DD-224…248) — migration guides
+(2026-09-05, `Project.runs` hands out `Run` objects, DD-249…255) and **v0.5.0–v0.5.2** (2026-09-02…04, the API grammar, DD-224…248) — migration guides
 `docs/migration-0.5.md` … `docs/migration-0.8.md`.
 
-Open: KB-023, KB-038, KB-043, KB-046 and KB-047. Unit and integration: 4219 passed / 39 skipped across the complete run, corrected reruns and new tests (2026-10-04, private branch).
-CUDA-specific and unavailable optional-tool coverage remains skipped; acceptance details are in the DD-279 internal record.
+Open: KB-038 and KB-043 on the default fast route; opt-in DD-287 mitigates KB-043 and resolves KB-053, available on `main`; KB-023/DD-286 and KB-052 are committed on the preceding `fix/cpml-staggered-profiles` branch (CPML commit `117c810f`). Latest full-suite acceptance: **4446 passed / 0 failed / 13 skipped**, 4459 collected, 1150.80 s, 132 warnings (2026-10-06), including the near-tangent section fix and existing integral, CAD, CPML and watch checks. Suite defaults pin NumPy/double; explicit single/GPU tests override them. Skipped paths are not verified. KB-047/DD-284 and KB-046/DD-285 are committed and backed up to private as `80eff88c` and `9fe0bdec`. Evidence: `investigations/near-tangent-meshing-performance/hesr/final-repair-tests.log` (internal record).
+All seven initial failures are addressed: scattering-only S access again raises the correct ValueError without opening unrelated records; cap/resume and incident-field fixtures follow resolved pulse timing; the dipole radiation gate uses negligible net current to avoid a static-tail DFT boundary term (independent tail completion agrees to 2e-8); the band gate preserves its original doubled-record ceilings and adds a short-record bound rather than rejecting an improved floor through its ratio. That test-health fix left production field/source/monitor arithmetic unchanged; DD-286 subsequently corrects CPML sampling. KB-038 remains open. Fresh offline HTML docs (gallery execution disabled), Ruff, format, hygiene, DD and API gates pass. Evidence: `investigations/test-health-2026-10-05/MEASUREMENTS.md`, `DERIVATION.md` and `final-pytest.log` (internal records).
 The foundation was merged to local `main` on 2026-10-02. WP0-WP5 and WP6.1/WP6.3-WP6.12 are implemented.
 WP6.12 imports free CAD faces as Sheets without duplicating solid boundaries and exports selected solids/sheets through STEP/BREP with explicit unit rules. The 1-nm solid exchange gate stays valid. Tutorial 14, "Geometry toolbox", also absorbs the former CAD/PCB import tutorials; fresh offline Sphinx passes. The wire adapter supports pythonocc 7.9 and the 8.0.1 edge-return binding.
 The feature branch is backed up to `private` through `926c1d91`; the foundation merge was pushed to `origin/main` on 2026-10-02. WP6.2 is cancelled. The foundation acceptance audit is recorded in `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record).
@@ -38,6 +36,9 @@ Pulse defaults are implemented in DD-281. DD-282 resolves KB-050/051: finite-dri
 This file states what *is*.  Chronology: `git log --first-parent main`; reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured floors regenerate from the `validation/` certificates their DDs name.
 ## Recent decisions
 Newest first, one line each; the full record is the DD entry.
+* **DD-287** (2026-10-06, `fix/near-tangent-sections`) — opt-in `MeshControl(robust_sections=True)` mitigates KB-043. Stationary-coordinate selection keeps regular fast paths; face trims and shared CAD edges retain thin material islands, holes and tangent contacts. Numerical residual and CAD boundary-consistency checks remain separate; unresolved sensitive cuts fail explicitly. All 46 section regressions, 63 independent production cuts and 320 material rectangles pass; the original stress and port certificates remain recorded. The unchanged 51-cell model now meshes, with all 361 recorded failures resolved. Methods and mesh-convergence how-to document the contract. Evidence: `investigations/kb043-near-tangency/IMPLEMENTATION.md` (internal record).
+* **DD-286** (2026-10-05, commit `117c810f`) — staggered CPML profiles resolve KB-023. Full/half dipole max dS11 improves from 0.02149 to 3.04e-5; independent node sampling and mirror tests cover all axes, graded grids and both precisions. Pulse reflection certificates pass 8/16/24 cells in all directions. Actual old HDF5 checkpoints resume bit-exactly in single/double; missing sampling markers preserve legacy profiles. Tutorial 08 executes in fresh offline HTML. Full-suite acceptance: 4374 passed, 39 skipped, no failures. Evidence: `investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record).
+* **DD-284/DD-285** (2026-10-05; DD-284/DD-285 committed/private) — electric-field line integrals preserve full complex phase and the existing float result/accumulation for real fields; KB-047 closed. Uniform/graded three-axis conservative fields, reversal, closed-loop circulation, pure imaginary and zero-imaginary complex fields and frequency snapshots pass. Methods, the voltage-integral how-to and its executed snippet document physical units, normalization and path dependence. Fresh offline HTML, Ruff, format, hygiene, DD and API gates pass. DD-285 (`9fe0bdec`, backed up to private) closes KB-046: centred, scaled-copy CAD integration passes the public smoothstep-volume gate across radii, physical sizes and build scales; the polar-dish counterexample retains precision. Geometry runs: 491 and 590 passed (overlapping selections); fresh HTML executes Tutorial 14; all repository gates pass. The subsequent full solver suite passes with the CAD fix included. Evidence: `investigations/kb047-complex-integrals/MEASUREMENTS.md` and `investigations/kb046-volume-quadrature/MEASUREMENTS.md` (internal records).
 * **DD-283** (2026-10-05, merged to main, unreleased) — stored-result metadata and time plots avoid S-matrix derivation; S/dB/phase evaluate selected runs and ports with reusable spectra, including custom axes. Coupled band projections remain intact; self-contained band records avoid mesh-operator reconstruction. Incident normalization and reference impedance use only required calibration/records. Index changes after completion and refresh invalidate derived caches. Shared DFT blocks cap kernel temporaries at 16 MiB and taper within blocks. HESR: first three-port time plot 0.44 s, selected S 0.55 s, cached S 0.00011 s, fresh full matrix 2.67 s versus 112.44 s baseline; maximum complex difference 1.73e-14. Validation: 217 targeted tests passed / 1 optional-tool skip; two pre-existing cap-warning failures reproduced on unchanged main and excluded. Methods and Tutorial 07 pass the executed Sphinx build; Ruff, format, hygiene, DD-reference and API gates pass. Evidence: `investigations/time-signal-first-call/MEASUREMENTS.md` (internal record).
 * **DD-281/DD-282** (2026-10-05, merged to main, unreleased) — Gaussian upper-edge attenuation is configurable (default 25 dB), with a 4.5-tau peak and cached full-spectrum width. Resolved timing persists; legacy automatic and explicit pulses resume with their original samples. Finite-drive guards and current decay diagnostics resolve KB-050/051. Full Gaussian unit suite: 3808 passed / 5 skipped; 36 focused propagation/state and resume checks passed. Termination acceptance: focused suites of 50, 112 and 81 passed, four GPU comparisons and executed offline documentation passed. Methods and Tutorial 03 document the pulse. Evidence: `investigations/pulse-defaults/IMPLEMENTATION.md` and `investigations/termination-accuracy/IMPLEMENTATION.md` (internal records).
 * **DD-280** (2026-10-05, merged to main, unreleased) — selected port-mode solves and bare-string excitations; dB/linear/phase S plots and calibrated a/b time plots; boundary overlays hidden by default, numeric cut input and mesh/layer steps, wrapping toolbars, searchable grouped solid visibility and configurable arrow length/density/thickness/colour/threshold and per-component numeric colour limits with automatic reset. Optional display-group metadata preserves project compatibility; solver physics is unchanged. Field-mirroring report deferred without a reproducer. Validation: 3832 passed / 5 skipped across the unit suite and selected integrations (full run plus corrected/final focused reruns); all 252 final focused tests pass; the colour-limit follow-up passes 146 viewer/API tests. Tutorials 02/03/04/10 pass the executed CPU Sphinx build with warnings treated as errors; browser checks cover menus/search/colour/length/cut steps and narrow-window wrapping. Ruff, format and public hygiene pass. Evidence: investigations/viewer-result-controls/MEASUREMENTS.md (internal record).
@@ -344,20 +345,6 @@ flickers to ``"done"`` between sequential runs; the reader skips
 * **Modal decomposition overshoots unity transmission** (|S21| 1.0030
   frozen, 1.0078 dispersive, rank-independent, growing with f) — left by
   the closed launch pair DD-239 → DD-244 → DD-248, DD-244's to own.
-* **Facet section engine (KB-043)** — the reach campaign is closed
-  (DD-240/242/243 close KB-039, KB-041, KB-042 and KB-044).  Open:
-  **KB-043**, pre-existing and two-sided — within ~1e-7 m of a
-  generatrix the kernel section
-  collapses to 0.0 while the facet path books 44–64 % of truth
-  (r = 2.30 mm, d = 1e-7: 2.7619e-07 facet / 0.0 kernel / 4.2895e-07
-  true), so neither is trustworthy there and widening the tangency band
-  would hand those planes to the worse one — which is why it stays a
-  rounding guard.  Undecided beside it: `radians(5)·|c_n|` binds in
-  every fixture tested and its origin is undocumented, so the corrected
-  sagitta exponent is largely latent and the measured facet/exact
-  bit-identity is a consequence of that cap, not a structural
-  guarantee; `_FACET_REFINE_FRACTION = 0.1` leaves the facet path a
-  3.16x finer sagitta budget than the exact one.
 * **API blueprint (DD-224) — Phases A–D complete** (listed above);
   Phase E ff. is a reserved-name roadmap, not scheduled work, each
   entry earning its own DD.  Field-source limits: the recording lives
@@ -369,19 +356,32 @@ flickers to ``"done"`` between sequential runs; the reader skips
   stable, worth −0.31 % on a SIBC wall Q — and a general incident field
   must solve Maxwell itself, or it leaks.  Blueprint: internal record
   `investigations/api-blueprint/`.
-* **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
+* **Symmetry planes (DD-154/DD-155/DD-172/DD-286).**
   Lumped ports/elements on a symmetry plane are corrected since DD-172;
   the ParaView session mirrors H as the axial vector it is since DD-262.
-  CPML min/max faces are not mirror images (KB-023) — full-vs-half
-  parity of resonant open structures floors at ~1e-2.
+  CPML min/max profiles now use the true staggered positions (KB-023);
+  the resonant full/half dipole has max dS11 = 3.04e-5.
 * **Ports with several signal conductors** report the channel's own
   reference in `dispersion()`, not a modal power–current impedance
   (DD-244); `TDResult` carries no reference impedances.
-* **Mesh build** — speed campaign closed 2026-08-29 (DD-201…DD-223;
-  deferred work, A/B switches and traps in DD-223).  Open against it:
-  KB-043.
+* **Mesh build** — bounded-surface sections (DD-287) are opt-in:
+  `MeshControl(robust_sections=True)`, default False; per build and worker.
+  Default fast paths retain KB-043: thin regions can be lost near tangency.
+  Five controlled 51-cell pairs:638.6 ->1700.6s (+166.3%); identical8,582,496cells.
+  Main RSS6.25 ->6.76GiB, tree10.24 ->10.68GiB; finite-record S/Ez changes tiny.
+  Global area-error improvement unresolved; actual wall losses unmeasured.
+  Curvature-weight diagnostics expose outliers. Further investigation deferred.
+  Opt-in acceptance:255 focused tests; Ruff/API/hygiene/DD clean; offline HTML built.
+  Evidence: `investigations/near-tangent-hesr-impact/` (internal dossier).
 
 ## Deferred / nice-to-have
+
+* **Double-precision late energy growth:** understand the increase in both
+  repeated-cell runs, already present before GPU resume; cause remains open.
+* **Robust-section applicability:** find relevant geometries and indicators for
+  targeted warnings/automatic selection. Actual wall losses remain uninvestigated
+  and could be highly relevant; weight diagnostics are not loss-error measurements.
+  Checklist: `investigations/near-tangent-hesr-impact/FOLLOW_UP.md` (internal dossier).
 
 * **Pulsed band-edge S-parameters on dispersive lines** are record-
   truncation limited.  The candidate — late-time pole estimation — is

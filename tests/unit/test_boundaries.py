@@ -184,7 +184,7 @@ class TestCPMLPortWindows:
     def test_no_windows_keeps_the_broadcast_coefficients(self):
         bc = self._bc()
         bc.set_port_windows([])
-        assert bc._c_E1 is bc._c_3d and bc._ck_H2 is bc._ck_3d
+        assert bc._c_E1 is bc._c_E_3d and bc._ck_H2 is bc._ck_3d
 
     def test_footprint_zeroes_c_and_ck_over_the_full_depth(self):
         bc = self._bc("xmin")
@@ -193,11 +193,11 @@ class TestCPMLPortWindows:
         c = np.asarray(bc._c_E1)  # psi_Ey: (n, Ny, Nz+1) — cell-sampled along y
         assert c.shape == (4, 10, 9)
         assert np.all(c[:, 3:6, 2:6] == 0.0)
-        assert np.all(c[:, :3, :] == np.asarray(bc._c_3d)[:, :, :])
-        assert np.all(c[:, 6:, :] == np.asarray(bc._c_3d)[:, :, :])
+        assert np.all(c[:, :3, :] == np.asarray(bc._c_E_3d)[:, :, :])
+        assert np.all(c[:, 6:, :] == np.asarray(bc._c_E_3d)[:, :, :])
         ck = np.asarray(bc._ck_E2)  # psi_Ez: (n, Ny+1, Nz) — node-sampled along y
         assert np.all(ck[:, 3:7, 2:5] == 0.0)
-        assert np.all(ck[:, :3, :] == np.asarray(bc._ck_3d))
+        assert np.all(ck[:, :3, :] == np.asarray(bc._ck_E_3d))
         h1 = np.asarray(bc._c_H1)  # psi_Hy: (n, Ny+1, Nz)
         assert np.all(h1[:, 3:7, 2:5] == 0.0)
         assert np.all(h1[:, 7:, :] == np.asarray(bc._c_3d))

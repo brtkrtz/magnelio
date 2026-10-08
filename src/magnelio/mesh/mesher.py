@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from magnelio._memory import array_bytes, format_bytes
+from magnelio.geo._section_policy import mesh_section_policy
 from magnelio.mesh._quality import check_grading_undershoot, check_quality
 from magnelio.mesh.grid import GridLines
 
@@ -92,6 +93,11 @@ class MeshControl:
     conformal : bool, default True
         Enable conformal/Dey-Mittra material treatment for cells
         partially filled with PEC.
+    robust_sections : bool, default False
+        Use bounded CAD-surface intersections for nearly tangent cuts.
+        This can preserve thin material regions missed by the faster
+        section paths, at substantial geometry-dependent build cost.
+        It does not certify field or wall-loss accuracy.
     dey_mittra_eta : float, default 0.4
         Stability cutoff for Dey-Mittra cells (fraction of full cell
         area below which cells are treated as PEC-only).
@@ -162,8 +168,11 @@ class MeshControl:
     max_edge_refinement: float = 4.0
     wavelength_rule: str = "local"
     singularity_refinement: float = 1.0
+    robust_sections: bool = False
 
     def __post_init__(self) -> None:
+        if not isinstance(self.robust_sections, bool):
+            raise ValueError("robust_sections must be a bool")
         for axis, n in dict(self.subdivide).items():
             if axis not in ("x", "y", "z") or int(n) < 1 or int(n) != n:
                 raise ValueError(
@@ -500,6 +509,7 @@ class Mesh:
         return mesh
 
     @classmethod
+    @mesh_section_policy
     def from_geometry(
         cls,
         geometry,

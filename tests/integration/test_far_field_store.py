@@ -56,6 +56,21 @@ def _monitor():
 _ANGLES = {"theta": np.linspace(0, np.pi, 19), "phi": np.linspace(0, 2 * np.pi, 37)}
 
 
+def _assert_same_pattern(actual, expected):
+    # Symmetric absorbers expose angular nulls where relative error is
+    # undefined. Allow a few global-field ulp for transform/division order.
+    scale = max(float(np.abs(expected.E_theta).max()), float(np.abs(expected.E_phi).max()))
+    atol = 16 * np.finfo(float).eps * scale
+    np.testing.assert_allclose(actual.E_theta, expected.E_theta, rtol=1e-10, atol=atol)
+    np.testing.assert_allclose(actual.E_phi, expected.E_phi, rtol=1e-10, atol=atol)
+
+
+def _assert_same_bins(actual, expected):
+    for face, components in expected._acc.items():
+        for component, accumulator in components.items():
+            np.testing.assert_array_equal(actual._acc[face][component].result, accumulator.result)
+
+
 def test_reader_matches_in_ram_monitor(tmp_path):
     mon = _monitor()
     p = tmp_path / "ff"
@@ -63,13 +78,13 @@ def test_reader_matches_in_ram_monitor(tmp_path):
     assert (p / "runs" / "feed_mode0" / "far_field.h5").exists()
 
     loaded = open_project(p).monitors["pattern"]
+    _assert_same_bins(loaded._hydrate(), mon)
     np.testing.assert_array_equal(loaded.f_axis, mon.f_axis)
     a = mon.result(F0, **_ANGLES)
     b = loaded.result(F0, **_ANGLES)
     # The divisor differs by the reference-signal storage round trip
     # (float re-sampling), so the match is tight but not bitwise.
-    np.testing.assert_allclose(b.E_theta, a.E_theta, rtol=1e-10)
-    np.testing.assert_allclose(b.E_phi, a.E_phi, rtol=1e-10)
+    _assert_same_pattern(b, a)
     assert a.physical_mask is None and b.physical_mask is None
     np.testing.assert_allclose(b.P_rad, a.P_rad, rtol=1e-12)
 
@@ -90,11 +105,11 @@ def test_resume_bit_exact(tmp_path):
     )
     proj = resume(p, run=("feed", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["feed_mode0"].n_steps == n_total
+    _assert_same_bins(proj.monitors["pattern"]._hydrate(), ref)
     resumed = proj.monitors["pattern"].result(F0, **_ANGLES)
     # The reference-signal storage round trip costs a few ulp on the
     # divisor; the accumulators themselves resume bit-exactly.
-    np.testing.assert_allclose(resumed.E_theta, ref_pattern.E_theta, rtol=1e-10)
-    np.testing.assert_allclose(resumed.E_phi, ref_pattern.E_phi, rtol=1e-10)
+    _assert_same_pattern(resumed, ref_pattern)
 
 
 def test_stale_result_file_is_rejected(tmp_path):
@@ -159,9 +174,10 @@ def test_legacy_phasor_file_reads_conjugated(tmp_path):
     _demodernise_far_field_file(p / "runs" / "feed_mode0" / "far_field.h5")
 
     a = mon.result(F0, **_ANGLES)
-    b = open_project(p).monitors["pattern"].result(F0, **_ANGLES)
-    np.testing.assert_allclose(b.E_theta, a.E_theta, rtol=1e-10)
-    np.testing.assert_allclose(b.E_phi, a.E_phi, rtol=1e-10)
+    loaded = open_project(p).monitors["pattern"]
+    _assert_same_bins(loaded._hydrate(), mon)
+    b = loaded.result(F0, **_ANGLES)
+    _assert_same_pattern(b, a)
 
 
 def test_legacy_partial_file_resumes_bit_exact(tmp_path):
@@ -185,9 +201,9 @@ def test_legacy_partial_file_resumes_bit_exact(tmp_path):
     _demodernise_far_field_file(ff)
 
     proj = resume(p, run=("feed", 0), total_time_steps=n_total, verbose=False)
+    _assert_same_bins(proj.monitors["pattern"]._hydrate(), ref)
     resumed = proj.monitors["pattern"].result(F0, **_ANGLES)
-    np.testing.assert_allclose(resumed.E_theta, ref_pattern.E_theta, rtol=1e-10)
-    np.testing.assert_allclose(resumed.E_phi, ref_pattern.E_phi, rtol=1e-10)
+    _assert_same_pattern(resumed, ref_pattern)
 
     with h5py.File(ff, "r") as f:
         assert f.attrs["phasor_convention"] == "exp(+jwt)"

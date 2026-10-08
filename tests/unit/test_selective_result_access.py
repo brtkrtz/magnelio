@@ -81,6 +81,13 @@ def test_metadata_and_impedance_do_not_read_time_records(project, monkeypatch):
 
 def test_single_s_reads_only_involved_channels_and_run(project, monkeypatch):
     reads = _reads(monkeypatch)
+    original_load = project._load_run
+
+    def selected_load(name, **kwargs):
+        assert name == "drive1", "selected S access read an unrelated run header"
+        return original_load(name, **kwargs)
+
+    monkeypatch.setattr(project, "_load_run", selected_load)
     s = project.S("p2", "p1")
     assert s.shape == (17,)
     records = [(file, path) for file, path in reads if path.startswith("/channels/")]

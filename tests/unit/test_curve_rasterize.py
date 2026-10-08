@@ -19,8 +19,11 @@ import pytest
 
 from magnelio._fields.field_arrays import FieldArrays
 from magnelio.circuit import EdgePath, integrate_E, rasterize_curve
+from magnelio.fields import FieldSpectrum, FieldState
 from magnelio.geo import Curve
 from magnelio.mesh.grid import GridLines
+
+pytestmark = pytest.mark.filterwarnings("error::numpy.exceptions.ComplexWarning")
 
 
 def _uniform_grid(n: int = 20, L: float = 20e-3) -> GridLines:
@@ -141,10 +144,11 @@ def test_reversing_curve_flips_signs():
     assert abs(V_fwd + V_rev) < 1e-12 * abs(V_fwd)
 
 
-def test_flat_indices_match_field_layout():
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_flat_indices_match_field_layout(dtype):
     """Integrating via flat_indices equals integrating via field arrays."""
     grid = _uniform_grid()
-    field = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
+    field = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz, dtype=dtype)
     rng = np.random.default_rng(0)
     field.e_flat[:] = rng.standard_normal(field.e_flat.shape)
 
@@ -178,3 +182,54 @@ def test_rasterize_errors():
     good = Curve.polyline([(grid.x[1], grid.y[1], grid.z[1]), (grid.x[3], grid.y[1], grid.z[1])])
     with pytest.raises(ValueError, match="samples_per_cell"):
         rasterize_curve(good, grid, samples_per_cell=1)
+
+
+@pytest.mark.parametrize("value", [3.0, 3 + 4j, 4j, 3 + 0j])
+def test_physical_field_integral_preserves_scalar_kind_and_phase(value):
+    grid = _uniform_grid()
+    field = FieldState.from_function(grid, E=lambda x, y, z: (value, 0, 0))
+    curve = Curve.polyline([(grid.x[2], grid.y[3], grid.z[4]), (grid.x[9], grid.y[3], grid.z[4])])
+    voltage = integrate_E(field, curve, grid)
+    assert voltage == pytest.approx(value * 7e-3)
+    assert type(voltage) is (complex if np.iscomplexobj(value) else float)
+
+
+@pytest.mark.parametrize("graded", [False, True])
+def test_complex_conservative_field_integrates_on_all_axes_and_reverses(graded):
+    axes = [_graded_axis(0, 20e-3, 20, growth=g) for g in (1.12, 1.17, 1.21)]
+    grid = GridLines(*axes) if graded else _uniform_grid()
+    coefficients = (2 + 3j, -4 + 1j, 5 - 2j)
+    field = FieldState.from_function(
+        grid, E=lambda x, y, z: tuple(-2 * c * q for c, q in zip(coefficients, (x, y, z)))
+    )
+    a = (grid.x[2], grid.y[3], grid.z[4])
+    b = (grid.x[15], grid.y[12], grid.z[13])
+    expected = sum(c * (a_i**2 - b_i**2) for c, a_i, b_i in zip(coefficients, a, b))
+    forward = integrate_E(field, Curve.polyline([a, b]), grid)
+    reverse = integrate_E(field, Curve.polyline([b, a]), grid)
+    assert forward == pytest.approx(expected, rel=1e-12)
+    assert reverse == pytest.approx(-expected, rel=1e-12)
+
+
+def test_frequency_frame_integral_matches_real_snapshots_at_each_phase():
+    grid = _uniform_grid()
+    shape = FieldState.zeros(grid).Ex.shape
+    spectrum = FieldSpectrum(grid, [5e9], Ex=np.full((1, *shape), 3 + 4j))
+    curve = Curve.polyline([(grid.x[2], grid.y[3], grid.z[4]), (grid.x[9], grid.y[3], grid.z[4])])
+    voltage = integrate_E(spectrum.at_frequency(5e9), curve, grid)
+    assert voltage == pytest.approx(0.021 + 0.028j)
+    for phase in (0, 37, 90, 180):
+        snapshot = spectrum.snapshot(5e9, phase_deg=phase)
+        expected = (voltage * np.exp(1j * np.deg2rad(phase))).real
+        assert integrate_E(snapshot, curve, grid) == pytest.approx(expected, abs=1e-14)
+
+
+def test_complex_circulation_on_a_closed_path():
+    grid = _uniform_grid()
+    coefficient = 3 + 4j
+    field = FieldState.from_function(grid, E=lambda x, y, z: (0, coefficient * x, 0))
+    x0, x1 = grid.x[2], grid.x[12]
+    y0, y1 = grid.y[3], grid.y[15]
+    z = grid.z[4]
+    curve = Curve.polyline([(x0, y0, z), (x1, y0, z), (x1, y1, z), (x0, y1, z), (x0, y0, z)])
+    assert integrate_E(field, curve, grid) == pytest.approx(coefficient * (x1 - x0) * (y1 - y0))
