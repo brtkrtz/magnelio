@@ -59,7 +59,14 @@ python validation/tools/check_dd_references.py   # DD anchors resolve
 python validation/tools/check_api_surface.py     # public surface unchanged
 python validation/tools/check_public_hygiene.py  # public content is safe to ship
 python validation/tools/check_imports.py         # script imports resolve
+python validation/tools/check_project_consistency.py  # status and release metadata
 ```
+
+The consistency gate checks the 400-line STATUS limit, all three version
+fields, dated changelog entries and coverage of available local release tags.
+CI checks out the tag history; source archives still check the current
+version without requiring Git. These structural checks do not certify the
+semantic completeness of documentation or numerical validation.
 
 ## Conventions
 

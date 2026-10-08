@@ -22,6 +22,15 @@ major version is 0, minor releases may change the public API.
 - Developer decision records consolidate completed API and usability work,
   distinguish superseded framing from surviving rules, and retain stable
   decision numbers and implementation/validation references.
+- Resolved bug records retain concise causes, fixes and evidence; open defects
+  remain unchanged. The technical specification and method chapters correct
+  obsolete implementation paths, curl dimensions and leapfrog-energy wording.
+
+### Added
+
+- A developer consistency check enforces STATUS length, matching package/Python/
+  citation versions and dated changelog coverage of local release tags. It runs
+  in pre-commit and CI; CI also checks that decision references resolve.
 
 ## [0.9.0] - 2026-10-08
 

@@ -25,12 +25,12 @@ modifications of the diagonal mass matrices
 $\mathbf M_\varepsilon, \mathbf M_\mu, \mathbf M_\sigma$ rather than
 of the stencil.
 
-Implementation: `operators/curl.py` (sparse primal curl $\mathbf C$;
-the dual curl is $\mathbf C^{\mathsf T}$), `operators/material_matrices.py`
+Implementation: `_operators/curl.py` (sparse primal curl $\mathbf C$;
+the dual curl is $\mathbf C^{\mathsf T}$), `_operators/material_matrices.py`
 (diagonal mass matrices $M_\varepsilon = \varepsilon_0\varepsilon_r
 A_{\text{dual}}/l_{\text{primal}}$, $M_\mu = \mu_0\mu_r
 A_{\text{primal}}/l_{\text{dual}}$, plus $M_\sigma$ and the magnetic
-$M_{\sigma^*}$), `fields/field_arrays.py` (structure-of-arrays field
+$M_{\sigma^*}$), `_fields/field_arrays.py` (structure-of-arrays field
 storage).
 
 ## Leapfrog time integration
@@ -116,9 +116,17 @@ chapter — see [numerical precision](precision.md).
 ## Simulation duration and energy stopping
 
 Runs are terminated either after a fixed number of steps or by an
-energy criterion: the total discrete field energy
-$\tfrac12(\hat e^{\mathsf T} \mathbf M_\varepsilon \hat e + \hat
-h^{\mathsf T} \mathbf M_\mu \hat h)$ must decay a configurable number
+energy criterion: the leapfrog energy
+$\tfrac12((\hat e^{n+1})^{\mathsf T} \mathbf M_\varepsilon \hat e^{n+1}
++ (\hat h^{n+1/2})^{\mathsf T} \mathbf M_\mu \hat h^{n+3/2})$
+pairs the two magnetic half-steps around the electric instant and must decay
+a configurable number
 of dB below its peak.  Energy-based stopping is common
 engineering practice in time-domain S-parameter extraction; no
 specific publication is claimed.
+
+For a lossless stable closed system this is the conserved leapfrog quantity;
+using the magnetic field squared at only one half-step introduces an
+oscillatory time-staggering error. If the paired diagnostic is non-positive,
+the solver falls back to the positive electric-plus-magnetic squared norm
+for stopping. This fallback does not certify stability or spectral accuracy.

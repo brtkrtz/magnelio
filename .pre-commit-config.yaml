@@ -18,3 +18,9 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: project-consistency
+        name: project consistency (STATUS, versions, changelog)
+        entry: python validation/tools/check_project_consistency.py
+        language: system
+        pass_filenames: false
+        always_run: true

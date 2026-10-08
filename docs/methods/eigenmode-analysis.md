@@ -10,7 +10,7 @@ $$
  = \omega^2\, \mathbf M_\varepsilon\, \hat e
 $$
 
-(`solver/eigenmode_3d.py`), the standard FIT eigenformulation
+(`solver/_eigenmode_3d.py`), the standard FIT eigenformulation
 {cite}`weiland1996,clemensweiland2001`.  PEC walls
 are imposed by degree-of-freedom elimination, which also removes the
 gradient null space for all-PEC cavities; PMC walls are the

@@ -21,41 +21,26 @@ KB-043 has an explicit opt-in mitigation; other entries are resolved.
 
 ## KB-054: ~~Repeated edge tags reject a valid filleted CAD section~~ — Resolved (DD-287, 2026-10-08)
 
-Periodic pcurve copies and closing-edge refinement can attach several
-slightly differing parameters of the same CAD edge to one trace endpoint.
-The ordinal matcher counted these aliases as additional crossings and
-rejected a valid filleted-cylinder section. CI under pythonocc/OCCT 8.0.1
-exposed the error; under 7.9.0 direct conditioning 1/16 failed while 4/64
-passed, so the router retry masked it locally.
-
-Parameter clusters sharing an endpoint are now one face/edge crossing before
-ordinal matching. Geometric trace records remain identical; no tolerance is
-widened. Node residuals, CAD boundary tubes and reciprocal contour closure
-remain mandatory. The independent fillet area passes directly at all four
-conditioning values, with repeated router calls; a closed-circle reference
-covers duplicate tags. All 52 section tests, the 320-rectangle material
-certificate and the full local suite (4436 passed / 39 skipped) pass.
-GitHub CI also passes under 8.0.1. Evidence:
-`investigations/release-0.9.0/CAD-FIX.md` (internal record).
+Repeated periodic/closing-edge parameter tags were counted as extra crossings,
+rejecting valid filleted sections. DD-287 clusters aliases per endpoint without
+widening tolerances or changing trace geometry. Independent fillet/circle
+references pass conditioning 1/4/16/64; previously retries masked failures at
+1/16 locally. Residual, CAD-tube and closure checks remain mandatory. OCCT
+7.9.0 and hosted 8.0.1 acceptance pass, including the 320-rectangle certificate.
+Evidence: `investigations/release-0.9.0/CAD-FIX.md` (internal record).
 
 ## KB-053: ~~Bounded-surface sections reject the repeated coaxial-cell CAD model~~ — Resolved (DD-287, 2026-10-06)
 
-The new section route rejected a valid 51-cell source at a three-endpoint
-shared edge. Embedded coedges and within-tolerance trim-vertex gaps corrupted
-UV membership; subsequent cuts exposed dense interpolation samples, hidden
-periodicity, lost cyclic trace identity and nonmonotonic scale retries.
-The repair preserves native support domains, actual material wires and original
-closed traces, and retains the existing residual/topology/CAD-tube checks.
-
-The complete unchanged 51-cell / 102-port input now meshes: 92 × 92 × 1014,
-8,582,496 cells, bit-identical grid coordinates. All 361 recorded failing cuts,
-46 section regressions, 63 independent area references and the 320-cell material
-certificate pass. Full suite: 4446 passed / 13 skipped / no failures. The repair
-smoke run takes 1811.762 s versus the parent's 641.465 s; concurrent test work
-and missing repeats prevent a controlled slowdown estimate. No global physical
-surface or electromagnetic error percentage is established. Evidence:
-`investigations/near-tangent-meshing-performance/hesr/REPAIR_MEASUREMENTS.md`
-and `REPAIR_DERIVATION.md` (internal dossier).
+Embedded coedges, trim-vertex gaps and lost periodic/trace identities made
+bounded sections reject valid repeated-cell CAD. DD-287 preserves native
+domains, actual material wires and closed traces with the original residual/
+topology/CAD-tube checks. The unchanged 51-cell/102-port model meshes with
+bit-identical grid coordinates (8,582,496 cells); 361 recorded failing cuts,
+63 independent area references and 320 material rectangles pass. The initial
+1811.762 versus 641.465 s smoke comparison was not a controlled slowdown
+measurement; no global physical-error percentage follows from these gates.
+Evidence: `investigations/near-tangent-meshing-performance/hesr/REPAIR_MEASUREMENTS.md`
+and `REPAIR_DERIVATION.md` (internal records).
 
 ## KB-052: ~~Project watching can omit the final writer state~~ — Resolved (2026-10-05)
 
@@ -131,89 +116,32 @@ retain their geometry. Original record:
 
 ## KB-045: ~~The band-DTBC port does not run on the CuPy backend~~ — Resolved (2026-09-03)
 
-**The band boundary now exchanges the port plane with the device the
-way the modal operator already did.**  `gather_host` and
-`array_module_of` moved from `_modal/operator.py` into
-`_backend/array_api.py` (next to `copy_into`, which solves the mirror
-problem) and both port families import them from there; the band port
-reads through `gather_host` in `project_V`, `project_V_interior`,
-`project_I` and `initialize_state`, and `update_e` writes the port
-plane in ONE fused scatter (`e_u_indices` and `e_v_indices`
-concatenated, cached device-side) before reading the first interior
-period back.  The port's own arithmetic is untouched host-side double,
-so the CPU path is bit-identical — the KB-038 length-law probe
-reproduces -128.72 / -136.19 dB at 4064 steps and -123.97 / -129.85 at
-8128, every digit as before — and the GPU answer matches the CPU one to
-better than 1e-6 dB.  Gated by
-`test_qtem_band_dtbc_sparams.py::TestBandDTBCOnGPU`, which skips
-without a CUDA device.
+Host NumPy mode profiles were multiplied by CuPy field slices, crashing the
+first band-port projection. Shared gather_host/array_module_of gathers the
+required samples and one fused scatter updates the device port plane; port
+arithmetic remains host-side double. CPU length-law results are bit-identical
+and the dedicated GPU gate agrees within 1e-6 dB. Default NumPy-pinned tests
+had missed this combination; TestBandDTBCOnGPU skips without CUDA and does
+not establish broad device-port coverage. This is the same transfer class
+as KB-006; the independent KB-038 precision defect remains open.
 
-**What it was.**  A band port under the shipped default
-`backend="auto"` died on the first recorder call on any machine with a
-usable CUDA device:
-
-    File "src/magnelio/ports/_modal/band_dtbc.py", line 1627, in _project_V_at
-      V[m] = float(np.dot(me_u, p_u * e_u)) + float(np.dot(me_v, p_v * e_v))
-    TypeError: Unsupported type <class 'numpy.ndarray'>   [cupy/_core/_scalar.pyx]
-
-`p_u` is a host-side mode profile, `e_u` a CuPy slice of the field.
-`band_dtbc.py` was written in `np.` throughout and, unlike
-`_modal/operator.py`, had no host gather — the class of the resolved
-KB-006.  Nothing saw it: `tests/integration/test_gpu_backend.py` never
-mentioned the band port and `tests/conftest.py` pins the suite to
-NumPy, so neither CI nor a developer running the suite on a CUDA box
-exercised the combination.  Found while setting up the KB-038
-wordlength probe, which ran outside pytest and therefore without that
-pin.
+Historical test/record anchors (private probes belong to the internal
+records named above): `_backend/array_api.py`, `_modal/operator.py`, `band_dtbc.py`, `src/magnelio/ports/_modal/band_dtbc.py`, `test_qtem_band_dtbc_sparams.py`, `tests/conftest.py`, `tests/integration/test_gpu_backend.py`.
 
 ## KB-044: ~~The in-house section paths book a tenth of the deflection, the kernel path the whole of it~~ — Resolved (DD-243, 2026-09-02)
 
-**All three section paths now tessellate to one chord budget, a tenth
-of the deflection** (`SECTION_CHORD_FRACTION` in `_section_kernels.py`):
-the kernel Boolean's `GCPnts_TangentialDeflection` is fed the budget,
-the exact engine's conic arcs and their compiled twin use it, the facet
-path already did.  Measured against the converged reference at δ/1000
-(same probe as below): the kernel path's worst per-cell deviation falls
-from 7.0…9.3e-3 to 0.79…1.15e-3 of a cell on cylinder, cone, sphere and
-torus; a cylinder cut across its axis now agrees between kernel, exact
-engine and facet path to 8e-14 / 2e-16 of a cell, and the two DD-217
-gates that pin the engine to the kernel pass unchanged.  Price: +19 %
-mesh-build CPU on the fillet-heavy probe model (5.41 → 6.43 s steady
-state), more than the +11…12 % of arm B alone because the fillets'
-cylinder faces are answered by the exact engine, whose arcs took the
-finer budget too.  The record below is kept as measured before the fix.
+Kernel/exact sections used the full deflection while facet sections used
+one tenth, so route changes altered curved-cell masses. DD-243 applies one
+SECTION_CHORD_FRACTION=0.1 budget to all three paths. Against a delta/1000
+reference, kernel worst-cell deviations improve from 7.0–9.3e-3 to
+0.79–1.15e-3; cylinder route agreement reaches 8e-14/2e-16 of a cell.
+The fillet-heavy build costs +19 % (5.41→6.43 s). Refining only the exact
+engine was rejected because it moved the same inconsistency to delegated
+kernel planes. Context: DD-199/DD-217 and KB-042. Full measured comparisons:
+`investigations/kb042-analytic-facets/MEASUREMENTS.md` (internal record).
 
-Found while decomposing KB-042.  The facet path refines every section
-chord to a sagitta of a tenth of the deflection (DD-199); the exact
-engine tessellates its cylinder arcs at the kernel's rule, the full
-deflection (DD-217 pins it to the kernel to rounding), and so does every
-plane delegated to the kernel Boolean.  A body that changes path —
-because a free-form face joins its solid, or leaves it — therefore
-moves the masses of every cell on a curved face by the kernel's sagitta
-deficit, (2/3)·δ per unit boundary length, about 7e-3 of a cell at the
-production deflection of a hundredth of a cell.  Worst per-cell
-deviation, planes across the axis, converged reference at δ/1000:
-
-    body        kernel vs facet   kernel vs converged   facet vs converged
-    cylinder       6.339e-03           7.023e-03             7.805e-04
-    cone           8.831e-03           9.280e-03             5.463e-04
-    sphere         7.485e-03           7.775e-03             6.336e-04
-    torus          8.742e-03           8.983e-03             6.043e-04
-
-The move is toward truth and both classes honour the deflection
-contract; what is lost is that the same body books the same masses on
-either path.  Closing it is a product decision on the section sagitta
-budget, and it has to be taken for all three paths at once: the exact
-engine alone at δ/10 is bit-identical to the facet path (2.1e-16 of a
-cell) but fails the two DD-217 gates that pin it to the kernel
-(`test_post_row_matches_the_kernel_to_rounding`,
-`test_partial_cylinder_face_with_a_seam`, +1.0e-3 relative) — it would
-open the same discontinuity between engine-answered and kernel-delegated
-planes of one shape.  The kernel path at δ/10 costs √10 more points per
-delegated section, measured +11…12 % mesh-build CPU on a fillet-heavy
-kernel-path model (5.44–5.87 s → 6.07–6.61 s, self + children), and
-re-pins every artefact with a curved face.  Internal record:
-`investigations/kb042-analytic-facets/MEASUREMENTS.md`.
+Historical test/record anchors (private probes belong to the internal
+records named above): `_section_kernels.py`.
 
 ## KB-043: Fast sections can lose material near a cylinder generatrix — Opt-in mitigation (DD-287)
 
@@ -244,138 +172,54 @@ in that internal dossier; the repository certificate is
 
 ## KB-042: ~~Cone, sphere and torus faces of a facetted shape keep the KB-041 reach defect~~ — Resolved (DD-242, 2026-09-02)
 
-The premise did not survive measurement.  With the free-form neighbour
-moved from 40 mm to 45 mm the facet answer on a sphere, cone or torus
-changes by exactly 0.0 on every plane — there is no reach, and none of
-the three faces has a translation invariance for a triangulated prism
-to lose.  The 7…9e-3 per cell recorded here is the kernel's own
-tessellation of the body *alone* at the deflection (kernel against a
-converged reference 6.5e-3…1.0e-2 of a cell, facet path 5…8e-4), and
-the cylinder measured beside it at 2e-13 only because its planes ran
-along the axis; across the axis it reads the same 6.3e-3.  What was
-real is one unprojected point: the parametric lift needs face
-parameters, which are degenerate at a sphere's pole, and the crossing
-there stayed on the chord a full deflection off the surface (2.4e-6 m;
-2.24e-3 of a cell against 5…8e-4 elsewhere).  DD-242 replaces the lift
-on these faces by a projection onto the implicit surface: residual
-2e-18 m, the pole cell 6.3e-4, a section 30 % cheaper.  The
-tessellation-class difference between the paths is KB-044.
+The suspected remote-body reach was refuted: moving the freeform neighbour
+changes sphere/cone/torus answers by zero. Their 7–9e-3 cell difference was
+the kernel tessellation budget, subsequently KB-044. The real defect was
+an unprojected sphere-pole crossing (2.4e-6 m). DD-242 projects onto the
+implicit analytic surface: residual 2e-18 m, pole-cell error 6.3e-4 and
+section cost −30 %. The unrelated cylinder invariance defect is KB-041.
 
 ## KB-041: ~~A free-form body perturbs the conformal masses of cells that contain none of it~~ — Resolved (DD-240, 2026-09-01)
 
-**The DD-199 free-form gate was per shape, not per face.**  One B-spline
-face anywhere on a shape set a single shape-wide flag, and the section
-engine then answered *every* face of that shape — the analytic cylinders
-included — from the lifted triangulation, returning before the exact
-tables were ever assembled.  It reached unrelated bodies because the CSG
-engine builds its tools engine on the *fused* tools: in the coupler
-fixture `vac -= electrodes` is a Difference whose operand routing is
-declined, so the kernel-fused solid is digested and its boundary carries
-the loft's B-spline imprint — the air body, which owns the port
-cross-section and has no free-form face of its own, was measured
-facetted.
+DD-199's freeform gate selected faceting per shape, including fused Boolean
+tools, rather than per face. Analytic cylinder sections then lost axial
+translation invariance; remote lofts reached an air body's bore through its
+Difference tools. One mass was 42.5 % low and slab defect 8.4165e-2 failed
+the 1e-8 port gate. DD-240 keeps analytic faces on their exact path; disabling
+faceting on the identical geometry already demonstrated DTBC recovery.
+Lost invariance, rather than generally worse approximation, caused the port
+fallback. No contribution to the separate precision-floor shift was measured;
+KB-038 remains open. Cone/sphere/torus and tangency limits were separated
+as KB-042/043, not implicitly closed by this fix.
 
-**The damage was lost invariance, not lost accuracy.**  A triangulated
-cylinder is a prism, so where a section plane falls between its node
-rows decides the chord: on the coupler bore, `M_mu` Hx at
-`(ix=2, iz=81)` reads 1.550977e-09 in all four y-layers on the exact
-path and 8.911369e-10 / 8.920923e-10 / 8.920996e-10 / 8.920997e-10 on
-the facetted one — 42.5 % low *and* drifting along y.
-`_port_chain_slab_defect` measures precisely that y-to-y drift, read
-8.4165e-02 against its 1e-8 gate and demoted both ports to Mur.  The
-exact DTBC consumes **uniformity**, which is why distance from the loft
-was irrelevant.  Cleanest proof: `MAGNELIO_FACET_SECTIONS=0` with the
-geometry byte-identical made the certificate pass — both ports on the
-exact DTBC, pair spreads 5.0475e-15 / 1.3073e-13, slab defect
-2.2192e-10.
-
-**Two readings recorded above were wrong.**  The control that added the
-loft as its own body instead of fusing it was read as ruling the Boolean
-out; it is bit-identical only *because* the loft still reaches the air
-body through the Difference, and the coax-stubs-only control is clean
-because that model carries no free-form face at all.  And the question
-left open — which of the two answers is wrong — has an answer: the
-facetted answer was not the less accurate one, it was the one that is
-not translation-invariant, and invariance is the property the gate
-consumes.
-
-Still not measured: whether the defect also contributed to the level
-shift of the four port-floor certificates.  KB-038 records single
-precision as the leading explanation and nothing in the repair displaces
-it.
-
-Fix and full record: DD-240 — analytic faces of a facetted shape are
-answered from their own geometry, and a shape with no free-form face is
-bit-identical.  What the repair does not reach has its own entries:
-KB-042 for cone, sphere and torus faces, KB-043 for the near-tangency
-band.
+Related record anchors: KB-043.
 
 ## KB-040: ~~The 2D port mode solve is 7–78× slower than its pinned cost~~ — Resolved (DD-239, 2026-09-01)
 
-The factor was contention, not code.  Re-measured 2026-09-01 with
-thread-pinned CPU time — the only contention-robust instrument
-available, a genuinely idle box being unobtainable while the session's
-own parallel agents held the load average at 58–88 on 16 cores — for
-the whole `build_cw_true_mode_port` call:
-
-    case          pinned    CPU measured    factor
-    layered        41 ms       43.2 ms      1.05×
-    block          31 ms       44.1 ms      1.42×
-    microstrip    433 ms     1109.4 ms      2.56×
-
-The CPU minima reproduce to within 2 % across repetitions, and the
-measured column is a *strict superset* of the pinned window: a cProfile
-run puts `build_curl_matrix` — built over the whole mesh, and called
-before the `t_solve0` timer opens — at 65 % of the microstrip call, so
-the pinned quantity itself is about 0.4 s against a 433 ms pin.  What
-is left is a mode solve within a factor of two or three of its pin, on
-a loaded machine, measured generously.
-
-The wall-clock instrument is what failed.  The same `layered` call
-measured 28.6 ms at load 0.15 and 1801 ms at load 68 — a 63× spread at
-constant CPU work, which is more than the whole factor this entry was
-opened for.  **Any future cost watch on this path must record CPU time
-or run alone**; a wall-clock pin on a shared box measures the box.
-
-One pin is stale in the other direction, which the original entry read
-as evidence that the machine was not the cause: the microstrip 3D run,
-pinned at 196 s/point, measured 81.0 s/point even on the loaded box, so
-that pin overstates by at least 2.4×.
-
-No user-facing cost problem was ever behind this.  The shipped default
-port build, `build_modal_port`, costs 12.8 / 9.7 / 691 ms of CPU on the
-same three cross-sections, against 3D runs of seconds to minutes;
-`build_cw_true_mode_port` is a certificate instrument, not public API.
+Thread contention, not a solver regression, caused the apparent 7–78×
+slowdown. Pinned CPU-time minima reproduce within 2 %; a loaded-box
+wall clock varied 28.6→1801 ms (63×) at constant work. The compared full
+mode call also included curl preparation outside the old timer window.
+DD-239 closes the diagnosis: future cost certificates need CPU time or an
+isolated machine and matching timed scope. The historical microstrip TD pin
+overstated cost by at least 2.4×; the shipped modal build was not the costly
+CW certificate instrument. No numerical or user-facing performance fix.
 
 ## KB-039: ~~The pair-ladder fixture's ports fall back to Mur since DD-199~~ — Resolved (DD-240, 2026-09-01)
 
-Both readings this entry recorded held: the first bad commit is DD-199,
-and the trigger inside the fixture is the tangent-blend loft.  The cause
-was the `src/`-side defect split off as KB-041 — a per-shape free-form
-gate that sent the air body's analytic bore through the triangulation
-and cost the port cross-section its uniformity.  With that repaired
-(DD-240), `validation/pair_ladder_choice_certificate.py` certifies again
-**on the fixture exactly as built**: both ports terminate on the exact
-DTBC, pair spreads 5.2164e-15 / 1.3072e-13, feed-chain slab defect
-1.4795e-10 against `_DTBC_SLAB_DEFECT_TOL = 1e-8`, z_line 96.1625 Ω.
+The tangent loft triggered KB-041's per-shape faceting, not a bad fixture.
+DD-240 restores the unchanged pair-ladder geometry: both DTBC ports certify,
+pair spreads 5.2164e-15/1.3072e-13, slab defect 1.4795e-10 below 1e-8,
+z_line 96.1625 ohms. Do not amputate the galvanic-feed loft to make a test
+pass. The certificate's mass-based first stage, printed second-stage veto,
+measured 18–20 s runtime and shipped 2e-6 gate were corrected. It remains
+outside pytest coverage, like other DD-anchored certificates. Context DD-199/
+DD-165; baseline `investigations/qtem-midpath/baseline/` (internal record).
 
-That settles the fixture question the entry was held open for.  The loft
-was deliberately never amputated, since a fixture without the
-electrode's galvanic feed would certify a model the DD-165 comparison
-was never about — and no amputation is needed: the model that failed is
-the model that now passes.  The script repairs recorded here stand
-(stage 1 recomputed from the operators' own port masses, the stage-2
-veto and its gate printed, the runtime corrected to the measured
-~18–20 s, the `GATE` re-pointed to the shipped 2e-6).
+Historical test/record anchors (private probes belong to the internal
+records named above): `DRIFT.md`, `validation/pair_ladder_choice_certificate.py`.
 
-*Not* closed, and not specific to this fixture: nothing under `tests/`
-references the script, which is why the breakage went unnoticed from
-DD-199 until the bisection.  That is the standing condition of every
-certificate in `validation/` — anchored by the DD that names it, not by
-the test suite — and no test was added here.  Baseline capture:
-internal record `investigations/qtem-midpath/baseline/`
-(`pair_ladder_choice_certificate.stdout` / `.stderr`, `DRIFT.md`
-section 9).
+Historical artifact anchors (internal records where applicable): `pair_ladder_choice_certificate.stdout`.
 
 ## KB-038: The band-DTBC port floor degrades with the length of the run — Open, cause located (2026-09-03)
 
@@ -549,99 +393,57 @@ establish its floor for arbitrary run lengths. Evidence:
 
 ## KB-037: ~~Two builds of the same band port gave different Galerkin subspaces~~ — Resolved (2026-08-31)
 
-`zeta_pencil.find_propagating_modes` called `spla.eigs` without a start
-vector, so ARPACK began from a random one.  The band subspace is spanned
-by the *traces* of the tracked mode families, so the randomness
-propagated into it: two builds of the same port from the same mesh gave
-projected exterior blocks differing by 35-113 % entrywise, with the
-entrywise magnitudes agreeing to 1e-5 and every norm intact.  Most of
-the difference was a per-basis-vector sign flip (the SVD gauge), but
-~1e-5 of genuine numerical variation remained underneath it, so a sign
-convention alone would not have fixed it.
+Unseeded zeta-pencil eigs rebuilt a different Galerkin basis: mostly sign
+gauge, but about 1e-5 real numerical variation underneath. Basis-invariant
+results concealed a checkpoint/resume incompatibility. Shared arpack_v0
+now seeds the pencil, numerical_2d and spectral solves; repeated builds are
+bit-identical in/across processes. Sign normalization alone was insufficient.
+Same root cause as KB-010/DD-142. Evidence:
+`investigations/port-model-default/` (internal dossier).
 
-This is the same defect as KB-010 (DD-142) in a third place: a fixed
-start vector had been applied to `numerical_2d.py`'s two `eigsh` calls
-and to `spectral_dt`, and the pencil eigensolve was missed.
-
-Nothing measured wrong because of it — the subspace is a basis, and the
-Galerkin projection is invariant under a change of basis to the accuracy
-above.  What it blocked was **resume**: a resumed run rebuilds its
-operators and reloads the boundary state from the checkpoint, and a
-rebuilt subspace that differs from the recorded one makes the two
-inconsistent while every norm still looks right.
-
-Fixed by the shared `magnelio._arpack.arpack_v0`, which the three
-callers now share.  Two builds of the same band port are now bit-
-identical, in one process and across processes (measured 0.0e+00).
-Measurement record: internal dossier `investigations/port-model-default/`
-(`probe_band_reproducibility.py`, MEASUREMENTS.md section 12).
+Historical test/record anchors (private probes belong to the internal
+records named above): `MEASUREMENTS.md`, `numerical_2d.py`, `probe_band_reproducibility.py`.
 
 ## KB-036: ~~Faces in a conductor's end wall blocked and the wall unbooked on grids below about 15 µm~~ — Resolved (DD-207, 2026-08-28)
 
-A grid plane coinciding with a face of the model is sampled a small
-step to either side (DD-106); the step was the section deflection, a
-hundredth of the smallest cell.  On the Lange coupler's 6 µm grid that
-is 60 nm — below the kernel's confusion (1e-7) and the edge tolerances
-of a Boolean result (1.5e-7) — and there the section Boolean reports
-the face the plane was meant to leave on *both* sides: the air body's
-finger pocket (12.6 µm × 5 µm) appeared in the section outside its own
-end wall, the spurious opening fell to the conducting background, and
-every face lying in a finger's end wall read fully blocked with a wall
-jump of zero (min = max, DD-106's min-convention had nothing to
-choose from).  The threshold is the kernel's, not a plain distance: a
-12.6-µm pocket on the body's bottom face answered correctly at the
-same 60 nm, one in the interior did not; a single brick is protected
-by the bounding-box screen.  Every model whose smallest cell is under
-about 15 µm at scale 1 was exposed; the ε average on the same planes
-was affected through the same mechanism.  Fix: the step is the larger
-of the deflection and four times the largest B-Rep tolerance of the
-model — which also puts the shifted planes past the planar engine's
-tolerance screen, so they are answered exactly instead of by the
-Boolean.  `tests/unit/test_section_slab_index.py`; measured in
-`investigations/mesh-build-bench/MEASUREMENTS.md` (M10, internal
-record).
+The two-sided DD-106 coplanar sampling step used deflection, falling below
+CAD tolerances on fine grids (60 nm at 6 micrometres versus 1e-7 confusion/
+1.5e-7 Boolean tolerances). Sections leaked pockets past conductor end walls,
+corrupting both wall jumps and epsilon averages. DD-207 uses the larger of
+deflection and four times the model's largest BREP tolerance; the planar
+screen then answers outside the tolerance tube. The threshold is kernel/
+geometry dependent, not a universal 15-micrometre physical-cell rule.
+Evidence: `investigations/mesh-build-bench/MEASUREMENTS.md` (M10, internal record).
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `tests/unit/test_section_slab_index.py`.
 
 ## KB-035: ~~Far-field power deficit of about a tenth with a window port in an absorbing face~~ — Resolved (DD-204, 2026-08-27)
 
-Misattributed when opened.  The deficit was not the window port's:
-the same lossless patch element on a lumped port radiated 0.91 of its
-accepted power too, and the Poynting flux through the Huygens box
-reproduced the accepted power to a percent in every configuration —
-the transform of those surface fields fell short, by 7 % with the
-domain top 0.3 λ above the copper (the how-to's `h_box` of 12 mm) and
-by nothing from 0.7 λ upward, independent of lateral clearance,
-substrate extent, grid grading and angular resolution; halving the
-cells took the shortfall to 3 %.  The box sits at the absorbing
-faces, and 0.3 λ above a printed resonator its discrete near field is
-not the outgoing free-space field the transform assumes.  The reading
-in the original entry was also inverted: the pattern amplitude, hence
-the realized gain, was 0.3–0.4 dB low, while directivity, normalised
-to `P_rad` itself, was right.  The window port adds only the
-documented few percent of outer-wall current beyond the box
-(`P_surf/P_acc` 0.965 on the launch), which the balance does not see.
-Fix: `FarFieldResult.surface_power`/`power_balance` and a warning
-from `MonitorFarFieldFrequency.result` beyond 5 % imbalance; the how-to's
-`h_box` is 0.7 λ.  Measured in `investigations/patch-array/MEASUREMENTS.md`
-(M18, internal record); `tests/unit/test_far_field_closure.py`.
+The deficit was misattributed to window ports: lumped feeds showed it too,
+while Huygens flux matched accepted power. At 0.3 wavelength top clearance
+the discrete near field is unsuitable for a free-space transform: radiation
+power was about 7 % low, halved cells about 3 %; realized gain was low but
+directivity remained correct. At 0.7 wavelength clearance the deficit vanished.
+DD-204 adds surface_power/power_balance and a >5 % closure warning; the
+how-to uses 0.7 wavelength. Window launches still have documented currents
+outside the box (surface/accepted power 0.965), which that balance cannot see.
+Evidence: `investigations/patch-array/MEASUREMENTS.md` (M18, internal record).
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `tests/unit/test_far_field_closure.py`.
 
 ## KB-034: ~~Thin sheets and wires touching an absorbing face had no mask in the PML~~ — Resolved (DD-198 amendment, 2026-08-27)
 
-DD-198 step 0 mirrors the first interior slab of the sub-cell data into
-the PML extension so a conductor touching an absorbing face keeps its
-PEC mask there.  It ran before the thin-wire and thin-sheet passes,
-which paint `pec_mask_edges` afterwards, so a thin metallisation
-reaching a CPML wall — a microstrip feed with a port window in that
-wall — was conductor inside the domain and free space in the
-extension.  A `PortWaveguide` window on the wall then saw a hollow
-cross-section over substrate and air and was refused with the
-"inhomogeneous or anisotropic filling" message; without a port the
-sheet simply ended one cell short of the wall.  Fix: step 4c repeats
-the mask-only extension after the sheet pass
-(`tests/unit/test_pml_extension.py::test_pml_slabs_carry_a_thin_sheet_touching_the_face`,
-`::test_microstrip_window_in_an_absorbing_face_resolves_as_a_line_mode`).
-The Holland material correction of a thin wire is still not continued
-into the extension — a wire ending on an absorbing face is not a
-supported feed.
+The DD-198 absorber continuation preceded thin-sheet/wire masking, so
+their later PEC masks stopped at the physical wall and window ports saw the
+wrong cross-section. Repeat mask-only continuation after the sheet pass;
+thin-sheet/window-line regressions cover it. Thin-wire Holland material
+correction still is not extended: a wire ending on an absorbing face is
+not a supported feed. This limitation is not closed by the mask repair.
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `tests/unit/test_pml_extension.py`.
 
 ## KB-033: ~~The 3D viewer refused bodies of a few tens of micrometres~~ — Resolved (DD-201, 2026-08-27)
 
@@ -656,45 +458,27 @@ Fix: `_tessellate_shape` floors every deflection at 1.1e-7
 
 ## KB-032: ~~Two thin sheets at one nominal height left a sliver anchor pair~~ — Resolved (DD-201, 2026-08-27)
 
-Thin-metallisation planes are verbatim anchors of the plane merge, like
-user-forced planes.  A brick and a Boolean-returned track on the same
-substrate come back with one ulp of float wiggle between their
-substrate-side faces (0.000254 against 0.00025399999999999994 m on the
-Lange coupler), so the merge saw two anchors 5e-20 m apart, warned
-"forced planes … closer than min_feature_gap … (user positions win)"
-for planes no user had forced, and computed the singular-edge grading
-from a feature size of 1.7e-21 m.  The grid itself deduplicated the
-sliver downstream, so the damage was the misleading warning and a
-growth-factor warning of ratio 1e14; the run that appeared to hang
-alongside it had a different cause (a closed housing ringing in band).
-Fix: `_unify_thin_sheet_positions` clusters sheet planes within the
-feature gap before they become anchors — a user-forced plane within
-reach wins, otherwise the lowest sheet — and updates the sheet specs
-so their masks land on the shared node
-(`tests/unit/test_thin_sheet_detection.py::TestThinSheetAnchorUnification`).
+One-ULP differences between nominally coincident sheet heights produced
+spurious forced-plane and extreme-growth warnings (5e-20 m separation,
+1e14 ratio). The downstream grid removed the sliver but not its diagnostics.
+DD-201 clusters sheet anchors within the feature gap and updates masks to
+the shared plane; a nearby user-forced plane wins, otherwise the lowest
+sheet. A coincident long run was separate closed-housing ringing, not this
+anchor defect. Thin-sheet anchor-unification regression covers the fix.
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `tests/unit/test_thin_sheet_detection.py`.
 
 ## KB-031: ~~Hollow conductors lost the conformal correction at their inner walls~~ — Resolved (DD-199, 2026-08-26)
 
-The kernel Boolean returns the contours of a section without a
-winding convention — a tube's bore and its rim came back with the same
-sign — and `compute_face_material_areas` sums signed areas per shape.
-A dual face inside the hole was therefore covered by the outer contour
-and by the hole alike, booked fully PEC, and the sub-cell fractions at
-the inner wall of every hollow conductor degraded to the staircase
-value: a PEC tube in air on a 1.5 mm grid had a mean |f_A − exact| of
-0.12 over its z-dual faces, the bore-wall faces at 0.000 against
-0.997.  DD-102 had recorded the independent contour orientation and
-judged it harmless.  DD-199 winds every contour by nesting parity
-before the kernels see it (`orient_nested_contours`); the tube is at
-4e-3 afterwards.  Dielectric bodies with a conductor in their hole
-were shielded by the priority rule (the conductor claims its area
-first), which is why coax-class models did not show it.  Dielectric
-bodies with an *air* hole were not shielded: a ceramic ring's bore was
-booked as ceramic, so the KB-011 fixture (ε_r = 45 ring, 4/2 mm,
-resonating at 2.3279 GHz) moved to 2.6566 GHz on an unchanged grid
-when the winding was fixed (solid puck 2.2302 GHz — the old value was
-a nearly filled bore).  The fixture, the DD-191 chamfer certificate
-and tutorial 13 were re-based on 2026-08-27.
+Kernel section contours had no signed nesting convention. Summing each as
+positive filled conductor and dielectric bores, degrading inner-wall sub-cell
+data. DD-199 winds by nesting parity; mean tube area error falls 0.12→4e-3.
+Material priority had hidden the defect in coax cases whose holes contained
+conductors, but not in ceramic air bores: correcting the ring changed
+2.3279→2.6566 GHz on the same grid (solid puck 2.2302 GHz). DD-102's
+earlier harmless-orientation verdict was wrong; KB-011, the DD-191 chamfer
+certificate and Tutorial 13 were re-based on 2026-08-27.
 
 ## KB-030: ~~Monitors fed by a TE/TM port were normalised to the waveform, not to the incident power~~ — Resolved (DD-198, 2026-08-26)
 
@@ -725,199 +509,65 @@ continuation the materials already had.
 
 ## KB-028: ~~Four conformal reference tests fail since the DD-191 / DD-192 mesh changes~~ — Resolved (DD-191 amendment / DD-193 note, 2026-08-26)
 
-Found while running the full integration suite for DD-196, bisected
-with `git bisect --first-parent`, settled the same day — one
-regression, one re-pin:
+One regression and one legitimate re-pin were separated. DD-191 admitted
+four-face edges where touching cylindrical surfaces continued on both sides,
+adding an axis plane and worsening TM010 error 3.7→6.0 %; the amended edge
+skip restores the old grid and fixes a latent gp_Ax1 distance call. DD-193's
+equal-fill grading instead improves conformal coax impedance 48.12→48.94
+ohms toward analytic 49.97 and port floor −131→−135.6 dB; that test was
+re-pinned, not forced back to a worse grid. Context DD-192/DD-196.
 
-- The three Dey–Mittra TM010 tests of `test_conformal_convergence.py`
-  failed since 6ca4049 (DD-191): the cylindrical cavity is inscribed
-  in its PEC block, the Boolean splits wall and cylinder along the
-  four touching lines, and the "two faces on one surface" skip of the
-  edge pass let those four-face edges through as geometry — a plane
-  through the cylinder axis, 7 × 7 → 8 × 8 cells with grid nodes on
-  the tangency cusps, DM error 3.7 → 6.0 %.  A **mesher regression**;
-  the edge pass now skips every edge at which each adjacent surface
-  continues on both sides (DD-191 amendment; a latent `gp_Ax1.Distance`
-  error in the coaxial-split test fixed alongside), the grids are
-  bit-identical to 0.4.4 again.
-- `test_conformal_coax_sparams.py` reported z_line 48.94 Ω against the
-  pinned 48.12 since a188229 (DD-192 merge, but the mover is DD-193):
-  the exact-fill grading turns the 0.121 / 0.168 / 0.121 mm ramp
-  inside the inner conductor into 3 × 0.137 mm cells.  Closer to the
-  analytic 49.97 Ω, port floor −131 → −135.6 dB — **merely different,
-  and better**; re-pinned.
+Historical test/record anchors (private probes belong to the internal
+records named above): `test_conformal_coax_sparams.py`, `test_conformal_convergence.py`.
 
 ## KB-027: ~~De-embedding a quasi-TEM feed leaves the line's physical dispersion behind~~ — Resolved (DD-244, 2026-09-02)
 
-**Resolution (DD-244).**  A modal run records a dispersion record for
-every quasi-TEM port — its feed chain, curl restriction and recording
-profiles — and `result.deembed` solves the true discrete modes of the
-cross-section on the result's axis from it, so the removed propagation
-is the grid's own, dispersion included.  Measured on the 20 mm tutorial
-microstrip at 25 nodes/λ: residual S21 phase +0.3° / +1.5° / +1.8° at
-5 / 10 / 15 GHz against −1.5° / −10.6° / −29.5° with the quasi-static
-fallback; the remainder is the drive port's launch residue (DD-239).
-The same modes back `report.dispersion(f)`.
-
-*Original record:*
-
-`result.deembed` removes the *discrete* chain propagation only on
-channels the run certified with line parameters `(r, q)` — the DTBC
-channels of homogeneous lines.  A quasi-TEM channel (microstrip, CPW,
-any inhomogeneous cross-section) is terminated by modal Mur in the
-default pipeline, carries no line parameters, and falls back to the
-mode's continuum `γ(ω)`.  That `γ` is the **quasi-static** one of the
-2D Laplace solve: `ε_eff = C'/C'_0` is frequency-flat, so the
-fallback removes a dispersion-free phase from a line whose real
-propagation constant rises with frequency.  The difference stays in
-the de-embedded S-matrix and is attributed to the device under test.
-
-Measured (internal record `investigations/port-deembedding/`): a
-16 mm shielded microstrip (w = 1.2 mm, t = 0.2 mm on 0.8 mm ε_r = 4.3,
-box 8 × 5 mm, PMC symmetry) de-embedded over its full length at
-`min_nodes_per_wavelength = 32` leaves a residual S21 phase of
-−1.1° / −7.9° / −22.4° at 5 / 10 / 15 GHz.  The residual is physics,
-not grid: it is unchanged across the ladder 16 → 48 nodes/λ (−24.4 →
-−22.0°, a 1/N² tail on top of a −21.6° limit), it vanishes for ε_r = 1
-(−0.13° at 15 GHz, the mechanism itself is exact), and it scales with
-the substrate — 12.7° / 22.4° / 39.9° at h = 0.4 / 0.8 / 1.6 mm — the
-signature of microstrip dispersion (Getsinger's ε_eff(f) predicts the
-same order and the same saturation with h).  The same quasi-static
-`γ` sets the Mur reflection coefficient of the channel, which is part
-of why QTEM channels sit at the −26…−39 dB floor.
-
-Consequences: keep quasi-TEM feed lines short when de-embedding, or
-judge mesh convergence on the raw S-matrix (the mesh-convergence
-how-to does).  Closing it means a frequency-dependent quasi-TEM mode —
-a full-wave 2D eigen-solve per frequency, or the band pipeline's
-tracked mode families carrying their own `γ(ω)` into the shift.
+Quasi-static continuum gamma could not remove a quasi-TEM line's physical
+dispersion; de-embedding attributed the residual to the device. DD-244 saves
+the port's restricted curl/feed/profiles and solves true discrete modes on
+the result axis, also used by dispersion reports. On the 20 mm microstrip
+at 25 nodes/wavelength, residual phase becomes +0.3/+1.5/+1.8 degrees at
+5/10/15 GHz versus −1.5/−10.6/−29.5; DD-239's launch residue remains.
+The original refinement/dielectric/thickness controls established a physical
+dispersion mechanism, not a mesh error. Original evidence:
+`investigations/port-deembedding/` (internal dossier).
 
 ## KB-026: ~~An empty boolean result crashes plot() with a C++ abort~~ — Resolved (2026-08-25)
 
-**Resolution (DD-190).**  The rebuilt 3D viewer checks each shape's
-bounding box before tessellating and skips a shape without extent with
-a warning naming it; `plot()` no longer reaches the OCC call that
-threw.  The mesher-side symptom (`GridLines.x must be a 1D array …`)
-and the wish for validation at `add()` stand as recorded below.
-
-*Original record:*
-
-`GeometryModel.add(a - b)` accepts a `Difference` whose result is
-empty (subtrahend covers the minuend, e.g. two equal bricks), and the
-failure surfaces only downstream, twice removed from the cause:
-
-- `model.plot()` **aborts the process** — the OCC tessellation of the
-  empty shape throws `std::invalid_argument: "The deviation must be
-  greater than 0"` (zero bounding-box diagonal → zero chordal
-  deviation), the exception crosses the C++/Python boundary uncaught,
-  and `terminate()` kills the interpreter.  In a notebook this reads
-  as a kernel death with no traceback (found by the developer while
-  building the CPW tuning model, internal notebook record).
-- `Mesh.from_geometry` fails with `GridLines.x must be a 1D array
-  with at least 2 elements` — technically an exception, but naming
-  the mesher's internals instead of the empty shape.
-
-Wanted: validate at `add()` (or at boolean construction) that a shape
-has volume, and raise a `ValueError` naming the empty operand there —
-the same early-error principle as the DD-176 argument validation.
-Until then: a model that suddenly "has no geometry" after a boolean
-edit is the signature; check the operands.
+An empty Boolean reached OCC tessellation at zero deflection and aborted
+Python across the C++ boundary. DD-190's viewer checks bounding-box extent,
+skips empty shapes with a named warning and prevents that abort. This does
+not establish eager volume validation at model.add: the separate downstream
+mesher array error and desired early empty-operand error remain outside this
+resolution. Check Boolean operands when a model unexpectedly loses geometry;
+DD-176 supplies the related argument-validation principle.
 
 ## KB-025: ~~A cross-section paints its holes shut~~ — Resolved (2026-08-20)
 
-`plot_cross_section` drew every contour `cross_section_polygons`
-returned as its own filled polygon.  That function returns "outer
-boundaries and holes mixed together" with no winding convention, and
-says so: the region is the set of points enclosed an *odd* number of
-times, and consumers are to apply the even-odd rule.  Filling each
-contour on its own applies no rule at all — a bore is painted in the
-same colour as the material around it.
+Drawing each contour as an independent fill painted holes shut and made
+coax images insertion-order dependent. post/plot_geometry builds one compound
+path with nesting-based opposite winding; the nonzero fill rule then realizes
+the even-odd material region, preserving free islands inside holes. Air
+outlines remain separate contours. CLOSEPOLY must explicitly repeat the first
+point: Path(closed=True) otherwise consumes a real last vertex and turns a
+rectangle into a triangle. Raster tests check annuli and rectangular
+two-level nesting, since inspecting compound-path structure alone misses it.
 
-The consequence is not a cosmetic tint.  An opaque shape with a hole
-covers everything that sits inside the hole, and shapes are drawn in
-insertion order, so the visible picture depends on which body happens
-to be added last.  Measured 2026-08-20 on a coaxial line (PEC pin,
-PTFE dielectric, PEC shield, added in that order), sampling the
-rendered image:
-
-```
-r = 0.0 mm (pin)         (166, 166, 166)
-r = 1.4 mm (dielectric)  (166, 166, 166)
-r = 2.8 mm (shield)      (166, 166, 166)
-```
-
-— one flat disc in the shield's colour.  It went unnoticed because the
-coaxial tutorials add the inner conductor *last*, which paints it back
-on top of the dielectric that had covered it; only a model whose
-outermost body comes last shows the full effect.
-
-Fixed in `post/plot_geometry.py`: the contours of one shape become a
-single compound path, and each contour's direction is set from its
-nesting depth — enclosed by an even number of others it bounds
-material and runs counter-clockwise, by an odd number it is a hole and
-runs the other way.  Matplotlib fills by the nonzero winding rule, so
-that turns the odd-enclosure region into the filled one.  The outline
-form air is drawn in stays contour by contour: the wall of a hole is a
-wall too.
-
-One trap sits inside the fix.  Matplotlib's `Path(vertices,
-closed=True)` *drops* the last vertex to make room for its CLOSEPOLY
-code, and section contours arrive without a repeated first point — so
-it eats a real corner.  On a tessellated circle that is one chord out
-of seventy and invisible; on the four-vertex contour of a rectangle it
-leaves a triangle.  The closing segment is therefore written out
-explicitly.
-
-Regression cover in `tests/unit/test_plot_geometry.py`, sampled in the
-rasterised image because the patch is one compound path either way and
-only the renderer answers the question:
-`test_a_hole_stays_open` (an annulus) and
-`test_nested_contours_alternate` (a rectangular block with a bore and a
-free-standing island in it — two contours deep, and rectangular, so it
-catches the dropped corner the annulus cannot see).
+Historical test/record anchors (private probes belong to the internal
+records named above): `post/plot_geometry.py`, `tests/unit/test_plot_geometry.py`.
 
 ## KB-024: ~~A missing pythonocc-core reads as an empty mesh, not as a missing dependency~~ — Resolved (2026-08-19)
 
-The geometry backend raises a clear `ImportError` when pythonocc-core is
-absent ("pythonocc-core is required for geometry operations.  Install
-via: conda install -c conda-forge pythonocc-core"), but the mesher never
-lets it through.  `extract_critical_planes_per_shape` wraps each shape
-in a broad `except Exception` and skips it — a guard meant for OCC-less
-and exotic shapes.  With the dependency missing, *every* shape is
-skipped, the per-axis critical-plane lists stay empty, and the failure
-surfaces two layers later as a complaint about grid line arrays.
+Broad exception guards swallowed missing pythonocc ImportError and later
+reported invalid grid arrays instead of installation guidance. Re-raise
+ImportError before generic guards at bounding-box/face feature extraction
+and feature-gap analytic-box queries; exotic-shape failures still skip.
+The README WR-90 missing-OCC probe now names the dependency rather than
+GridLines. TestMissingOccSurfaces covers all three guards; available-OCC
+behavior is unchanged.
 
-Measured 2026-08-19 on the README's WR-90 quick-start model, with OCC
-blocked by the `sys.meta_path` hook `release.yml` uses for its smoke
-test:
-
-```
-import ok: 0.3.1
-geo.Brick ok
-Mesh.from_geometry FAILS: ValueError
-  GridLines.x must be a 1D array with at least 2 elements
-```
-
-Importing the package and declaring geometry both succeed, so the report
-a user can give is "meshing fails with an array error".  This is the
-first thing a fresh install does, and the pip route is the only one
-where the dependency can be absent — the conda-forge package pulls it in.
-
-Fixed by separating the two causes the guards collect: `except
-ImportError: raise` now stands ahead of the broad `except` at all three
-sites (the bounding box and face queries in
-`extract_critical_planes_per_shape`, and the analytic box in
-`resolve_feature_gap`), so the backend's message reaches the caller
-while an exotic shape is still skipped.  The same run now ends with
-
-```
-ImportError: pythonocc-core is required for geometry operations.
-Install via: conda install -c conda-forge pythonocc-core
-```
-
-Regression cover in `tests/unit/test_geometry.py::TestMissingOccSurfaces`:
-each site raises on `ImportError` and still skips on any other failure.
-Nothing changes on an install that has the dependency.
+Historical test/record anchors (private probes belong to the internal
+records named above): `tests/unit/test_geometry.py`.
 
 ## KB-023: ~~CPML min and max faces are not mirror images~~ — Resolved (2026-10-05)
 
@@ -933,117 +583,45 @@ Evidence: `investigations/kb023-staggered-cpml/MEASUREMENTS.md` (internal record
 
 ## KB-022: ~~Pair coupling accepts ladder candidates 100x looser than the transparent-boundary gate~~ — Resolved (DD-228, 2026-08-30)
 
-Split out of KB-017, which DD-165 closed for the case that produced it.
-The pairing calls two ladder targets equal at a relative `rtol = 1e-6`,
-while the DTBC pair-spread gate certifies at 1e-8.  A port whose two
-candidates differ anywhere inside that band reaches the gate with a
-target that agreement did not pin down.  DD-165 resolves the choice by
-conditioning — of two agreeing ladders, the one whose own partners
-disagree less supplies the target — which is optimal but not a
-guarantee: two jittered ladders would still pass the pairing and fail
-the gate.  The failure mode is what makes it worth an entry: the
-channel falls back to modal Mur-1st **silently**, trading a 1e-14
-termination for a −30 dB-class reflection floor on that port alone,
-while a geometrically identical port on the same model keeps the exact
-one.
-
-Measured on the stripline coupler (internal record): before DD-165 the
-mirrored stub's port2 spread was 1.7e-8 against the 1e-8 tolerance,
-where its unmirrored twin certified at 7e-15; after DD-165 the same
-port reads 6.3e-14.  The conformal identity KB-017 originally blamed is
-not involved — `eps_avg` and `f_A` agree to 3.9e-15 across all 19 244
-conformal edges, since both integrals share one area budget.  The
-jitter enters through the pairing tolerance.
-
-Closed the second way (DD-228): the provenance is explicit and the
-silence is gone.  The pairing records which accepted targets rest on a
-residual above the gate's own 1e-8, the port build restricts that
-record to the faces its gate reads, and a withheld exact termination
-now warns — port, channel, measured spread, and the mesh-side cause
-where there is one.  The warning covers the marginal band only
-(1e-8 to 1e-4): further out the cross-section is genuinely
-inhomogeneous, which is the model the user built, not a defect.  The
-decision is also published per channel
-(`ModeReport.termination` / `chain_spread`), so `solve_ports()`
-answers the question before a run is paid for.
-
-The first way was refuted by measurement.  Tightening the pairing
-tolerance to the gate does not reject *wrong* ladders, it rejects
-merely unpinned ones — and what replaces them is the Krietenstein
-value, the wrong LC partner on a line.  On the coupler it drops 1 008
-of 24 295 coupled targets and moves both ports' pair spread away from
-the gate (0.1055 → 0.1180 and 0.1149 → 0.1175); on clean conformal
-geometry the band is empty and the change is a no-op.
-
-What is *not* closed is the underlying estimator: two jittered ladders
-can still agree at `rtol` and fail the gate.  DD-165's conditioning
-rule remains the best available choice, and the tolerance band remains
-where jittered geometry lands.  The defect that made this an entry —
-that it happened invisibly — is gone.
+Pairing at rtol=1e-6 can agree without meeting the 1e-8 DTBC gate. DD-165
+improved conditioning but did not close that band. Tightening pairing was
+refuted: rejecting 1008/24295 targets substituted worse Krietenstein line
+partners and increased both spreads. DD-228 instead publishes provenance,
+termination/chain_spread and warns for withheld certificates in the marginal
+1e-8–1e-4 band. Truly inhomogeneous models are not mislabeled defects.
+Closure removes silent fallback, not estimator uncertainty: jittered ladders
+can still fail. eps_avg/f_A were consistent to 3.9e-15 across 19244 edges;
+the old inconsistent-integral diagnosis in KB-017 was wrong.
 
 ## KB-021: ~~Half a solid's cross-section goes missing with no warning~~ — Resolved (DD-168, 2026-08-15)
 
-Recorded as a residual of DD-167 and read as the section operator
-failing at grazing incidence.  It was not: the kernel produced every
-edge, and the wire builder in `cross_section_polygons` lost them.
-`BRepBuilderAPI_MakeWire` accepts an edge reaching *any* free end of
-the wire so far — including a vertex that already joins two — and the
-branched result is not a wire; `BRepTools_WireExplorer` walks one arm
-and stops.  Measured on a stripline-coupler electrode (internal
-record): fourteen section edges, eight added to one wire, one visited.
-No open chain remained, so nothing warned, and thirty cells of metal
-were meshed as vacuum.  Section edges are chained on an endpoint graph
-now, with branches resolved by tangent continuity.
-
-Worth remembering how the diagnosis went wrong the first time.  "The
-section operator is degenerate here" is a plausible reading of a
-halved cross-section and it survived a whole session, because both
-plausible fixes — nudging further, tessellating finer — do nothing
-against it.  What settled it was counting: edges out of the kernel
-against edges reaching the tessellation.
+OCC produced all section edges, but MakeWire admitted a branch and
+WireExplorer visited only one arm: fourteen edges, eight added, one visited,
+thirty metal cells silently filled as air. DD-168 replaces assembly with an
+endpoint graph and tangent-continuity branch choice. Nudging/tessellating
+cannot fix this topology loss; count kernel edges versus consumed edges to
+distinguish it from the wrongly suspected DD-167 grazing-section failure.
 
 ## KB-020: ~~A near-tangent section plane drops a solid's whole cross-section on a fine mesh~~ — Resolved (DD-167, 2026-08-15)
 
-Found on a stripline-coupler worksheet (internal record) whose mesher
-printed two open-chain warnings with nothing a user could act on.  The
-DD-157
-retry that steps off a degenerate section plane took its step length
-from the tessellation deflection, so the conformal-area pass — which
-tessellates ten times finer than the cell classification on purpose —
-inherited a ten times shorter reach and could no longer leave
-near-tangency bands the classification pass cleared easily.  The two
-passes then disagreed: cells classified conductor whose material
-matrices saw nothing there.  The escape is now its own length, shared
-by both passes.
-
-The warning was the actionable part of the failure and it was not
-actionable: it named no body, no amount, and no consequence.  It does
-now.  Worth remembering that the natural reading — "the mesh is fine,
-so the boundary should be nearly planar in every cell" — is exactly
-inverted here: the mesher anchors a grid line on a feature's extreme,
-so refining moves the neighbouring cell-centre plane *closer* to the
-tangency, not away from it.
+DD-157's recovery reach was tied to tessellation deflection, so the
+ten-times-finer conformal pass could not leave near-tangency bands that cell
+classification escaped. DD-167 gives both passes one independent recovery
+length and warnings naming body, lost amount and consequence. Refinement
+can move a neighboring section closer to an anchored extreme, not make
+grazing geometry harmless. The separate lost-branch case is KB-021.
 
 ## KB-019: ~~The classifier never produces sub-cell data on a domain boundary face~~ — Resolved (2026-08-15)
 
-The conformal candidate mask in `geo/_filling.py` was written only on
-the interior index range of each transverse axis, so every partially
-filled E-edge lying *in* a bbox face was rounded to fully free or fully
-metal.  It is now written on the boundary indices too, with each
-boundary edge's dual face clamped to `[wall, first dual line]` — see
-DD-164.
+The candidate mask excluded transverse boundary indices, rounding partially
+filled domain-face edges to full free/metal. DD-164 includes those indices
+and clamps dual faces to the physical boundary. The decisive magnetic-half
+identity improves −2.3e-3→4.7e-15 where dielectric meets the symmetry plane;
+the pillbox test was blind because its field vanished there. A moving band
+floor was a separate kernel-fit sensitivity, not evidence against the fix.
 
-The bug stayed open one session longer than the diagnosis, because the
-fix had been written and measured and *no certificate improved*: the
-pillbox quarter model is blind by construction (TM010's `E_z` vanishes
-at the cylindrical wall it cuts), and the band-DTBC floor moved the
-wrong way.  What closed it was a certificate with an exact identity and
-a known target — a magnetic half model must reproduce its full model to
-machine precision — on a fixture whose dielectric contour crosses the
-symmetry plane where the mode's tangential E is maximal.  It read
--2.3e-03 and now reads 4.7e-15.  The DTBC floor turned out to be a
-kernel-fit residual whose own spread under the fit's resolution is 30 to
-52 dB, three to five times the ratio it was being asked to judge.
+Historical test/record anchors (private probes belong to the internal
+records named above): `geo/_filling.py`.
 
 ## KB-018: ~~2D mode profile carries several percent of spurious transverse field at a curved conductor~~ — Resolved (2026-08-15)
 
@@ -1059,58 +637,36 @@ not attributed further.
 
 ## KB-017: ~~Pair-coupling tolerance band lets a 7.5e-7 conformal jitter silently push a port channel to Mur~~ — Resolved (DD-165, 2026-08-15)
 
-On the stripline coupler with its mirrored coax stub, port2's only TEM
-channel fell back to modal Mur-1st with no warning: the DTBC pair-spread
-gate measured 1.7e-8 against its 1e-8 tolerance, while the geometrically
-identical stub on the unmirrored side certified at 7e-15.  Fixed by
-DD-165: of two valid, agreeing ladders the one whose own partners
-disagree less now supplies the target, instead of whichever axis was
-listed first.  port2 reads 6.3e-14 and takes the exact termination.
-
-The recorded root cause was wrong, and re-measuring is what showed it.
-This entry blamed the classifier for deriving ``eps_avg`` and ``f_A``
-from inconsistent integrals of one dual face; on the same model that
-identity holds on all 19 244 conformal edges to 3.9e-15, with the
-pairing error unchanged.  Both integrals share one area budget and
-cannot disagree.
-
-The structural gap the entry named does remain: the pairing calls
-targets equal at ``rtol = 1e-6`` while the DTBC gate demands 1e-8.
-DD-165 makes the choice inside that band optimal; it does not close the
-band, and two jittered ladders would still get through.
+DD-165 chooses the better-conditioned agreeing ladder rather than the
+first axis: mirrored-coupler pair spread improves 1.7e-8→6.3e-14 and DTBC
+returns. The blamed eps_avg/f_A mismatch was refuted (3.9e-15 consistency
+over 19244 edges). The 1e-6 agreement versus 1e-8 certificate band still
+exists; conditioning is optimal choice, not a guarantee that two jittered
+ladders cannot fail. The remaining silent-fallback problem became KB-022.
 
 ## KB-016: ~~Frozen zero-M_eps edges seed NaN Mur coefficients on live complement-absorber edges~~ — Resolved (2026-08-14)
 
-Degenerate conformal edges are clamped to ``M_eps == 0`` without
-entering ``pec_mask_edges``; the volume update freezes them
-(``live_E = M_eps > 0``), but the port complement absorber's live
-mask only consulted the PEC mask.  Such an edge in a port window got
-``eps_eff = 0`` → an infinite phase velocity → a NaN Mur coefficient
-on a *live* edge (observed: four Ey edges of the stripline-coupler ZL
-port sitting on the Boolean cut plane inside the curved electrode
-shell).  Latent only because the absorber runs solely when a mode is
-on Mur, and the affected port certified for the exact DTBC.  Fixed by
-adding ``M_eps <= 0`` edges to the absorber's dead set with a finite
-coefficient, mirroring the volume convention; the 0/0 chi-patch
-census warning on ``f_A == 0`` edges was silenced the same way (the
-isfinite guard already discarded those quotients).  Gate:
-`tests/unit/test_port_edge_bc.py::TestComplementAbsorberFrozenEdges`.
+Zero-M_eps edges were frozen by volume stepping but remained live in a
+Mur complement absorber that consulted only the PEC mask, producing infinite
+speed/NaN coefficients. Add M_eps<=0 to the absorber's dead set with finite
+coefficients; suppress equivalent already-discarded 0/0 chi census terms.
+The four curved-cut Ey edges were latent while their port used exact DTBC.
+The complement-absorber frozen-edge regression covers the Mur case.
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `tests/unit/test_port_edge_bc.py`.
 
 ## KB-015: ~~Open section chains book fantasy coverage — coax ports fall back to Mur under declared symmetry~~ — Resolved (DD-157, 2026-08-14)
 
-On a plane in the near-tangent band of a curved face of a
-tolerance-inflated Boolean union, `BRepAlgoAPI_Section` returns a
-mutilated edge set; the wire assembly accepted the resulting OPEN
-chains and the polygon consumers implicitly closed them — one
-13-point chain spanning both coax bores of the stripline coupler
-booked a bore-wall H face at 0.80 free instead of 0.19, broke the
-feed-chain slab invariance (defect 0.43) and sent both coax ports to
-modal Mur-1st.  Only the uncut full-model body triggered it, so it
-surfaced when DD-154 symmetry declarations replaced manual Boolean
-quarter cuts.  Fixed by the DD-157 closedness contract (open chains →
-nudge retry → loud drop).  Certificate:
-`validation/section_open_chain_guard_certificate.py`; gate:
-`tests/unit/test_geometry.py::TestSectionAtFace`.
+Near-tangent Boolean sections returned open edge chains that polygon
+consumers closed implicitly, booking fantasy coverage (0.80 versus 0.19
+free area, slab defect 0.43) and demoting symmetric coax ports to Mur.
+DD-157 requires closed chains, retries with a nudge and loudly drops unresolved
+chains. The uncut full model exposed it when DD-154 replaced manual quarter
+cuts. Section-open-chain certificate and face-section regressions cover it.
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `tests/unit/test_geometry.py`, `validation/section_open_chain_guard_certificate.py`.
 
 ## KB-014: ~~A two-node phantom conductor shadows the real TEM mode~~ — Resolved (DD-156, 2026-08-14)
 
@@ -1167,43 +723,27 @@ generic start vector for both `eigsh` calls in
 
 ## KB-009: ~~QTEM hybrid modes (n_modes ≥ 2) fail on x-normal port faces~~ — Resolved (2026-08-12)
 
-Found 2026-08-10 during the Wilkinson tutorial groundwork (DD-123..125):
-requesting `n_modes=2` on a `PortWaveguide` whose plane is
-`xmin`/`xmax` and whose cross-section is transversally inhomogeneous
-(shielded microstrip) raised
-`RuntimeError: e_u and e_v families have different normal strides;
-unsupported flat layout` in `zeta_pencil.build_period_blocks`.  Cause:
-`PeriodChain` carried the one-period-inward flat-index offset of the
-tangential trace as a single scalar, which only exists on z-normal
-faces — there both tangential families stride by 1.  On x-/y-normal
-faces `e_u` and `e_v` are different E components whose flat arrays
-have different shapes, hence different normal strides (x-normal:
-`Ny*(Nz+1)` for Ey vs `(Ny+1)*Nz` for Ez).  Fixed as the code's own
-dead comment already sketched: `et_step` becomes a per-edge array when
-the families differ; `period()` shifts elementwise, so the block
-extraction, invariance certificate and Bloch-field synthesis are
-untouched.  Gate:
-`test_zeta_pencil.py::TestPeriodBlocks::test_x_and_y_normal_faces_match_z_reference`
-(x- and y-normal chains on an axis-permuted fixture reproduce the
-z-normal fundamental eigenpair to 1e-9).
+PeriodChain assumed one normal flat stride for both E tangential families,
+valid on z faces but not x/y faces whose arrays differ. et_step is now a
+per-edge offset when necessary; elementwise period shifts retain the block,
+certificate and Bloch synthesis algorithms. Axis-permuted x/y fixtures
+reproduce the z-normal fundamental eigenpair to 1e-9. Found during the
+DD-123/124/125 Wilkinson groundwork, not a physical orientation restriction.
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `test_zeta_pencil.py`.
 
 ## KB-006: ~~MonitorWallLoss crashes on the cupy backend~~ — Resolved (2026-08-10)
 
-Found while fixing the same class of defect in the field/flux
-monitors (DD-115): `MonitorWallLoss.record` called
-`np.asarray(h_arrays[c])` on device arrays and fancy-indexed them
-with NumPy index arrays — on the GPU backend (the production default
-since DD-090) this raised `TypeError` at the first recorded step.
-Fixed as sketched (found during the Tutorial-11 groundwork): the
-wall samples are gathered on the device with device-resident index
-arrays (cached per surface on the first record) and only the
-per-surface sample vectors cross the bus; the reference-plane slabs
-transfer per recorded step like the DD-115 field monitors.  The DFT
-accumulators stay host-side, so CPU results are unchanged by
-construction.  Gate:
-`test_gpu_backend.py::TestWallLossMonitorGPU::test_fraction_matches_cpu`
-(GPU fraction ≡ CPU fraction to 1e-12 on the DD-082 parallel-plate
-fixture).
+MonitorWallLoss used NumPy coercion/indices on CuPy fields and crashed at
+the first record. Gather wall samples on-device with cached device indices,
+transfer only surface sample vectors and reference-plane slabs, and retain
+host DFT accumulation. CPU arithmetic is unchanged; the DD-082 plate GPU
+loss fraction matches CPU to 1e-12. Related monitor transfer work: DD-115;
+automatic device selection: DD-090. Coverage remains the dedicated gated case.
+
+Historical test/record anchors (private probes belong to the internal
+records named above): `test_gpu_backend.py`.
 
 ## KB-008: ~~`port_signal_stop_db="auto"` can never fire on band-edge cut-off plateaus~~ — Resolved (DD-122)
 

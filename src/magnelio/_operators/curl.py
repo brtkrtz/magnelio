@@ -10,8 +10,8 @@ Exactness: C @ G = 0  (curl of gradient vanishes).
 
 For a grid of size Nx × Ny × Nz:
     - n_nodes = (Nx+1)(Ny+1)(Nz+1)
-    - n_E = 3 * Ne  (E edges: Ex, Ey, Ez components flattened)
-    - n_H = 3 * Nf  (H faces: Hx, Hy, Hz components flattened)
+    - n_E is the sum of the Ex, Ey and Ez component sizes.
+    - n_H is the sum of the Hx, Hy and Hz component sizes.
 
 See spec.md for mathematical details of the discrete operators.
 """
@@ -27,8 +27,8 @@ from magnelio.mesh.grid import GridLines
 def build_curl_matrix(grid: GridLines) -> sp.csr_matrix:
     """Build the discrete curl matrix C for the given grid.
 
-    Returns a sparse CSR matrix of shape ``(3*Nf, 3*Ne)`` where each row
-    has exactly two non-zero entries (+1 and -1).
+    Returns a sparse CSR matrix of shape ``(n_H, n_E)`` where each row
+    has four signed face-edge incidence entries (+1 or -1).
 
     Args:
         grid: :class:`~magnelio.mesh.grid.GridLines` defining the mesh topology.

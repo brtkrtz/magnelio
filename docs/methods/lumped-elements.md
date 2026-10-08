@@ -13,7 +13,7 @@ i = \frac{v_{\text{src}} - v_{\text{hist}} - v_{\text{total}}}
 $$
 
 which is unconditionally stable at the unchanged CFL limit
-(`ports/discrete/operator.py`).  Embedding lumped
+(`ports/_lumped/operator.py`).  Embedding lumped
 resistive sources and loads into the FDTD grid in this
 field-circuit-consistent way is the established *lumped-element FDTD*
 technique of Sui et al. {cite}`sui1992` and Piket-May,

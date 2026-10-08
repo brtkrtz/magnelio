@@ -30,11 +30,14 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
   (main), with deployment gated by `DEPLOY_DOCS` or manual dispatch.
 - Evidence: `investigations/release-0.9.0/RELEASE-CHECKLIST.md` and
   `cad-fixed-full-pytest.log` (internal records).
-- Current maintenance checks: Ruff, format, public hygiene, DD-reference and
-  API-surface gates pass; 782 imports in 101 repository scripts resolve.
+- Current maintenance checks: Ruff, format, public hygiene, DD-reference,
+  project-consistency and API-surface gates pass; 782 imports in 102
+  repository scripts resolve. The new maintenance/operator/API-documentation
+  selection passes 72 tests, including 12 project-consistency cases.
   The README's complete WR-90 workflow is checked separately from the
   release suite. Evidence: `investigations/project-health-2026-10-08/`
-  (internal record). The release suite is not rerun for prose-only changes.
+  (internal record). The full release suite is not rerun for editorial and
+  maintenance-only changes.
 
 ## Current architecture
 
@@ -173,12 +176,22 @@ measured floors. A port reflection floor is not a global 3D accuracy claim.
 - Documentation historically needed follow-ups (including symmetry and two
   naming-migration tutorial consumers). Passing builds cannot establish
   that every feature and limitation has always been documented.
-- The specification's obvious backend/CI/example drift is corrected; a
-  broader architecture/numerics reconciliation remains tracked in `TODO.md`.
-  A first editorial pass condenses 13 completed/refined DD entries, preserving
-  all 287 DD headings/numbers and their file/evidence references. Detailed
-  staging narratives remain in release history and the internal record
-  `investigations/dd-log-compaction-2026-10-08/`.
-  DD/KB anchor numbers must survive any further compaction. The only explicit
-  document-length limit in the workspace instructions is this file's
-  **400 lines**; long DD history is permitted but merits selective compaction.
+- Specification descriptions now match current grid quantities, field storage,
+  stepping/curl coefficients and dimensions, spectral timing, port pipelines
+  and existing test/benchmark inventories. Obsolete source paths and staging
+  statuses are corrected; historical planning is marked explicitly. Solver
+  arithmetic and numerical acceptance thresholds are unchanged.
+- Two editorial passes condense 25 completed/refined DDs and 28 resolved KBs.
+  The logs retain all 287 DD and 54 KB headings, their references and essential
+  conclusions/limits; KB-038/043 remain byte-identical in the final pass.
+  Current lengths: DD log 22,186, KB log 795. Detailed staging remains in
+  release history and `investigations/housekeeping-completion-2026-10-08/`
+  (internal record); no historical line cap or automatic truncation is imposed.
+- Pre-commit/CI enforce STATUS <=400, three matching version fields and dated
+  changelog/available-tag coverage; CI also audits DD references. Source
+  archives check current metadata without requiring Git. These gates enforce
+  structure, not semantic completeness or numerical correctness.
+- Fresh offline HTML builds warning-free with gallery execution disabled.
+  Stable/dev entry pages and switcher return HTTP 200 in the live read check.
+  Local Markdown targets and current implementation paths are verified;
+  independent engineering TODOs are not implemented by the maintenance pass.

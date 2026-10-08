@@ -36,7 +36,7 @@ The solver realises the pole sum with the **auxiliary differential
 equation method**: one polarisation-current state per pole on the
 dispersive edges only, advanced with the **trapezoidal rule** and
 folded semi-implicitly into the E update so the field kernels stay
-untouched (`solver/dispersion.py`).  The ADE technique is due
+untouched (`solver/_dispersion.py`).  The ADE technique is due
 to Kashiwa and Fukai {cite}`kashiwafukai1990` and
 Joseph, Hagness and Taflove {cite}`joseph1991`; the
 textbook treatment is {cite}`taflovehagness2005`.

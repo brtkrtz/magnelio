@@ -14,7 +14,7 @@ P_{\text{loss}}(f) = \tfrac12\, R_s(f) \sum_{\text{wall}}
  w\,|H_{\tan}|^2, \qquad R_s = \sqrt{\pi f \mu / \sigma},
 $$
 
-(`monitors/wall_loss.py`, `postprocessing/wall_loss.py`).
+(`monitors/wall_loss.py`, `post/wall_loss.py`).
 This is the classical power-loss perturbation method of microwave
 engineering {cite}`pozar2012,jackson1999`.  Two
 accuracy refinements are in-house: exact conformal
@@ -100,7 +100,7 @@ SIBC is currently an opt-in: `wall_model="sibc"`.
 The surface-impedance boundary condition realises the **Leontovich
 condition** $E_{\tan} = Z_s(\omega)\,(\hat n \times \mathbf H)$
 {cite}`leontovich1948,senior1960` directly in the
-leapfrog update (`solver/sibc.py`):
+leapfrog update (`solver/_sibc.py`):
 
 - $Z_s(\omega)$ — smooth-metal $\sqrt{j\omega\mu/\sigma}$ or the
   causally completed rough impedance — is fitted as a

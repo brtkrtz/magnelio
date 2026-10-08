@@ -15,7 +15,7 @@ problem $\mathbf K \hat e = \omega_c^2 \mathbf M \hat e$ with
 $\mathbf K = \mathbf C_{2D}^{\mathsf T}\,\mathrm{diag}(M_\mu^{-1})\,
 \mathbf C_{2D}$, where $\mathbf C_{2D}$ is the *row/column slice of
 the 3D FIT curl matrix* at the port plane
-(`ports/modal/curl_curl_2d.py`).  Discretising the 2D problem in the
+(`ports/_modal/curl_curl_2d.py`).  Discretising the 2D problem in the
 same metric as the 3D problem (rather than with an independent 2D
 solver) is the property that makes the discrete mode an exact
 eigenvector of the 3D-restricted transversal operator; the FIT
@@ -27,7 +27,7 @@ derivation.
 ### TEM / quasi-TEM Laplace solver
 
 Multi-conductor cross-sections use the electrostatic route
-(`ports/modal/tem_laplace.py`): a 2D FIT Laplace problem
+(`ports/_modal/tem_laplace.py`): a 2D FIT Laplace problem
 $\nabla\!\cdot(\varepsilon\nabla\varphi_k) = 0$ per signal conductor
 with unit-potential boundary conditions, $\hat e_k = -\nabla\varphi_k$,
 line capacitance from the discrete energy.  For inhomogeneous filling
@@ -132,7 +132,7 @@ $\hat u_{K+1} = \lambda(z)\,\hat u_K$, realised in time domain as a
 causal convolution over the boundary history whose kernel is computed
 by contour integration and auto-extended past the run length, making
 the boundary **exact (reflection-free to machine precision) within any
-finite run** (`ports/modal/dtbc.py`).  Incident waves are prescribed
+finite run** (`ports/_modal/dtbc.py`).  Incident waves are prescribed
 at the ghost plane through the same kernel.
 
 This construction was derived in-house for the FIT/FDTD leapfrog
@@ -163,7 +163,7 @@ $$
 $$
 
 built from the *production* system matrices at the port
-(`ports/modal/zeta_pencil.py`), solved by sparse shift-invert ARPACK
+(`ports/_modal/zeta_pencil.py`), solved by sparse shift-invert ARPACK
 on the linearised pencil.  Quadratic eigenvalue problems and their
 linearisations are covered by the survey of Tisseur and Meerbergen
 {cite}`tisseurmeerbergen2001`; computing waveguide
@@ -182,7 +182,7 @@ mode-family traces over the band span a low-rank W-orthonormal
 subspace; the exterior half-line is Galerkin-projected onto it,
 inheriting the palindromic symmetry that makes the projected lattice
 lossless, and is closed by the exact small-system DTBC kernel
-(`ports/modal/band_dtbc.py`).  Projection-based model order reduction
+(`ports/_modal/band_dtbc.py`).  Projection-based model order reduction
 (Galerkin projection onto an SVD/POD subspace) is standard numerical
 practice {cite}`benner2015` (survey reference; the
 specific passive-by-construction boundary closure is in-house).
@@ -192,7 +192,7 @@ specific passive-by-construction boundary closure is in-house).
 Analytical-path modes (and, with explicit specs, inhomogeneous QTEM) are
 terminated by a **first-order Mur absorbing boundary applied per mode
 in modal-coefficient space**, with the per-mode phase velocity at the
-mode-calculation frequency (`ports/modal/operator.py`).  The ABC is
+mode-calculation frequency (`ports/_modal/operator.py`).  The ABC is
 Mur's {cite}`mur1981`.  The design of the
 modal port
 operator as a co-simulated 1D termination per mode follows the
@@ -412,7 +412,7 @@ it does not depend on the rank.
 S-parameters are computed as **power waves** with $\sqrt{\mathrm W}$
 normalisation, $a,b = (V \pm Z_0 I)/(2\sqrt{Z_0})$ per mode, from the
 recorded modal V/I after Fourier transform
-(`postprocessing/modal_sparameters.py`).  The
+(`post/modal_sparameters.py`).  The
 power-wave formalism is Kurokawa's {cite}`kurokawa1965`.
 Two discrete-exactness refinements are
 in-house: the a/b split de-staggers E and H

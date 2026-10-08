@@ -120,19 +120,21 @@ bottleneck is a profiling starting point, not a completed GPU-placement study.
 
 ## Documentation and maintenance
 
-- [ ] Reconcile the remaining architecture/numerics sketches in `spec.md`
-  with current code, methods and accepted decisions. Backend/CI/example drift
-  was corrected on 2026-10-08; that edit is not a full specification audit.
-- [ ] Compact closed/superseded DD and resolved KB records where their detailed
-  evidence is already retained elsewhere. Preserve every heading number,
-  rationale, verdict and evidence anchor; run the DD-reference gate afterward.
-  There is no arbitrary line limit on these historical records.
-- [ ] Evaluate automatic documentation/release consistency gates: STATUS length,
-  synchronized versions, release-tag changelog coverage and documentation for
-  user-visible changes. Current CI does not enforce all of these obligations;
-  successful builds alone cannot establish semantic completeness.
+- [x] Reconcile `spec.md`'s current architecture/API/storage/timing descriptions
+  and obsolete numerical sketches with code, methods and accepted decisions
+  (2026-10-08). Correct curl dimensions/incidence and already-included inverse
+  masses, spectral stepping, current ports and test/benchmark inventories.
+  Historical planning is marked explicitly; no arithmetic or threshold changed.
+- [x] Review/condense completed and refined DDs and resolved KBs (2026-10-08).
+  Preserve headings, rationale, limits and evidence anchors; leave open defects
+  and independent investigations intact. Detailed numerical records remain
+  where their constraints are needed, with no arbitrary historical line limit.
+- [x] Enforce structural project consistency in pre-commit and CI (2026-10-08):
+  STATUS <=400 lines, three matching versions and dated changelog/tag coverage.
+  CI also checks DD resolution. Tests/builds cannot certify semantic completeness
+  of every feature's documentation; that remains part of feature acceptance.
 
-Audit: `investigations/project-health-2026-10-08/MEASUREMENTS.md`
+Audit: `investigations/housekeeping-completion-2026-10-08/MEASUREMENTS.md`
 (internal record). The separate private documentation backlog retains unfinished
 runtime, meshing, ports, GPU and troubleshooting guides.
 

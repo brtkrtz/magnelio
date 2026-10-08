@@ -5,9 +5,10 @@
 > This is the internal design reference; the user-facing API reference
 > is the Sphinx documentation (`docs/api`).
 >
-> Last updated: 2026-10-08 (maintenance corrections; not a full numerical re-audit)
-> Current contracts and migration notes take precedence over historical
-> implementation sketches below. Remaining reconciliation work is in `TODO.md`.
+> Last updated: 2026-10-08 (current-code/documentation reconciliation)
+> Current contracts and migration notes take precedence over explicitly
+> historical sketches. This editorial reconciliation changes no numerical method
+> and does not replace the DD-named accuracy certificates.
 
 ## Table of Contents
 
@@ -21,7 +22,7 @@
 8. [Public Python API](#8-public-python-api)
 9. [AnalysisScatteringTD.run() — convenience parameters](#9-analysisscatteringtdrun--convenience-parameters)
 10. [Testing Strategy](#10-testing-strategy)
-11. [Implementation Order](#11-implementation-order)
+11. [Historical implementation order](#11-historical-implementation-order)
 12. [Open Questions](#12-open-questions)
 13. [Verification](#13-verification)
 14. [Implementation Status](#14-implementation-status)
@@ -33,7 +34,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         User / API Layer                        │
-│          Project, Simulation, Material, Port, BoundaryCondition │
+│     GeometryModel, Mesh, Analysis*, Excitation, Material         │
 └──────────────────────────────┬──────────────────────────────────┘
                                │
           ┌────────────────────┼────────────────────┐
@@ -74,8 +75,8 @@
    │ Postprocessing     │  │ I/O Subsystem   │  │ Backend          │
    │                    │  │                 │  │ Abstraction      │
    │ S-params (FFT)     │  │ HDF5 project    │  │                  │
-   │ Field probes       │  │ VTK export      │  │ get_xp() → xp    │
-   │ Far field (future) │  │                 │  │ numpy / cupy     │
+   │ Field probes       │  │ VTK export      │  │ resolve_backend()│
+   │ Far-field transform │  │                 │  │ numpy / cupy     │
    └────────────────────┘  └─────────────────┘  └──────────────────┘
 ```
 
@@ -83,15 +84,15 @@
 
 | Subsystem       | Responsibility |
 |-----------------|----------------|
-| User/API Layer  | `Project`, `Simulation`, `Material`, `Port`, `BoundaryCondition` — user-facing orchestration |
+| User/API Layer  | GeometryModel/Mesh/Analysis* declarations and result contracts; Project is the stored-result reader |
 | Geometry        | CSG tree construction, OCC backend queries, bounding-box extraction, face intersections |
 | Mesh            | Grid line generation from geometry, Yee-cell staggering, material-ID filling, quality checks |
 | Operators       | Sparse curl C/C^T (eigenmode solver); Numba-fused + array-stencil kernels (FIT-TD); diagonal M_eps, M_mu, M_sigma |
 | Boundaries      | PEC/PMC edge masks, CPML auxiliary field arrays, periodic ghost-cell index maps |
 | Solver          | Leapfrog update loop, Courant stability check, 2D/3D eigenmode solve |
-| Postprocessing  | S-parameter FFT + mode decomposition, time-domain field probes |
+| Postprocessing  | Selected spectral transforms, mode decomposition, field/energy/flux access and near-to-far transform |
 | I/O             | HDF5 project persistence (full state), VTK field snapshots for ParaView |
-| Backend         | `get_xp()` / `set_backend()` — swap NumPy ↔ CuPy without API changes |
+| Backend         | Per-analysis resolve_backend/resolve_precision; NumPy/CuPy stepping with CPU geometry/mode preparation |
 
 ---
 
@@ -122,7 +123,7 @@ class Mesh:
     material_id: np.ndarray          # shape (Nx, Ny, Nz), dtype int32
                                      # material_id[i,j,k] → index into material_library
     material_library: dict[int, Material]
-    pec_mask_edges: np.ndarray       # bool, shape (3, Nx*Ny*Nz)
+    pec_mask_edges: np.ndarray       # flattened live/masked edge bookkeeping
                                      # axis 0: Ex-edges, axis 1: Ey-edges, axis 2: Ez-edges
     boundary_conditions: BoundaryConditions | dict
                                      # closure of the six bbox faces (DD-103);
@@ -145,7 +146,8 @@ class Material:
     sigma:   tuple[float, float, float] = (0.0, 0.0, 0.0)  # electric conductivity [S/m]
     sigma_m: tuple[float, float, float] = (0.0, 0.0, 0.0)  # magnetic loss [Ω/m]
     is_pec:  bool = False
-    dispersion: DispersionModel | None = None  # pole-residue ε(ω), DD-083
+    dispersion: DispersionModel | None = None  # electric poles, DD-083
+    dispersion_mu: DispersionModel | None = None  # magnetic poles, DD-089
 
     @classmethod
     def air(cls) -> "Material": ...       # ε=μ=1, σ=0
@@ -164,19 +166,21 @@ class Material:
 ```
 
 Dispersive permittivity is the pole-residue form
-`ε(ω) = ε_∞ + Σ_p r_p/(jω − a_p)` (`DispersionModel`, exported
-top-level) with `debye` / `lorentz` / `drude` / `djordjevic_sarkar`
+`ε(ω) = ε_∞ + Σ_p r_p/(jω − a_p)` (`DispersionModel` in `magnelio.materials`) with `debye` / `lorentz` / `drude` / `djordjevic_sarkar`
 constructors and a mandatory passivity check at construction; see
 DD-083/DD-084.
 
-### 2.4 FieldState (Structure of Arrays)
+### 2.4 FieldArrays and public FieldState
 
-Yee-staggered field components on the primary grid (E) and dual grid (H):
+Internal FieldArrays stores electric/magnetic grid voltages in two flat
+contiguous buffers; the six component attributes are reshaped zero-copy views.
+The structural layout below is not a dataclass constructor. Public
+`fields.FieldState` adds GridLines, metric/dual-width information and physical
+component/interpolation access (DD-085/DD-258/DD-259).
 
 ```python
-@dataclass
-class FieldState:
-    # E fields — on primary grid edges
+class FieldArrays:
+    # Electric grid voltages on E edges — on primary grid edges
     Ex: Array  # shape (Nx,   Ny+1, Nz+1)
     Ey: Array  # shape (Nx+1, Ny,   Nz+1)
     Ez: Array  # shape (Nx+1, Ny+1, Nz  )
@@ -193,7 +197,8 @@ Rationale for SoA: see `design-decisions.md` DD-002.
 
 > **Note:** The `SimulationConfig` dataclass originally planned here was never implemented.
 > Solver parameters (`total_time_steps`, `dt`, `energy_stop_db`, `excite_port_id`, …) are
-> runtime arguments of `Simulation.run()` (Section 9) and `FITTimeDomainSolver`.
+> runtime arguments of AnalysisTD/AnalysisScatteringTD.run (Section 9) and
+> FITTimeDomainSolver; configuration lives on analysis/solver instances.
 
 ### 2.6 MeshControl
 
@@ -213,6 +218,9 @@ class MeshControl:
     dey_mittra_eta: float = 0.4            # dimensionless stability cutoff
     min_feature_gap: float | None = None   # plane-clustering tol [m];
                                            # None -> 1e-5 x bbox diagonal (DD-120)
+    max_edge_refinement: float = 4.0       # geometry-edge plane refinement cap
+    robust_sections: bool = False         # opt-in bounded CAD sections (DD-287)
+    subdivide: dict[str, int] = field(default_factory=dict)
 ```
 
 The CPML layer thickness is *not* here — it belongs to the boundary
@@ -223,63 +231,75 @@ drives both the grid extension and the runtime profile.
 
 ## 3. FIT Numerics
 
-### 3.1 Leapfrog Update Equations (SI units)
+### 3.1 Leapfrog update in grid quantities
 
-Half-step leapfrog scheme (Yee):
-
-```
-E^{n+1} = M_eps_inv ⊗ (α_E · E^n + β_E · C^T · H^{n+1/2})
-H^{n+3/2} = M_mu_inv  ⊗ (α_H · H^{n+1/2} - β_H · C   · E^{n+1})
-```
-
-Where:
-- `C`        — sparse curl matrix, shape `(3·Ne, 3·Ne)`, `Ne = Nx·Ny·Nz`
-- `M_eps`    — diagonal mass matrix: `ε₀ · εr · A_face / dl` per E-edge
-- `M_mu`     — diagonal mass matrix: `μ₀ · μr · dl / A_face` per H-face
-- `α_E`, `β_E`, `α_H`, `β_H` — update coefficients incorporating `M_sigma` and `dt`
-
-For lossless media (σ = 0):
-```
-α_E = 1,   β_E = dt
-α_H = 1,   β_H = dt
-```
-
-For lossy media (electric loss σ ≠ 0), using implicit E-field update:
-```
-α_E = (1 - σ·dt/(2ε)) / (1 + σ·dt/(2ε))
-β_E = dt / (ε · (1 + σ·dt/(2ε)))
-```
-
-### 3.2 Courant Stability Condition
+The state is electric grid voltage e and magnetic grid voltage h, not
+unweighted point samples of E/H. On live degrees of freedom:
 
 ```
-dt ≤ 0.99 / (c₀ · √(1/dx_min² + 1/dy_min² + 1/dz_min²))
+e^(n+1)   = alpha_E * e^n       + beta_E * C.T @ h^(n+1/2)
+h^(n+3/2) = alpha_H * h^(n+1/2) - beta_H * C   @ e^(n+1)
 ```
 
-Safety factors by accuracy level:
-| `accuracy` | Courant factor |
-|------------|----------------|
-| `"draft"`  | 0.90           |
-| `"normal"` | 0.95           |
-| `"high"`   | 0.99           |
+For static electric conductivity, with diagonal coefficients:
 
-### 3.3 Simulation Duration
-
-When `f_max` is given and `total_time_steps` is not:
 ```
-T_sim = 10 / f_max         # 10 periods at f_max
-total_time_steps = ceil(T_sim / dt)
+D_E = M_eps + dt*M_sigma/2
+alpha_E = (M_eps - dt*M_sigma/2) / D_E
+beta_E = dt / D_E
 ```
 
-### 3.4 Discrete Curl Matrix C
+The H-side conductivity update is the corresponding M_mu/M_sigma_m form.
+Lossless alpha is 1; beta_E=dt/M_eps and beta_H=dt/M_mu. The mass inverse
+is already in beta and must not be applied a second time. Zero-mass
+frozen entries use finite alpha=1, beta=0; PEC walls additionally
+enforce their masks. ADE pole histories and SIBC
+add their accepted auxiliary terms (DD-081/DD-084/DD-089/DD-091).
+M_eps=epsilon*A_dual/l_primal; M_mu=mu*A_primal/l_dual, including conformal
+corrections. Sources, ports and boundary corrections follow their own update
+contracts. Implementation: solver/fit_td.py and the shared operator kernels.
 
-The curl matrix C maps E-field edges to H-field faces. It is assembled as a sparse matrix in
-CSR format. For a 3D grid of size Nx×Ny×Nz:
+### 3.2 Stability
 
-- E-edge count: Ne = Nx·(Ny+1)·(Nz+1) + (Nx+1)·Ny·(Nz+1) + (Nx+1)·(Ny+1)·Nz
-- C has shape (3·Nf, 3·Ne) where Nf = (Nx+1)·Ny·Nz + Nx·(Ny+1)·Nz + Nx·Ny·(Nz+1)
-- Each row has exactly 2 non-zero entries (+1 and -1, i.e., Whitney 1-forms)
-- Discrete Stokes theorem: `C · e + C^T · h = 0` for exact discrete forms
+The geometric/material Courant estimate remains available, but production
+preparation uses the measured spectral bound (DD-150):
+
+```
+dt <= safety * 2 / sqrt(lambda_max(M_eps^-1 C.T M_mu^-1 C))
+```
+
+Lanczos acts on the symmetrized, live-DOF operator; the mesh caches its
+largest eigenvalue. Nonconvergence uses a safe row-sum upper bound of the
+same operator. Port reports and stepping use consistent dt. Accuracy factors
+remain draft=0.90, normal=0.95, high=0.99. The old vacuum-only product of
+axis minima is not the implemented general conformal stability policy.
+
+### 3.3 Duration and stopping
+
+The default is an unbounded record ending on armed energy/port-signal decay,
+with a runtime cap/watchdog, not a fixed ten periods. The delay-aware pulse
+plus traversal estimate schedules checks; explicit total_time_steps or
+physical-duration bounds remain hard limits. Finite drives must complete
+before decay stopping, including plane-wave retardation and resumed absolute
+steps (DD-070/DD-096/DD-114/DD-122/DD-224/DD-281/DD-282). These stopping
+heuristics do not certify Fourier-tail or complex-S accuracy; see Section 9.
+
+### 3.4 Discrete curl
+
+C is a dimensionless oriented face-edge incidence matrix in CSR form:
+
+```
+n_E = Nx*(Ny+1)*(Nz+1) + (Nx+1)*Ny*(Nz+1) + (Nx+1)*(Ny+1)*Nz
+n_H = (Nx+1)*Ny*Nz     + Nx*(Ny+1)*Nz     + Nx*Ny*(Nz+1)
+C.shape = (n_H, n_E)
+```
+
+Each primal rectangular-face row has four signed entries, not two. Dual
+boundary-edge columns may have fewer incident faces. With the discrete
+node-edge gradient G, C@G=0 exactly; C@e+C.T@h is not a Stokes identity
+(and generally has incompatible vector dimensions). The stencil/fused
+kernels evaluate the same topology without constructing C in each step.
+Gate: tests/unit/test_operators.py; source: _operators/curl.py.
 
 ---
 
@@ -326,7 +346,8 @@ Polynomial grading (ρ ∈ [0, 1] = normalised depth):
 ```
 
 Default: `BoundaryConditions.cpml_thickness_cells = 8`; 16 is a
-common choice for waveguide port PML.
+common choice for more demanding open-boundary absorption. Waveguide ports
+use their own termination rather than a PML-backed port.
 
 DD-286 samples transverse E corrections at the normal-axis grid nodes and
 H corrections at cell centres, with physical depth measured from the
@@ -343,112 +364,77 @@ conditions are re-applied to prevent PEC-wall violations inside PML regions.
 
 ## 5. 2D Eigenmode Port Solver
 
-### 5.1 Problem Setup
+### 5.1 Current port pipeline
 
-Given a rectangular cross-section on a bounding face (e.g., xmin-plane), cut the 3D mesh
-at that plane to obtain a 2D Yee grid. Assemble the 2D curl-curl eigenvalue problem:
+PortWaveguide is a model declaration, not the former monolithic WaveguidePort
+runtime class. The numerical port builders restrict the production 3D material
+operators to the declared face/window; analytical PortSpec families remain a
+separate path. Public specs/reports and private runtime operators are distinct
+(DD-040/DD-044/DD-048/DD-050/DD-117). Mode preparation remains CPU/double.
 
-```
-(∇_t × μr⁻¹ · ∇_t ×) · E_t = ω² · ε₀ · μ₀ · εr · E_t
-```
+### 5.2 Numerical modes
 
-Discretized using 2D discrete curl operators (sparse matrices).
+TEM/QTEM conductors use the electrostatic/capacitance problem; multi-TEM
+families use a Gram eigenbasis and inhomogeneous multiconductor channels a
+capacitance pencil. TE/TM problems use discrete transverse curl restrictions,
+including the exact normal-E restriction for TM. Modes merge by cutoff;
+heterogeneous/hybrid propagating modes use the zeta pencil and frequency-local
+true-mode operators when the selected pipeline requires them
+(DD-054–057/DD-066/DD-068). The old Port2D Hz/node-Laplace sketches and their
+retired class names are not the current implementation.
 
-### 5.2 Solver Paths
+### 5.3 Impedance and dispersion
 
-Three solver paths exist, applied depending on the mode type:
+Distinguish power-current line impedance, wave impedance and a result's
+reference impedance. TEM/QTEM line impedance derives from normalized power
+and conductor voltage; TE/TM has cutoff-dependent wave impedance and no
+TEM line impedance. Continuum beta/Z formulas are analytic references, not
+substitutes for the discrete chain/true-mode dispersion used by certified
+terminations and de-embedding (DD-025/DD-187/DD-244/DD-252).
 
-| Path | Formulation | Modes found | Design Decision |
-|------|-------------|-------------|-----------------|
-| **Hz dual EVP** | `A_H = C2 · M_ε⁻¹ · C2ᵀ`, `B_H = diag(M_μ_hz)` | TE (Hz ≠ 0) | DD-012 |
-| **E_z scalar EVP** | `-∇·(μ⁻¹∇E_z) = ω_c²·ε·E_z`, Dirichlet E_z=0 on PEC | TM (E_z ≠ 0) | DD-026b |
-| **2D Laplace** | `∇·(ε∇φ) = 0`, φ=1 on trace, φ=0 on boundary | TEM (quasi-static) | DD-020 |
+### 5.4 Field profiles and classification
 
-`_solve_on_grid` runs both TE and TM EVPs, merges and sorts by f_cutoff (DD-026b).
+Mode profiles are grid quantities with their Yee positions and metrics;
+physical rendering must not read edge voltages as unweighted fields.
+Longitudinal/transverse content distinguishes TEM, TE, TM and hybrid families,
+with the public reports publishing the selected modes rather than assuming
+that every inhomogeneous mode is quasi-static. Numeric cutoff/impedance
+queries follow the current ModeReport contract in docs/methods/ports.md.
 
-```python
-from scipy.sparse.linalg import eigsh
+### 5.5 Termination and excitation
 
-eigenvalues, eigenvectors = eigsh(A, M=B, k=n_modes, which='SM')
-omega_n = np.sqrt(eigenvalues.real)
-```
+Numerical-path TEM/TE/TM modes whose feed chain passes pair/slab certificates
+use exact discrete DTBC (Klein–Gordon mass q=omega_hat_c*dt, q=0 for TEM).
+Ghost-plane excitation and the lambda^(1/2) discrete staggering factor match
+the actual stepping chain. A failed certificate or analytical-path mode uses
+modal Mur with a published termination/spread; it is not PML-backed.
+Inhomogeneous CW true modes and broadband Galerkin band-subspace DTBC are
+implemented, not a future WP-R4 promise (DD-054–057/DD-228/DD-229).
+port_model="modal" remains default; band/auto selection is explicit.
 
-See `design-decisions.md` DD-007 for rationale.
+### 5.6 Waveforms and observation
 
-### 5.3 Propagation Constant and Frequency-Dependent Impedance (DD-026b)
+Ports/sources bind shared Waveform/Excitation values. Gaussian upper-edge
+attenuation defaults to 25 dB, peak at 4.5*tau and nominal end at 9*tau;
+legacy resolved timing persists on resume (DD-224/DD-281). Observe the
+required propagating channels: a missing physical mode can contaminate a
+complete-looking decomposition (DD-235). Selected S access and cached bounded
+DFTs follow DD-283; de-embedding/renormalization belong to the result.
 
-When `f_ref` is provided to the solver:
+### 5.7 Public/private homes
 
-```
-β² = (ω_ref² − ω_c²) · μ₀ · ε₀ · ε_eff   (evanescent if ≤ 0 → β = 0)
+Use magnelio.ports.PortWaveguide/PortLumped and PortSpec families for public
+assembly. DTBC, curl restrictions, zeta pencil and operators are under
+ports/_modal; lumped operators under ports/_lumped. Diagnostics and custom
+reports are documented in docs/api/ports.md and docs/methods/ports.md.
 
-TE:  Z_wave = ω_ref · μ₀ / β
-TM:  Z_wave = β / (ω_ref · ε₀ · ε_eff)
-TEM: Z_wave = η = √(μ₀ / (ε₀ · ε_eff)),  β = ω_ref · √(μ₀ · ε₀ · ε_eff)
-```
+### 5.8 Acceptance and limits
 
-Without `f_ref` (default): `Z_wave = η`, `β = None`.
-
-### 5.4 Characteristic Impedance Z_pi (DD-025)
-
-For TEM/quasi-TEM modes, the power-current line impedance `Z_pi` is computed via voltage
-integration between conductors after Poynting normalisation (P = 1 W):
-`Z_pi = V² / P = V²`. TE/TM modes get `Z_pi = None`.
-
-### 5.5 H-Field Profiles (DD-026a)
-
-H_t is derived from E_t via the plane-wave impedance relation `H_t = (1/Z)(ẑ × E_t)`.
-For TEM modes in inhomogeneous media, per-DOF local impedance
-`η(i,j) = √(μ₀/(ε₀·ε_r(i,j)))` is used. Both E and H profiles are stored in `ModeResult`.
-
-### 5.6 Mode Classification
-
-| Mode type | Criterion |
-|-----------|-----------|
-| TEM       | Ez ≈ 0, Hz ≈ 0 (requires multi-conductor cross-section) |
-| TE        | Ez ≈ 0, Hz ≠ 0 |
-| TM        | Hz ≈ 0, Ez ≠ 0 |
-| Hybrid    | Both Ez ≠ 0, Hz ≠ 0 (EH or HE modes) |
-
-Classification threshold: `‖E_z‖ / ‖E_t‖ < 1e-6` for TE, analogous for TM.
-
-### 5.7 Port Types
-
-**WaveguidePort** (`port_waveguide.py`, ~2100 lines) — **primary port type**. General
-waveguide port supporting all 6 domain faces. Features:
-- Per-mode termination (DD-054 TEM, DD-055 TE/TM): numerical-path modes on
-  certified-uniform feed chains use the exact discrete transparent boundary
-  condition (`ports/modal/dtbc.py`; Klein-Gordon mass `q = ω̂_c·dt` from the
-  2D eigenvalue of the 3D-restricted transversal operator, `q = 0` for TEM)
-  with ghost-plane source injection, the discrete `λ^{1/2}` de-stagger, and —
-  for dispersive modes — the exact discrete wave impedance
-  (`dtbc_wave_impedance`) in `compute_s_parameters` (straight-line floors at
-  the float-noise class).  Remaining modes (analytical-path, inhomogeneous
-  QTEM until WP-R4): modal Mur-ABC (DD-027, supersedes DD-023), first-order
-  Mur absorber on E-overlap with TF/SF source injection.
-- TM 2D eigenproblem (DD-055): `build_2d_tm_curl_curl` — the index-sliced
-  restriction of the 3D operators onto the port slab's normal-E edges
-  (exact discrete cut-off; replaces the former lumped node-Laplace).
-- Supports TEM, TE, and TM modes with frequency-dependent impedance.
-- Waveform: plain Gaussian for TEM, modulated Gaussian for TE/TM (DD-022).
-  DD-281 sizes both by upper-edge amplitude attenuation (25 dB by default),
-  relative to DC or the carrier-centre spectrum including mirrored lobes.
-  Envelope `exp(-((t-peak_time)/tau)^2)`, peak at `4.5*tau`, nominal end
-  `9*tau`; resolved width and timing persist with backward reconstruction
-  of legacy Gaussian records. The width solve runs once on construction.
-- Integrated into the high-level API as declarative ports (`PortWaveguide`,
-  declared on the model — DD-109); optionally windowed to a sub-rectangle
-  of the face via `corners=` (world-coordinate corner pair, DD-153).
-
-### 5.8 Port Integration
-
-- Port excitation: inject mode profile as a soft source at E-tangential edges
-  (WaveguidePort also injects H-field for modal ABC)
-- Port monitoring: overlap integral with mode profile at each time step
-- S-parameter extraction: FFT of time-domain port signals; post-hoc
-  reference-plane shift via `result.deembed` on the exact discrete
-  chain dispersion (DD-187)
-- Waveform: Gaussian for TEM, modulated Gaussian for TE/TM (DD-022)
+DD-named validation certificates retain the conditions, precision and floors
+for TEM/TE/TM/CW/band paths; no one floor establishes general 3D accuracy.
+KB-038 and the remaining modal/finite-record limits stay in known-bugs/STATUS.
+This editorial reconciliation does not change thresholds, arithmetic,
+port placement policy or supported physical models.
 
 ---
 
@@ -572,6 +558,9 @@ Output: GridLines(x, y, z)
 | `conformal`                 | `bool`            | True    | —          | Conformal/Dey-Mittra material treatment |
 | `dey_mittra_eta`            | `float`           | 0.4     | —          | Stability cutoff for Dey-Mittra cells |
 | `min_feature_gap`           | `float \| None`   | None    | meters     | Critical-plane clustering tolerance; `None` resolves to 1e-5 × the model bbox diagonal (DD-120) |
+| `max_edge_refinement` | `float` | 4.0 | — | Geometry-edge plane refinement cap |
+| `robust_sections` | `bool` | False | — | Opt-in bounded sensitive-section route (DD-287) |
+| `subdivide` | `dict[str, int]` | {} | — | Explicit per-axis subdivision |
 
 ### 6.3 Internal Geometry Scaling (DD-120)
 
@@ -1347,7 +1336,7 @@ def run(
     checkpoint_interval: int | None = None,          # store path only (DD-070)
     port_signal_stop_db: float | str | None = "auto",  # |V|-envelope stop (DD-096/DD-114)
     max_time_steps: int | str | None = "auto",         # runtime backstop cap + stall watchdog
-) -> ScatteringTDResult:
+) -> ScatteringTDResult | Project:
     """
     Run one independent FIT-TD simulation per excited (port, mode) pair
     and merge the resulting S-matrix columns.
@@ -1371,8 +1360,8 @@ def run(
     not bounds on the omitted Fourier tail or on complex S-parameter error.
 
     Parameter priority:
-    - dt is computed from the Courant condition with the chosen accuracy
-      safety factor and the mesh's effective ε / μ floors.
+    - dt uses the measured spectral bound with the chosen accuracy factor;
+      the geometric/material Courant estimate is a separate helper (DD-150).
     - total_time_steps default ``None``: the run is unbounded; the
       ``ceil((t_pulse + 25·t_diag) / dt)`` estimate (with
       ``t_pulse = max(delay + waveform.t_end)``,
@@ -1415,50 +1404,40 @@ def run(
 
 ## 10. Testing Strategy
 
-### 10.1 Unit Tests (`tests/unit/`)
+### 10.1 Unit tests (`tests/unit/`)
 
-Each module is independently testable without running the full solver.
+Current representative gates (the test tree is authoritative):
 
-| Test file                | What is tested |
-|--------------------------|----------------|
-| `test_geometry.py`       | CSG Boolean ops: correct BRep volume, bounding-box accuracy |
-| `test_mesh.py`           | Gradient condition h_{i+1}/h_i ≤ g, forced_planes exact, Yee cell count |
-| `test_mesh_from_grid.py` | `Mesh.from_grid()` region-based material filling |
-| `test_materials.py`      | Material matrix assembly for anisotropic case; PEC mask correctness |
-| `test_operators.py`      | `C · e + C^T · h = 0` (discrete Stokes), sparsity pattern, symmetry |
-| `test_boundaries.py`     | CPML σ profile monotonicity, aux-field dimensions vs PML thickness |
-| ~~`test_ports.py`~~      | ~~Port2D~~ (removed) |
-| `test_port_waveguide.py` | WaveguidePort: TE/TM/TEM modes, Z_pi, β(f_ref), H-field profiles, modal ABC |
-| `test_solver.py`         | Single Leapfrog step energy conservation (lossless), Courant formula |
-| `test_fit_td.py`         | FITTimeDomainSolver integration (energy stopping, port excitation) |
-| `test_sources.py`        | SourcePlaneWave TF/SF injection |
-| `test_postprocessing.py` | S-parameter FFT, field probes |
-| `test_io.py`             | HDF5 roundtrip, VTK export |
+| Area | Existing test files |
+|---|---|
+| Geometry/grid/materials | test_geometry.py, test_mesh.py, test_mesh_from_grid.py, test_materials.py |
+| Operators/time stepping | test_operators.py, test_solver.py, test_fit_td.py, test_boundaries.py |
+| Modal ports | test_modal_curl_curl_2d.py, test_modal_tem_laplace.py, test_modal_qtem_laplace.py, test_modal_sparameters.py |
+| Results/storage | test_sparameter_renormalize.py, test_project_store.py, test_api_documentation.py |
+| Maintenance | test_project_consistency.py |
 
-### 10.2 Integration Tests (`tests/integration/`)
+These are examples of current coverage, not a fixed inventory or a promise
+that every optional device/tool path executes. Deprecated Port2D and retired
+monolithic port/postprocessing test names are in release history.
 
-Small solver runs (≤ 20³ cells) verifiable in seconds.
+### 10.2 Integration tests (`tests/integration/`)
 
-| Test file                     | Scenario |
-|-------------------------------|----------|
-| `test_rectangular_cavity.py`  | 10×10×10 cell PEC cavity; 3 lowest eigenmodes, error < 5% |
-| `test_waveguide.py`           | Rectangular WG section; S21 magnitude in passband > −1 dB |
-| `test_discrete_port.py`       | λ/4 stub; S11 null at design frequency, error < 5% |
-| `test_plane_wave.py`          | Plane-wave propagation: arrival time and peak amplitude |
+Full solver problems include test_rectangular_cavity.py, test_plane_wave.py,
+test_conformal_coax_sparams.py, test_project_scattering.py and
+source/current/field-surface and loss/dispersion cases. Runtime and mesh size
+vary; the former blanket <=20^3/in-seconds description is not a suite limit.
+Acceptance criteria belong to the tests and DD-named certificates, not a
+stale duplicated threshold table.
 
 ### 10.3 Benchmarks (`benchmarks/`)
 
-Full-scale validation against analytical solutions. Scripts output JSON report.
-
-| Script                           | Case                        | Acceptance criterion |
-|----------------------------------|-----------------------------|----------------------|
-| `bench_rectangular_cavity.py`   | Rectangular cavity modes    | f_error < 2% |
-| `bench_spherical_cavity.py`     | Spherical cavity modes      | f_error < 2% |
-| `bench_waveguide_transmission.py`| Waveguide S-parameters     | S-param error < 2 dB |
-| `bench_microstrip.py`           | Microstrip S-parameters     | S-param error < 2 dB |
-| `bench_sphere_scattering.py`    | Plane-wave RCS from sphere  | RCS error < 2 dB |
-| `bench_stripline.py`            | Stripline S-parameters      | S-param error < 2 dB |
-| `bench_mesh_build.py`           | Mesh-build time per mesher pass on three production geometry classes (Lange-coupler row, patch array with corporate feed, post row), section-pool arms off / auto / forced; `sheets` (thin-sheet detection + footprints), `singular` (singular-edge planes), `overlap` (model overlap check) and `fuse` (every N-ary union, nested) columns | timing only; results in `benchmarks/results/bench_mesh_build.json` |
+Runtime/memory profiles are distinct from numerical acceptance. Existing
+scripts include bench_rectangular_cavity.py, bench_spherical_cavity.py,
+bench_waveguide_transmission.py, bench_sphere_scattering.py,
+bench_eigenmode_scaling.py, bench_plane_wave_tfsf.py, bench_pcb_import.py and
+bench_mesh_build.py. The latter reports geometry-build passes/pool arms on
+production classes; results live under benchmarks/results/. Old unshipped
+microstrip/stripline benchmark names do not describe current files.
 
 ### 10.4 Tutorial and how-to notebooks
 
@@ -1474,7 +1453,8 @@ extra are recommended for interactive modelling and post-processing.
   suite on main pushes and pull requests. The conda environment includes CAD;
   a headless display supports viewer checks. Device tests skip without CUDA.
 - Full integration/numerical acceptance remains a separate local check.
-  API/DD/import gates are available locally; mypy is not a current CI gate.
+  API/import gates are available locally; DD-reference and project-consistency
+  gates now run in CI. mypy is not a current CI gate.
 - The separate Docs workflow executes the gallery and publishes stable/dev
   channels when `DEPLOY_DOCS` is enabled or manually dispatched.
 
@@ -1540,6 +1520,7 @@ python validation/tools/check_dd_references.py
 # Public content and script imports
 python validation/tools/check_public_hygiene.py
 python validation/tools/check_imports.py
+python validation/tools/check_project_consistency.py
 ```
 
 The measured accuracy floors (port reflection, wall loss, curvature)
@@ -1550,6 +1531,7 @@ the current numbers are summarised in `STATUS.md`.
 
 ## 14. Implementation Status
 
-Step completion, open questions, known bugs, and current benchmark
-results are tracked in `STATUS.md`.  Raw benchmark data lives in
+Current implementation and validation state are tracked in `STATUS.md`;
+unfinished engineering work is in `TODO.md`, investigated defects in
+`known-bugs.md`.  Raw benchmark data lives in
 `benchmarks/results/`; the reasoning record is `design-decisions.md`.

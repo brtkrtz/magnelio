@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # local release tags are needed for changelog coverage
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -24,6 +26,8 @@ jobs:
       # the workspace pre-push hook runs the same audit over every
       # commit of a push).  Standard library only.
       - run: python validation/tools/check_public_hygiene.py
+      - run: python validation/tools/check_project_consistency.py
+      - run: python validation/tools/check_dd_references.py
 
   test:
     runs-on: ubuntu-latest

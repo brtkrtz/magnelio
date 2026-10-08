@@ -851,7 +851,8 @@ The x-axis code was verified correct by derivation from Maxwell's curl equations
 ## DD-032 — Three-tier solver kernel dispatch and GPU backend
 
 **Date:** 2026-04-11
-**Status:** Accepted (GPU path untested — CuPy not yet installed)
+**Status:** Accepted. GPU availability was untested at this original decision;
+subsequent backend/precision implementation and acceptance are in DD-090/DD-094.
 
 **Decision:** Replace the single sparse-matvec solver loop with a three-tier kernel dispatch
 and make the entire solver pipeline backend-agnostic (NumPy / CuPy).
@@ -904,138 +905,52 @@ fallback does and does not buy a prospective third backend.
 
 ## DD-033 — Scalable 3D eigenmode solver: evaluated approaches
 
-**Date:** 2026-04-11
-**Status:** Accepted (iterative approaches evaluated and rejected)
+**Date:** 2026-04-11; GPU follow-up 2026-07-18. **Status:** Evaluation
+closed; ARPACK/SuperLU remains production default, alternatives experimental.
 
-**Problem:** The ARPACK `eigsh` shift-invert path builds the full sparse matrix
-`A = C^T diag(M_mu_inv) C` and factors `(A - σB)` via SuperLU.  Both steps are O(n^1.5)
-to O(n^2) for 3D problems and become the bottleneck above ~50k cells.
+**Decision/rationale.** Sparse shift-invert factorization dominates 3D cost.
+A matrix-free CurlCurlOperator retains the PEC-free operator and nine
+workspaces for experiments, but cheap matvecs alone do not solve the Maxwell
+null-space/preconditioning problem. Folded-spectrum LOBPCG uses
+S_std=B^-1/2*(A/sigma-B)*B^-1/2 and eigenvalues (lambda/sigma-1)^2,
+recovering physical lambda by the original Rayleigh quotient; unpreconditioned
+it was about 75 times slower and 2 % versus 0.2 % accurate at 2800 cells.
 
-**Current solution:** ARPACK + SuperLU remains the production backend.  Works
-reliably up to ~100³ grid cells.  SciPy's default COLAMD reordering provides
-good factorisation performance without explicit configuration.
+**Rejected measured paths.** Fill-reducing ILU is singular; NATURAL gives
+9.6x fill without a useful indefinite GMRES solve. Scalar pyamg AMG-CG costs
+9/20/32x SuperLU on 762/6663/24365 DOFs (1.7/29/1139 s versus 0.2/1.4/36).
+Gauss-Seidel, constant-field near-null vectors and W-cycles did not restore
+mesh-independent convergence; inexact shift-invert needs rtol=1e-8.
+PEC-restricted gradient regularization perturbed modes 10–100 %; arbitrary
+beta shifts mixed null/physical modes. Tree-cotree CHOLMOD makes the ungauged
+null-space reduction positive but adds low spurious eigenmodes, leaving the
+shifted system indefinite at ordinary auto shifts. It remains an explicit
+small-shift experimental path, not the general recommendation. Gradient
+assembly satisfies C@G=0; shift estimation was corrected to use the two
+smallest, not largest, squared wave-number terms.
 
-**CurlCurlOperator** (`operators/curl_curl_operator.py`): Matrix-free operator applying
-`A @ x = C^T diag(M_mu_inv) C @ x` via stencil operations (`curl_e_stencil` → M_mu_inv
-multiply → `curl_h_stencil`).  Operates in the PEC-free DOF subspace. Pre-allocates 9
-workspace buffers.  Verified bit-exact against explicit sparse matrix in unit tests.
-Retained for future GPU solvers.
+**GPU rejection is stage-specific.** On 30^3/40^3 vacuum cubes, SuperLU
+factorization took 63.7/629 s (215x/365x fill, 2.5/10 GB), versus 4.9/15.6 s
+for 33 ARPACK solves: 93–98 % of cost. cupyx factorization was host-side;
+device triangular solves on the identical 30^3 factors took 9247 versus
+125 ms (~74x slower), including device-resident timing 9246 ms. Solutions
+agreed to 5e-14, but end-to-end ARPACK with GPU OPinv was 305 versus 4.5 s.
+Repeated per-RHS sparse QR was rejected by construction. A GPU does not
+remove the unmeasured Maxwell-preconditioner requirement.
 
-**LOBPCG folded-spectrum backend** (`solver="lobpcg"`, experimental):
-PEC cavities have a large gradient null space (~N³ modes with eigenvalue 0).  Naive
-LOBPCG with `largest=False` finds these trivial modes first.  The folded-spectrum
-transformation `S_std² y = μ y` with `S_std = B⁻½(A/σ−B)B⁻½` maps modes near σ to
-the smallest μ = (λ/σ−1)² while the null space folds to μ ≈ 1.  The B⁻½ absorption
-into the operator avoids B-orthogonalisation issues from small M_ε entries (~10⁻¹⁴).
-True eigenvalues are recovered via the Rayleigh quotient on the original (A, B) pair.
+**Limits/future names.** Historical host size/cost figures are measurements,
+not a general supported-grid envelope. PARDISO/MUMPS, hypre AMS/PETSc and
+cuDSS remain unevaluated/unimplemented candidates, not measured speed promises
+or new work performed by this editorial pass. The negative results are
+retained so the same generic iterative/direct-GPU routes are not reopened
+without a changed preconditioner/factorization premise.
 
-Evaluated and rejected approaches for null-space elimination:
-- Tree-cotree gauging: PEC restriction breaks de Rham exactness → spurious modes
-- Gradient regularisation A + α·G·Gᵀ: ILU singular (GGᵀ is graph Laplacian),
-  Jacobi amplifies null space by O(α/diag(A)) ≈ O(10¹⁴)
-- Direct LOBPCG + AMG on free subspace: failed to converge (200 iterations)
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-Current limitation: unpreconditioned LOBPCG is ~75× slower than ARPACK+SuperLU at
-2800 cells and achieves only ~2% accuracy (vs. 0.2% for ARPACK).  A Maxwell-specific
-preconditioner (e.g. AMS from hypre, or subspace correction with the gradient operator)
-would be needed to make LOBPCG competitive.  Not auto-dispatched; retained for
-experimental use and as foundation for future GPU solvers.
-
-**ILU-GMRES evaluated and rejected:**
-- `spilu` fails with "Factor is exactly singular" for fill-reducing orderings (MMD,
-  COLAMD) on the indefinite shifted matrix (A−σB)
-- `NATURAL` ordering produces a valid ILU but GMRES doesn't converge (ILU quality
-  too poor for the indefinite system — 9.6× fill yet wrong eigenvalues)
-
-**pyamg AMG-CG evaluated and rejected:**
-An AMG-preconditioned CG inner solve for the shifted system (A−σB) was implemented
-and benchmarked using pyamg's smoothed-aggregation solver.  Results:
-
-| Grid | n_free | AMG-CG [s] | SuperLU [s] | Ratio |
-|------|--------|-----------|-------------|-------|
-| 10×7×5 | 762 | 1.7 | 0.2 | 9× slower |
-| 20×13×10 | 6,663 | 29 | 1.4 | 20× slower |
-| 30×20×15 | 24,365 | 1,139 | 36 | 32× slower |
-
-AMG gets **worse** with increasing mesh size: CG iteration counts grow instead of
-staying constant, indicating that pyamg's scalar SA-AMG does not achieve mesh-independent
-convergence for the vector-valued Maxwell curl-curl operator.  Tested configurations:
-- Default Jacobi smoother (best: 162 CG iters at 6.6k DOFs)
-- Gauss-Seidel smoother (worse: 246 iters)
-- Near-null-space vectors (3 constant-field columns): diverged
-- W-cycle: no improvement
-
-Root cause: pyamg's smoothed-aggregation AMG is designed for scalar elliptic problems.
-The curl-curl operator's vector-field structure requires Maxwell-specific AMG approaches
-(e.g., Auxiliary-Space Maxwell Solver from hypre) which pyamg does not implement.
-
-The AMG-CG path is retained as `solver="arpack-amg"` for experimental use but is not
-auto-dispatched.  Inner tolerance: rtol=1e-8 (looser values produce wrong eigenvalues
-because scipy's ARPACK wrapper does not support inexact shift-invert).
-
-**CHOLMOD Cholesky evaluated (experimental):**
-Approach: tree-cotree gauging eliminates the gradient null space, making the cotree system
-positive definite → CHOLMOD Cholesky factorisation of (A_ct − σ·B_ct).
-
-Implementation:
-- `build_gradient_matrix(grid)` added to `operators/curl.py`: discrete gradient G (nodes→edges),
-  verified C·G = 0 (de Rham exactness).
-- Tree-cotree via BFS on PEC-component-collapsed super-node graph.  Union-Find identifies
-  PEC-connected node groups.  Tree size = dim(ker(A_f)) exactly.
-- Sigma estimation bug fixed: was using two LARGEST k² terms (giving σ > ω₁² for non-cubic
-  cavities), corrected to two SMALLEST k² terms.
-
-Results: tree-cotree gauging correctly eliminates the null space (A_cotree is PD), but the
-gauging introduces **spurious low-frequency modes** (artifacts from constraining tree-edge
-DOFs to zero).  These modes have eigenvalues well below the physical spectrum (e.g., 5e20
-vs. ω₁²=3.2e21 for 30×20×15mm cavity).  Consequently (A_ct − σ·B_ct) remains indefinite
-whenever σ exceeds the lowest spurious eigenvalue — which it typically does for auto-estimated
-σ.  This is a known limitation of tree-cotree in eigenvalue (as opposed to source) problems.
-
-Also evaluated and rejected:
-- Gradient regularisation (A + α·G_f·G_fᵀ): PEC restriction breaks de Rham (C_f·G_f ≠ 0),
-  so G_f·G_fᵀ perturbs physical modes by 10–100%.
-- Diagonal beta shift (CHOLMOD beta parameter): gradient modes contaminate ARPACK spectrum
-  at all β values (physical and shifted-gradient modes have similar ARPACK θ values).
-
-The CHOLMOD path is retained as `solver="arpack-cholmod"` for cases where an explicit small
-σ is provided, but is not recommended for general use.
-
-**GPU shift-invert via CuPy evaluated and rejected (2026-07-18, session 111,
-`benchmarks/profile_eigenmode_shift_invert.py`):**
-Measured on a vacuum PEC cube (k=9, RTX 4070 SUPER, 16-core host), stage-split
-via an instrumented `OPinv` passed to scipy `eigsh`:
-
-| Grid | n_free | assembly | SuperLU factor | ARPACK (33 solves) | factor share |
-|------|--------|----------|----------------|--------------------|--------------|
-| 30³ | 75,690 | 0.15 s | 63.7 s (fill 215×, 2.5 GB) | 4.9 s | 93 % |
-| 40³ | 182,520 | 0.35 s | 629 s (fill 365×, 10 GB) | 15.6 s | 98 % |
-
-Two independent rejection grounds:
-1. cupyx `splu`/`factorized` compute the LU **on the CPU by design** (their
-   docstrings state the decomposition is not GPU-accelerated; only the
-   triangular solves run on device via cuSPARSE `spsm`).  The factorisation is
-   93–98 % of total time → nothing that dominates can move.
-2. The triangular solves that *do* move are **~74× slower on the GPU**:
-   125 ms/solve CPU vs 9,247 ms GPU on the identical N=30³ factors —
-   device-resident timing 9,246 ms, so transfers are irrelevant; the 215×-fill
-   factors' sequential dependency chains defeat `spsm` level scheduling.
-   Solutions agree to 5e-14; ARPACK end-to-end 4.5 s CPU vs 305 s GPU-OPinv.
-
-The iterative route (GPU matvecs through the xp-agnostic CurlCurlOperator) was
-not re-measured: it fails on this DD's already-measured convergence wall (no
-Maxwell preconditioner), which a GPU does not change.  cuSOLVER `csrlsvqr`
-(cupyx `spsolve`) refactorises per RHS — rejected by construction.
-
-**Future scaling options** (not yet implemented):
-1. PARDISO/MUMPS: symmetric indefinite LDLᵀ factorisation — drop-in replacement for SuperLU
-   with ~2× speedup.  Requires pypardiso or python-mumps (not currently installed).
-2. hypre AMS via PETSc: Maxwell-specific AMG, mesh-independent convergence.
-   Heavy dependency (MPI, PETSc, hypre).
-3. ~~GPU shift-invert via CuPy + CurlCurlOperator~~ — evaluated and rejected
-   2026-07-18, see above.  The genuine GPU direct-sparse candidate would be
-   NVIDIA cuDSS (multifrontal factorisation on device); no binding in our
-   stack, unevaluated.
+- `benchmarks/profile_eigenmode_shift_invert.py`
+- `operators/curl.py`
+- `operators/curl_curl_operator.py`
 
 ---
 
@@ -1680,7 +1595,9 @@ ultimately realised exactly by the DTBC chain (DD-054/DD-055).
 ## DD-044 — Numerical 2D Mode Solver (curl-curl + Laplace dispatch)
 
 **Date:** 2026-04-27 (session 53; closes Phase-2a sub-block).
-**Status:** Accepted, partially implemented.  Phase-2a delivered the
+**Status:** Accepted; the following is the historical Phase-2a snapshot,
+not the current implementation envelope (later pipeline: DD-048/DD-050–057).
+Phase-2a delivered the
 TE/TM curl-curl path; the TEM Laplace and QTEM dispatch land in
 Phase 2b (the architecture-document §2.2 three-class deliverable).
 
@@ -6556,140 +6473,45 @@ the next independent multiplier.
 
 ## DD-103 — Boundary conditions belong to the model, declared once
 
-**Status:** Decided 2026-07-30 (session 136).  Shipped; hard API
-break (MAJOR = 0).  Supersedes the background-driven bbox-wall rule
-of DD-049 and folds in the BC-PEC consolidation of DD-050.
+**Date:** 2026-07-30. **Status:** Implemented; intentional API break.
+Supersedes DD-049's background-driven wall rule and DD-050 BC consolidation.
 
-**Problem.**  The boundary closure was declared on the *analysis*
-(`AnalysisScatteringTD(boundary_conditions=...)`), but three of its
-four consequences happen at mesh-build time, before the analysis
-exists.  They were therefore steered by separate, unchecked
-parameters — or by nothing at all:
+**Problem/decision.** Domain closure affects grid extension, PMC positioning,
+PEC masks and runtime operators; declaring only on analysis was too late and
+could disagree with mesher controls. Declare once on GeometryModel or
+Mesh.from_grid, carry on Mesh and persist in mesh.h5. Background fills volume
+and never independently chooses six walls. Each declared PEC face is fully
+masked, including tangent dielectric contacts; PMC/CPML/Periodic are not.
+Undeclared faces default PEC, so old partial dictionaries that intended
+natural magnetic closure must now say PMC. CPML thickness belongs to
+BoundaryConditions and controls both extension and profiles.
 
-| consequence | was steered by |
-|---|---|
-| CPML grid extension | `Mesh.from_geometry(pml_faces=...)` |
-| PMC grid-line pull-in (WP-U0) | `Mesh.from_geometry(pmc_faces=...)` |
-| PEC wall mask | nothing per face — see below |
-| runtime BC objects | `AnalysisScatteringTD(boundary_conditions=...)` |
+Mesh.with_boundary_conditions replaces closure/masks using the original
+pre-wall backup; it cannot grow CPML buffers or move a PMC grid line.
+Low-level solvers retain explicit boundary_conditions for geometry-free use.
+Analyses read closure/thickness from the mesh. Separate mesher pml_faces/
+pmc_faces and analysis closure/thickness configuration were removed; common
+boundary readers replace duplicated input-form dispatch. Recipe schema 2.0
+moves closure to the mesh; one face cannot declare overlapping wall types.
 
-Nothing tied the two declarations together.  The PML depth even
-existed twice as an independent number (`MeshControl.
-pml_thickness_cells` for the grid extension,
-`AnalysisScatteringTD.cpml_thickness_cells` for the profile), so a
-layer could grade over a span the grid did not have.
+**Verdict.** PEC-background PMC/CPML regressions and path-independent mask
+replacement/store round trips pass. The reported half coax now resolves TEM
+(f_c=0, 117.7 ohms) instead of mistakenly fusing its signal conductor into
+an all-PEC frame. Boundary-closure tests capture that difference.
 
-The wall mask was the damaging one.  DD-049 keyed it on the
-*background material*: `background.is_pec` force-masked the
-tangential E-edges of **all six** bbox faces, to keep a PEC chamber
-wall one connected component for the auto-conductor detection
-(a dielectric touching the bbox at isolated tangent points otherwise
-un-masks the edges between those cells and fragments the wall).
-That rule cannot see the declared closure, so it overrode it:
+**Unchanged limits.** Persisting a type map does not preserve a wall material
+carried by PECBoundary (DD-099). The pre-wall backup is not serialized, so a
+stored mesh cannot reconstruct a different pre-wall closure. An already-dead
+TransientAnalysis example was removed, not evidence of a new solver defect.
+Original model report: userscripts/beamcoupler_slotline.py (internal record).
 
-- a **PMC symmetry plane** in a PEC chamber became an electric wall.
-  `PMCBoundary` is deliberately a no-op — the magnetic wall is the
-  *natural* BC of the free curl operators — so nothing downstream
-  could take the mask back off, and `fit_td` freezes masked edges
-  with `alpha_E = beta_E = 0`.  The half-model then ran the opposite
-  symmetry, silently.
-- a **CPML face** became a mirror in front of the absorber (same
-  mechanism; no shipped example hit it because every PML fixture
-  uses an air background).
-- on a **port touching such a plane**, the mode-path detection
-  (`resolve_declarative_port` → `extract_conductor_groups_from_mesh`)
-  saw the inner conductor fused to the wall frame: one PEC component
-  instead of two, so the TEM/QTEM path was rejected and the port
-  resolved as a hollow TE/TM guide.  Reported on a half-modelled
-  rectangular coax (`userscripts/beamcoupler_slotline.py`), where
-  both ports came back TE.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-**Decision.**  The closure is a property of the modelled domain, not
-of a run on it — a PMC face is a symmetry plane, a CPML face an
-opening.  It is declared once, on the `GeometryModel` (or on
-`Mesh.from_grid` for the OCC-free path), carried by the `Mesh`, and
-read from there by the layer-a analyses:
+- `examples/pml_verification_coax_discrete.py`
+- `tests/unit/test_boundary_closure.py`
 
-```python
-model = GeometryModel(background=pec, boundary_conditions={
-    "xmin": "PMC", "xmax": "PEC", ...})
-mesh = Mesh.from_geometry(model, control, f_max)
-analysis = AnalysisScatteringTD(mesh=mesh, ports=[...], f_max=f_max)
-```
-
-Rules:
-
-1. **The declaration decides the wall, per face.**  `PEC` masks that
-   face's tangential edges; `PMC`/`CPML`/`Periodic` do not.  The
-   background fills the *volume* outside every shape and no longer
-   closes anything by itself.  DD-049's purpose survives: a declared
-   PEC face is force-masked whole, so the wall stays one component
-   under dielectric tangency.
-2. **An undeclared face closes with PEC** — the conventional closure
-   and the safe default.  Note the change of meaning: a *partial*
-   BC dict used to leave the remaining faces to the free curl update
-   (i.e. a magnetic wall); those faces are now electric.  Call sites
-   that wanted the old behaviour say `"PMC"` explicitly.
-3. **One type per face.**  The former `pml_faces`/`pmc_faces` overlap
-   check is unrepresentable now and was dropped.
-4. **The CPML depth lives on the declaration**
-   (`BoundaryConditions.cpml_thickness_cells`), driving both the grid
-   extension and the profile.  `MeshControl.pml_thickness_cells` and
-   `AnalysisScatteringTD.cpml_thickness_cells` are gone.
-5. **Layer C is untouched.**  `FITTimeDomainSolver` /
-   `EigenmodeSolver3D` keep their `boundary_conditions=` argument —
-   they must stay usable without a geometry.
-
-`Mesh.with_boundary_conditions(bc)` *replaces* a closure on a built
-mesh: PEC faces are masked, faces that are no longer PEC get the
-edge values they had before any wall was forced on them (kept in
-`Mesh._wall_backup` — the OR is lossy on its own).  It cannot grow a
-CPML extension or move a PMC grid line, so declare those on the
-model; conversely that is exactly why fixtures which must keep their
-grid use it instead of re-declaring upstream.
-
-**API changes (hard).**
-
-- `GeometryModel(boundary_conditions=...)`, `Mesh.from_grid(
-  boundary_conditions=...)`, `Mesh.boundary_conditions`,
-  `Mesh.with_boundary_conditions()` — new.
-- `Mesh.from_geometry(pml_faces=, pmc_faces=)`,
-  `MeshControl.pml_thickness_cells`,
-  `AnalysisScatteringTD(boundary_conditions=, cpml_thickness_cells=)`,
-  `AnalysisEigenmode(boundary_conditions=)` — removed.  The two analyses
-  expose `boundary_conditions` / `cpml_thickness_cells` as read-only
-  properties onto the mesh.
-- `BoundaryConditions.to_objects(grid)` — the
-  `cpml_thickness_cells` argument moved into the dataclass.
-- New readers in `boundaries.boundary_conditions`:
-  `bc_type_entries` (any accepted form → `{face: type}`),
-  `resolve_boundary_conditions`, `cpml_thickness_of`.  These replace
-  four copies of an `isinstance` cascade in the analysis.
-- The closure left the resume recipe (`RECIPE_SCHEMA_VERSION` 1.0 →
-  2.0) for `mesh.h5`, where it round-trips as a type map plus the
-  CPML depth.
-
-**Verification.**  Full suite green: 1335 unit + 262 integration
-(27 skipped).  `tests/unit/test_boundary_closure.py` pins the
-defect: on the half-model rect coax the port resolves as
-`PortSpecMultiConductor` with `xmin="PMC"` and as `PortSpecNumerical`
-under the old all-PEC forcing; PMC and CPML faces stay unmasked
-under a PEC background; `with_boundary_conditions` is path
-independent and round-trips.  On the reported coupler both ports now
-solve TEM (f_c = 0, Z = 117.7 Ω on the half model) instead of TE.
-
-**Limitations / follow-ups.**
-
-- A `PECBoundary` carrying its own wall material (DD-099) still does
-  not survive a store round-trip — the closure persists as a type
-  map.  Pre-existing (the recipe route had the same hole), not
-  addressed here.
-- `Mesh._wall_backup` is not serialised, so on a mesh reloaded from
-  the store `with_boundary_conditions` can only re-declare the same
-  closure (which is what the store does).
-- `examples/pml_verification_coax_discrete.py` turned out to import
-  `TransientAnalysis`, a class that no longer exists in `src/` — dead
-  before this change, and deleted right after it (session 136).
+---
 
 ## DD-104 — Monitor regions are corner boxes; open-ended recording schedules
 
@@ -7350,156 +7172,59 @@ string.  The resume/run-longer path keeps its explicit signature
 
 ## DD-115 — Ready-to-open ParaView sessions from the project store
 
-**Status:** Decided 2026-08-04 (session 150); shipped same session.
-**Superseded in part by [[DD-262]] (2026-09-07):** the export is on
-request only (`Project.export_paraview()`), no longer a side effect of
-the run's close, and the per-monitor pipeline is one
-`ProgrammableFilter` feeding one cut instead of the reflect / point /
-lattice / calculator chain with three cuts.  The glyph length law, the
-lattice sizing and the cap/exponent statistics below stand.
+**Date:** 2026-08-04. **Status:** Implemented; export lifecycle/pipeline
+refined by DD-259/DD-262, geometry/version binding by DD-265/DD-266.
 
-**Problem.**  The store's ParaView surface was raw material, not a
-result: `geometry.stl` collapsed all solids into one unnamed,
-uncoloured triangle soup; `fields.xdmf` loaded but left the user to
-hand-build every pipeline (cell→point conversion, slices, glyphs);
-`FieldFrequencyMonitor` had *no* working ParaView path at all (the
-`write_xdmf_xml` frequency branch was dead code that never matched
-the actual `fields_freq.h5` layout — cell-centre axes, complex
-`(nf, nx, ny, nz)` bins); and naive glyph scaling is unusable on FIT
-results because edge singularities produce a few huge vectors that
-dictate the arrow scale and colour range.
+**Decision/rationale.** Export per-solid named/material-colored VTM blocks,
+per-monitor field series and a prepared ParaView session rather than unnamed
+STL soup and raw files requiring manual pipelines. Complex frequency fields
+have real/imaginary vectors plus complex magnitudes; both phase glyph sets
+share scales. The initial run-close/XDMF/three-cut pipeline is historical:
+current export is explicit, time fields are VTR/PVD and one programmable
+filter/shared cutting plane replaces that pipeline.
 
-**Decision.**  A three-layer exporter in `io/paraview.py`, riding on
-the already-declared (previously unused) `vtk` dependency:
+**Surviving glyph contract.** Separate the 98th-percentile saturation cap
+from the length reference. Fit an exponent so p60 of samples above 1 % of
+peak maps to 45 % of maximum length, cap maps to 1; linear distributions
+use exponent 1. Dimensionless direction arrays make ScaleFactor a length
+in metres. On the 561050-cell beam fixture, median arrows improved
+1.1→4.4 mm, maximum 82→32 mm; using the cap as length reference hid typical
+fields. Colors stay zero-anchored and capped.
 
-1. **Geometry** — `export_vtm` tessellates each solid into its own
-   named block of a `geometry.vtm` multiblock (OCC per-face
-   triangulation, deflection 0.2 % of each solid's bbox diagonal),
-   with a `MaterialIndex` cell array into a deterministic material
-   table (colours from `post/_colors.material_color`, the 3D-viewer
-   palette).  Replaces `geometry.stl` in the store (`export_stl`
-   stays as API); `geometry.json` gains a schema-additive `names`
-   list and `_LoadedShape` a `name`, so loaded projects keep block
-   identity.
-2. **Monitors** — field-time monitors stay on XDMF over `results.h5`
-   (no data duplication; one descriptor per monitor under
-   `runs/<run>/paraview/` for clean per-monitor pipelines).
-   Frequency monitors become a `.vtr`-per-frequency series plus a
-   `.pvd` collection (frequency as the ParaView time axis), with
-   scalar `<comp>_re/_im`, vector `E_re/E_im` (glyphs at phase 0)
-   and complex-magnitude `|E|` cell arrays; node axes are recovered
-   exactly by re-resolving the stored corners against the stored
-   grid.  The dead `write_xdmf_xml` was deleted.
-3. **Session** — run close generates `paraview_open.py`
-   (`paraview.simple`; open via `paraview --script=…`) and, when
-   `pvpython` is on the PATH, bakes a double-clickable
-   `paraview.pvsm`.  The pre-built pipeline per monitor:
-   `CellDatatoPointData` → Calculator clipping the field vector to a
-   cap (98th percentile of |v|, estimated from sampled steps at
-   export time) → three slice planes through the monitor centre
-   (default visible: normal to the shortest extent; planar monitors
-   glyph directly) → arrow glyphs (uniform spatial distribution,
-   scaled so a cap-length vector spans 1/25 of the monitor
-   diagonal) → a geometry `Clip` whose plane is proxy-linked to the
-   slice plane, so dragging one drags the other.  Colour ranges are
-   pinned to `[0, cap]` — singularities can neither stretch arrows
-   nor wash out the colormap.  Only the first monitor's default
-   slice is shown; all other sources are created hidden and unread,
-   so many-monitor projects stay RAM-cheap until toggled visible.
-   `Project.export_paraview()` regenerates with different options;
-   `MAGNELIO_PVSM_BAKE=0` suppresses the bake (test-suite pin).
-   Everything is best-effort: a viz failure at run close warns,
-   never invalidates the run.
+Sample arrows on isotropic spatial lattices, not snapped computational-grid
+seeds or equal per-axis counts: the fixture's 43× grid-spacing range otherwise
+formed misleading planes of arrows. Section density targets about 2000 points
+on the largest cut, volume about 8000 across the region. One-cell planes use
+one layer, decided by cell count. Resample raw fields before nonlinear length
+mapping. Volume glyphs discard magnitudes below 2 % of cap and start hidden;
+cuts retain empty samples as information. Real and imaginary sets correspond
+to phase 0/−90 degrees; the collection axis is frequency, not phase animation.
+No separate mesh-true glyph-placement branch was accepted.
 
-**Found along the way (fixed).**  Since GPU became the production
-default (DD-090), *every* field/flux monitor crashed on the cupy
-backend: the DD-085 interpolation and the flux weights mixed NumPy
-operands into device arrays (`TypeError` at the first recorded
-step).  `_interp_to_cell_centres` now interpolates on the device and
-transfers only region-sized results; `FluxTimeMonitor` moves its
-weight planes to the device once.  `WallLossMonitor` has the same
-defect and remains open — see known-bugs.md (KB-006).
+**Evidence/compatibility.** Deterministic material tables, VTM identity,
+configuration round trips, VTR/HDF5 ordering/value parity, real streamed export
+and optional pvpython bake/failure paths are gated. The DD-085 interpolation/
+flux GPU transfer defect was fixed by device-local interpolation/weights and
+region-sized gathers; the then-open wall-loss analogue is now resolved KB-006.
+DD-090 governs automatic device selection. MAGNELIO_PVSM_BAKE=0 suppresses
+optional bake; later export decisions govern current exception/lifecycle
+behavior. Original sampled glyph/lattice evidence remains in release history.
 
-**Glyph length law (measured correction, same session).**  The first
-implementation used the clip cap as *both* the saturation point and
-the length reference (`scale = l_ref / cap`), which made the glyphs
-unusable on the first real fixture — measured on a slotline beam
-coupler, whole-domain H monitor, 561 050 cells: 25 % of cells are
-exactly zero and 54 % sit below 5 % of the p98 (PEC interior and quiet
-volume), so the p98 lands next to the maximum and the *median* arrow
-came out 1.1 mm on a 200 mm structure — invisible, while the maximum
-ran to 82 mm.  The developer independently arrived at ~1e8 as a usable
-factor; the fitted reference gives 8.6e7, confirming the diagnosis.
-The two roles are now separate: the cap still saturates outliers, and
-a length **exponent** is fitted per monitor so that the typical
-field-carrying magnitude (p60 over cells above 1 % of the peak) is
-drawn at 45 % of the full length, while the cap maps to exactly 1.
-The Calculator emits a dimensionless 0…1 direction array, so the glyph
-`ScaleFactor` is the longest arrow in metres — interpretable, and
-inside the range ParaView's slider offers (the previous magnitude-
-derived factor of 2.6e7 sat far outside it).  Result on that fixture:
-median 1.1 → 4.4 mm, p75 7.6 → 13.8 mm, maximum 82 → 32 mm (bounded).
-A distribution needing no compression fits exponent 1 (pure linear),
-so the law degrades gracefully.  Verified in ParaView itself: both
-direction arrays evaluate to magnitude range exactly 0…1.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-**Every arrow sits on an even lattice; the computational grid is not
-used for placement.**  ParaView's spatial glyph seeding snaps each seed
-onto the nearest *mesh* point, so arrows expose the computational grid:
-on the beam coupler the z spacing runs from 0.44 mm in the
-geometry-refined slot region to 18.7 mm in the wavelength-sized
-waveguide (a factor 43; 30 coarse cells cover 65 % of the length),
-which reads as arrows crowding into isolated x-y planes with voids
-between them.  Developer's verdict after seeing it: numerically honest,
-practically unusable, and not what commercial tools show.  Every
-monitor is therefore resampled (`ResampleToImage`) onto a lattice with
-**one spacing for all axes** and glyphed with *All Points* — a fixed
-sample count per axis would make the spacing directional on an
-elongated region, reintroducing the very bias being removed.  A
-correctly set up simulation has a grid fine enough that interpolating
-is legitimate, and the user is after the field, not the discretisation
-that produced it.  No mesh-true branch is kept: it was offered and
-declined.
-Two lattices per 3D monitor, because the two views need different
-densities.  The **section** lattice is sized for arrows per unit area
-(~2000 in the largest section, the one the default cut shows) and feeds
-the three slice planes; the **volume** lattice is coarser (~8000 points
-over the region) because glyphing every point of the section lattice in
-3D would bury the field under its own arrows.  Planar monitors resample
-to a single layer — degeneracy is decided by cell count, not by
-thickness, so a one-cell-thick plane does not get several layers
-through a thickness carrying no second sample.  Measured on the beam
-coupler: section lattice 12x14x154 at 5.2-5.4 mm giving 2156 / 1848 /
-168 arrows on the three cuts, volume lattice 9x10x109 at 7.4-7.6 mm
-giving 1711 arrows after the threshold.
-Resampling happens on the **raw** field, ahead of the direction
-calculators, so the non-linear length map is applied to interpolated
-field values rather than the interpolation being applied to compressed
-ones.  Ahead of the volume glyphs sits a Threshold keeping only cells
-above 2 % of the cap — 297 k of 561 k cells on that fixture, i.e.
-exactly the PEC interior and quiet volume that would otherwise bury the
-field in short arrows.  Thresholding needs a scalar (ParaView's
-Threshold offers no vector-magnitude mode), hence a scalar
-``<arr>_mag`` Calculator per field array.  Slice glyphs keep every
-lattice point: on a single cut the empty regions read as information.
-Volume sets are created hidden — a slice stays the cheaper first look.
-**Frequency glyphs carry both phases.**  The first implementation
-offered only the real part; where the field is mostly imaginary that
-shows nearly nothing.  Real and imaginary part (phase 0 and −90°) each
-get their own Calculator + glyph set sharing the cap and exponent from
-the complex magnitude; the imaginary set is created hidden, one click
-from visible.  Phase animation is not available — the `.pvd` time axis
-is already spent on frequency.
+- `fields_freq.h5`
+- `geometry.json`
+- `io/paraview.py`
+- `known-bugs.md`
+- `paraview_open.py`
+- `results.h5`
+- `tests/integration/test_paraview_session.py`
+- `tests/unit/test_paraview_export.py`
 
-**Consequences.**  `geometry.stl` is no longer written (alpha break;
-store docs updated, round-trip test moved to `.vtm`).  `vtk` added
-to `environment.yml` (was already in pyproject/recipe).  Gates:
-`tests/unit/test_paraview_export.py` (material table, VTM blocks,
-slice specs, script config round-trip),
-`tests/integration/test_paraview_session.py` (artefacts on a real
-streamed run, `.vtr` ↔ `fields_freq.h5` value/ordering parity,
-regeneration, an actual `pvpython` state bake, and warn-not-raise on
-export failure).
+Historical artifact anchors (internal records where applicable): `fields.xdmf`, `geometry.vtm`, `paraview.pvsm`.
+
+---
 
 ## DD-116 — Documentation portal: four pillars, tutorials from sphinx-gallery
 
@@ -7824,146 +7549,55 @@ default of DD-094 bounds |S| reproducibility near 1e-7 — consider
 
 ## DD-121 — Slice plots for 3D field data + normal-component encoding in vector plots
 
-**Status:** Decided + shipped 2026-08-09 (gap surfaced by tutorial 05,
-which had to hand-roll Yee interpolation with internals; developer
-decisions: ⊙/⊗ markers instead of a background colour layer, single
-magnitude colour scale with sign in the marker shape, existing 2D
-plots included in the fix, `interact()` in scope).
+**Date:** 2026-08-09. **Status:** Implemented; shared field-container access
+later refined by DD-259. No solver or monitor-normalization change.
 
-**Problem.**  Three related holes in field plotting.  (1) Both field
-monitors record 3D volumes but `plot()` raised `NotImplementedError`
-for `ndim == 3` — no way to look at a volume recording.  (2)
-`EigenmodeResult` had no plot API at all; tutorial 05 accessed
-`mode.Ex` / `mesh.grid` and re-derived the staggered-edge averaging
-inline, violating the examples policy.  (3) `plot_field_vector`
-silently dropped the out-of-plane component everywhere it is used: a
-field crossing the plotted plane at right angles rendered as an
-*empty* plot, and the colour bar claimed "Field magnitude" while
-showing the in-plane projection only.  TEM-dominated test cases had
-masked this; hybrid port modes and eigenmode slices expose it.
+**Decision/rationale.** Monitors and eigenmode results expose public plot/
+interact slices instead of forcing examples to access mesh/field internals.
+For volumes, normal/position chooses the nearest cell-centre plane; 2D regions
+validate their own normal. Only the requested slab is interpolated and labels
+state its position. A shared plane/overlay resolver removes duplicated axes.
 
-**Decision 1 — plane-view resolver.**  `monitors/base.py` gains
-`PlaneView` + `resolve_plane_view(region, normal, position)`: for a 2D
-region the plane is the region itself (a given `normal` is validated),
-for a 3D region `normal=`/`position=` select the slice, snapped to the
-nearest cell-centre plane — the same normal-plus-offset convention as
-`plot_cross_section` and the geometry overlay.  Both monitors'
-`plot()` **and** `interact()` route through it (slider = time/
-frequency at a fixed plane); titles carry the plane (e.g. `y=0.667
-mm`).  The duplicated `_free_axes`/`_make_overlay` pair collapsed into
-it.
+Vector arrow direction/length remains in-plane, but color and scale use full
+3D magnitude when the normal component is present. Local |w|>=3*in-plane
+(about 72 degrees) above max(threshold,0.02) of peak uses colored dot/cross
+markers: sign is toward +/-axis, independent of viewer/flip. A separate
+background layer was rejected because it hides overlays and duplicates scales.
+Without w, label the in-plane magnitude honestly. ModeReport supplies only
+stored transverse profiles, not an invented longitudinal component.
 
-**Decision 2 — normal component in the shared vector renderer.**
-`plot_field_vector` accepts an optional `w`.  Arrow direction and
-relative length stay in-plane, arrow *colour* becomes the full 3D
-magnitude on an explicit 0-anchored norm, and with `w` the
-auto-scale also references the full-magnitude peak (in-plane peak
-without `w`), so arrow length over colour reads as the out-of-plane
-tilt everywhere.  The in-plane reference would amplify honest small
-residues to full-length arrows — measured on the sphere quintet's
-H slice, where the half-cell offset of the cell-centre slice plane
-from the symmetry plane leaves a genuine ~0.5 %-energy in-plane
-residue (checked against the raw staggered DOFs; it grows ∝ x² off
-the plane, so it is physics, not interpolation) that used to bury
-the pattern's node lines under visible arrows.  The monitors'
-`interact()` fixed-scale precompute follows the same reference.  Grid points whose
-vector tilts out of the plane by more than ~72° (`|w| >= 3x` the
-in-plane part, at magnitude above `max(threshold, 0.02)` of the
-peak) are drawn as filled circles on the same colour scale with a ⊙
-(towards `+axis`) or ⊗ (towards `-axis`) glyph and a small legend —
-deliberately axis-referenced, not "towards the viewer", which would
-depend on axis handedness and `flip`.  The criterion is *local*
-tilt, not a comparison against the global in-plane peak: quiver
-auto-scales arrows to the in-plane maximum, so a slice pierced
-almost at right angles everywhere (e.g. the H field of a TM
-eigenmode on a meridional slice, in-plane residue ~6 %) would
-otherwise still render as a full-length arrow picture — measured on
-the sphere quintet before the criterion was fixed.  Rationale vs.
-the background-colour alternative: markers keep geometry overlays
-visible and keep one colour scale; the sign lives in the marker
-shape (a 2D glyph has two visual channels for three vector
-components plus sign — one channel must be the shape).  Without `w`
-the behaviour is unchanged except the honest colour-bar label
-"In-plane field magnitude".  Monitors pass `w` whenever the normal
-component was recorded; port `ModeReport.plot()` passes no `w`
-(`DiscreteMode` stores transverse profiles only — there is no
-longitudinal profile to pass).
+Eigenmode slices use e^T M_eps e=1 and arbitrary-unit labels. A sphere's
+normal/parallel E/H split was independently checked; the real half-cell-offset
+in-plane residue grows quadratically off the symmetry plane and must not be
+autoscaled into dominant arrows. Degenerate basis orientation/mixing depends
+on requested n_modes, and overall eigenvector sign is a gauge: generate the
+same tutorial mode count and avoid fixed dot/cross-sector claims.
 
-**Decision 3 — `EigenmodeResult.plot()`.**  Same signature family
-(`mode=`, `component=`, `normal=`, `position=`, `plot_type=`,
-`geometry=` overlay): interpolates only the requested slab via
-`_interp_to_cell_centres` (the eigenmode `FieldState` holds FIT grid
-quantities, `h = (1/ω)·M_μ⁻¹·C·e`, so the monitor converter applies
-verbatim), labels amplitudes "arb. units" (normalisation
-`eᵀ M_ε e = 1`).  Tutorial 05 now plots modes through this API; the
-canonical ⊙/⊗ demonstration (developer-suggested) is quintet mode 3
-on the slice where its E field lies fully in-plane: the E panel is
-all arrows, the H panel — everywhere perpendicular to E — is all
-markers with alternating ⊙/⊗ sectors.  Verified by an
-energy-weighted normal-fraction scan over all modes and slice
-normals (E/H normal fractions 0.00/0.99-style splits).  Tutorial
-prose must stay sign-agnostic about which region is ⊙ vs. ⊗
-(eigenvector sign is a gauge; it flipped between otherwise identical
-runs), and every figure must be generated with the tutorial's exact
-`n_modes` — the degenerate-cluster basis (orientation *and* mixing)
-changes with `n_modes` (1 vs. 4 vs. 8 gave three different mode-0/3
-orientations).
+Port-profile rendering averages live nonzero contributors rather than
+halving stencils touching PEC: on the coax, median angle 10.3→5.4 degrees,
+magnitude >=0.78 rather than 0.39 of analytic 1/r. Interior values stay
+unchanged; strict two-point monitor interpolation (DD-085) is separate.
+Transparent material cross-sections draw dashed black/white-understroked
+outlines unless explicitly disabled; visible=False always hides the shape.
+Port overlays sample half a boundary cell inward to avoid tangent end faces;
+X_MAX/Y_MIN/Z_MAX local handedness is handled by swap_axes XOR flip.
 
-**Decision 6 — conductor-aware destaggering in port mode plots.**
-Mode profiles carry exact `0.0` on every non-DOF edge; the plain
-two-point average onto cell centres therefore halved the magnitude
-and rotated the direction of every vector whose stencil touches a
-conductor — measured on the tutorial coax (78 of 460 cells: median
-angle error 10.3°, magnitude down to 0.39x of the 1/r value; the
-"colour speckle at the inner conductor" the developer spotted
-visually).  `_avg_nonzero` in `mode_report.py` now averages only the
-live contributors: touched cells improve to median 5.4° / magnitude
->= 0.78x (the remainder is genuine conformal/staircase
-discreteness); interior cells (median 0.24°, |E|·r flat to ±6 %) are
-bit-unchanged.  Plot-side only — `_interp_to_cell_centres` (DD-085)
-defines recorded *monitor data* and stays strictly two-point.
+**Verdict.** Uniform-field, slice-resolution, marker/norm, transparent-outline,
+conductor-aware average and port-overlay gates pass; Tutorials 02/04/05 use
+the public API. Generated gallery output stays outside lint scope. Exact
+historical sample/test anchors are retained below, not replaced by a new
+accuracy claim.
 
-**Decision 4 — transparent materials as outlines in cross-sections.**
-`plot_cross_section` used to *skip* fully transparent (air/vacuum)
-shapes — correct for filled inspection plots of visible parts, but it
-made the geometry overlay useless for the most common eigenmode
-geometry, a cavity carved into a conducting background (the air
-shape's boundary *is* the wall; tutorial 05 had to hand-draw the
-circle).  Transparent shapes now render as a dashed black outline
-with a white under-stroke (`patheffects`), readable on any field
-colour map; `outline_transparent=False` restores the skip, and
-`visible=False` still hides a shape unconditionally.  Tutorial 05
-passes `geometry=model` instead of drawing the wall by hand.
-Related trap recorded there: the overall sign of an eigenvector is
-arbitrary, so tutorial prose must not pin which region carries ⊙
-vs. ⊗ (it flipped between two otherwise identical runs).
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-**Decision 5 — geometry overlay on port mode plots.**
-`ModeReport.plot()` accepts `geometry=` like the monitor and
-eigenmode plots (tutorials 02/04 pass their model).  Two port-plane
-subtleties, both pinned by
-`test_solve_ports.py::test_geometry_overlay_wiring`: (1) the
-cross-section is sliced **half a boundary cell inward**
-(`coordinate + inward_sign · normal_dx/2`) — exactly on the bbox
-face the OCC section is tangent to the solids' end faces
-(ill-defined), and a port requires an extruded cross-section there
-anyway; (2) three of the six faces order their local `(u, v)` axes
-*descending* (`u x v` points inward: X_MAX, Y_MIN, Z_MAX), while the
-cross-section renderer slices in ascending order —
-`CrossSectionOverlay` gained a `swap_axes` flag that XORs with the
-plot's `flip`.
+- `check_imports.py`
+- `mode_report.py`
+- `monitors/base.py`
+- `test_eigenmode_plot.py`
+- `test_solve_ports.py`
 
-**Gates.**  Unit suite 1471 passed (new: `test_eigenmode_plot.py`
-with an exact uniform-field recovery check, plane-view resolution and
-3D-slice-vs-data tests, marker/colour-norm tests, air-outline
-cross-section tests); integration 317 passed incl. the port-overlay
-wiring and `_avg_nonzero` tests (the 4 `test_tile_skip_solver`
-bit-identity tests need the documented `CUPY_ACCELERATORS=""` when
-the env binary is called directly); `check_imports.py` over the
-private dirs (947 imports resolve); tutorials 02, 04 and 05 executed
-end-to-end on the public API; ruff clean (plus `extend-exclude` for
-the generated `docs/tutorials/` gallery output, which had drifted
-into the lint scope).
+---
 
 ## DD-122 — Port-signal stall watchdog + runtime cap for unbounded runs
 
@@ -8337,130 +7971,42 @@ zero new Sphinx warnings.
 
 ## DD-129 — The scattering-result contract documents itself
 
-**Date:** 2026-08-10
-**Status:** Accepted — implemented, gated.
+**Date:** 2026-08-10. **Status:** Implemented and gated; follows DD-128.
 
-**Problem.**  The object every user script holds after `run()` —
-`ScatteringTDResult`, or a `Project` reader with a store — published
-almost none of its contract in the API reference.  Found by sweeping
-all 69 exported classes for members inherited from non-exported bases,
-the follow-up to [[DD-128]].  Three independent causes, stacked:
+**Problem/decision.** Result accessors were missing from their own API pages:
+inherited mixin members were hidden, S/db/axes/channels lacked docstrings,
+and an invented numpydoc Convenience heading rendered as a phantom attribute.
+Document the contract on both in-memory/store implementations and protocol;
+move class-wide prose to Notes and accessor prose to actual members.
+Enable inherited-members on analysis/io pages for the result mixin, without
+adding public exports. Correct the referenced contract test's unit/integration
+directory rather than inventing another test.
 
-1. **Inherited and invisible.**  `phase`, `plot_s`, `to_touchstone` and
-   `to_skrf` come from `ScatteringResultMixin`, which
-   `analysis/__init__.py` imports but leaves out of its `__all__`;
-   autodoc skips inherited members by default, so the Touchstone and
-   scikit-rf exports — the two calls that get results out of Magnelio
-   and into anything else — appeared nowhere.
-2. **Undocumented, therefore unrendered.**  `S`, `db`, `f_axis`,
-   `channels` and `excitations` carried no docstring at all on
-   `ScatteringTDResult` (and `db`, `f_axis`, `channels`, `excitations`
-   on `Project`).  Autodoc renders only documented members, so the
-   central accessor of the whole library, `result.S("port2", "port1")`,
-   was absent from its own class page.
-3. **A phantom member.**  The class docstring carried an invented
-   numpydoc section, `Convenience\n-----------`, holding exactly the
-   prose those methods were missing.  Napoleon does not know the
-   heading, so it rendered as an attribute named "Convenience" and the
-   text stayed stuck to the class instead of reaching the methods.
+**Follow-up consolidated.** Sweep exported docstrings for unknown headings
+and phantom parameters: Example:: inside Parameters and Note instead of
+Notes silently misrendered geometry/mesh help. Type fields must contain
+resolvable types, not shapes or (label,mode)/(fig,ax) structure; name real
+matplotlib return types and describe structure literally in prose.
+Parentheses are allowed for resolvable tuple types: a blanket ban created
+fourteen false positives. Add matplotlib intersphinx coverage. The historical
+ambiguous label warning was generated from Project.export_paraview's
+docstring, not the page named by Sphinx, and was corrected there.
 
-The `ScatteringResult` protocol had the same shape of hole: it declared
-the contract but every member was a bare `...` stub, so the page showed
-a class with a one-line summary and no members.
+**Verdict/rationale.** Gates were shown to fail with removed docstrings,
+restored phantom headings and the ambiguous type spelling. All contract
+members render on both results; exported-object checks detect silent defects
+that a quiet Sphinx log alone misses. Establish warning freedom with a fresh
+-E build: an incremental cache does not re-emit unchanged-file warnings.
+Intermediate warning counts and repeated follow-up chronology are historical.
 
-**Decision.**  The contract is documented where it is implemented, and
-the reference is configured to show it.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-- The `Convenience` section is dissolved: its content moves onto `S`,
-  `db`, `a`/`b` as real docstrings, and what remains that is genuinely
-  about the class as a whole becomes a proper `Notes` section.
-- `S`, `db`, `f_axis`, `channels`, `excitations` get docstrings on both
-  implementations; `settings` joins the `Attributes` block.
-- The protocol's stubs get one-line docstrings and its class docstring
-  lists the members, so it reads as the contract it claims to be.
-- `docs/api/analysis.md` and `docs/api/io.md` gain
-  `:inherited-members:`.  Unlike the geometry case in [[DD-128]] this
-  is proportionate rather than wasteful: both classes inherit from
-  exactly one mixin contributing exactly four methods, and those
-  methods belong conceptually to the result object, which is where a
-  reader looks for them.  No public name is added.
-
-**Validation.**  `tests/unit/test_api_documentation.py` (39 cases):
-every contract member is documented on both implementations (dataclass
-fields via their `Attributes` entry), the protocol declares and
-documents each, both implementations satisfy it, and no class docstring
-invents a numpydoc section heading.  Both gates were shown to fail when
-the defect is reintroduced — a removed docstring and a restored
-`Convenience` heading are each caught.  Built docs: all twelve contract
-members now render on both `ScatteringTDResult` and `Project`; warning
-count unchanged at two, both pre-existing (the `GeometryModel`
-definition-list warning and an ambiguous `label` cross-reference, the
-latter verified present without the new option).
-
-**En-route fix.**  The module docstring cited the cross-check as
-`tests/unit/test_result_contract.py`; it lives in `tests/integration/`.
-
-**Follow-up (same day): the gate generalised, one more defect found.**
-Cause 3 turned out not to be a one-off.  The section-heading check and
-a new phantom-*parameter* check now sweep every object reachable
-through a namespace `__all__` (293 docstrings), and each found a case:
-
-* `GeometryModel` wrote `Example::` where numpydoc wants an `Examples`
-  section.  Napoleon ends a Parameters block only at a heading it
-  knows, so both example paragraphs became parameter *names* with the
-  example code as their description — the class advertised **five**
-  parameters where it takes three, and this was the long-standing
-  `Definition list ends without a blank line` warning in the docs build
-  (recorded as open in this file's own status notes).  Fixed; the build
-  is down to one warning, the remaining one pre-existing and unrelated
-  (an ambiguous `label` cross-reference, present before this work).
-* `Mesh.with_boundary_conditions` wrote `Note` for `Notes` — found by
-  the generalised check on its first run.
-
-Both gates were again shown to fail on the reintroduced defect.  The
-lesson worth keeping: an invalid numpydoc heading fails *silently* in
-the common case (`Convenience` produced no warning at all, just a
-phantom attribute), so a linter cannot be traded for the build log
-here.
-
-**Follow-up, 2026-08-11 — the last warning is closed and the build is
-clean.**  The remaining `label` cross-reference did not live in
-`docs/api/io.md` at all; the warning names the *page*, not the source,
-and carries no line number.  It came from the docstring of
-`Project.export_paraview`, whose parameter type read
-`str or (label, mode)`: napoleon turns a numpydoc type into a `:type:`
-field, Sphinx resolves the field's contents as a cross-reference, and
-two objects in the tree are called `label`.  The type now names only
-resolvable types and the structure moved into the description, where
-double backticks keep `(label, mode)` literal.
-
-A scan of every public docstring found **19** such type fields —
-`(fig, ax)`, `Signal1D`, `Nf` and friends.  None of them warned,
-because outside nitpicky mode Sphinx reports only what is *ambiguous*,
-never what is merely unresolvable; `label` happened to be the one name
-that exists twice.  Latent rather than harmless: a second class gaining
-a member `ax` would surface the same warning somewhere unrelated.  All
-of them are now cleaned up — nine `(fig, ax)` return blocks became
-named `fig`/`ax` entries with their real matplotlib types, five monitor
-`corners` types became `tuple of tuple` with the corner layout moved
-into the description, and the `shape (Nf,)` and
-`dict[(str, int), (Signal1D, Signal1D)]` spellings lost the parts that
-were never types.  `matplotlib` joined `intersphinx_mapping` so the new
-return types link rather than merely read correctly.
-
-`test_type_fields_name_only_resolvable_types` keeps it that way.  It
-flags a parenthesised group in a type field whose words are not
-resolvable type names — the check deliberately allows
-`tuple of (str, int)`, which is ordinary numpydoc, because `str` and
-`int` do resolve.  A first, stricter draft banned parentheses outright
-and produced fourteen false positives on correct docstrings; the list
-of resolvable names is therefore explicit in the test rather than
-implied by a bracket heuristic.  Shown to fail on the reintroduced
-`str or (label, mode)`.
-
-One habit worth keeping: warning-freedom can only be established with
-`sphinx -E`.  A cached rebuild does not repeat warnings for unchanged
-files, so a quiet log from an incremental build proves nothing.
+- `analysis/__init__.py`
+- `docs/api/analysis.md`
+- `docs/api/io.md`
+- `tests/unit/test_api_documentation.py`
+- `tests/unit/test_result_contract.py`
 
 ---
 
@@ -18905,6 +18451,16 @@ lint gate.
 `git-hooks/pre-push` (outside the repository), `design-decisions.md`
 (DD-187 status line reworded), `STATUS.md`.
 
+**Maintenance enforcement (2026-10-08).**
+`validation/tools/check_project_consistency.py` checks the existing 400-line
+STATUS limit, matching pyproject/Python/CFF versions, unique dated changelog
+entries and coverage of available local release tags. It imports no library,
+uses no network, and runs in pre-commit and CI; CI fetches the tag history.
+`tests/unit/test_project_consistency.py` exercises archive use, drift and
+malformed metadata. The DD-reference audit also runs in CI. These are
+structural maintenance gates, not numerical or documentation-completeness
+certificates; the content/range gate above remains unchanged.
+
 ## DD-242 — sphere, cone and torus faces of a facetted shape are projected onto their implicit surface
 
 **Date:** 2026-09-02.  Closes KB-042, opens KB-044.  Gates:
@@ -20785,585 +20341,281 @@ and 13, `docs/migration-0.7.md`, `README.md`.
 
 ## DD-263 — The 3D viewer after the v0.7.0 review: whole model, own toolbar, parallel in the browser
 
-**Date:** 2026-09-07
-**Status:** Accepted (developer decisions from the v0.7.0 review,
-2026-09-06/07; implemented on `feat/viewer-review-0.7`, patch after
-v0.7.0).
+**Date:** 2026-09-07. **Status:** Implemented; post-0.7 viewer review.
 
-**Problem.**  The developer's review of the viewer shipped in v0.7.0
-([[DD-259]] step 0, [[DD-261]]) listed: no isometric projection in the
-browser; no larger window; a line or point monitor crashed
-(`IndexError`); the play button ran over frames only, not over the
-phase; the readouts changed width as the frames played and pushed the
-controls about; two boxes (*Domain box* and PyVista's *bounding box*)
-that did not agree; the vectors' anchor at the arrow's tail, no cones,
-no thickness; no help anywhere (the `show()` docstrings said nothing
-about the mouse); no `show()` on an eigenmode result; and, from a look
-at the TESLA cell, no mirroring across the symmetry planes with the
-planes drawn on the CAD hull instead of at x = 0.
+**Decision/rationale.** A shared custom toolbar provides reset/isometric/axis
+views, projection/render toggles, screenshot, pop-out, help and domain box.
+Pre-register the PyVista subclass in the viewer cache; camera serialization
+must carry parallelProjection/parallelScale through server initialization.
+Later DD-264 restores ruler/HTML export and corrects screenshot/camera updates.
 
-**Findings.**  (a) The scene *is* built with parallel projection, but
-trame's camera serialiser sends position, focal point, view-up and
-clipping range only; `push_camera` (a view button) sends the
-projection, the initial scene load does not — so the browser opened in
-perspective.  (b) PyVista's toolbar shows, in client mode, a *bounding
-box* toggle that draws the bounds of the visible actors (the clipped
-half plus labels), an edge toggle, a ruler, an HTML export, and labels
-its isometric button *Perspective view*; its projection toggle starts
-`False` while the scene is parallel.  (c) `_resample` indexed a
-one-cell axis with `xc.size - 2 = -1`.  (d) The play button and the
-frame slider stood under one `if n_frames > 1`, so a single-bin
-spectrum had no play at all.  (e) The frame readout was `.4g` in a
-span without a minimum width, the position slider a bare thumb label
-without a unit.  (f) `_add_symmetry_planes` placed the sheet on the
-scene's bound, which without `mesh=` is the CAD hull ∪ field extent.
-(g) `FieldState.mirrored` (DD-259 step 1) was there; the viewer never
-derived the planes.  (h) The vtk.js bindings of trame's local view,
-read from its bundle: left drag rotate, middle pan, right/wheel zoom,
-alt + left pan, ctrl + left zoom, shift + left select, alt + shift +
-left roll; the offline viewer of the documentation pages differs
-(shift + left pan, alt + left zoom).
+With mirror=True and an available mesh, resolve declared symmetry planes,
+mirror each accessed frame with FieldState's staggering/parity (DD-259),
+fold the PEC mask onto mirrored cells and drop the incompatible half-mesh
+overlay. Use declared plane positions, not the union of CAD/field scene bounds;
+None positions fall back to domain faces. One frame remains loaded at a time;
+each symmetry plane doubles displayed region volume and can slow playback.
 
-**Decision.**  Three choices put to the developer and accepted (own
-toolbar; mirror in the viewer and draw the planes where declared;
-everything else as routine), implemented as one series:
+Eigenmodes are labeled frames including index/frequency/arb.units; complex
+Bloch modes rotate to energy maximum before phase control. DD-279 later
+separates physical mode from render_mode. Every animatable slider gets play;
+phase advances 10 degrees per tick and excludes frame playback. Fixed-width
+unit-bearing labels use spacing-aware decimals. Arrow/cone glyphs are centered
+on samples; one-cell axes get one constant raster sample instead of invalid
+interpolation indices. Help covers actual mouse/camera/cut/field behavior;
+offline documentation vtk.js bindings intentionally differ from the widget.
 
-1. **Projection in the browser.**  `_extend_camera_serializer` wraps
-   trame's camera serialiser to add `parallelProjection` and
-   `parallelScale`, installed in the registry *and* under the name the
-   registry's initialiser rebinds at every server start.
-2. **Own toolbar.**  `_viewer_class()` subclasses PyVista's vuetify3
-   viewer and overrides `ui_controls`: reset, isometric, along x/y/z,
-   projection toggle (starting in the scene's state), rendering toggle
-   in `"trame"` mode, screenshot, **pop-out** (`window.open` of the
-   widget's own URL — the trame server is an HTTP server), **help** (a
-   dialog built from `_HELP_ROWS`).  Installed by pre-registering the
-   instance in PyVista's viewer cache (`_install_viewer`) before
-   `show()` looks it up.  No bounding box, edges, ruler, HTML export.
-   *Domain box* stays: the computational domain including the
-   absorbing buffer.
-3. **Symmetry.**  `show_field(mirror=True)`: with a mesh (an eigenmode
-   result brings its own) the planes the region reaches come from
-   `resolve_mirrors`, every frame is `mirrored(*specs)` on access (one
-   frame held at a time, as before), the PEC mask is folded onto the
-   mirrored cells (`_mirrored_mask`), the scene's mesh overlay is
-   dropped (it no longer matches the frames).  All frame sources go
-   through one `_frames_from_states`.  `_add_symmetry_planes` takes the
-   declared position (`symmetry_entries`; `"SymmetryPMC"` = 0) and
-   falls back to the domain face for a `None` declaration.
-4. **Eigenmodes.**  `EigenmodeResult.show(component, **kwargs)`: the
-   modes are the frames (`kind="mode"`, label `mode i  f GHz`, index
-   first because degenerate pairs share the frequency, unit `a.u.`);
-   `frame=` picks the first mode — `mode=` is the rendering mode of
-   every `show()` and stays so; a complex Bloch mode is turned to its
-   energy maximum (`_mode_state`, the rule of `plot`) before the phase
-   slider.
-5. **Controls.**  A play button per animatable slider (`_PHASE_STEP`
-   10° per tick; the two exclude each other); readouts of fixed width
-   (`min-width` in `ch`, tabular numerals): frame labels with decimals
-   fixed per series from the smallest frame step (`.4g` for one
-   frame), `phase = 120°`, the position with its unit and as many
-   decimals as the slider step needs.
-6. **Vectors.**  Glyphs centred on the sample point (`pv.Arrow(start=(-0.5, 0, 0))`,
-   `pv.Cone`); `glyph="arrow"|"cone"`, `glyph_width=`; *Show* entries
-   renamed *Vectors on cut* and *Field vectors*.
-7. **Lines and points.**  `_arrow_grid` gives a one-cell axis one
-   raster point, `_stencil_axis` reads it as constant.
-8. **Help.**  `_HELP_ROWS` (mouse, camera, cut, show, field) in the
-   dialog, the same bindings in the `show_field`/`show_geometry`
-   docstrings and in the chapter.
+**Verdict.** Label/glyph/line-point/play/eigenmode/mirror/toolbar handlers are
+tested; Tutorial 18 shows the whole TESLA pi-mode. The original review had
+state-driven tests but browser completion was still pending at that point;
+later viewer decisions retain the subsequent browser evidence rather than
+retroactively assigning it to this first pass.
 
-**Consequences.**  A field behind symmetry planes is shown whole
-whenever the mesh is at hand; `mirror=False` restores the half.  The
-volume of a mirrored region doubles per plane, so a large monitor
-plays slower mirrored.  The docs' rotatable scenes keep vtk.js's
-bindings (documented as such).  Chrome check of the widget itself:
-open at the time of writing (the developer's look), the state-driven
-tests cover the handlers.  Gates: `tests/unit/test_field_3d.py`
-(`TestLabels`, `TestGlyphs`, `TestLineAndPointMonitors`,
-`TestPhasePlay`, `TestEigenmodes`, `TestMirror`),
-`tests/unit/test_plot_3d.py::TestToolbar`; tutorial 18 shows the
-π-mode of the TESLA cell whole.
-Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
-`src/magnelio/post/plot_field.py`, `src/magnelio/solver/eigenmode_result.py`,
-`docs/methods/viewer.md`, `examples/tutorials/plot_18_periodic_tesla_cell.py`.
+Related historical anchors: DD-261.
+
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
+
+- `docs/methods/viewer.md`
+- `examples/tutorials/plot_18_periodic_tesla_cell.py`
+- `src/magnelio/post/field_3d.py`
+- `src/magnelio/post/plot_3d.py`
+- `src/magnelio/post/plot_field.py`
+- `src/magnelio/solver/eigenmode_result.py`
+- `tests/unit/test_field_3d.py`
+- `tests/unit/test_plot_3d.py`
+
+---
 
 ## DD-264 — The second viewer pass: a screenshot of what is on screen, a stored eigenmode result that reads like the in-RAM one
 
-**Naming refinement (2026-10-04):** [[DD-279]] uses show for loaded geometry
-as well as models, removes the obsolete 3D plot entries, and separates physical
-mode from render_mode. The revised entry points are implemented.
+**Date:** 2026-09-07. **Status:** Implemented after DD-263.
+DD-279 subsequently removes obsolete 3D plot aliases, uses show for loaded
+geometry and separates physical mode from render_mode.
 
-**Date:** 2026-09-07
-**Status:** Accepted (developer findings from a second pass over the
-v0.7.0 review, 2026-09-07; implemented after [[DD-263]], patch after
-v0.7.0).
+**Decision/rationale.** Stored eigenmode projects delegate the same field/
+frequencies/modes/solver_info/plot/show contract as in-memory results.
+Other analysis kinds fail attribute lookup immediately, including hasattr,
+with the producing analysis named; adding storage must not change usability
+(DD-070/DD-224).
 
-**Problem.**  Five findings from the developer's second look.  (1)
-`AnalysisEigenmode(..., project=…).run()` returns a
-`Project`, and `Project` had no `plot`, `show`, `frequencies` or
-`field`: putting a project name on an eigenmode analysis changed what
-the returned object *can do*, while [[DD-070]]/[[DD-224]] had made
-exactly that impossible for the scattering analyses (the reader
-implements the scattering contract).  (2) The toolbar's PNG button
-raised `AttributeError: This plotter has not yet been set up and
-rendered with show()` in a notebook cell, produced a picture of the
-kernel's camera (not the browser's) in the popped-out tab, and
-sometimes did nothing at all.  (3) The projection toggle switched
-once and then stood still.  (4) The ruler and the HTML export, dropped
-with PyVista's toolbar in DD-263, were wanted back.  (5) The browser
-tab was called *PyVista*, and `GeometryModel.plot()` — the 3D view —
-carried the name every *matplotlib* drawing in magnelio carries.
+Take a screenshot where rendering occurs: client captureImage from trame's
+view yields the browser camera's PNG, while server rendering uses the kernel;
+switchable rendering chooses its active surface. A suppressed native render
+has neither a usable screenshot window nor the browser's camera. Projection
+changes explicitly push/update the camera, not only actors. Replace a cached
+viewer if a recycled plotter name belongs to another plotter.
 
-**Findings.**  (a) In client rendering the viewer is built with
-`suppress_rendering=True`, so `Plotter.render()` returns without
-rendering, `_rendered` stays `False` and `Plotter.screenshot` refuses:
-the kernel has no rendered window to photograph, and its camera is not
-the one the user turned.  PyVista hides its own PNG button in that
-mode for the same reason.  (b) trame's local view exposes
-`captureImage()`, which resolves to a PNG blob and is exactly the
-picture on screen; `utils.download` awaits a promise and accepts a
-blob as content, and the template's scope carries `trame` (its
-`refs` hold the view) — the Vue `$refs` of the toolbar's own component
-do not.  (c) `on_parallel_projection_change` ends in `update()`, which
-pushes the scene; the browser applies it to the actors and keeps its
-own camera.  Only `push_camera` carries `parallelProjection`, so the
-toggle never reached the picture (measured in Chrome: the state
-flipped, the image did not).  (d) `plotter._id_name` is
-`P_{hex(id(plotter))}_{len(_ALL_PLOTTERS)}` and a closed plotter is
-dropped from `_ALL_PLOTTERS`: six plotters opened and closed in a row
-all read as the same name.  PyVista caches one viewer per name
-forever, and `_install_viewer` honoured a cached entry — so a toolbar
-could drive a plotter that no longer exists.  That is the "sometimes
-nothing happens" of (2).
+Restore ruler and HTML export; axis labels carry display units. Set the
+Magnelio Viewer title after PyVista initialization. GeometryModel.show names
+interactive 3D; the original deprecated plot alias is migration history, not
+the current contract. vtk.js PNG anti-aliasing differs from kernel SSAA.
 
-**Decision.**
+**Verdict.** Toolbar and stored-eigenmode round-trip gates plus Chrome checks
+cover title, projection both ways, ruler, camera-correct PNG and HTML export.
+Record: `investigations/viewer-review-followup/` (internal dossier).
 
-1. **The reader is the result, for eigenmodes too.**  `Project.__getattr__`
-   serves `frequencies`, `modes`, `n_modes`, `solver_info`, `field`,
-   `show` and `plot` off `self.eigenmodes`.  A project written by
-   another analysis does not have them — the lookup fails, so
-   `hasattr` says no instead of a call failing later, and the message
-   names the analysis that wrote the project.
-2. **The screenshot is taken where the picture is drawn.**
-   `_screenshot_js` writes the button's click expression per rendering
-   mode: `trame.refs['view_…'].captureImage()` in the browser, the
-   kernel attachment in server rendering, and the switchable view picks
-   per `SERVER_RENDERING`.
-3. **The projection reaches the browser.**  `MagnelioViewer.on_parallel_projection_change`
-   follows PyVista's handler with `update_camera()` (push_camera +
-   update_image).
-4. **Ruler and HTML export return**, the ruler with the display unit in
-   its axis titles (`show_grid(xtitle="x [mm]", …)`, the unit parked on
-   the plotter at build time).
-5. **Names.**  The trame state's `trame__title` is set after PyVista's
-   `initialize` has written *PyVista* over it: `Magnelio Viewer`, plus
-   what the view shows (a field view carries its source's name).
-   `GeometryModel.show()` is the 3D view; `plot()` stays as a
-   deprecated alias — `plot` is matplotlib everywhere else in the
-   library.
-6. **A recycled plotter name is not a viewer.**  `_install_viewer`
-   replaces a cached entry whose `plotter` is not the one being shown.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-**Consequences.**  The PNG button now saves what the user sees,
-including a camera turned in the browser; the file is produced by
-vtk.js, so it carries the browser's anti-aliasing rather than the
-kernel's SSAA.  `GeometryModel.plot()` warns from this patch on; the
-examples and the chapter use `show()`.  Checked in Chrome against a
-trame server built from the same scene code
-(`investigations/viewer-review-followup/` — internal dossier): tab
-name, projection both ways, ruler, PNG with the browser camera, HTML
-export.  Gates: `tests/unit/test_plot_3d.py::TestToolbar`,
-`tests/unit/test_project_store.py::TestEigenModeRoundTrip`,
-`tests/unit/test_geometry.py::test_plot_is_a_deprecated_alias_of_show`.
-Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
-`src/magnelio/geo/__init__.py`, `src/magnelio/io/project.py`,
-`src/magnelio/analysis/eigenmode.py`, `docs/methods/viewer.md`,
-`docs/methods/projects-and-runs.md`.
+- `docs/methods/projects-and-runs.md`
+- `docs/methods/viewer.md`
+- `src/magnelio/analysis/eigenmode.py`
+- `src/magnelio/geo/__init__.py`
+- `src/magnelio/io/project.py`
+- `src/magnelio/post/field_3d.py`
+- `src/magnelio/post/plot_3d.py`
+- `tests/unit/test_geometry.py`
+- `tests/unit/test_plot_3d.py`
+- `tests/unit/test_project_store.py`
+
+---
 
 ## DD-265 — A ParaView state file is bound to its ParaView: the geometry is completed at export time, and the bake names its interpreter
 
-**Date:** 2026-09-07
-**Status:** Accepted (developer decision, 2026-09-07: all three parts;
-implemented after [[DD-264]], patch after v0.7.0).
+**Date:** 2026-09-07. **Status:** Implemented after DD-264/DD-262.
 
-**Problem.**  The developer moved from ParaView 6.0.1 to 6.1 (which
-ends the numpy 2.4 breakage [[DD-262]] shimmed) and the session came up
-worse than before: dozens of `vtkPVGeometryFilter … Missing input data`
-and `vtkPVMetaClipDataSet … Input port 0 … has 0 connections but is not
-optional`, solids without their colour or transparency, and a slice
-that could not be moved.
+**Problem/decision.** PVSM proxy names bind a state to the ParaView that
+baked it; 6.0 reflection names disappearing in 6.1 removed downstream geometry/
+clips. Build the whole geometry at export instead: clip to modeled half,
+reflect polydata with reversed winding and cache symmetry planes in VTM
+metadata. Session-side reflection proxies and the DD-169 fallback disappear.
 
-**Findings.**  (a) The `.pvsm` in the project had been baked by 6.0.1 —
-`bake_pvsm` took whatever `shutil.which("pvpython")` found, and the
-distribution build comes first on `PATH` even when the ParaView the
-developer opens is a downloaded 6.1.  (b) `simple.Reflect` resolves to
-`AxisAlignedReflectionFilter` in 6.0 and to `ReflectionFilter`
-(deprecated, to go in 6.2) in 6.1: loading the 6.0 state on 6.1 gives
-*No proxy that matches: group=filters and proxy=AxisAlignedReflectionFilter*,
-the two geometry mirrors vanish, and the clips below them are left
-without an input — the flood of errors, the half model, the dead
-slice.  Measured on the developer's own `pi_mode` export: script path
-clean and **pixel-identical** under 6.0.1 and 6.1.0 with the slice
-movable and the linked clip following; the 6.0-baked state gives
-`geometry_cut_eigenmodes` 0 points on 6.1.  (c) So the fragility is
-structural: a state file names proxies by the spelling of the release
-that wrote it and drops a renamed one together with its whole branch,
-while the generated script builds the session live and is version-free
-by construction.  (d) Separately: the developer counted 29 pipeline
-entries against DD-262's "seven".  Not a defect — that project carries
-**five** monitors (1 geometry reader + 7 + 4 + 4 + 5 + 8 = 29); the
-seven is per monitor.  The chapter now says so.
+Name the bake interpreter via pvpython or MAGNELIO_PVPYTHON. It is an argv
+prefix (string shlex-split or explicit sequence), supporting container runners,
+not only an executable path. Record the version returned after SaveState in
+paraview_open.py. The live script is the robust reconstruction path; PVSM is
+convenience for its baking version. NumPy-2.4 failures in ParaView's own C++
+filter preamble occur before injected Python, so an export script cannot
+repair them with a late shim.
 
-**Decision.**
+**Verdict/limits.** The repaired 6.0.1-baked state opens on 6.1 with whole
+geometry and populated proxies; live scripts were pixel-identical with movable
+linked cuts. Reverse-version Python filters still hit the NumPy issue, not
+geometry loss. Geometry export adds a clip/transform and doubles tessellation
+per symmetry plane. Pipeline counts are per monitor: a five-monitor example's
+29 entries did not contradict the earlier seven-per-monitor figure. Version/
+argv/mirrored-geometry/session gates cover the change; record:
+`investigations/viewer-review-followup/MEASUREMENTS.md` (internal record).
 
-1. **The geometry is completed where the fields already are — at export
-   time.**  `export_vtm(..., mirrors=…)` clips every block to the
-   simulated half and appends its reflection (`_half_and_mirror`:
-   `vtkClipPolyData`, `vtkTransformPolyDataFilter`, and
-   `vtkReverseSense` because a mirror reverses the winding of every
-   triangle), so `geometry.vtm` holds the whole model and the session
-   builds no reflection of its own.  `_ensure_geometry_vtm` records the
-   planes in `geometry.vtm.json` and rebuilds when they differ, so a
-   file written before this DD is not shown as a half model.  The
-   session loses `<label>_symclip_<i>` and `<label>_mirror_<i>` per
-   plane, and with them the only version-fragile proxy it had.
-2. **The bake names its interpreter.**  `export_paraview(pvpython=…)`,
-   `export_paraview_eigenmodes(pvpython=…)` and `MAGNELIO_PVPYTHON`
-   (`resolve_pvpython`); the version the bake ran under travels back on
-   stdout (`_VERSION_MARKER`, printed by the script after `SaveState`)
-   and is written into the header of `paraview_open.py`
-   (`_stamp_version`), which also states in prose that the state is
-   bound to it and the script is not.  *Amended 2026-09-07:* the
-   setting is a **command**, not only a path — `resolve_pvpython`
-   returns the argv prefix (a string is `shlex.split`, a sequence is
-   taken as given).  A sandboxed or containerised ParaView has no
-   `pvpython` file to point at and is reached through its runner
-   (`flatpak run --command=pvpython org.paraview.ParaView`, measured
-   against the developer's Flathub build: reports 6.1.1 while the
-   Flathub metadata still says 6.1.0, and its `filesystems=home`
-   permission covers a project under `$HOME`).
-3. **The chapter says which file to open.**  A new section *Which of
-   the two files to open* in `docs/methods/sources-monitors.md`:
-   `paraview_open.py` is the robust path, `paraview.pvsm` the
-   convenience bound to one release; tutorial 07 says the same.  The
-   `usercustomize.py` advice for the numpy 2.4 breakage is replaced by
-   the finding that a state file cannot be helped there at all —
-   ParaView's own filter preamble (`from paraview.vtk.numpy_interface.algorithms import *`,
-   a hardcoded C++ string) runs before the first line of any script of
-   ours, so no `Script` or `RequestInformationScript` can carry the
-   shim.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-**Consequences.**  Verified end to end on a copy of the developer's
-`pi_mode` project: the state **baked by 6.0.1 now loads on 6.1.0** with
-all eight proxies carrying data and the geometry whole
-(x, y ∈ [−0.1033, 0.1033] m against the simulated quarter) — the
-scenario that produced the report.  The reverse direction (6.1-baked
-opened on 6.0.1) still loses the *Python filters* to the numpy 2.4
-breakage, but no longer the geometry.  The pipeline is two proxies per
-symmetry plane shorter.  The mirroring costs one clip and one
-transform per solid per plane at export time and doubles the
-tessellated geometry per plane on disk (kilobytes).  The DD-169
-warning path for a renderer without a usable reflection filter is gone
-with the filter.  Gates:
-`tests/unit/test_paraview_export.py::test_export_vtm_completes_the_model_across_symmetry_planes`,
-`::test_the_baking_paraview_is_named_in_the_script`,
-`::test_the_bake_interpreter_can_be_named`,
-`tests/unit/test_symmetry_declaration.py` (the session builds no
-reflection); record `investigations/viewer-review-followup/MEASUREMENTS.md`
-(internal record).
-Files: `src/magnelio/io/paraview.py`, `src/magnelio/io/project.py`,
-`docs/methods/sources-monitors.md`,
-`examples/tutorials/plot_07_project_store.py`.
+- `docs/methods/sources-monitors.md`
+- `examples/tutorials/plot_07_project_store.py`
+- `geometry.vtm.json`
+- `src/magnelio/io/paraview.py`
+- `src/magnelio/io/project.py`
+- `tests/unit/test_paraview_export.py`
+- `tests/unit/test_symmetry_declaration.py`
+- `usercustomize.py`
+
+Historical artifact anchors (internal records where applicable): `geometry.vtm`, `paraview.pvsm`, `paraview.vtk`.
+
+---
 
 ## DD-266 — One cutting plane for the session, and every set of arrows coloured when it is made
 
-**Date:** 2026-09-07
-**Status:** Accepted (developer findings after the [[DD-265]] pass,
-2026-09-07; patch after v0.7.0).
+**Date:** 2026-09-07. **Status:** Implemented; refines DD-265.
 
-**Problem.**  Three findings from the developer's first session on
-ParaView 6.1.  (1) A `geometry_cut_<monitor>` per monitor, each with
-its own registered plane link — five monitors, five geometry clips,
-five links, and no single plane that opens the solids where the field
-is looked at.  (2) "Most arrows have `coloring = Solid Color` instead
-of the field strength": only the *first shown* monitor's pair was
-given a representation, so every hidden glyph set — the imaginary
-part, the volume arrows, every other monitor — came up in ParaView's
-flat default when it was switched on, and had to be coloured by hand.
-(3) A `vtkContext2DScalarBarActor` warning that `%-#6.1e` is a printf
-format, deprecated in 6.1.
+**Decision/rationale.** One geometry_cut and one cut_plane proxy link connect
+all monitor slices: a session has one movable cutting plane instead of one
+independent clip/link per monitor. A monitor region outside that plane shows
+an empty slice until the shared plane reaches it; this is deliberate.
 
-**Findings.**  (a) `vtkSMProxyLink` takes any number of proxies, so one
-link can hold the geometry clip's plane and every monitor's slice
-plane together; measured, moving one slice drags the other slice and
-the clip.  (b) `simple.GetDisplayProperties(proxy, view)` creates a
-representation without showing it (its `Visibility` is then set to 0),
-so the colouring can be fixed at build time; a representation not
-asked for is not stored in the state at all, which is why the hidden
-sets had none.  ParaView's own auto-colouring only runs for a
-representation that is shown, which is exactly why the *first* pair
-looked right and nothing else did.  (c) The scalar-bar warning is not
-ours: 6.1's own defaults are already `{:<#6.1e}`, 6.0's are
-`%-#6.1e`, and the warning appears only when a state **baked by 6.0**
-is opened on 6.1 — the version binding of [[DD-265]].  Measured: a
-fresh 6.1 export, live script and baked state alike, raises none.
+Create/color every glyph and field-sheet representation before setting hidden
+visibility, including imaginary/volume sets. Fix transfer ranges before arrays
+are built; share one visible scalar bar but prefer separate representation
+color maps so same-named arrays from different monitors do not share caps.
+Hidden sets otherwise had no saved representation and reopened as Solid Color.
+The 6.0 printf scalar-bar-format warning on 6.1 was a state-version issue,
+not a new formatting defect; fresh 6.1 script/state exports were warning-free.
 
-**Decision.**
+**Verdict/cost.** Session gates assert one cut/link and every glyph colored
+when revealed. Each glyph pays one pipeline update at export (three-monitor
+example plus bake 4.2 s); extra per-monitor clips/links are removed.
 
-1. **One cut.**  `clip_geometry` makes a single `geometry_cut` at the
-   first monitor's plane, and `link_planes("cut_plane", …)` registers
-   one link over that plane and every `<monitor>_slice` plane.  A
-   session has one cutting plane, whichever monitor is on show.
-2. **Colour at build time.**  `coloured(proxy, array, visible, bar)`
-   replaces `show_coloured`: it fixes the transfer function (scaled
-   `0 … cap` before the array is attached, so no unbuilt data is asked
-   for its range), colours the representation and *then* sets its
-   visibility.  Applied to every glyph set — cut arrows, the
-   imaginary part, the volume arrows — and to the field sheet, which
-   now carries the same magnitude on the same scale explicitly rather
-   than by ParaView's default.  One scalar bar, on the visible pair.
-   The transfer function is per representation (`UseSeparateColorMap`,
-   best-effort): monitors of one run share an array *name* but not a
-   cap, and a shared map would price one monitor's arrows on another's
-   scale.
-3. **Nothing to fix for the scalar bar** beyond DD-265: the chapter
-   already says to bake with the ParaView that opens the session.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-**Consequences.**  The pipeline browser loses one clip and one link
-per monitor beyond the first.  Every representation is built at export
-time, so the export pays one pipeline update per glyph set (measured:
-4.2 s for a three-monitor run including the bake) and the state file
-carries them.  The linked plane means a monitor whose region does not
-reach the shared plane shows an empty slice until the plane is dragged
-into it — the price of one cutting plane, and the developer's ask.
-Gates: `tests/integration/test_paraview_session.py::test_every_glyph_comes_up_coloured_by_its_field`
-(one `geometry_cut`, one `cut_plane` link, no glyph on `Solid Color`),
-`::test_pvsm_bake` (the per-monitor clips and links are gone).
-Files: `src/magnelio/io/paraview.py`, `docs/methods/sources-monitors.md`.
+- `docs/methods/sources-monitors.md`
+- `src/magnelio/io/paraview.py`
+- `tests/integration/test_paraview_session.py`
+
+---
 
 ## DD-267 — The phase of a picture is ωt: e^{-jωt} phasors read forward in time
 
-**Date:** 2026-09-07
-**Status:** Accepted (developer findings on the v0.7.0 viewer,
-2026-09-07; patch after v0.7.0).
+**Date:** 2026-09-07. **Status:** Implemented; the initial reconstruction
+sign was superseded by DD-268 the same day before release.
 
-**Problem.**  Three findings from the developer's session with the new
-viewer.  (1) "With the phase animated the wave seems to run backwards,
-toward the exciting port instead of away from it."  (2) The toolbar of
-`model.show()` is clipped along the top — the floating labels *Cut* and
-*Show* are cut in half.  (3) `monitor.show()` read back from a project
-has no real docstring: `geometry=` is what draws the model and is
-undocumented, and `mesh=` "is accepted without error but not used".
+**Surviving decision.** Picture phase is omega*t, so reconstruction must
+match the accumulator's convention and animate time forward. The initial
+positive-sign DFT yielded exp(-jwt) phasors and required exp(-j*phase);
+DD-268 changes the DFT to the engineering negative sign, making current
+reconstruction Re(F*exp(+j*phase)). The three plot/view/snapshot evaluators
+use one convention. A traveling-wave crest measurement, not a magnitude
+plot, pins the sign; DD-173 far fields/DD-183 transit phases were related
+consumers and are re-signed by DD-268.
 
-**Findings.**
+Allow the shared toolbar card to grow and wrap, rather than clipping select
+labels at 36 px; the field row keeps its own full-width line (DD-261).
+Document geometry versus mesh overlays on live/stored monitor show methods.
+Mirroring drops the half-mesh grid overlay: show_grid warns and names
+mirror=False, instead of silently ignoring a requested grid. The half-box
+test had 99 grid cells unmirrored and none mirrored before the warning.
 
-(a) The running DFT accumulates `Σ F(t) e^{+jωt} dt`
-(`monitors/_dft.py`), so a bin of `A·cos(ωt+φ)` is `(T/2)·A·e^{-jφ}`:
-the stored phasors are the *conjugates* of the engineering `e^{+jωt}`
-phasor, i.e. phasors of the `e^{-jωt}` convention.  The instant of such
-a pattern is `Re(F e^{-jωt})`.  Every picture applied `Re(F e^{+jφ})`
-instead, which is that instant at `-ωt`: the animation ran time
-backwards, exactly as reported.  Measured on a wave whose direction is
-known — `cos(ωt-kx)` accumulated over 2000 steps, then reconstructed:
-the crest walked toward `-x` at `+jφ` and to `phase/360` of a
-wavelength per step at `-jφ`, matching the analytic wave to 1 % of a
-wavelength.  The convention itself was never in doubt: [[DD-173]]'s
-far-field transform conjugates in and out for exactly this reason, and
-[[DD-183]] fixed the transit phase `e^{-jk_B z}` for a beam toward `+z`
-from the same sum.  Only the reconstruction was reading it the wrong
-way round.
+**Verdict.** Traveling-wave, frequency-view and field-series gates cover
+reconstruction; phase-independent magnitudes were unchanged by this picture
+fix. The later accumulator convention change, not this entry, controls
+complex-field/store migration. Keep the supersession explicit to avoid
+reintroducing the historical minus-sign reconstruction.
 
-(b) PyVista lays its menu out as a `VCard` of fixed `height: 36px`
-holding rows with `flex-wrap: nowrap`.  A Vuetify select's floating
-label needs more than 36 px, so it is clipped, and controls that do not
-fit are unreachable.  The field view already worked around it
-([[DD-261]]) with a `:has(.mio-field-row)` rule — a card carrying a
-*field* row grew, a card carrying only the cut row did not.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-(c) `mesh=` *is* used for a monitor: it cuts the PEC cells out of the
-sheet, it names the symmetry planes the field is continued across, and
-with `show_grid=True` it draws the grid cells.  But `show_field` drops
-the mesh once the frames are mirrored ("the frames span the whole model
-now; the mesh does not"), and dropped `show_grid` with it in silence.
-Measured on the half-box fixture: `show_grid=True` yields a `grid_cut`
-actor of 99 cells at `mirror=False` and no actor at all at
-`mirror=True`.
+- `docs/methods/sources-monitors.md`
+- `docs/methods/viewer.md`
+- `monitors/_dft.py`
+- `src/magnelio/fields/series.py`
+- `src/magnelio/io/project.py`
+- `src/magnelio/monitors/_frame_plots.py`
+- `src/magnelio/monitors/field_frequency.py`
+- `src/magnelio/monitors/field_time.py`
+- `src/magnelio/post/field_3d.py`
+- `src/magnelio/post/plot_3d.py`
+- `tests/unit/test_field_3d.py`
+- `tests/unit/test_field_series.py`
+- `tests/unit/test_monitors.py`
 
-**Decision.**
-
-1. **`phase` is ωt.**  `Re(F · exp(-j·phase))` in all three places that
-   evaluate a phasor — `monitors/_frame_plots.at_phase` (2D plots and
-   `interact`), `post/field_3d._FieldView._instant` (the viewer and its
-   phase play), `fields/series._FieldSeries._snapshot`
-   (`FieldSpectrum.snapshot`).  A rising phase is time running forward,
-   so the play button walks a wave away from the port that launched it.
-   The convention is stated once for users in
-   `docs/methods/sources-monitors.md`, beside the sum that fixes it.
-   **Amended by [[DD-268]]** (the same day, before any release): the
-   sign is `+j`, because the accumulator now sums `e^{-jωt}` and its
-   bins are `e^{+jωt}` phasors.  The finding — that `phase` is ωt and
-   that the reconstruction must read the bins with the sign the
-   accumulator gave them — stands, as do decisions 2 to 4.
-2. **Room for the toolbar.**  The cut row — which every viewer of the
-   module carries — is wrapped in `div.mio-menu-row`, and
-   `_viewer._MENU_CSS` lets the card grow (`height: auto`,
-   `overflow: visible`) and its rows wrap.  The field row keeps
-   `flex-basis: 100%` to claim a line of its own and no longer injects
-   a stylesheet of its own.
-3. **Say what is dropped.**  `show_grid=True` on a mirrored field warns
-   that the mesh covers the modelled part only and names `mirror=False`
-   as the way to see the grid.
-4. **Document the two overlays where they are read.**  The `show`
-   methods of `_LoadedFieldMonitor` and `_LoadedFreqMonitor` (and, more
-   briefly, the in-RAM monitors and `_FieldSeries`) say that a monitor
-   carries the field alone, that `geometry=` draws the model, and what
-   `mesh=` brings.
-
-**Consequences.**  A picture at a phase other than 0 or 180 degrees is
-the mirror in time of what the same call gave before — a behaviour
-change, called out in the changelog under *Fixed*.  Magnitudes,
-S-parameters and far fields are untouched: none of them goes through
-these three functions, and the far-field transform's own conjugation
-([[DD-173]]) is unchanged (removed by [[DD-268]], which made it
-unnecessary).  Gates:
-`tests/unit/test_monitors.py::TestDFTAccumulator::test_a_rising_phase_runs_the_wave_forward`
-(the travelling-wave measurement above),
-`tests/unit/test_field_3d.py::TestFrequencyMonitor::test_phase_turns_the_pattern`
-and `tests/unit/test_field_series.py` (both re-signed).
-Files: `src/magnelio/monitors/_frame_plots.py`,
-`src/magnelio/post/field_3d.py`, `src/magnelio/post/plot_3d.py`,
-`src/magnelio/fields/series.py`, `src/magnelio/monitors/field_frequency.py`,
-`src/magnelio/monitors/field_time.py`, `src/magnelio/io/project.py`,
-`docs/methods/viewer.md`, `docs/methods/sources-monitors.md`.
+---
 
 ## DD-268 — Frequency-domain fields are e^{+jωt} phasors: the running DFT sums e^{-jωt}
 
-**Date:** 2026-09-07
-**Status:** Accepted (developer decision the same day as [[DD-267]],
-before any release; branch `feat/phasor-convention-0.8`, shipped in
-0.8.0).
+**Date:** 2026-09-07. **Status:** Released in 0.8.0; amends DD-267.
 
-**Problem.**  [[DD-267]] settled how a picture reads a phasor and, in
-doing so, wrote down what the library had been doing all along: the
-running DFT sums `Σ F(t) e^{+jωt} dt`, so a field monitor's bins are
-`e^{-jωt}` phasors.  Nothing else in the library speaks that
-convention.  The S-parameter path transforms its port signals with
-`Signal1D.at_frequencies` (`Σ x_n e^{-2πjft_n}`), `Waveform.spectrum`
-matches it, `cw_lockin_phasors` returns `a − jb` from a cos/sin fit,
-and the modal half-step rotation is `e^{+jω dt/2}` — all `e^{+jωt}`.
-The consequences were live: the phase of a field monitor and the phase
-of a port voltage at the same frequency were conjugates of each other,
-the near-to-far-field transform had to conjugate its inputs at the
-entrance and its result at the exit to reach the textbook algebra
-([[DD-173]]), a user computing a circular-polarisation handedness from
-`E_theta`/`E_phi` with a textbook formula got the wrong hand, and the
-transit phase of a beam toward `+z` had to be written `e^{-jk_B z}`
-([[DD-183]]) where every accelerator text writes `e^{+jk_B z}`.  The
-developer asked which convention the library works in; the honest
-answer was "two".
+**Decision/rationale.** Frequency fields use engineering exp(+jwt) phasors,
+as port signals/waveforms already did. DFTAccumulator, source_spectrum and
+wall-loss accumulation sum F(t)*exp(-j*omega*t)*dt; a cosine A*cos(omega*t+phi)
+gives (T/2)*A*exp(+j*phi). Pictures read Re(F*exp(+j*phase)). NTFF formulas
+apply directly without DD-173's former input/output conjugations; outward
+radiation is A*exp(-jkr)/r and +z beam transit uses exp(+j*k_B*z) (DD-183).
+Port DTBC/pencil/source spectra remain in their existing rFFT convention;
+DD-198's incident ratio is a magnitude and does not change.
 
-**Findings.**
+**Exact store migration.** Schema remains 3.0 rather than refusing convertible
+0.7 files. fields_freq/wall_loss/far_field files carry phasor_convention=
+exp(+jwt); absence means old raw bins, conjugated at their single load/resume
+read sites. Unknown markers raise ProjectSchemaError. Divisors are recomputed
+from stored real waveforms; conjugating both complete and partial raw sums
+converts them exactly. Checkpoints contain no independent accumulator bins
+for these monitors, so the three result files define the boundary.
 
-(a) The sign lives in exactly two kernels: `monitors/_dft.py`
-(`DFTAccumulator.accumulate` and `source_spectrum`, which feed the
-frequency monitors and the far-field monitor) and a private copy in
-`monitors/wall_loss.py`.  Everything downstream inherits it.  The port
-machinery (`dtbc`, `zeta_pencil`, `dispersive_source`,
-`band_source_spectrum`) is in the numpy-rfft world already and reads no
-DFT bin; the DD-198 incident ratio is a magnitude.
+**Verdict/meaning change.** Complex fields, patterns and imaginary export
+arrays are conjugated relative to 0.7; power/energy/magnitude/gain/directivity
+and S-parameters are unchanged. Direct field/port phases and textbook
+polarization formulas now agree. Legacy mutated-file gates fail without
+conversion and pass with it; partial resumes are bit-exact. Independent
+Hertzian-dipole absolute phase and opposite-beam stripline cancellation pin
+the sign, alongside Signal1D/analytic-cosine tests. The Cargo pre-1.0 minor
+release reflects changed meaning despite unchanged call signatures;
+docs/migration-0.8.md explains it.
 
-(b) Most consumers cannot tell the two signs apart: `Re Σ e·h*`
-(`wall_loss`, `surface_power`, [[DD-260]]'s `flux()`), `|·|²`
-([[DD-260]]'s `energy()`, `P_rad`, `directivity`, the pattern
-magnitudes).  What changes is every complex value a user reads:
-`.spectrum`/`.spectrum_raw`, `E_theta`/`E_phi`, the `_im` arrays of the
-ParaView export.
+Related historical anchors: DD-260.
 
-(c) The store converts exactly.  A result file holds *raw* bins and no
-divisor; the divisor is recomputed on read from the run's stored real
-excitation waveform, so an old file read with the new divisor is
-exactly `conj(spectrum)`.  Conjugating the bins on read recovers the
-correct result to the last bit — of a finished transform as much as of
-a partial sum a resume continues, because the conjugate of a partial
-sum in the old kernel *is* the partial sum in the new one.
-`checkpoint.h5` carries no accumulator bins (the frequency, wall-loss
-and far-field monitors have no `state_dict`; a resume re-reads the
-three result files), so those three files are the whole version
-boundary.  Measured: the five legacy-store gates below fail on
-mutated-to-old files when the conjugation hook is removed and pass with
-it, and the resumed runs are bit-exact against uninterrupted ones.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-(d) Two independent measurements pin the absolute sign, and both were
-already in the tree pointing the other way: the analytic Hertzian
-dipole ([[DD-173]]), whose `E_theta` at the equator must be Balanis 4-2
-verbatim, and the stripline directivity ([[DD-183]]), where the wrong
-transit-phase sign swaps which beam direction sees its two gap kicks
-cancel.
-
-**Decision.**
-
-1. **One kernel sign.**  `DFTAccumulator.accumulate`, `source_spectrum`
-   and `MonitorWallLoss.record` sum `F(t) e^{-jωt} dt` — identical to
-   `Signal1D.at_frequencies` times `dt`.  A bin of `A·cos(ωt+φ)` is
-   `(T/2)·A·e^{+jφ}`.
-2. **Pictures read `Re(F e^{+jφ})`** in the three phasor evaluators, the
-   sign amendment to [[DD-267]] decision 1; `phase` still means ωt.
-3. **No conjugation in the NTFF transform.**  `post/far_field.py`
-   applies the textbook formulas verbatim; the returned pattern is a
-   phasor like every other frequency-domain quantity, and
-   `E(r) = A e^{-jkr}/r` — which its own docstring already claimed.
-4. **The store says which convention it holds.**  Schema stays `"3.0"`:
-   a bump would refuse 0.7 stores whose data is exactly convertible.
-   `fields_freq.h5`, `wall_loss.h5` and `far_field.h5` carry a file
-   attribute `phasor_convention = "exp(+jwt)"`
-   (`io/_schema.PHASOR_CONVENTION`), read through
-   `stored_phasors_conjugated`: absent means a file of the older era and
-   its complex data is conjugated on read; an unknown value raises
-   `ProjectSchemaError` rather than degrading silently.  The hooks sit
-   at the single read site of each file — `_LoadedFreqMonitor._hydrate`,
-   `_read_far_field_dump` (which serves both the loader and the resume),
-   and the two `_load_*_accumulators` of `analysis/time_domain.py`.
-5. **Release 0.8.0** with `docs/migration-0.8.md`: the complex values a
-   user reads are conjugated, which is a breaking change of meaning
-   under the Cargo reading even though no call signature moves.
-
-**Consequences.**  Every complex field the library hands out is the
-conjugate of what 0.7 returned; magnitudes, power, energy, gain,
-directivity and S-parameters are unchanged.  A monitor's phase may now
-be compared directly with a port voltage's phase at the same frequency,
-and textbook post-processing formulas apply as written.  Stored runs
-need no re-run and resume exactly.  The two in-tree consumers of the
-old sign were re-signed with the convention: the how-to's
-`beam_voltage` (`e^{+jk_B z}` for a beam toward `+z`) and the Hertzian
-validation script (`arg(E_θ / j)` reads 0° where it read 180°).
-Gates: `tests/unit/test_monitors.py::TestDFTAccumulator::
-test_matches_signal1d_at_frequencies` (the accumulator *is*
-`Signal1D.at_frequencies` times `dt`) and
-`::test_a_cosine_bin_is_the_engineering_phasor` (the absolute sign),
-`tests/unit/test_ntff_transform.py::TestFreeDipole::
-test_phase_convention_is_pinned` (Balanis verbatim, no conjugation),
-`tests/integration/test_project_freq.py::
-test_legacy_phasor_file_reads_conjugated`,
-`::test_legacy_partial_file_resumes_bit_exact`,
-`::test_unknown_phasor_convention_is_rejected`,
-`tests/integration/test_far_field_store.py::
-test_legacy_phasor_file_reads_conjugated`,
-`::test_legacy_partial_file_resumes_bit_exact`, and
-`tests/integration/test_wall_loss_store.py::
-test_legacy_partial_file_resumes_bit_exact`.
-Files: `src/magnelio/monitors/_dft.py`,
-`src/magnelio/monitors/wall_loss.py`,
-`src/magnelio/monitors/_frame_plots.py`,
-`src/magnelio/monitors/field_frequency.py`,
-`src/magnelio/post/far_field.py`, `src/magnelio/post/field_3d.py`,
-`src/magnelio/post/plot_3d.py`, `src/magnelio/fields/series.py`,
-`src/magnelio/io/_schema.py`, `src/magnelio/io/project.py`,
-`src/magnelio/io/paraview.py`, `src/magnelio/analysis/time_domain.py`,
-`docs/migration-0.8.md`, `docs/methods/sources-monitors.md`,
-`docs/methods/far-field.md`, `docs/methods/viewer.md`,
-`examples/howto/plot_stripline_pickup_kicker.py`,
-`validation/current_path_hertzian_dipole.py`.
+- `analysis/time_domain.py`
+- `checkpoint.h5`
+- `docs/methods/far-field.md`
+- `docs/methods/sources-monitors.md`
+- `docs/methods/viewer.md`
+- `examples/howto/plot_stripline_pickup_kicker.py`
+- `far_field.h5`
+- `fields_freq.h5`
+- `monitors/_dft.py`
+- `monitors/wall_loss.py`
+- `post/far_field.py`
+- `src/magnelio/analysis/time_domain.py`
+- `src/magnelio/fields/series.py`
+- `src/magnelio/io/_schema.py`
+- `src/magnelio/io/paraview.py`
+- `src/magnelio/io/project.py`
+- `src/magnelio/monitors/_dft.py`
+- `src/magnelio/monitors/_frame_plots.py`
+- `src/magnelio/monitors/field_frequency.py`
+- `src/magnelio/monitors/wall_loss.py`
+- `src/magnelio/post/far_field.py`
+- `src/magnelio/post/field_3d.py`
+- `src/magnelio/post/plot_3d.py`
+- `tests/integration/test_far_field_store.py`
+- `tests/integration/test_project_freq.py`
+- `tests/integration/test_wall_loss_store.py`
+- `tests/unit/test_monitors.py`
+- `tests/unit/test_ntff_transform.py`
+- `validation/current_path_hertzian_dipole.py`
+- `wall_loss.h5`
 
 ---
 
@@ -21736,49 +20988,33 @@ worth a factor 1500 before it was caught.
 
 ## DD-274 — Display destination and rendering backend are separate; scripts open the complete viewer in a browser
 
-**Date:** 2026-09-23.
-**Status:** Implemented.
-**Files:** `src/magnelio/post/plot_3d.py`,
-`src/magnelio/post/field_3d.py`, `src/magnelio/plots/__init__.py`,
-`docs/methods/viewer.md`.
-**Amends:** [[DD-190]] (a script no longer defaults to the native VTK
-window).
+**Date:** 2026-09-23. **Status:** Implemented; amends DD-190.
 
-**Problem.**  The view had only two destinations: a trame widget when
-`IPKernelApp` identified a Jupyter kernel, and PyVista's native VTK window
-otherwise.  An editor REPL can itself use ipykernel without implementing an
-ipywidgets frontend.  Zed therefore received Magnelio's asynchronously
-filled `VBox`, rendered only its representation (`VBox()`), and never showed
-the view.  The native window remained usable from a script, but it did not
-carry Magnelio's cut, object-group, field and export controls.
+**Decision/rationale.** Separate display target (auto/inline/browser/native)
+from client/server/trame/static/none render_mode (renamed by DD-279).
+Scripts and identified Zed kernels default to the browser because native
+VTK lacks the full toolbar and some ipykernel editor frontends cannot display
+widgets. Other notebook kernels stay inline; configure_viewer sets a default
+for unidentified editors. Browser views share the notebook's named layout,
+reuse a loopback aiohttp server on a daemon thread and open its URL. Native
+remains explicit fallback with a warning if trame is absent; render_mode=none
+returns the plotter for tests/screenshots. Gallery builds start no browser.
 
-**Decision.**  Destination is now `target` (`"auto"`, `"inline"`,
-`"browser"`, `"native"`), independent of the existing rendering `mode`
-(`"client"`, `"server"`, `"trame"`, `"static"`, `"none"`).  A browser target
-builds the same named trame layout and toolbar as the notebook, starts its
-aiohttp server on a daemon thread bound to loopback, and opens that layout's
-URL in the system browser.  The shared server is reused by later views.
-Scripts and Zed kernels choose the browser under `auto` (Zed's connection
-file is named `kernel-zed-*.json`); other Jupyter kernels remain inline.
-`plots.configure_viewer(target=...)` sets the process default for editors
-whose kernels carry no such identity.  `target="native"` retains the VTK window,
-and a missing trame stack warns and falls back to it.  `mode="none"` remains
-the test/screenshot escape hatch and always returns the plotter.
+**Compatibility.** PyVista 0.49 extracts trame integration into trame-pyvista,
+which the jupyter extra/development environment install; register the toolbar
+in that package's registry when present. PyVista 0.48 retains its built-in
+integration. Identifying a kernel is about destination support, not a new
+rendering/solver backend; scripts and notebooks retain the same controls.
 
-**Compatibility amendment (same day).**  PyVista 0.49 moved its trame
-integration out of `pyvista.trame` into the separately distributed
-`trame-pyvista`.  It is part of Magnelio's `jupyter` extra and the development
-environment now; without it PyVista's compatibility import fails before the
-viewer can apply its native fallback.  PyVista 0.48 keeps working because the
-integration remains built in there.  The 0.49 compatibility module does not
-expose the viewer registry; installing the custom toolbar therefore targets
-the extracted package's registry when present.
+**Historical implementation/validation anchors** (retained as recorded;
+private probes belong to the internal dossiers named in the entry):
 
-**Consequences.**  The standard script view and the notebook view now have
-the same controls and client/server rendering choices.  Zed needs no switch;
-users of an unidentified editor select the browser once per kernel instead of
-adding a destination to every `show()`.  Documentation builds remain on PyVista's gallery path; no browser
-or server is started for them.
+- `docs/methods/viewer.md`
+- `src/magnelio/plots/__init__.py`
+- `src/magnelio/post/field_3d.py`
+- `src/magnelio/post/plot_3d.py`
+
+---
 
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
