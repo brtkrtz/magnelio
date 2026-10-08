@@ -31,6 +31,8 @@ Target: resonance in the 2.45 GHz ISM band.
 # faces** are declared CPML; the mesher appends the absorbing layer
 # outside the declared domain, so the air brick below is the usable
 # free-space region, not something the layer eats into.
+# Absorber profiles follow the electric and magnetic fields at their
+# staggered positions, so opposing layers share the same physical grading.
 #
 # The wire itself is a :class:`~magnelio.geo.ThinWire`: a sub-cell
 # conductor along a curve.  Its 0.5 mm radius is far below any

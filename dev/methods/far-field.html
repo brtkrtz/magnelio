@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -640,6 +654,14 @@ two adjacent cell layers onto that plane, which keeps the surface
 exactly closed and second-order accurate on graded grids.  The
 memory cost is one complex sample per frequency and surface cell —
 negligible next to a volume monitor.</p>
+<p>The DFT covers the recorded interval. A field that remains static at the
+end is also cut off by that interval; extending the run alone does not
+make its Fourier boundary term vanish. In particular, a unipolar current
+on an open impressed-current path leaves endpoint charge. For its AC
+radiation pattern, use a pulse with negligible net integrated current
+so the electrostatic tail is negligible, and record the radiating
+response completely. The monitor applies no automatic static-tail
+completion (in-house finite-record analysis).</p>
 <p>After the run, <code class="docutils literal notranslate"><span class="pre">monitor.result(f)</span></code> performs the transform and returns
 a <code class="docutils literal notranslate"><span class="pre">FarFieldResult</span></code> with the complex patterns <span class="math notranslate nohighlight">\(E_\theta\)</span>, <span class="math notranslate nohighlight">\(E_\varphi\)</span>
 on a spherical grid (ISO convention: <span class="math notranslate nohighlight">\(\theta\)</span> from the <span class="math notranslate nohighlight">\(+z\)</span> axis,

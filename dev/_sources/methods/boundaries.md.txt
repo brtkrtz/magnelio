@@ -4,8 +4,7 @@
 
 Open-region truncation uses the **convolutional perfectly matched
 layer (CPML)** of Roden and Gedney {cite}`rodengedney2000`
-(`boundaries/cpml.py`, chosen over the uniaxial PML in
-DD-001).  The implementation carries the full **complex
+(`boundaries/cpml.py`). The implementation carries the full **complex
 frequency-shifted (CFS)** stretching function
 
 $$
@@ -22,8 +21,27 @@ $\alpha$; grading choices follow the CPML literature
 {cite}`rodengedney2000,taflovehagness2005`.
 The PML
 concept itself originates with Bérenger {cite}`berenger1994`;
-the uniaxial variant used for comparison in DD-001 is
+the uniaxial variant is
 Gedney's {cite}`gedney1996`.
+
+The electric and magnetic updates sample each profile at their own
+staggered positions: transverse electric-field nodes and magnetic-field
+cell centres along the layer normal. Depth is measured from the physical
+interface, including on a graded grid. Opposing layers therefore use the
+same physical profile under reflection. This matters when a resonator
+repeatedly encounters the absorber or when comparing a full model with
+its symmetry reduction. The grid, materials and excitation must also
+respect that symmetry.
+
+`R_target` sets the continuous grading strength; achieved reflection also
+depends on the mesh, frequency, incidence angle and layer thickness. Check
+the result with additional clearance or more absorbing cells when boundary
+reflections could affect the quantity of interest. Tutorial 08 shows the
+open-region setup and clearance around a radiator.
+
+Existing CPML checkpoints retain the profile-sampling rule they were
+created with when resumed. New runs use staggered sampling; start a new
+run to use it for an older model.
 
 ## PEC, PMC and periodic walls
 

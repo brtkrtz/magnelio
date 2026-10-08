@@ -160,6 +160,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -172,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -367,6 +374,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -699,6 +713,8 @@ then retrieve the same physical face in its new position.</p>
 </span>    <span class="o">.</span><span class="n">straight_to_plane</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">x</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">20e-3</span><span class="p">)</span><span class="w">
 </span><span class="p">)</span><span class="w">
 </span><span class="n">extension</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-method reference internal" href="../api/geo.html#magnelio.geo.FaceRef.swept" title="magnelio.geo.FaceRef.swept"><span class="n">end</span><span class="o">.</span><span class="n">swept</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-method reference internal" href="../api/geo.html#magnelio.geo.Path.curve" title="magnelio.geo.Path.curve"><span class="n">route</span><span class="o">.</span><span class="n">curve</span></a><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="w">
+</span><span class="c1"># Volume measures the curved, hollow CAD solid in cubic metres. Its</span><span class="w">
+</span><span class="c1"># internal measurement scale is automatic; compare with area times length.</span><span class="w">
 </span><span class="k">assert</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-method reference internal" href="../api/geo.html#magnelio.geo.Solid.volume" title="magnelio.geo.Solid.volume"><span class="n">extension</span><span class="o">.</span><span class="n">volume</span></a><span class="p">(</span><span class="p">)</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-property reference internal" href="../api/geo.html#magnelio.geo.FaceRef.area" title="magnelio.geo.FaceRef.area"><span class="n">end</span><span class="o">.</span><span class="n">area</span></a> <span class="o">*</span> <a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-method reference internal" href="../api/geo.html#magnelio.geo.Path.curve" title="magnelio.geo.Path.curve"><span class="n">route</span><span class="o">.</span><span class="n">curve</span></a><span class="p">(</span><span class="p">)</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-plots sphx-glr-backref-type-py-function reference internal" href="../api/plots.html#magnelio.plots.plot_cross_section" title="magnelio.plots.plot_cross_section"><span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span></a><span class="p">(</span><span class="w">
 </span>    <span class="p">[</span><span class="n">shield</span><span class="p">,</span> <span class="n">extension</span><span class="p">]</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">z</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">Named face swept to a domain plane</span><span class="s2">&quot;</span><span class="w">
@@ -856,7 +872,7 @@ is independent and can be used in a thin-wire declaration.</p>
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_aspect.html#matplotlib.axes.Axes.set_aspect" title="matplotlib.axes.Axes.set_aspect"><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">equal</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_14_profile_geometry_012.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_012.png" alt="Trace on a cylindrical wall" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7fb34bbba850&gt;
+<img src="../_images/sphx_glr_plot_14_profile_geometry_012.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_012.png" alt="Trace on a cylindrical wall" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f3f101d5cd0&gt;
 </pre></div>
 </div>
 </section>
@@ -927,7 +943,7 @@ Detach an owned face before using the independent Sheet offset.</p>
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_aspect.html#matplotlib.axes.Axes.set_aspect" title="matplotlib.axes.Axes.set_aspect"><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">equal</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_14_profile_geometry_014.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_014.png" alt="Two layers, one neutral surface" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7fb34b709310&gt;
+<img src="../_images/sphx_glr_plot_14_profile_geometry_014.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_014.png" alt="Two layers, one neutral surface" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f3f104659d0&gt;
 </pre></div>
 </div>
 </section>
@@ -1030,7 +1046,7 @@ before they become meshable material volumes.</p>
 </span>    <span class="k">for</span> <a class="sphx-glr-backref-module-matplotlib-patches sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.PathPatch.html#matplotlib.patches.PathPatch" title="matplotlib.patches.PathPatch"><span class="n">shape</span></a><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a><span class="o">.</span><span class="n">patches</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;</span><span class="s2">#b9dce9</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">#cf7554</span><span class="s2">&quot;</span><span class="p">)</span><span class="p">)</span><span class="p">:</span><span class="w">
 </span>        <a class="sphx-glr-backref-module-matplotlib-patches sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch.set_facecolor" title="matplotlib.patches.Patch.set_facecolor"><span class="n">shape</span><span class="o">.</span><span class="n">set_facecolor</span></a><span class="p">(</span><span class="n">color</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_14_profile_geometry_018.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_018.png" alt="Imported sheet given physical thickness" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 2.095 seconds)</p>
+<img src="../_images/sphx_glr_plot_14_profile_geometry_018.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_018.png" alt="Imported sheet given physical thickness" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 3.019 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-14-profile-geometry-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/bd56a784e653efaf900109070ab3849d/plot_14_profile_geometry.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_14_profile_geometry.ipynb</span></code></a></p>

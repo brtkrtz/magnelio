@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -820,9 +834,9 @@ is the magnetic one (tutorial 09).</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (1.6 s)
+  mesh | conformal cells | done (2.7 s)
   mesh | PEC masks
-  mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.8 s total)
+  mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (3.0 s total)
 grid: 26 x 26 x 30 cells
 </pre></div>
 </div>
@@ -854,16 +868,17 @@ nothing periodic about them:</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (1.3 s)
+  mesh | conformal cells | done (2.3 s)
   mesh | PEC masks
-  mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.4 s total)
+  mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (2.5 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
+  mesh | materials | done (0.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (1.6 s)
+  mesh | conformal cells | done (2.5 s)
   mesh | PEC masks
-  mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (2.0 s total)
+  mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (3.1 s total)
 electric walls on the iris planes (0-mode):  1.2774 GHz
 magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 </pre></div>
@@ -989,12 +1004,13 @@ travelling wave is not, and no combination of walls would produce it.</p>
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" alt="$\pi$-mode (standing wave), 1.3019 GHz, $2\pi/3$-mode (travelling wave), 1.2957 GHz" class = "sphx-glr-single-img"/><p>The same mode in three dimensions: <code class="docutils literal notranslate"><span class="pre">show()</span></code> on the result opens the
-cell along a cutting plane with the field laid on it.  The quarter
+cell along a cutting plane with only field vectors on it
+(<code class="docutils literal notranslate"><span class="pre">opacity=0.0</span></code> hides the magnitude sheet).  The quarter
 model was solved, but the picture is the whole cell — the result
 carries its mesh, whose declaration names the two symmetry planes,
 and the field is continued across them with the parity of each
 component.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-solver-eigenmode_result sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.solver.eigenmode_result.EigenmodeResult"><span class="n">pi_mode</span></a><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">cone</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span><span class="w">
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-solver-eigenmode_result sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.solver.eigenmode_result.EigenmodeResult"><span class="n">pi_mode</span></a><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">cone</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <div class="sd-tab-set docutils">
 <input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
@@ -1018,7 +1034,7 @@ parameter table leaves implicit.  The same pair of declarations
 serves any periodic structure whose unit cell fits in a box —
 disk-loaded waveguides, photonic-crystal slabs, frequency-selective
 surfaces at normal incidence.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 5.625 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 5.240 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-18-periodic-tesla-cell-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/784a329cd82bda387fe74c6dd69b284a/plot_18_periodic_tesla_cell.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_18_periodic_tesla_cell.ipynb</span></code></a></p>

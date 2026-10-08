@@ -159,6 +159,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     API reference
@@ -172,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -367,6 +374,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -862,15 +876,18 @@ again is wrong by a cell length.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The line integral [V] (the total voltage along the curve).</p>
+<dd class="field-even"><p>The line integral [V] (the total voltage along the curve).
+Real fields return a float; complex fields return a complex
+voltage phasor, retaining both magnitude and phase.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
+<dd class="field-odd"><p>float or complex</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>Real-valued fields only: a complex frame currently loses its
-imaginary part here (known limitation).</p>
+<p>The integral is linear in the field, without complex conjugation.
+Reversing the path negates it. Integrating a real phase snapshot
+gives the real part of the voltage phasor at that same phase.</p>
 </dd></dl>
 
 <dl class="py function">

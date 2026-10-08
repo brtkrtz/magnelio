@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -695,12 +709,25 @@ terminal signals stays a half-model quantity, so a directly measured
 device.</p>
 </section>
 <section id="edge-path-rasterisation">
-<h2>Edge-path rasterisation<a class="headerlink" href="#edge-path-rasterisation" title="Link to this heading">#</a></h2>
+<span id="id6"></span><h2>Edge-path rasterisation<a class="headerlink" href="#edge-path-rasterisation" title="Link to this heading">#</a></h2>
 <p>Lumped elements and thin wires ride on a canonical curve rasteriser
 that converts an arbitrary polyline/curve into an ordered, directed
 staircase of grid edges with per-edge orientation signs
-(<code class="docutils literal notranslate"><span class="pre">circuit/rasterize.py</span></code>, DD-076), plus the line integral
-<code class="docutils literal notranslate"><span class="pre">integrate_E</span></code> along the path.  This is in-house infrastructure.</p>
+(<code class="docutils literal notranslate"><span class="pre">circuit.rasterize_curve</span></code>), plus the line integral
+<code class="docutils literal notranslate"><span class="pre">circuit.integrate_E</span></code> along the path. This is in-house infrastructure.</p>
+<p>The integral takes a physical <code class="docutils literal notranslate"><span class="pre">FieldState</span></code> in V/m and returns voltage:
+a real time-domain frame gives a <code class="docutils literal notranslate"><span class="pre">float</span></code>, a complex frequency-domain
+frame gives a <code class="docutils literal notranslate"><span class="pre">complex</span></code> phasor with its full phase. It sums
+<span class="math notranslate nohighlight">\(\sum_e s_e E_e\,\Delta l_e\)</span> without conjugating the field. Reversing
+the path negates the result; integrating a snapshot at phase <span class="math notranslate nohighlight">\(\phi\)</span>
+gives <span class="math notranslate nohighlight">\(\mathrm{Re}(V e^{j\phi})\)</span> under the library’s phasor convention.
+The solver’s raw edge voltages already include edge length and must
+not be passed as physical fields.</p>
+<p>In time-varying fields the integral can depend on the chosen path; it
+is not generally an endpoint potential difference. The curve is snapped
+to the grid and followed as a staircase, with the same geometric limits
+as the rasteriser. See <a class="reference internal" href="../howto-voltage-integrals.html"><span class="std std-doc">Measure voltage along a field path</span></a>
+for a frequency-monitor recipe and normalization rules.</p>
 </section>
 <section id="paths-any-direction-at-a-measured-price">
 <h2>Paths: any direction, at a measured price<a class="headerlink" href="#paths-any-direction-at-a-measured-price" title="Link to this heading">#</a></h2>

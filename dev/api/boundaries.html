@@ -159,6 +159,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     API reference
@@ -172,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -367,6 +374,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -628,6 +642,9 @@ Improves low-frequency absorption and late-time stability.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
+<p>Stretching profiles are sampled at the transverse electric-field
+nodes and magnetic-field cell centres along the layer normal.
+Distances are measured from the physical layer interface.</p>
 <p>A waveguide port embedded in this face owns the columns behind its
 window: <a class="reference internal" href="#magnelio.boundaries.CPMLBoundary.set_port_windows" title="magnelio.boundaries.CPMLBoundary.set_port_windows"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_port_windows()</span></code></a> (wired by the solver) sets the
 stretching coefficients to <code class="docutils literal notranslate"><span class="pre">σ</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">κ</span> <span class="pre">=</span> <span class="pre">1</span></code> there over the whole
@@ -710,7 +727,7 @@ H-field masks.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.boundaries.CPMLBoundary.set_port_windows">
 <span class="sig-name descname"><span class="pre">set_port_windows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">windows</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.boundaries.CPMLBoundary.set_port_windows" title="Link to this definition">#</a></dt>
-<dd><p>Switch the absorber off behind waveguide-port windows (DD-198).</p>
+<dd><p>Switch the absorber off behind waveguide-port windows.</p>
 <p>A modal port embedded in this absorbing face owns the columns
 behind its window: the mode enters the domain through a
 conductor-enclosed guide that the mesher continued through the
@@ -744,9 +761,10 @@ window ring — conductor edges by construction — is included.</p></li>
 <dt class="sig sig-object py" id="magnelio.boundaries.CPMLBoundary.state_dict">
 <span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.boundaries.CPMLBoundary.state_dict" title="Link to this definition">#</a></dt>
 <dd><p>Checkpoint the ψ auxiliary convolution fields.</p>
-<p>Serialises every <code class="docutils literal notranslate"><span class="pre">_psi_*</span></code> array — the exact subset depends on
-the boundary face axis.  All other CPML data are constant
-stretching coefficients, re-derived at construction.</p>
+<p>Serialises every <code class="docutils literal notranslate"><span class="pre">_psi_*</span></code> array and the profile-sampling version.
+Stretching coefficients are re-derived when loading. Checkpoints
+without a version retain their original cell-sampled electric
+profiles when resumed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
@@ -802,8 +820,8 @@ before this method is called (tangential E = 0 at PEC boundary).</p>
 <dt class="sig sig-object py" id="magnelio.boundaries.CPMLBoundary.sigma_per_cell">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sigma_per_cell</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.boundaries.CPMLBoundary.sigma_per_cell" title="Link to this definition">#</a></dt>
 <dd><p>Conductivity σ [S/m] for each PML cell along the normal axis.</p>
-<p>The array has length <code class="docutils literal notranslate"><span class="pre">thickness_cells</span></code> and follows the grading
-profile from the interface (index 0) inward.  Requires
+<p>The array samples magnetic-field cell centres and follows
+<a class="reference internal" href="#magnelio.boundaries.CPMLBoundary.pml_axis_indices" title="magnelio.boundaries.CPMLBoundary.pml_axis_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pml_axis_indices</span></code></a> in ascending global order. Requires
 <a class="reference internal" href="#magnelio.boundaries.CPMLBoundary.initialize" title="magnelio.boundaries.CPMLBoundary.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize()</span></code></a> to have been called first.</p>
 </dd></dl>
 

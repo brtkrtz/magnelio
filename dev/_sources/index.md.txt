@@ -48,6 +48,7 @@ tutorials/index
 :caption: How-to guides
 
 howto/index
+howto-voltage-integrals
 ```
 
 ```{toctree}

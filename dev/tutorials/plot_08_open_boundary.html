@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -632,7 +646,9 @@ the height — same resonance, half the feed resistance (the textbook
 73 Ω of a thin half-wave dipole becomes ~36.5 Ω).  The <strong>other five
 faces</strong> are declared CPML; the mesher appends the absorbing layer
 outside the declared domain, so the air brick below is the usable
-free-space region, not something the layer eats into.</p>
+free-space region, not something the layer eats into.
+Absorber profiles follow the electric and magnetic fields at their
+staggered positions, so opposing layers share the same physical grading.</p>
 <p>The wire itself is a <a class="reference internal" href="../api/geo.html#magnelio.geo.ThinWire" title="magnelio.geo.ThinWire"><code class="xref py py-class docutils literal notranslate"><span class="pre">ThinWire</span></code></a>: a sub-cell
 conductor along a curve.  Its 0.5 mm radius is far below any
 affordable cell size, so it is not meshed as a solid — the mesher
@@ -770,7 +786,7 @@ goes somewhere other than back — and with no walls and no losses,
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">S11 dip: </span><span class="si">{</span><span class="mi">20</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s11</span></a><span class="p">[</span><span class="n">i_dip</span><span class="p">]</span><span class="p">)</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB at </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">f_axis</span></a><span class="p">[</span><span class="n">i_dip</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GHz</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">-10 dB band: </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">in_band</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">in_band</span></a><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GHz</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_08_open_boundary_002.png" srcset="../_images/sphx_glr_plot_08_open_boundary_002.png" alt="monopole return loss" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>S11 dip: -17.7 dB at 2.49 GHz
+<img src="../_images/sphx_glr_plot_08_open_boundary_002.png" srcset="../_images/sphx_glr_plot_08_open_boundary_002.png" alt="monopole return loss" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>S11 dip: -17.4 dB at 2.49 GHz
 -10 dB band: 2.31 to 2.71 GHz
 </pre></div>
 </div>
@@ -801,7 +817,7 @@ a network analyzer would, makes that quantitative:</p>
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_08_open_boundary_003.png" srcset="../_images/sphx_glr_plot_08_open_boundary_003.png" alt="input impedance from S11" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>resonance (Im Zin = 0): 2.44 GHz
-feed resistance there:  37.3 Ohm (thin-monopole textbook: ~36.5)
+feed resistance there:  36.9 Ohm (thin-monopole textbook: ~36.5)
 </pre></div>
 </div>
 <p>The curve reads like the antenna-theory chapter: capacitive
@@ -890,10 +906,10 @@ radiating into half the space).</p>
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">peak realized gain: </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-property reference internal" href="../api/post.html#magnelio.post.FarFieldResult.realized_gain" title="magnelio.post.FarFieldResult.realized_gain"><span class="n">pattern</span><span class="o">.</span><span class="n">realized_gain</span><span class="o">.</span><span class="n">max</span></a><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> dBi</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">radiated power:     </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-property reference internal" href="../api/post.html#magnelio.post.FarFieldResult.P_rad" title="magnelio.post.FarFieldResult.P_rad"><span class="n">pattern</span><span class="o">.</span><span class="n">P_rad</span></a><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> W per incident W</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>peak directivity:   5.16 dBi
-peak gain:          5.08 dBi
-peak realized gain: 4.99 dBi
-radiated power:     0.962 W per incident W
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>peak directivity:   5.15 dBi
+peak gain:          5.12 dBi
+peak realized gain: 5.02 dBi
+radiated power:     0.970 W per incident W
 </pre></div>
 </div>
 <p>The last line doubles as a sanity check on the whole simulation: for
@@ -914,7 +930,7 @@ returns to antennas with a dipole computed as a half model on a
 symmetry plane, 3D pattern included.  The next tutorials leave the
 wire world and move to printed circuits: microstrip lines and the
 components built from them.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 12.724 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 15.971 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-08-open-boundary-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/b718b63296483895102268247dded24c/plot_08_open_boundary.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_08_open_boundary.ipynb</span></code></a></p>

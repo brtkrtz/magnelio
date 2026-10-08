@@ -176,7 +176,7 @@ Name a face before moving its owner
 A FaceRef belongs to its solid. Name the annular end, rotate the solid,
 then retrieve the same physical face in its new position.
 
-.. GENERATED FROM PYTHON SOURCE LINES 93-116
+.. GENERATED FROM PYTHON SOURCE LINES 93-118
 
 .. code-block:: Python
 
@@ -192,6 +192,8 @@ then retrieve the same physical face in its new position.
         .straight_to_plane(normal="x", position=20e-3)
     )
     extension = end.swept(route.curve())
+    # Volume measures the curved, hollow CAD solid in cubic metres. Its
+    # internal measurement scale is automatic; compare with area times length.
     assert math.isclose(extension.volume(), end.area * route.curve().length, rel_tol=1e-9)
     fig, ax = plots.plot_cross_section(
         [shield, extension], "z", 0, title="Named face swept to a domain plane"
@@ -215,14 +217,14 @@ then retrieve the same physical face in its new position.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 117-121
+.. GENERATED FROM PYTHON SOURCE LINES 119-123
 
 Copy a component with its named contact
 ---------------------------------------
 Each placed copy owns its own face. A reusable placement can move an
 entire mixed component without replacing the face name.
 
-.. GENERATED FROM PYTHON SOURCE LINES 121-135
+.. GENERATED FROM PYTHON SOURCE LINES 123-137
 
 .. code-block:: Python
 
@@ -252,14 +254,14 @@ entire mixed component without replacing the face name.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 136-140
+.. GENERATED FROM PYTHON SOURCE LINES 138-142
 
 Shape solids from existing faces
 --------------------------------
 Owned faces select shell openings and loft ends. Annular faces give a
 transition its bore automatically.
 
-.. GENERATED FROM PYTHON SOURCE LINES 140-153
+.. GENERATED FROM PYTHON SOURCE LINES 142-155
 
 .. code-block:: Python
 
@@ -288,14 +290,14 @@ transition its bore automatically.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 154-158
+.. GENERATED FROM PYTHON SOURCE LINES 156-160
 
 Revolve a profile or round selected edges
 ------------------------------------------
 Revolution suits a rotational part with a changing outline. Fillets
 and chamfers can take edges from a selected face on an existing solid.
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-177
+.. GENERATED FROM PYTHON SOURCE LINES 160-179
 
 .. code-block:: Python
 
@@ -330,14 +332,14 @@ and chamfers can take edges from a selected face on an existing solid.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-182
+.. GENERATED FROM PYTHON SOURCE LINES 180-184
 
 Choose how a section follows a bend
 -----------------------------------
 The default keeps a swept section perpendicular to the route. A fixed
 frame keeps its apertures parallel in world space instead.
 
-.. GENERATED FROM PYTHON SOURCE LINES 182-199
+.. GENERATED FROM PYTHON SOURCE LINES 184-201
 
 .. code-block:: Python
 
@@ -370,14 +372,14 @@ frame keeps its apertures parallel in world space instead.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 200-204
+.. GENERATED FROM PYTHON SOURCE LINES 202-206
 
 Twist or draft a sweep
 ----------------------
 Twist is total roll. Positive draft grows the outside of a profile
 and shrinks its holes by a normal offset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 204-214
+.. GENERATED FROM PYTHON SOURCE LINES 206-216
 
 .. code-block:: Python
 
@@ -403,14 +405,14 @@ and shrinks its holes by a normal offset.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 215-219
+.. GENERATED FROM PYTHON SOURCE LINES 217-221
 
 Partition a body and keep its filled section
 --------------------------------------------
 Partition returns independent solids. Section returns curves;
 filled=True returns a Profile, including its hole.
 
-.. GENERATED FROM PYTHON SOURCE LINES 219-230
+.. GENERATED FROM PYTHON SOURCE LINES 221-232
 
 .. code-block:: Python
 
@@ -437,14 +439,14 @@ filled=True returns a Profile, including its hole.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 231-235
+.. GENERATED FROM PYTHON SOURCE LINES 233-237
 
 Imprint a contact and insert a material
 ---------------------------------------
 Imprint splits a receiver face without removing volume. Insert assigns
 overlap to the body with the higher explicit priority.
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-250
+.. GENERATED FROM PYTHON SOURCE LINES 237-252
 
 .. code-block:: Python
 
@@ -475,14 +477,14 @@ overlap to the body with the higher explicit priority.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 251-255
+.. GENERATED FROM PYTHON SOURCE LINES 253-257
 
 Project a trace onto a curved wall
 ----------------------------------
 Directional rays meet the actual bounded face. The resulting curve
 is independent and can be used in a thin-wire declaration.
 
-.. GENERATED FROM PYTHON SOURCE LINES 255-270
+.. GENERATED FROM PYTHON SOURCE LINES 257-272
 
 .. code-block:: Python
 
@@ -515,18 +517,18 @@ is independent and can be used in a thin-wire declaration.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fb34bbba850>
+    <matplotlib.legend.Legend object at 0x7f3f101d5cd0>
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 271-275
+.. GENERATED FROM PYTHON SOURCE LINES 273-277
 
 Add clearance or move a curved sheet
 ------------------------------------
 Profile offset expands the material region, including into the hole.
 Detach an owned face before using the independent Sheet offset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 275-298
+.. GENERATED FROM PYTHON SOURCE LINES 277-300
 
 .. code-block:: Python
 
@@ -565,13 +567,13 @@ Detach an owned face before using the independent Sheet offset.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 299-302
+.. GENERATED FROM PYTHON SOURCE LINES 301-304
 
 Bend an existing layered component
 ----------------------------------
 One neutral surface bends both layers, including their straight ends.
 
-.. GENERATED FROM PYTHON SOURCE LINES 302-340
+.. GENERATED FROM PYTHON SOURCE LINES 304-342
 
 .. code-block:: Python
 
@@ -627,18 +629,18 @@ One neutral surface bends both layers, including their straight ends.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fb34b709310>
+    <matplotlib.legend.Legend object at 0x7f3f104659d0>
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 341-345
+.. GENERATED FROM PYTHON SOURCE LINES 343-347
 
 Wrap layers onto a curved patch
 -------------------------------
 Wrap uses one chart for substrate and conductor; max_strain bounds
 distortion on a surface that need not be developable.
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-371
+.. GENERATED FROM PYTHON SOURCE LINES 347-373
 
 .. code-block:: Python
 
@@ -686,14 +688,14 @@ distortion on a surface that need not be developable.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 372-376
+.. GENERATED FROM PYTHON SOURCE LINES 374-378
 
 Make a tangent transition between solids
 ----------------------------------------
 A face-to-face loft with blend="tangent" meets the adjacent walls
 without a sharp corner at either end.
 
-.. GENERATED FROM PYTHON SOURCE LINES 376-382
+.. GENERATED FROM PYTHON SOURCE LINES 378-384
 
 .. code-block:: Python
 
@@ -715,14 +717,14 @@ without a sharp corner at either end.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 383-387
+.. GENERATED FROM PYTHON SOURCE LINES 385-389
 
 Use a named face for a port and a recording plane
 -------------------------------------------------
 Eligible rectangular faces specify EM consumers directly. Port and
 field monitor now share the selected plane and window.
 
-.. GENERATED FROM PYTHON SOURCE LINES 387-412
+.. GENERATED FROM PYTHON SOURCE LINES 389-414
 
 .. code-block:: Python
 
@@ -769,14 +771,14 @@ field monitor now share the selected plane and window.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 413-417
+.. GENERATED FROM PYTHON SOURCE LINES 415-419
 
 Exchange solids and sheets with CAD
 -----------------------------------
 STEP keeps units and body names. Imported sheets need physical thickness
 before they become meshable material volumes.
 
-.. GENERATED FROM PYTHON SOURCE LINES 417-438
+.. GENERATED FROM PYTHON SOURCE LINES 419-440
 
 .. code-block:: Python
 
@@ -816,7 +818,7 @@ before they become meshable material volumes.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.095 seconds)
+   **Total running time of the script:** (0 minutes 3.019 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_14_profile_geometry.py:

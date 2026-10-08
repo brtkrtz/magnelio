@@ -593,11 +593,11 @@ first would hand the trim a moving target.
       mesh | 78 x 69 x 31 = 166,842 cells | 49 MiB
     --- element, cavity-model length, inset 0.25 L ---
     |S11| at f0      :   -2.6 dB
-    dip              :  -17.3 dB at 9.57 GHz
-    -10 dB band      : 9.45 - 9.68 GHz (2.3 %)
-    peak directivity :   7.06 dBi
-    realized gain    :   3.40 dBi
-    length 9.653 -> 9.238 mm
+    dip              :  -17.9 dB at 9.56 GHz
+    -10 dB band      : 9.44 - 9.68 GHz (2.4 %)
+    peak directivity :   7.05 dBi
+    realized gain    :   3.32 dBi
+    length 9.653 -> 9.229 mm
 
       mesh | feature planes
       mesh | grid lines
@@ -606,11 +606,11 @@ first would hand the trim a moving target.
       mesh | PEC masks
       mesh | 78 x 73 x 31 = 176,514 cells | 52 MiB
     --- element, trimmed length, inset 0.20 L ---
-    |S11| at f0      :  -12.6 dB
-    dip              :  -12.6 dB at 10.00 GHz
-    -10 dB band      : 9.89 - 10.10 GHz (2.1 %)
+    |S11| at f0      :  -13.1 dB
+    dip              :  -13.1 dB at 10.00 GHz
+    -10 dB band      : 9.89 - 10.11 GHz (2.2 %)
     peak directivity :   7.49 dBi
-    realized gain    :   7.35 dBi
+    realized gain    :   7.26 dBi
       mesh | feature planes
       mesh | grid lines
       mesh | materials
@@ -618,11 +618,11 @@ first would hand the trim a moving target.
       mesh | PEC masks
       mesh | 78 x 69 x 31 = 166,842 cells | 49 MiB
     --- element, trimmed length, inset 0.25 L ---
-    |S11| at f0      :  -15.9 dB
-    dip              :  -20.7 dB at 9.94 GHz
-    -10 dB band      : 9.82 - 10.07 GHz (2.5 %)
+    |S11| at f0      :  -17.0 dB
+    dip              :  -22.2 dB at 9.95 GHz
+    -10 dB band      : 9.82 - 10.08 GHz (2.6 %)
     peak directivity :   7.43 dBi
-    realized gain    :   7.40 dBi
+    realized gain    :   7.32 dBi
       mesh | feature planes
       mesh | grid lines
       mesh | materials
@@ -630,13 +630,13 @@ first would hand the trim a moving target.
       mesh | PEC masks
       mesh | 78 x 68 x 31 = 164,424 cells | 49 MiB
     --- element, trimmed length, inset 0.30 L ---
-    |S11| at f0      :   -8.3 dB
-    dip              :  -20.3 dB at 9.87 GHz
-    -10 dB band      : 9.76 - 9.97 GHz (2.1 %)
+    |S11| at f0      :   -8.7 dB
+    dip              :  -19.3 dB at 9.87 GHz
+    -10 dB band      : 9.77 - 9.97 GHz (2.0 %)
     peak directivity :   7.33 dBi
-    realized gain    :   6.64 dBi
+    realized gain    :   6.60 dBi
 
-    element: L = 9.24 mm, inset 2.31 mm
+    element: L = 9.23 mm, inset 2.31 mm
 
 
 
@@ -733,25 +733,25 @@ trims the length only.
       mesh | 134 x 123 x 39 = 642,798 cells | 189 MiB (1.1 s total)
     grid: 134 x 123 x 39 = 0.64 M cells
     --- array, element length ---
-    |S11| at f0      :  -14.3 dB
-    dip              :  -14.7 dB at 10.04 GHz
-    -10 dB band      : 9.87 - 10.21 GHz (3.4 %)
-    peak directivity :  12.92 dBi
-    realized gain    :  12.81 dBi
+    |S11| at f0      :  -14.8 dB
+    dip              :  -15.9 dB at 10.06 GHz
+    -10 dB band      : 9.87 - 10.26 GHz (3.9 %)
+    peak directivity :  12.80 dBi
+    realized gain    :  12.48 dBi
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (0.6 s)
+      mesh | conformal cells | done (0.7 s)
       mesh | PEC masks
-      mesh | 134 x 123 x 39 = 642,798 cells | 189 MiB (1.1 s total)
+      mesh | 134 x 123 x 39 = 642,798 cells | 189 MiB (1.2 s total)
     --- array, trimmed (L = 9.28 mm) ---
-    |S11| at f0      :  -14.4 dB
-    dip              :  -14.4 dB at 10.00 GHz
-    -10 dB band      : 9.84 - 10.17 GHz (3.3 %)
-    peak directivity :  12.99 dBi
-    realized gain    :  12.89 dBi
-    array gain over the element: 5.6 dB (four sources: 6.0 dB)
+    |S11| at f0      :  -15.6 dB
+    dip              :  -15.6 dB at 10.00 GHz
+    -10 dB band      : 9.82 - 10.20 GHz (3.8 %)
+    peak directivity :  12.90 dBi
+    realized gain    :  12.61 dBi
+    array gain over the element: 5.5 dB (four sources: 6.0 dB)
 
 
 
@@ -860,7 +860,7 @@ straight one used here.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (7 minutes 50.303 seconds)
+   **Total running time of the script:** (9 minutes 17.618 seconds)
 
 
 .. _sphx_glr_download_howto_plot_patch_array.py:

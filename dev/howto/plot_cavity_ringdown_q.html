@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -632,7 +646,7 @@ homogeneously filled cavity, and against the sum rule above.</p>
 </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span><span class="w">
 </span><span class="w">
 </span><span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span><span class="w">
-</span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">ports</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">sources</span><span class="w">
+</span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">ports</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">sources</span><span class="w">
 </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="nn">.</span><span class="nn">constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">EPS0</span><span class="w">
 </span></pre></div></div>
 <section id="the-resonator-and-its-feed">
@@ -702,7 +716,7 @@ natural start: the march places the magnetic half-step itself.</p>
 </span>    <span class="k">return</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.zeros_like.html#numpy.zeros_like" title="numpy.zeros_like"><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span></a><span class="p">(</span><span class="n">e_y</span><span class="p">)</span><span class="p">,</span> <span class="n">e_y</span><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.zeros_like.html#numpy.zeros_like" title="numpy.zeros_like"><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span></a><span class="p">(</span><span class="n">e_y</span><span class="p">)</span><span class="w">
 </span><span class="w">
 </span><span class="w">
-</span><span class="k">def</span><span class="w"> </span><span class="nf">ring_down</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">mode0</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">wall_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="p">:</span><span class="w">
+</span><span class="k">def</span><span class="w"> </span><span class="nf">ring_down</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">mode0</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">wall_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">record_fields</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="p">:</span><span class="w">
 </span><span class="w">    </span><span class="sd">&quot;&quot;&quot;March from the resonator's mode and return the result.
 
     ``wall_sigma`` turns the metal from perfect conductor into a
@@ -713,7 +727,19 @@ natural start: the march places the magnetic half-step itself.</p>
 </span>    <span class="n">mesh</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.Mesh.from_geometry" title="magnelio.Mesh.from_geometry"><span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span></a><span class="p">(</span><span class="n">model</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.MeshControl" title="magnelio.MeshControl"><span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span></a><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">)</span><span class="w">
 </span>    <span class="n">source</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-sources sphx-glr-backref-type-py-method reference internal" href="../api/sources.html#magnelio.sources.SourceFieldInitial.from_function" title="magnelio.sources.SourceFieldInitial.from_function"><span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldInitial</span><span class="o">.</span><span class="n">from_function</span></a><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">te101_field</span><span class="p">)</span><span class="w">
 </span>    <span class="n">walls</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;</span><span class="s2">wall_model</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="s2">sibc</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">wall_sigma</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">wall_sigma</span><span class="p">}</span> <span class="k">if</span> <span class="n">wall_sigma</span> <span class="k">else</span> <span class="p">{</span><span class="p">}</span><span class="w">
-</span>    <span class="n">analysis</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisTD" title="magnelio.AnalysisTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisTD</span></a><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">with_sources</span><span class="p">(</span><span class="p">[</span><span class="n">source</span><span class="p">]</span><span class="p">)</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="o">*</span><span class="n">walls</span><span class="p">)</span><span class="w">
+</span>    <span class="n">field_monitors</span> <span class="o">=</span> <span class="p">[</span><span class="p">]</span><span class="w">
+</span>    <span class="k">if</span> <span class="n">record_fields</span><span class="p">:</span><span class="w">
+</span>        <span class="n">field_monitors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="w">
+</span>            <a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-class reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldTime" title="magnelio.monitors.MonitorFieldTime"><span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldTime</span></a><span class="p">(</span><span class="w">
+</span>                <span class="n">corners</span><span class="o">=</span><span class="p">(</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">B</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">B</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="p">)</span><span class="p">,</span><span class="w">
+</span>                <span class="n">times</span><span class="o">=</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">2e-9</span><span class="p">,</span> <span class="mi">41</span><span class="p">)</span><span class="p">,</span><span class="w">
+</span>                <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span><span class="w">
+</span>                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">midplane</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
+</span>            <span class="p">)</span><span class="w">
+</span>        <span class="p">)</span><span class="w">
+</span>    <span class="n">analysis</span> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.AnalysisTD" title="magnelio.AnalysisTD"><span class="n">mio</span><span class="o">.</span><span class="n">AnalysisTD</span></a><span class="p">(</span><span class="w">
+</span>        <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">with_sources</span><span class="p">(</span><span class="p">[</span><span class="n">source</span><span class="p">]</span><span class="p">)</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="n">field_monitors</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="o">*</span><span class="n">walls</span><span class="w">
+</span>    <span class="p">)</span><span class="w">
 </span>    <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excitations</span><span class="o">=</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="p">,</span> <span class="n">t_end</span><span class="o">=</span><span class="n">t_end</span><span class="p">,</span> <span class="n">energy_stop_db</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="p">,</span> <span class="n">mesh</span><span class="w">
 </span></pre></div></div>
 </section>
@@ -769,7 +795,8 @@ energy.  Everything below has to sit far above it.</p>
 </span><span class="n">runs</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">sealed, copper walls</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">_</span></a> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><span class="w">
 </span>    <span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="p">,</span> <span class="mf">150e-9</span><span class="p">,</span> <span class="n">wall_sigma</span><span class="o">=</span><span class="n">SIGMA_CU</span><span class="w">
 </span><span class="p">)</span><span class="w">
-</span><span class="n">runs</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">coupled, lossless</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">_</span></a> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="p">,</span> <span class="mf">60e-9</span><span class="p">)</span><span class="w">
+</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model_coupled</span></a> <span class="o">=</span> <span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="w">
+</span><span class="n">runs</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">coupled, lossless</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh_coupled</span></a> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model_coupled</span></a><span class="p">,</span> <span class="mf">60e-9</span><span class="p">,</span> <span class="n">record_fields</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="w">
 </span><span class="n">runs</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">coupled, lossy fill</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">_</span></a> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="p">,</span> <span class="mf">60e-9</span><span class="p">)</span><span class="w">
 </span><span class="w">
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">f_loaded</span></a> <span class="o">=</span> <span class="n">loaded_frequency</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">coupled, lossless</span><span class="s2">&quot;</span><span class="p">]</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">out</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
@@ -891,6 +918,33 @@ what a design actually has to meet:</p>
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_cavity_ringdown_q_001.png" srcset="../_images/sphx_glr_plot_cavity_ringdown_q_001.png" alt="Ring-down of the WR-90 cavity, one loss channel at a time" class = "sphx-glr-single-img"/></section>
+<section id="inspecting-the-field">
+<h2>Inspecting the field<a class="headerlink" href="#inspecting-the-field" title="Link to this heading">#</a></h2>
+<p>The coupled, lossless result also carries a field monitor on the
+horizontal mid-plane, y = B/2.  It records the first 2 ns, enough to
+see the initial cavity field radiate into the feed.  Open that
+recording in the viewer and use the time slider or play button:
+only the electric-field vectors are visible on the cut, with the
+magnitude sheet made transparent by <code class="docutils literal notranslate"><span class="pre">opacity=0.0</span></code>.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span class="n">runs</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">coupled, lossless</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">monitors</span><span class="p">[</span><span class="s2">&quot;</span><span class="s2">midplane</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="w">
+</span>    <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model_coupled</span></a><span class="p">,</span><span class="w">
+</span>    <span class="n">mesh</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh_coupled</span></a><span class="p">,</span><span class="w">
+</span>    <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span><span class="w">
+</span>    <span class="n">position</span><span class="o">=</span><span class="n">B</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span><span class="w">
+</span>    <span class="n">opacity</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_cavity_ringdown_q_002.png" srcset="../_images/sphx_glr_plot_cavity_ringdown_q_002.png" alt="plot cavity ringdown q" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/howto/images/sphx_glr_plot_cavity_ringdown_q_002.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+</section>
 <section id="what-the-number-sees">
 <h2>What the number sees<a class="headerlink" href="#what-the-number-sees" title="Link to this heading">#</a></h2>
 <ul class="simple">
@@ -930,7 +984,7 @@ channel at the coupling you actually use.</p></li>
 </ul>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 16.071 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 29.021 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-cavity-ringdown-q-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/640c110f9caa4c52f9f43924a24be549/plot_cavity_ringdown_q.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_cavity_ringdown_q.ipynb</span></code></a></p>
@@ -998,6 +1052,7 @@ channel at the coupling you actually use.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#block-2-after-q-from-the-decay-frequency-from-the-port">Block 2 — after: Q from the decay, frequency from the port</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#one-run-per-loss-channel">One run per loss channel</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-decays-one-channel-at-a-time">The decays, one channel at a time</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inspecting-the-field">Inspecting the field</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-number-sees">What the number sees</a></li>
 </ul>
   </nav></div>

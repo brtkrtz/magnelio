@@ -160,6 +160,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -172,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -367,6 +374,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -775,6 +789,8 @@ position slider walks that layer through the recorded volume.</p>
 <span class="n">pattern</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">,</span> <span class="n">phase_deg</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>                 <span class="c1"># a frequency monitor at a phase</span>
 <span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>                  <span class="c1"># an eigenmode result: a slider over the modes</span>
 <span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">"cone"</span><span class="p">)</span>                <span class="c1"># starting at mode 2, cones instead of arrows</span>
+<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">volume</span><span class="o">=</span><span class="s2">"arrows"</span><span class="p">)</span>   <span class="c1"># whole mode, without a cutting plane</span>
+<span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>      <span class="c1"># vectors on the cut, no magnitude sheet</span>
 </pre></div>
 </div>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -902,7 +918,9 @@ too, in the two forms every 3D field plot offers.</p>
 <p>Both are entries of the <em>Show</em> menu whenever the source is a volume
 (isosurfaces need at least two cells along every axis, so a plane
 monitor offers arrows only); <code class="docutils literal notranslate"><span class="pre">volume=</span></code> only chooses what is on at
-first.  Without a cut (<em>Cut</em> set to <em>off</em>) the whole region is drawn.
+first.  Without a cut (<em>Cut</em> set to <em>off</em>, or <code class="docutils literal notranslate"><span class="pre">cut=False</span></code> on the field
+<code class="docutils literal notranslate"><span class="pre">show()</span></code> call) the whole region is drawn.  The toolbar can enable a
+cutting plane later.
 A volume representation costs the whole region per frame instead of
 one layer — a large monitor plays slower with it on.  The cell values
 are interpolated to the grid nodes before the surfaces are contoured,

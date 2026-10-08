@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -932,6 +946,15 @@ precisely the time integral of its current on its two end nodes and no
 charge anywhere else — to the last bit of double precision.  An open
 current path <em>is</em> a consistent oscillating dipole, with the right
 near-zone electrostatic part; there is nothing to clean up.</p>
+<p>A unipolar pulse on an open path leaves opposite charges at its ends
+after the current finishes. The resulting electrostatic field does not
+decay. A finite rectangular Fourier record cuts off that field and can
+contaminate a far-field pattern, even after the radiating transient has
+left the box. For a transient measurement of an AC radiation pattern,
+use a modulated pulse whose net time-integrated current is negligible,
+and record its complete response. This finite-record limitation follows
+from the endpoint-charge identity above (in-house analysis); the far-field
+monitor does not automatically complete a static tail.</p>
 <p>Edges the solver holds at zero — inside a perfect conductor, or
 tangential to a PEC wall — cannot take an impressed current.  A path
 crossing such a region radiates less than it was asked to, and says so

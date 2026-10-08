@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -1516,6 +1530,20 @@ them takes.  The point set is the same either way; the face count is
 what the mesher sees.</p>
 </section>
 </section>
+<section id="check-a-solid-s-volume">
+<h2>Check a solid’s volume<a class="headerlink" href="#check-a-solid-s-volume" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">solid.volume()</span></code> measures the enclosed CAD geometry in cubic metres, including
+curved walls, Boolean cuts and intrinsic holes. It uses adaptive integration
+on a centred, uniformly scaled copy of the built shape, then converts the
+result back to the original units. This keeps the measurement accurate for
+small rational spline faces without changing the solid or its mesh. A
+<code class="docutils literal notranslate"><span class="pre">Group.volume()</span></code> sums member volumes and counts any overlap more than once.</p>
+<p>The result describes the kernel geometry: spline fitting and CAD import
+tolerances still limit agreement with an ideal mathematical surface. A
+volume check does not certify topology or mesh convergence. Leave the
+optional build <code class="docutils literal notranslate"><span class="pre">scale</span></code> unset for normal use. Tutorial 14 checks a hollow
+continuation against cross-section area times path length.</p>
+</section>
 <section id="lofts-between-profiles-and-between-faces">
 <h2>Lofts: between profiles, and between faces<a class="headerlink" href="#lofts-between-profiles-and-between-faces" title="Link to this heading">#</a></h2>
 <p>Two constructors build a body that changes cross-section along its
@@ -1745,6 +1773,7 @@ ones. The grid remains unchanged.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#place-a-reusable-component">Place a reusable component</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#check-a-solid-s-volume">Check a solid’s volume</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lofts-between-profiles-and-between-faces">Lofts: between profiles, and between faces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-a-map-to-a-reflector-parametric-surfaces">From a map to a reflector: parametric surfaces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#selected-faces-for-ports-and-field-recordings">Selected faces for ports and field recordings</a></li>

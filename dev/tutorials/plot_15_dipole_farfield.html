@@ -160,6 +160,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -172,13 +179,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -187,6 +187,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -367,6 +374,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -756,7 +770,7 @@ what keeps it away.</p>
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_15_dipole_farfield_002.png" srcset="../_images/sphx_glr_plot_15_dipole_farfield_002.png" alt="dipole input impedance from the half model" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>resonance (Im Zin = 0): 2.45 GHz
-feed resistance there:  75.4 Ohm (thin-dipole textbook: ~73)
+feed resistance there:  74.5 Ohm (thin-dipole textbook: ~73)
 </pre></div>
 </div>
 </section>
@@ -777,9 +791,9 @@ and the peak lands at the half-wave dipole’s 2.15 dBi.</p>
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">peak realized gain: </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-property reference internal" href="../api/post.html#magnelio.post.FarFieldResult.realized_gain" title="magnelio.post.FarFieldResult.realized_gain"><span class="n">pattern</span><span class="o">.</span><span class="n">realized_gain</span><span class="o">.</span><span class="n">max</span></a><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> dBi</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">radiated power:     </span><span class="si">{</span><a class="sphx-glr-backref-module-magnelio-post sphx-glr-backref-type-py-property reference internal" href="../api/post.html#magnelio.post.FarFieldResult.P_rad" title="magnelio.post.FarFieldResult.P_rad"><span class="n">pattern</span><span class="o">.</span><span class="n">P_rad</span></a><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> W per incident W</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_15_dipole_farfield_003.png" srcset="../_images/sphx_glr_plot_15_dipole_farfield_003.png" alt="elevation cut (E-plane), azimuth cut (H-plane)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>peak directivity:   2.15 dBi
-peak realized gain: 2.07 dBi
-radiated power:     0.982 W per incident W
+<img src="../_images/sphx_glr_plot_15_dipole_farfield_003.png" srcset="../_images/sphx_glr_plot_15_dipole_farfield_003.png" alt="elevation cut (E-plane), azimuth cut (H-plane)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>peak directivity:   2.14 dBi
+peak realized gain: 2.10 dBi
+radiated power:     0.991 W per incident W
 </pre></div>
 </div>
 <p>The elevation cut carries the shape; the azimuth cut is the circle
@@ -798,7 +812,7 @@ a half model, and pattern cuts plus the 3D radiation surface.  The
 same three ingredients carry over unchanged to patch antennas and
 arrays — declare the full structure, state its symmetry, and read
 full-model answers.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 22.854 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 29.658 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-15-dipole-farfield-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/dbf98d90590a5c0a0ab189ce2b120c3b/plot_15_dipole_farfield.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_15_dipole_farfield.ipynb</span></code></a></p>

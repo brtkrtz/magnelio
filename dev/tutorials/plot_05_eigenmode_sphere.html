@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -693,8 +707,9 @@ this modest resolution.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
+  mesh | conformal cells | done (0.5 s)
   mesh | PEC masks
-  mesh | 30 x 30 x 30 = 27,000 cells | 8.2 MiB
+  mesh | 30 x 30 x 30 = 27,000 cells | 8.2 MiB (0.6 s total)
 grid: 30 x 30 x 30 cells
 </pre></div>
 </div>
@@ -742,6 +757,21 @@ discretisation fingerprint, not physics.</p>
 </section>
 <section id="looking-at-a-mode">
 <h2>Looking at a mode<a class="headerlink" href="#looking-at-a-mode" title="Link to this heading">#</a></h2>
+<p>Use the interactive viewer first to get an overview of the modes.
+Start with mode 0, the cut disabled and electric-field vectors
+throughout the cavity; the mode slider lets you explore the others.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-solver-eigenmode_result sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/analysis.html#magnelio.analysis.EigenmodeResult" title="magnelio.solver.eigenmode_result.EigenmodeResult"><span class="n">result</span></a><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">volume</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">arrows</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" alt="plot 05 eigenmode sphere" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
 <p><code class="docutils literal notranslate"><span class="pre">result.plot()</span></code> draws any mode on an axis-aligned slice through
 the cavity: <code class="docutils literal notranslate"><span class="pre">normal</span></code> and <code class="docutils literal notranslate"><span class="pre">position</span></code> select the plane,
 <code class="docutils literal notranslate"><span class="pre">component</span></code> the field quantity, and <code class="docutils literal notranslate"><span class="pre">plot_type</span></code> switches between
@@ -758,7 +788,7 @@ dashed circle is the cavity wall, sliced from the actual model:</p>
 </span>    <span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" alt="Mode 0 (6.543 GHz) — |E|, y=0.667 mm, Mode 3 (9.206 GHz) — |E|, y=0.667 mm" class = "sphx-glr-single-img"/><p>Mode 0 shows the dipole-like pattern of the lowest TM resonance;
+<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" alt="Mode 0 (6.543 GHz) — |E|, y=0.667 mm, Mode 3 (9.206 GHz) — |E|, y=0.667 mm" class = "sphx-glr-single-img"/><p>Mode 0 shows the dipole-like pattern of the lowest TM resonance;
 mode 3, the first member of the quintet, already carries the richer
 angular structure of the <span class="math notranslate nohighlight">\(n = 2\)</span> level.</p>
 <p><code class="docutils literal notranslate"><span class="pre">plot_type=&quot;vector&quot;</span></code> shows the field <em>direction</em>.  Arrows draw
@@ -786,9 +816,22 @@ markers resolve and a magnitude plot would hide:</p>
 </span>    <span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" alt="Mode 3 (9.206 GHz) — E-field, x=0.667 mm, Mode 3 (9.206 GHz) — H-field, x=0.667 mm" class = "sphx-glr-single-img"/><p>(Which sector carries ⊙ and which ⊗ is not meaningful — the overall
+<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_003.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_003.png" alt="Mode 3 (9.206 GHz) — E-field, x=0.667 mm, Mode 3 (9.206 GHz) — H-field, x=0.667 mm" class = "sphx-glr-single-img"/><p>(Which sector carries ⊙ and which ⊗ is not meaningful — the overall
 sign of an eigenmode is arbitrary, and inside a degenerate cluster
 the same holds for the mode’s <em>orientation</em>.)</p>
+</section>
+<section id="using-symmetries">
+<h2>Using symmetries<a class="headerlink" href="#using-symmetries" title="Link to this heading">#</a></h2>
+<p>Symmetry planes reduce computation time and filter out modes with
+unwanted field parity.  For example, declare a magnetic symmetry
+plane through the sphere’s centre when constructing the model:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span></a><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">pec</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;</span><span class="s2">xmin</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="s2">SymmetryPMC</span><span class="s2">&quot;</span><span class="p">}</span><span class="p">)</span><span class="w">
+</span></pre></div></div>
+<p>This selects modes with tangential E and normal H at x = 0; a
+<code class="docutils literal notranslate"><span class="pre">&quot;SymmetryPEC&quot;</span></code> plane selects the opposite parity.  Add the sphere
+and remesh after choosing the symmetry.  Only the selected parity
+is solved, so the full triplet and quintet above are no longer returned.
+See <a class="reference internal" href="../methods/boundaries.html"><span class="doc">Boundary conditions</span></a> for the symmetry conventions.</p>
 </section>
 <section id="where-to-go-next">
 <h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
@@ -798,7 +841,7 @@ discretisation fingerprint), and mode field plots on slice planes
 through the cavity.  The next tutorials turn to the toolbox around
 the solvers — starting with field monitors, which record fields
 <em>during</em> a driven simulation.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 33.909 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 31.410 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-05-eigenmode-sphere-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/58d5022b9d63b83aed3b5a4b7ebb5b07/plot_05_eigenmode_sphere.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_05_eigenmode_sphere.ipynb</span></code></a></p>
@@ -865,6 +908,7 @@ the solvers — starting with field monitors, which record fields
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-and-mesh">Model and mesh</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#solving-for-the-eigenmodes">Solving for the eigenmodes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#looking-at-a-mode">Looking at a mode</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-symmetries">Using symmetries</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-go-next">Where to go next</a></li>
 </ul>
   </nav></div>

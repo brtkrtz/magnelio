@@ -128,8 +128,9 @@ this modest resolution.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
+      mesh | conformal cells | done (0.5 s)
       mesh | PEC masks
-      mesh | 30 x 30 x 30 = 27,000 cells | 8.2 MiB
+      mesh | 30 x 30 x 30 = 27,000 cells | 8.2 MiB (0.6 s total)
     grid: 30 x 30 x 30 cells
 
 
@@ -207,7 +208,7 @@ quintet:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 102-120
+.. GENERATED FROM PYTHON SOURCE LINES 102-114
 
 The triplet lands within 0.03 % of the Bessel value, the quintet
 within 0.25 %.  On the ideal sphere each cluster would be exactly
@@ -217,6 +218,53 @@ discretisation fingerprint, not physics.
 
 Looking at a mode
 -----------------
+
+Use the interactive viewer first to get an overview of the modes.
+Start with mode 0, the cut disabled and electric-field vectors
+throughout the cavity; the mode slider lets you explore the others.
+
+.. GENERATED FROM PYTHON SOURCE LINES 114-117
+
+.. code-block:: Python
+
+
+    result.show(mode=0, cut=False, volume="arrows", geometry=model)
+
+
+
+
+
+
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.png
+        :alt: plot 05 eigenmode sphere
+        :srcset: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.vtksz
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 118-127
 
 ``result.plot()`` draws any mode on an axis-aligned slice through
 the cavity: ``normal`` and ``position`` select the plane,
@@ -228,7 +276,7 @@ in arbitrary units — an eigenmode has no absolute scale, only a
 shape.  Passing the geometry model overlays its cross-section: the
 dashed circle is the cavity wall, sliced from the actual model:
 
-.. GENERATED FROM PYTHON SOURCE LINES 120-128
+.. GENERATED FROM PYTHON SOURCE LINES 127-135
 
 .. code-block:: Python
 
@@ -243,16 +291,16 @@ dashed circle is the cavity wall, sliced from the actual model:
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_002.png
    :alt: Mode 0 (6.543 GHz) — |E|, y=0.667 mm, Mode 3 (9.206 GHz) — |E|, y=0.667 mm
-   :srcset: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.png
+   :srcset: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_002.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 129-145
+.. GENERATED FROM PYTHON SOURCE LINES 136-152
 
 Mode 0 shows the dipole-like pattern of the lowest TM resonance;
 mode 3, the first member of the quintet, already carries the richer
@@ -271,7 +319,7 @@ On this slice its **E** field lies entirely *in* the plane (left).
 the blank node lines of the pattern — a sign structure the ⊙/⊗
 markers resolve and a magnitude plot would hide:
 
-.. GENERATED FROM PYTHON SOURCE LINES 145-159
+.. GENERATED FROM PYTHON SOURCE LINES 152-166
 
 .. code-block:: Python
 
@@ -292,20 +340,37 @@ markers resolve and a magnitude plot would hide:
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_002.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_003.png
    :alt: Mode 3 (9.206 GHz) — E-field, x=0.667 mm, Mode 3 (9.206 GHz) — H-field, x=0.667 mm
-   :srcset: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_002.png
+   :srcset: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_003.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 160-173
+.. GENERATED FROM PYTHON SOURCE LINES 167-198
 
 (Which sector carries ⊙ and which ⊗ is not meaningful — the overall
 sign of an eigenmode is arbitrary, and inside a degenerate cluster
 the same holds for the mode's *orientation*.)
+
+Using symmetries
+----------------
+
+Symmetry planes reduce computation time and filter out modes with
+unwanted field parity.  For example, declare a magnetic symmetry
+plane through the sphere's centre when constructing the model:
+
+.. code-block:: python
+
+    model = mio.GeometryModel(background="pec", boundary_conditions={"xmin": "SymmetryPMC"})
+
+This selects modes with tangential E and normal H at x = 0; a
+``"SymmetryPEC"`` plane selects the opposite parity.  Add the sphere
+and remesh after choosing the symmetry.  Only the selected parity
+is solved, so the full triplet and quintet above are no longer returned.
+See :doc:`/methods/boundaries` for the symmetry conventions.
 
 Where to go next
 ----------------
@@ -318,9 +383,10 @@ the solvers — starting with field monitors, which record fields
 *during* a driven simulation.
 
 
+
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 33.909 seconds)
+   **Total running time of the script:** (0 minutes 31.410 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_05_eigenmode_sphere.py:

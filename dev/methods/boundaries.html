@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -609,8 +623,7 @@
 <h2>Absorbing boundary: CPML<a class="headerlink" href="#absorbing-boundary-cpml" title="Link to this heading">#</a></h2>
 <p>Open-region truncation uses the <strong>convolutional perfectly matched
 layer (CPML)</strong> of Roden and Gedney <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id12" title="J. Alan Roden and Stephen D. Gedney. Convolution PML (CPML): an efficient FDTD implementation of the CFS-PML for arbitrary media. Microwave and Optical Technology Letters, 27(5):334–339, 2000. doi:10.1002/1098-2760(20001205)27:5&lt;334::AID-MOP14&gt;3.0.CO;2-A.">12</a>]</span>
-(<code class="docutils literal notranslate"><span class="pre">boundaries/cpml.py</span></code>, chosen over the uniaxial PML in
-DD-001).  The implementation carries the full <strong>complex
+(<code class="docutils literal notranslate"><span class="pre">boundaries/cpml.py</span></code>). The implementation carries the full <strong>complex
 frequency-shifted (CFS)</strong> stretching function</p>
 <div class="math notranslate nohighlight">
 \[
@@ -626,8 +639,24 @@ coefficients.  Profiles are the customary polynomial grading
 <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>, <a class="reference internal" href="../bibliography.html#id12" title="J. Alan Roden and Stephen D. Gedney. Convolution PML (CPML): an efficient FDTD implementation of the CFS-PML for arbitrary media. Microwave and Optical Technology Letters, 27(5):334–339, 2000. doi:10.1002/1098-2760(20001205)27:5&lt;334::AID-MOP14&gt;3.0.CO;2-A.">12</a>]</span>.
 The PML
 concept itself originates with Bérenger <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id10" title="Jean-Pierre Bérenger. A perfectly matched layer for the absorption of electromagnetic waves. Journal of Computational Physics, 114(2):185–200, 1994. doi:10.1006/jcph.1994.1159.">14</a>]</span>;
-the uniaxial variant used for comparison in DD-001 is
+the uniaxial variant is
 Gedney’s <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id13" title="Stephen D. Gedney. An anisotropic perfectly matched layer-absorbing medium for the truncation of FDTD lattices. IEEE Transactions on Antennas and Propagation, 44(12):1630–1639, 1996. doi:10.1109/8.546249.">15</a>]</span>.</p>
+<p>The electric and magnetic updates sample each profile at their own
+staggered positions: transverse electric-field nodes and magnetic-field
+cell centres along the layer normal. Depth is measured from the physical
+interface, including on a graded grid. Opposing layers therefore use the
+same physical profile under reflection. This matters when a resonator
+repeatedly encounters the absorber or when comparing a full model with
+its symmetry reduction. The grid, materials and excitation must also
+respect that symmetry.</p>
+<p><code class="docutils literal notranslate"><span class="pre">R_target</span></code> sets the continuous grading strength; achieved reflection also
+depends on the mesh, frequency, incidence angle and layer thickness. Check
+the result with additional clearance or more absorbing cells when boundary
+reflections could affect the quantity of interest. Tutorial 08 shows the
+open-region setup and clearance around a radiator.</p>
+<p>Existing CPML checkpoints retain the profile-sampling rule they were
+created with when resumed. New runs use staggered sampling; start a new
+run to use it for an older model.</p>
 </section>
 <section id="pec-pmc-and-periodic-walls">
 <h2>PEC, PMC and periodic walls<a class="headerlink" href="#pec-pmc-and-periodic-walls" title="Link to this heading">#</a></h2>

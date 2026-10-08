@@ -167,6 +167,8 @@ monitor.show(geometry=model, mesh=mesh)          # with the solids; metal cut ou
 pattern.show(f=10e9, phase_deg=90.0)                 # a frequency monitor at a phase
 eigen.show("H", geometry=model)                  # an eigenmode result: a slider over the modes
 eigen.show(mode=2, glyph="cone")                # starting at mode 2, cones instead of arrows
+eigen.show(mode=0, cut=False, volume="arrows")   # whole mode, without a cutting plane
+monitor.show("E", normal="y", opacity=0.0)      # vectors on the cut, no magnitude sheet
 ```
 
 | Item | Appearance |
@@ -274,7 +276,9 @@ monitor.show("Hx", volume="both", levels=[2.0])  # ±2 A/m surfaces, arrows too
 Both are entries of the *Show* menu whenever the source is a volume
 (isosurfaces need at least two cells along every axis, so a plane
 monitor offers arrows only); `volume=` only chooses what is on at
-first.  Without a cut (*Cut* set to *off*) the whole region is drawn.
+first.  Without a cut (*Cut* set to *off*, or ``cut=False`` on the field
+``show()`` call) the whole region is drawn.  The toolbar can enable a
+cutting plane later.
 A volume representation costs the whole region per frame instead of
 one layer — a large monitor plays slower with it on.  The cell values
 are interpolated to the grid nodes before the surfaces are contoured,

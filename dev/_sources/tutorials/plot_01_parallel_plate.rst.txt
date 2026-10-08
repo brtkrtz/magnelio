@@ -228,11 +228,11 @@ cap the cell size at 1/16 of the plate spacing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (12.0 s)
+      mesh | materials | done (17.1 s)
       mesh | conformal cells
-      mesh | conformal cells | done (4.7 s)
+      mesh | conformal cells | done (7.1 s)
       mesh | PEC masks
-      mesh | 32 x 16 x 64 = 32,768 cells | 10.0 MiB (17.0 s total)
+      mesh | 32 x 16 x 64 = 32,768 cells | 10.0 MiB (24.5 s total)
     grid: 32 x 16 x 64 cells
 
 
@@ -288,12 +288,21 @@ cutting plane in its toolbar); here it is rendered as a picture.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 144-146
+.. GENERATED FROM PYTHON SOURCE LINES 144-155
+
+In a notebook or browser, the viewer includes camera controls, the
+cutting-plane controls and the *Show* menu pictured below.  During
+post-processing, recorded monitor fields can be inspected in the
+same viewer with ``monitor.show()`` (see :ref:`sphx_glr_tutorials_plot_06_field_monitors.py`).
+
+.. image:: /_static/tutorial_01_viewer.png
+   :alt: Parallel-plate viewer with camera and cutting-plane controls and the Show menu
+   :width: 100 %
 
 The 2D cross-section is the exact companion — a section through the
 CAD model with the grid lines overlaid.
 
-.. GENERATED FROM PYTHON SOURCE LINES 146-149
+.. GENERATED FROM PYTHON SOURCE LINES 155-158
 
 .. code-block:: Python
 
@@ -312,7 +321,7 @@ CAD model with the grid lines overlaid.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 150-160
+.. GENERATED FROM PYTHON SOURCE LINES 159-169
 
 The port modes
 --------------
@@ -325,7 +334,7 @@ run.  The report prints the mode ladder of each port; for a TEM mode
 it also carries the line impedance, which we can hold against the
 textbook formula.
 
-.. GENERATED FROM PYTHON SOURCE LINES 160-172
+.. GENERATED FROM PYTHON SOURCE LINES 169-181
 
 .. code-block:: Python
 
@@ -354,12 +363,12 @@ textbook formula.
       [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω  ε_eff = 1.000  termination = dtbc (chain floor <= -329 dB)
     Z_L (port solver):  188.3652 Ohm
     Z_L (eta0 * b/a) :  188.3652 Ohm
-    relative deviation: 2.22e-16
+    relative deviation: 1.11e-16
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 173-181
+.. GENERATED FROM PYTHON SOURCE LINES 182-190
 
 The two agree to machine precision: the uniform TEM field of this
 cross-section is represented exactly on the grid.  (On less trivial
@@ -370,7 +379,7 @@ before trusting a result.)
 The transverse mode profile confirms what a TEM plate mode should
 look like — a uniform vertical E field:
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-184
+.. GENERATED FROM PYTHON SOURCE LINES 190-193
 
 .. code-block:: Python
 
@@ -389,7 +398,7 @@ look like — a uniform vertical E field:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 185-193
+.. GENERATED FROM PYTHON SOURCE LINES 194-202
 
 Run and S-parameters
 --------------------
@@ -400,7 +409,7 @@ record what arrives, and the recorded signals are transformed into
 S-parameters over the whole band — one run, all frequencies.  The
 run stops on its own once the port signals have decayed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 193-211
+.. GENERATED FROM PYTHON SOURCE LINES 202-220
 
 .. code-block:: Python
 
@@ -435,12 +444,12 @@ run stops on its own once the port signals have decayed.
 
  .. code-block:: none
 
-    max |S11| in band: -129.7 dB
+    max |S11| in band: -128.6 dB
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 212-220
+.. GENERATED FROM PYTHON SOURCE LINES 221-229
 
 A matched, lossless, uniform line transmits everything: ``|S21|``
 sits at 0 dB and ``|S11|`` at the numerical noise floor (below
@@ -451,7 +460,7 @@ The phase of S21 carries the physics of the 20 mm flight path.  For a
 TEM line it must follow :math:`e^{-j \beta L}` with
 :math:`\beta = 2 \pi f / c_0`:
 
-.. GENERATED FROM PYTHON SOURCE LINES 220-236
+.. GENERATED FROM PYTHON SOURCE LINES 229-245
 
 .. code-block:: Python
 
@@ -489,7 +498,7 @@ TEM line it must follow :math:`e^{-j \beta L}` with
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 237-247
+.. GENERATED FROM PYTHON SOURCE LINES 246-256
 
 Where to go next
 ----------------
@@ -505,7 +514,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 24.513 seconds)
+   **Total running time of the script:** (0 minutes 35.439 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

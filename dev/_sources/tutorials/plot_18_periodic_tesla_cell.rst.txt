@@ -282,9 +282,9 @@ is the magnetic one (tutorial 09).
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (1.6 s)
+      mesh | conformal cells | done (2.7 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.8 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (3.0 s total)
     grid: 26 x 26 x 30 cells
 
 
@@ -335,16 +335,17 @@ nothing periodic about them:
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (1.3 s)
+      mesh | conformal cells | done (2.3 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (1.4 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (2.5 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
+      mesh | materials | done (0.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (1.6 s)
+      mesh | conformal cells | done (2.5 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (2.0 s total)
+      mesh | 26 x 26 x 30 = 20,280 cells | 6.2 MiB (3.1 s total)
     electric walls on the iris planes (0-mode):  1.2774 GHz
     magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 
@@ -536,21 +537,22 @@ travelling wave is not, and no combination of walls would produce it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 343-349
+.. GENERATED FROM PYTHON SOURCE LINES 343-350
 
 The same mode in three dimensions: ``show()`` on the result opens the
-cell along a cutting plane with the field laid on it.  The quarter
+cell along a cutting plane with only field vectors on it
+(``opacity=0.0`` hides the magnitude sheet).  The quarter
 model was solved, but the picture is the whole cell — the result
 carries its mesh, whose declaration names the two symmetry planes,
 and the field is continued across them with the parity of each
 component.
 
-.. GENERATED FROM PYTHON SOURCE LINES 349-352
+.. GENERATED FROM PYTHON SOURCE LINES 350-353
 
 .. code-block:: Python
 
 
-    pi_mode.show(geometry=model, normal="y", position=0.0, glyph="cone", density=14)
+    pi_mode.show(geometry=model, normal="y", position=0.0, opacity=0.0, glyph="cone", density=14)
 
 
 
@@ -586,7 +588,7 @@ component.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 353-365
+.. GENERATED FROM PYTHON SOURCE LINES 354-366
 
 Where to go next
 ----------------
@@ -604,7 +606,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 5.625 seconds)
+   **Total running time of the script:** (4 minutes 5.240 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

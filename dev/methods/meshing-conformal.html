@@ -162,6 +162,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -174,13 +181,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-api-naming.html">
-    API naming migration
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -189,6 +189,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-api-naming.html">
+    API naming migration
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-geometry.html">
     Upgrading geometry construction
@@ -369,6 +376,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../howto/index.html">
     How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto-voltage-integrals.html">
+    Measure voltage along a field path
   </a>
 </li>
 
@@ -608,13 +622,13 @@
 <section id="geometry-kernel-and-material-filling">
 <h2>Geometry kernel and material filling<a class="headerlink" href="#geometry-kernel-and-material-filling" title="Link to this heading">#</a></h2>
 <p>Solid geometry is authored through a CSG layer (<code class="docutils literal notranslate"><span class="pre">geometry/</span></code>) backed by
-the Open CASCADE kernel via <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code> (DD-003, DD-016).
+the Open CASCADE kernel via <code class="docutils literal notranslate"><span class="pre">pythonocc-core</span></code>.
 Material assignment on the grid uses exact boundary-representation
 queries (solid classification, 3D face–solid intersection, planar
 cross-sections) rather than voxel sampling.  This is engineering
 infrastructure on top of a third-party kernel, not a numerical-methods
 contribution.</p>
-<p>The planar cross-sections that feed the conformal fractions are taken
+<p>Regular planar cross-sections that feed the conformal fractions are taken
 three ways.  Planar faces are sectioned exactly by an in-house engine
 (intersection points on straight edges, segments stitched through
 shared edges).  Free-form faces — parametric surfaces, lofts, imported
@@ -682,6 +696,59 @@ bookkeeping — a crossing on a face outline, as on every edge that runs
 along a conductor’s corner — classifies its sub-segment midpoints on
 probe lines of their own, and a midpoint within tolerance of a face
 counts as conductor, as the kernel’s classifier would have it.</p>
+<section id="nearly-tangent-cuts">
+<h3>Nearly tangent cuts<a class="headerlink" href="#nearly-tangent-cuts" title="Link to this heading">#</a></h3>
+<p>A plane that almost touches a curved wall can intersect a thin but nonzero
+material region. Losing that region changes the conformal material matrices,
+even if the bulk cell classification looks reasonable. Comparing two
+approximations is insufficient: both may lose the same region.</p>
+<p>The default section paths favour fast mesh construction and can miss very
+thin material regions near tangency. An optional in-house bounded-surface
+section is available through <code class="docutils literal notranslate"><span class="pre">MeshControl(robust_sections=True)</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+
+<span class="n">control</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">robust_sections</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">5e9</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">robust_sections</span></code> defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>. Enabling it selects the bounded-surface
+route for geometrically sensitive planes, including cuts computed by parallel
+mesh workers. It can substantially increase build time on curved CAD models;
+keep the selection fixed across a convergence ladder. There is no automatic
+warning or switch for a silently missed thin region. Preserving that region
+does not by itself establish an improvement in S-parameters or conductor
+losses: wall losses also depend on the sampled tangential magnetic field and
+the wall reconstruction. Assess those quantities separately when relevant.</p>
+<p>The optional route intersects the stored CAD surfaces with the requested plane,
+clips the resulting curves to their actual face boundaries and connects
+them through shared CAD edges. Outer boundaries and holes keep opposite
+orientations. The computation uses a centred, scaled copy of the completed
+body; construction, placement and mesh coordinates retain their geometry.
+Ordinary cuts keep the existing fast paths.</p>
+<p>An imprint or construction edge embedded inside a CAD face does not create
+another material boundary. Sections follow the bounding wires, including
+holes and periodic seams. Boundary curves can differ slightly at a shared
+vertex within the stored CAD tolerances; the interval classification uses
+another transversal direction when a test ray cannot give a consistent
+closed-boundary count. Trimmed periodic surfaces retain their native support
+domain for the intersection, while periodic parameter wrapping follows the
+underlying surface. Refinement preserves the closed support trace’s identity
+so artificial parameter-domain ends can still be connected.</p>
+<p>The curve-position residual budget is a small fraction of the section’s
+chord budget, with a floating-point resolution floor. This controls the
+geometric evaluation; it does not bound the electromagnetic discretisation
+error or recover features absent from the stored CAD model. In particular,
+a sampled parametric surface is the interpolated CAD surface, whose extrema
+need not equal those of the function between its supplied samples.</p>
+<p>Near tangency differs from a material interface coincident with the
+integration plane. Coincident interfaces retain their two-sided material
+limits, and domain boundaries retain the interior-sided limit. A tangent
+boundary with no area is empty; a coplanar material face keeps its area.
+When a sensitive section cannot satisfy the curve, boundary or closure
+checks, mesh creation reports the cut coordinate and the reason instead of
+accepting partial material coverage. Check the body’s validity, units and
+boundary tolerances before treating mesh refinement as a remedy.</p>
+</section>
 </section>
 <section id="graded-cartesian-mesh">
 <h2>Graded Cartesian mesh<a class="headerlink" href="#graded-cartesian-mesh" title="Link to this heading">#</a></h2>
@@ -693,9 +760,9 @@ temporary meshing allocations. Analysis setup and time integration need
 additional memory.</p>
 <p>The mesh generator (<code class="docutils literal notranslate"><span class="pre">mesh/mesher.py</span></code>) produces a graded (non-uniform)
 Cartesian tensor-product grid: geometry-derived fixpoints (“anchors”,
-plane clustering, DD-059…DD-062) plus feature-based two-scale
+plane clustering) plus feature-based two-scale
 refinement (<code class="docutils literal notranslate"><span class="pre">h_fine</span></code> near features, <code class="docutils literal notranslate"><span class="pre">h_coarse</span></code> in bulk, geometric
-grading between them, DD-028).  Graded Cartesian meshes and the
+grading between them).  Graded Cartesian meshes and the
 accuracy trade-offs of local grading are standard FDTD/FIT practice
 <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.</p>
@@ -706,7 +773,7 @@ tensor-product grid the question is <em>which</em> λ.  A grid line spans the
 whole domain, so the finest sensible resolution is per <em>slab</em>: each
 interval between two grid planes on an axis is a slab of the domain,
 and the densest material whose bounding box reaches into that slab
-sets the slab’s wavelength (DD-192, the default
+sets the slab’s wavelength (the default
 <code class="docutils literal notranslate"><span class="pre">MeshControl(wavelength_rule=&quot;local&quot;)</span></code>).  The air box around a small
 ceramic is meshed at the air wavelength on every axis interval the
 ceramic does not reach; the slabs the ceramic occupies — and every
@@ -720,7 +787,7 @@ rule — the densest material anywhere sets one bulk size for the
 whole domain.</p>
 <p>The two rules differ only far from material interfaces.  Feature
 refinement (<code class="docutils literal notranslate"><span class="pre">min_cells_per_feature</span></code>), the geometric grading from an
-interface into the bulk, the DD-107 domain-face buffer and the edge
+interface into the bulk, the domain-face buffer and the edge
 floor below are the same under both; the edge floor keeps the
 densest material’s wavelength as its reference, because it bounds
 the time step, and the time step follows the smallest cell anywhere.
@@ -732,7 +799,7 @@ settings; the slab-wise form is its consequence on a tensor grid.</p>
 <p>Grid planes come from two passes over the CAD model.  The <em>face</em> pass
 places a plane on every planar face with an axis-parallel normal and
 on the axis-normal tangent positions of cylinders and spheres — the
-material boundaries.  The <em>edge</em> pass (DD-191) places a plane wherever
+material boundaries.  The <em>edge</em> pass places a plane wherever
 a B-rep edge lies flat in an axis-normal plane: the circle where a
 chamfer cone meets a cylinder, the straight line where a fillet leaves
 a box face, the section curves of a loft, the iris and equator
@@ -878,7 +945,7 @@ shows as <code class="docutils literal notranslate"><span class="pre">-&gt;</spa
 staircasing: per primal edge the classifier stores an averaged
 <span class="math notranslate nohighlight">\(\bar\varepsilon\)</span>, a free (non-PEC) length fraction and a free dual-face
 area fraction; per dual face a corresponding <span class="math notranslate nohighlight">\(\bar\mu\)</span> and free-area
-data (unified per-edge/per-face sub-cell classification, DD-051).
+data (unified per-edge/per-face sub-cell classification).
 This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
@@ -900,18 +967,17 @@ see it.  Where the edge floor drops that plane, the mesher says so.</p>
 <p>For perfectly conducting boundaries the classifier additionally
 shortens partially-PEC edges (free-length weighting), which is the
 conformal-PEC idea of Dey and Mittra <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id16" title="Supriyo Dey and Raj Mittra. A locally conformal finite-difference time-domain (FDTD) algorithm for modeling three-dimensional perfectly conducting objects. IEEE Microwave and Guided Wave Letters, 7(9):273–275, 1997. doi:10.1109/75.622536.">8</a>]</span>
-(DD-036, since generalised into the unified classifier of DD-051).</p>
+(generalised into the unified sub-cell classifier).</p>
 <p>Two refinements are in-house:</p>
 <ul class="simple">
-<li><p><strong>LC-consistent pair coupling</strong> (DD-053, <code class="docutils literal notranslate"><span class="pre">couple_face_material_pairs</span></code>):
+<li><p><strong>LC-consistent pair coupling</strong> (<code class="docutils literal notranslate"><span class="pre">couple_face_material_pairs</span></code>):
 on dual faces with a locally translation-invariant ladder direction,
 the averaged <span class="math notranslate nohighlight">\(\bar\mu\)</span> is replaced by the value that makes the
 co-located product <span class="math notranslate nohighlight">\(M_\varepsilon M_\mu\)</span> equal the exact
 transmission-line value <span class="math notranslate nohighlight">\(\varepsilon_0\mu_0\,\varepsilon\mu\,d\tilde d\)</span>,
 so a discrete travelling wave on a uniform line is exact
-(derivation in <code class="docutils literal notranslate"><span class="pre">design-decisions.md</span></code> DD-053).</p></li>
-<li><p><strong>Enlarged-cell donor</strong> (DD-058, implemented but dormant — measured
-neutral): stabilising strongly cut cells by borrowing area from the
+(in-house derivation).</p></li>
+<li><p><strong>Enlarged-cell donor</strong> (currently inactive): stabilising strongly cut cells by borrowing area from the
 uncut neighbour.  The published antecedent is the family of
 uniformly stable conformal schemes / enlarged-cell techniques, e.g.
 Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id17" title="Igor Zagorodnov, Rolf Schuhmann, and Thomas Weiland. A uniformly stable conformal FDTD-method in Cartesian grids. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 16(2):127–141, 2003. doi:10.1002/jnm.488.">9</a>]</span>.</p></li>
@@ -920,8 +986,8 @@ Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a cla
 <section id="thin-conducting-sheets">
 <h2>Thin conducting sheets<a class="headerlink" href="#thin-conducting-sheets" title="Link to this heading">#</a></h2>
 <p>Zero-thickness or sub-cell metallisation is detected before gridding
-(DD-035, DD-059) and represented as PEC edge masks on the primal grid
-(<code class="docutils literal notranslate"><span class="pre">apply_thin_pec_sheet</span></code>, DD-017) — the standard thin-sheet treatment
+and represented as PEC edge masks on the primal grid
+(<code class="docutils literal notranslate"><span class="pre">apply_thin_pec_sheet</span></code>) — the standard thin-sheet treatment
 in Cartesian time-domain solvers <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>
 (subcell thin-sheet models are ch. 10 there; the
 detection pipeline itself is in-house).  The footprint a sheet paints
@@ -939,7 +1005,7 @@ plane.</p>
 <h2>Thin-wire sub-cell model<a class="headerlink" href="#thin-wire-sub-cell-model" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">ThinWire(curve,</span> <span class="pre">radius)</span></code> embeds a conductor thinner than a cell as a
 PEC edge chain with corrected surrounding material matrices
-(<code class="docutils literal notranslate"><span class="pre">mesh/thin_wire.py</span></code>, DD-080).  The model is the classic thin-wire
+(<code class="docutils literal notranslate"><span class="pre">mesh/thin_wire.py</span></code>).  The model is the classic thin-wire
 sub-cell treatment of Holland and Simpson <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id18" title="Richard Holland and Larry Simpson. Finite-difference analysis of EMP coupling to thin struts and wires. IEEE Transactions on Electromagnetic Compatibility, 23(2):88–97, 1981. doi:10.1109/TEMC.1981.303899.">10</a>]</span>,
 realised in the paired <span class="math notranslate nohighlight">\((m, 1/m)\)</span> encoding of
 Noda and Yokoyama <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id19" title="Taku Noda and Shigeru Yokoyama. Thin wire representation in finite difference time domain surge simulation. IEEE Transactions on Power Delivery, 17(3):840–847, 2002. doi:10.1109/TPWRD.2002.1022813.">11</a>]</span>:
@@ -990,10 +1056,9 @@ insulated wires are outside the model.</p>
 </section>
 <section id="mesh-quality-safeguards">
 <h2>Mesh quality safeguards<a class="headerlink" href="#mesh-quality-safeguards" title="Link to this heading">#</a></h2>
-<p>Hard minimum cell size with floor-aware refits and a longitudinal
-series-<span class="math notranslate nohighlight">\(\varepsilon\)</span> correction (DD-060), per-axis fine resolution
-(DD-061), a permanent 30-case stress sentinel (DD-062) and the
-reported edge floor (DD-191) are in-house engineering.</p>
+<p>Hard minimum cell size with floor-aware refits, a longitudinal
+series-<span class="math notranslate nohighlight">\(\varepsilon\)</span> correction, per-axis fine resolution and the
+reported edge floor are in-house engineering.</p>
 </section>
 </section>
 
@@ -1044,7 +1109,10 @@ reported edge floor (DD-191) are in-house engineering.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-kernel-and-material-filling">Geometry kernel and material filling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-kernel-and-material-filling">Geometry kernel and material filling</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nearly-tangent-cuts">Nearly tangent cuts</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#graded-cartesian-mesh">Graded Cartesian mesh</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-wavelength-sets-the-bulk-cell-size">Which wavelength sets the bulk cell size</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-geometry-gets-a-grid-plane">Which geometry gets a grid plane</a></li>
