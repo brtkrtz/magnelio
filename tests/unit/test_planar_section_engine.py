@@ -13,6 +13,7 @@ import pytest
 from magnelio.geo import Brick, Difference, Union
 from magnelio.geo import _occ_backend as ob
 from magnelio.geo._polygon_clip import polygon_area
+from magnelio.geo._section_policy import section_policy
 from magnelio.materials import Material
 
 pytest.importorskip("OCC")
@@ -277,7 +278,8 @@ class TestCylinderSectionEngine:
         for body in (air, posts):
             engine = ob._PlanarSectionEngine(body._occ_shape(1.0), scale=1.0, deflection=DEFLECTION)
             assert engine.section(1, 0.0) is None  # the seams lie in y = 0
-            tangent = engine.section(1, RADIUS)
+            with section_policy(True):
+                tangent = engine.section(1, RADIUS)
             assert tangent is not None
             area = abs(sum(polygon_area(p) for p in tangent))
             expected = 4 * PITCH * 6e-3 if body is air else 0.0

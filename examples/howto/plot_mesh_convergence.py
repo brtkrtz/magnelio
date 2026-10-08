@@ -43,7 +43,10 @@ from magnelio.constants import C0
 # mesh setting your model needs (``min_cell_size``,
 # ``max_edge_refinement``, …) goes in here too and stays fixed.
 # Keep the CAD model fixed across the ladder. Nearly tangent cuts at curved
-# walls are handled automatically when conformal material fractions are built.
+# walls can lose thin material regions on the default fast section paths.
+# For the optional bounded-CAD route, set robust_sections=True in rung() and
+# keep it fixed on every rung. It can substantially increase meshing time;
+# assess wall losses separately from S-parameters when they matter.
 # If meshing reports an unresolved sensitive section, inspect the CAD body's
 # validity and boundary tolerances before comparing the rungs: refinement
 # cannot restore a material region missing from the stored CAD geometry.
@@ -54,6 +57,7 @@ def rung(mnpw):
     return mio.MeshControl(
         min_nodes_per_wavelength=mnpw,
         min_cells_per_feature=max(2, mnpw // 4),
+        robust_sections=False,
     )
 
 

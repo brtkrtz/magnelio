@@ -18,6 +18,7 @@ import magnelio as mio
 from magnelio import geo
 from magnelio.geo._occ_backend import _PlanarSectionEngine, cross_section_polygons
 from magnelio.geo._polygon_clip import polygon_area
+from magnelio.geo._section_policy import section_policy
 
 DEFLECTION = 1e-4
 
@@ -819,16 +820,22 @@ class TestTangentPlaneBooksNothing:
     delegates the plane the way the analytic screen does.
     """
 
+    @pytest.mark.parametrize("robust", [False, True])
     @pytest.mark.parametrize("bore_axis", ["x", "y"])
     @pytest.mark.parametrize("offset", TANGENT_OFFSETS)
-    def test_the_engine_books_nothing_on_the_tangent_plane(self, bore_axis, offset):
+    def test_the_engine_books_nothing_on_the_tangent_plane(self, bore_axis, offset, robust):
         shape = _cross_drilled(offset, bore_axis)
         engine = _engine(shape, TANGENT_DEFLECTION)
         assert engine.enabled and engine.facetted
         axis = "xyz".index(bore_axis)
         pos = offset + TANGENT_R
         assert not engine.can_fast(axis, pos)
-        assert engine.section(axis, pos) == []
+        with section_policy(robust):
+            result = engine.section(axis, pos)
+        if robust:
+            assert result == []
+        else:
+            assert result is None  # the fast route delegates the tangent plane
 
     @pytest.mark.parametrize("bore_axis", ["x", "y"])
     @pytest.mark.parametrize("offset", TANGENT_OFFSETS)

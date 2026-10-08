@@ -20,6 +20,7 @@ from scipy.integrate import quad
 from magnelio import geo
 from magnelio.geo._occ_backend import _PlanarSectionEngine, cross_section_polygons
 from magnelio.geo._polygon_clip import polygon_area
+from magnelio.geo._section_policy import section_policy
 from magnelio.geo._surface_sections import (
     _endpoint_partners,
     _PreparedGeometry,
@@ -32,6 +33,12 @@ from magnelio.geo._surface_sections import (
 )
 
 R, BORE, HEIGHT, DEFLECTION = 2.3e-3, 0.7e-3, 10e-3, 2.5e-6
+
+
+@pytest.fixture(autouse=True)
+def enable_robust_sections():
+    with section_policy(True):
+        yield
 
 
 def drilled(axis, offset=0):
@@ -170,16 +177,39 @@ def test_coplanar_material_faces_retain_their_area(axis):
         assert area(result) == pytest.approx(1e-6, rel=1e-12)
 
 
-def test_disabling_the_guard_reproduces_the_original_defect(monkeypatch):
+def test_disabling_the_guard_reproduces_the_original_defect():
     body = drilled("y")
     occ = body._occ_shape(1)
-    monkeypatch.setenv("MAGNELIO_SURFACE_SECTIONS", "0")
-    old = _PlanarSectionEngine(occ, deflection=DEFLECTION).section(1, R - 1e-7)
+    with section_policy(False):
+        old = _PlanarSectionEngine(occ, deflection=DEFLECTION).section(1, R - 1e-7)
+        assert cross_section_polygons(occ, "y", R - 1e-7, deflection=DEFLECTION) == []
     assert area(old) < 0.8 * exact_drilled(1e-7)
-    assert cross_section_polygons(occ, "y", R - 1e-7, deflection=DEFLECTION) == []
-    monkeypatch.delenv("MAGNELIO_SURFACE_SECTIONS")
     corrected = _PlanarSectionEngine(occ, deflection=DEFLECTION).section(1, R - 1e-7)
     assert area(corrected) == pytest.approx(exact_drilled(1e-7), rel=1e-4)
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_spawn_worker_obeys_selected_cut_route(enabled):
+    import multiprocessing
+    from concurrent.futures import ProcessPoolExecutor
+
+    from magnelio.geo import _occ_backend as backend
+
+    body = drilled("y")
+    blob = breptools.WriteToString(body._occ_shape(1))
+    with ProcessPoolExecutor(
+        max_workers=1,
+        mp_context=multiprocessing.get_context("spawn"),
+        initializer=backend._section_worker_init,
+        initargs=([(0, blob)], enabled),
+    ) as pool:
+        polygons = pool.submit(
+            backend._section_worker, ("y", R - 1e-7, 0, DEFLECTION, 1.0, 1e-7, "")
+        ).result(timeout=60)
+    if enabled:
+        assert area(polygons) == pytest.approx(exact_drilled(1e-7), rel=1e-4)
+    else:
+        assert polygons == []
 
 
 @pytest.mark.parametrize("shift", [-1e-9, 0, 1e-9])

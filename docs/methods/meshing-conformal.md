@@ -88,8 +88,27 @@ material region. Losing that region changes the conformal material matrices,
 even if the bulk cell classification looks reasonable. Comparing two
 approximations is insufficient: both may lose the same region.
 
-Magnelio uses an in-house bounded-surface section for geometrically sensitive
-planes. It intersects the stored CAD surfaces with the requested plane,
+The default section paths favour fast mesh construction and can miss very
+thin material regions near tangency. An optional in-house bounded-surface
+section is available through `MeshControl(robust_sections=True)`:
+
+```python
+import magnelio as mio
+
+control = mio.MeshControl(robust_sections=True)
+mesh = mio.Mesh.from_geometry(model, control, f_max=5e9)
+```
+
+`robust_sections` defaults to `False`. Enabling it selects the bounded-surface
+route for geometrically sensitive planes, including cuts computed by parallel
+mesh workers. It can substantially increase build time on curved CAD models;
+keep the selection fixed across a convergence ladder. There is no automatic
+warning or switch for a silently missed thin region. Preserving that region
+does not by itself establish an improvement in S-parameters or conductor
+losses: wall losses also depend on the sampled tangential magnetic field and
+the wall reconstruction. Assess those quantities separately when relevant.
+
+The optional route intersects the stored CAD surfaces with the requested plane,
 clips the resulting curves to their actual face boundaries and connects
 them through shared CAD edges. Outer boundaries and holes keep opposite
 orientations. The computation uses a centred, scaled copy of the completed

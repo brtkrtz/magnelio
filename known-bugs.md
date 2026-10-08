@@ -16,8 +16,8 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**One entry is open as of 2026-10-06: KB-038.**
-All other entries are struck through and resolved.
+**Two entries are open as of 2026-10-08: KB-038 and KB-043 on the default fast route.**
+KB-043 has an explicit opt-in mitigation; other entries are resolved.
 
 ## KB-053: ~~Bounded-surface sections reject the repeated coaxial-cell CAD model~~ — Resolved (DD-287, 2026-10-06)
 
@@ -196,7 +196,7 @@ kernel-path model (5.44–5.87 s → 6.07–6.61 s, self + children), and
 re-pins every artefact with a curved face.  Internal record:
 `investigations/kb042-analytic-facets/MEASUREMENTS.md`.
 
-## KB-043: ~~Neither section path is trustworthy near a cylinder generatrix~~ — Resolved (DD-287, 2026-10-06)
+## KB-043: Fast sections can lose material near a cylinder generatrix — Opt-in mitigation (DD-287)
 
 The Boolean section lost curves before polygon assembly; lifted facet
 crossings missed a trim boundary. With the corrected bore-aware reference,
@@ -204,11 +204,15 @@ the facet path lost 25.1% / 49.7% at 100 nm / 1 nm, while the kernel returned
 zero. The historical alleged 14% loss at 1 um omitted the bore and was not
 a defect.
 
-Sensitive cuts now use conditioned bounded CAD-surface traces, face trims
+With `MeshControl(robust_sections=True)`, sensitive cuts use conditioned bounded CAD-surface traces, face trims
 and shared-edge contour assembly. Holes retain their signed winding;
 ordinary fast paths and coplanar interface semantics remain. Final residual,
 CAD boundary-tube and closure checks reject unresolved sensitive sections
 explicitly. Implemented on `fix/near-tangent-sections`.
+The controlled repeated-cell comparison establishes substantial build cost
+with very small finite-record S/field changes. The route is opt-in as of
+2026-10-08; the default fast route remains affected. Actual wall-loss sensitivity
+has not been measured, and sampling-weight diagnostics cannot certify it.
 
 Acceptance: 31 new regressions, 63 independent production section cases,
 320 material rectangles, mesh stress, port and S-parameter scale certificates.

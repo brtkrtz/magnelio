@@ -24123,8 +24123,35 @@ limits and old-checkpoint continuation. Evidence and final suite status:
 ## DD-287 — Bounded-surface sections at geometric grazing planes
 
 **Date:** 2026-10-06. **Status:** implemented on `fix/near-tangent-sections`,
-accepted on the audited fixtures and complete repeated coaxial-cell model.
-Resolves KB-043 and the subsequent valid-CAD regression KB-053.
+accepted on the audited fixtures and complete repeated coaxial-cell model;
+explicit opt-in as of 2026-10-08. Mitigates KB-043 when selected and resolves
+the subsequent valid-CAD regression KB-053.
+
+**Opt-in decision (2026-10-08).** `MeshControl(robust_sections=False)` retains
+the established fast paths by default; `True` selects the bounded-surface route.
+Five controlled repeated-cell builds per arm measure638.6 ->1700.6s (+166.3%)
+with very small finite-record S/field changes. This does not establish useful
+global accuracy improvement for that model, or exclude relevance elsewhere.
+Actual wall losses were not measured; geometry/sampling-weight diagnostics
+expose strong curvature-correction outliers and cannot establish loss accuracy.
+The maintainer defers further investigation of double-precision late energy
+growth and representative geometries that could justify targeted warnings or
+automatic routing. Wall-loss relevance is explicitly included in that search.
+Record: `investigations/near-tangent-hesr-impact/FOLLOW_UP.md` (internal dossier).
+
+Selection is scoped to a mesh build with a context variable, restored on
+completion or exception; no process environment is mutated. Spawned section
+workers receive the resolved boolean explicitly. An internal environment switch
+remains for raw A/B probes outside a build; the public control is authoritative.
+
+Opt-in acceptance:255 focused tests pass, including independent grazing-area
+references, serial/spawned route selection, default material filling and nested/
+failed-build policy restoration. Ruff, formatting, hygiene, API and DD gates pass.
+Offline HTML builds with gallery execution disabled; external-inventory warnings
+reflect unavailable network access. Workspace import checking finds only73
+pre-existing imports in an archived test-health snapshot; active scripts resolve.
+No new full EM suite or model simulation is claimed for this policy-only change.
+Record: `investigations/near-tangent-hesr-impact/opt-in-tests.log` (internal dossier).
 
 **Problem.** The stored cylinder/bore fixture loses material on two distinct
 routes. The Boolean section collapses before polygon assembly; lifted facet

@@ -34,6 +34,7 @@ from magnelio.geo._line_kernels import (
     planar_point_state,
     segment_fractions,
 )
+from magnelio.geo._section_policy import robust_sections_enabled, worker_section_policy
 from magnelio.geo._topology_history import result as _history_result
 
 
@@ -1858,7 +1859,7 @@ def cross_section_polygons(
         implicitly closed (see ``_tessellate`` below).
     """
     axis = {"x": 0, "y": 1, "z": 2}.get(plane_normal)
-    if axis is not None and os.environ.get("MAGNELIO_SURFACE_SECTIONS", "").strip() != "0":
+    if axis is not None and robust_sections_enabled():
         from magnelio.geo._surface_sections import _sensitive_section  # noqa: PLC0415
 
         resolved = _sensitive_section(shape, axis, plane_position, deflection, scale, slab)
@@ -3959,7 +3960,7 @@ class _PlanarSectionEngine:
     def _sensitive_section(self, axis: int, pos: float) -> list[np.ndarray] | None:
         if self.slab is None or self._deflection is None:
             return None
-        if os.environ.get("MAGNELIO_SURFACE_SECTIONS", "").strip() == "0":
+        if not robust_sections_enabled():
             return None
         from magnelio.geo._surface_sections import _SurfaceRouter  # noqa: PLC0415
 
@@ -6327,7 +6328,9 @@ def _section_worker_count() -> int:
     return min(8, os.cpu_count() or 1)
 
 
-def _section_worker_init(shape_blobs: list[tuple[int, bytes]]) -> None:
+def _section_worker_init(
+    shape_blobs: list[tuple[int, bytes]], robust_sections: bool = False
+) -> None:
     """Worker initializer: deserialize the broadcast shapes once.
 
     Each worker is a fresh ``spawn`` interpreter (never ``fork``: the
@@ -6337,6 +6340,7 @@ def _section_worker_init(shape_blobs: list[tuple[int, bytes]]) -> None:
     from OCC.Core.BRepTools import breptools  # noqa: PLC0415
     from OCC.Core.TopoDS import TopoDS_Shape  # noqa: PLC0415
 
+    worker_section_policy(robust_sections)
     for si, blob in shape_blobs:
         shape = TopoDS_Shape()
         breptools.ReadFromString(blob, shape)
@@ -6598,7 +6602,7 @@ def _parallel_section_prefill(
                 max_workers=n_workers,
                 mp_context=ctx,
                 initializer=_section_worker_init,
-                initargs=(blobs,),
+                initargs=(blobs, robust_sections_enabled()),
             ) as ex,
         ):
             chunk = max(1, len(tasks) // (n_workers * 32))
