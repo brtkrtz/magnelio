@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-10-07.*  **Released v0.8.2** (2026-09-09): **DD-270**
+*Last updated: 2026-10-08.*  **Released v0.8.2** (2026-09-09): **DD-270**
 the Poynting vector as a derived view of any recorded field (`poynting()`,
 `"S"` in the component vocabulary), **DD-271** three more readings of an
 S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
@@ -289,7 +289,7 @@ are required because gallery caches do not track library changes.
 Bibliographic confidence remains in the maintainers' internal ledger.
 On `docs/tutorial-viewer-guidance`, Tutorial 01 includes the supplied
 toolbar screenshot and monitor hint; Tutorial 05 opens mode 0 with
-`cut=False, volume="arrows"` and explains symmetry parity selection.
+`cut=False, volume="arrows"`; "Using symmetries" precedes "Where to go next".
 Tutorial 18 and the ring-down Q how-to show vectors-only cuts via
 `opacity=0.0`; the how-to records 41 E-field frames at mid-height in
 the coupled lossless run. The additive `cut=False` option uses the

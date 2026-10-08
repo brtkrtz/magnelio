@@ -168,15 +168,8 @@ fig.tight_layout()
 # sign of an eigenmode is arbitrary, and inside a degenerate cluster
 # the same holds for the mode's *orientation*.)
 #
-# Where to go next
+# Using symmetries
 # ----------------
-#
-# New in this tutorial: the eigenmode analysis type, degenerate mode
-# clusters as a symmetry statement (and their weak splitting as a
-# discretisation fingerprint), and mode field plots on slice planes
-# through the cavity.  The next tutorials turn to the toolbox around
-# the solvers — starting with field monitors, which record fields
-# *during* a driven simulation.
 #
 # Symmetry planes reduce computation time and filter out modes with
 # unwanted field parity.  For example, declare a magnetic symmetry
@@ -191,3 +184,14 @@ fig.tight_layout()
 # and remesh after choosing the symmetry.  Only the selected parity
 # is solved, so the full triplet and quintet above are no longer returned.
 # See :doc:`/methods/boundaries` for the symmetry conventions.
+#
+# Where to go next
+# ----------------
+#
+# New in this tutorial: the eigenmode analysis type, degenerate mode
+# clusters as a symmetry statement (and their weak splitting as a
+# discretisation fingerprint), and mode field plots on slice planes
+# through the cavity.  The next tutorials turn to the toolbox around
+# the solvers — starting with field monitors, which record fields
+# *during* a driven simulation.
+#
