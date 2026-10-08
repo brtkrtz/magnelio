@@ -24175,11 +24175,12 @@ Within each face/edge, connected parameter clusters sharing an endpoint are
 now one crossing before ordinal matching across faces. This is topological
 identity, not a wider distance or parameter tolerance. Shared-node solving,
 CAD-edge tolerance tubes, curve/surface residuals and reciprocal closure remain
-unchanged. The analytic fillet area is checked directly at all four fixed
+unchanged. This closes KB-054. The analytic fillet area is checked directly at all four fixed
 conditioning choices, plus repeated router calls; a closed-circle reference
 checks duplicated endpoint tags. All 52 section tests and the independent
-320-rectangle material certificate pass under 7.9.0. CI-version validation and
-full-suite results are tracked in `investigations/release-0.9.0/`
+320-rectangle material certificate pass under 7.9.0. The full local suite
+passes (4436 passed / 39 skipped), and GitHub CI passes under 8.0.1.
+Full-suite results are tracked in `investigations/release-0.9.0/`
 (internal record).
 
 **Problem.** The stored cylinder/bore fixture loses material on two distinct

@@ -1,10 +1,10 @@
-# API naming migration
+# Upgrading to 0.9: API naming
 
-This breaking revision makes physical quantities and operation scope explicit.
+Magnelio 0.9 makes physical quantities and operation scope explicit.
 Update Python calls together; removed spellings have no compatibility aliases.
 It does not change numerical methods, phasor conventions or the interpretation
-of supported stored projects. This guide is version-neutral until a release is
-assigned.
+of supported stored projects. For the geometry construction changes in the
+same release, see [Upgrading geometry construction](migration-geometry.md).
 
 ## Complete mapping
 

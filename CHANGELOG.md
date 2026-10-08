@@ -9,79 +9,12 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
-### Fixed
-
-- Repeated parameter-domain tags on one CAD section endpoint no longer
-  create spurious edge crossings and reject valid filleted sections.
-  Geometric residual, shared-edge tolerance and contour-closure checks remain.
-
-- Nearly tangent cuts through curved and trimmed CAD faces retain thin
-  material regions in conformal meshes. Shared-edge contour assembly preserves
-  holes, while unresolved sensitive cuts report an error instead of silently
-  accepting incomplete coverage.
-
-- Project watching delivers the final state when a writer finishes while
-  the consumer is processing the previous update.
-
-- Opposing CPML boundaries sample electric and magnetic fields at their
-  staggered positions, removing the absorber asymmetry in symmetry-model
-  comparisons. Existing checkpoints retain their original profiles on resume.
-
-- CAD volume measurements accurately integrate small rational spline faces,
-  including smooth circular tapers, while retaining curved-sheet precision.
-
-- Electric-field line integrals retain the full complex voltage and phase
-  of frequency-domain fields. Real-valued fields still return a float.
-
-- S-parameter queries on stored general time-domain runs again explain
-  that a scattering analysis is required, instead of reporting a missing run.
-
-- Stored-result metadata and time plots no longer derive the full
-  S-matrix. Individual S-parameter queries evaluate only the selected
-  excitation and involved ports, reuse calibrated spectra on matching
-  frequency axes, and discard cached results after a run is resumed.
-  Fourier evaluation shares bounded temporary blocks across records.
-
-- Energy decay stopping waits for all scheduled finite excitations to
-  finish, including delayed drives, synthesised port-source buffers and
-  plane-wave spatial retardation, on initial runs and continuation.
-- Energy-stopped runs report the current port-voltage check interval.
-  Checkpoints retain current decay peaks and pending port envelopes.
-
-- A bare port name in `run(excited="port1")` selects one port instead
-  of interpreting its characters as port names.
-
-- The microstrip dispersion and periodic TESLA-cell tutorials execute with
-  the revised API; derived phases retain radians and eigenmode frequencies
-  use their documented accessor.
-
-### Changed
-
-- Gaussian drives use a configurable `edge_attenuation_db` (25 dB by
-  default) at the upper band edge and peak after 4.5 envelope time constants.
-  The modulated pulse includes both mirrored spectral lobes when sizing
-  its width. Waveforms expose `tau` and `peak_time`; duration estimates
-  follow the resolved pulse. Existing stored runs retain their original
-  source waveform when resumed.
-
-- Public API names now distinguish physical frequency in Hz, excitation
-  normalization, rectangular corner origins, field frames and eigenmodes,
-  renderer options, stored-run selection and per-run counts. Immutable
-  geometry operations use `tagged_*` and `imprinted`. The
-  `migration-api-naming` guide lists every breaking mapping; existing
-  supported projects retain their coordinates, units and checkpoint meaning.
-- Sampled spectral axes use `f_axis`, requested recording samples use
-  `frequencies`, degree-valued phase inputs use `phase_deg`, and cell-centered
-  field access uses US spelling. Memory estimates use `estimate_memory`
-  and `n_runs`; material grid regions accept two 3D corners.
-
-### Removed
-
-- Geometry's deprecated `plot` aliases and the surface-current
-  `current_through` integral. Use `show` for interactive geometry and read
-  the local surface-current vector or magnitude for current distributions.
+## [0.9.0] - 2026-10-08
 
 ### Added
+
+- Interactive geometry and field viewers open in a browser from scripts;
+  notebooks retain their inline widget, with explicit destination selection.
 
 - Field viewers accept `cut=False` to open a whole-volume field view.
   Tutorials include the viewer controls, whole-mode inspection and
@@ -164,6 +97,24 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Gaussian drives use a configurable `edge_attenuation_db` (25 dB by
+  default) at the upper band edge and peak after 4.5 envelope time constants.
+  The modulated pulse includes both mirrored spectral lobes when sizing
+  its width. Waveforms expose `tau` and `peak_time`; duration estimates
+  follow the resolved pulse. Existing stored runs retain their original
+  source waveform when resumed.
+
+- Public API names now distinguish physical frequency in Hz, excitation
+  normalization, rectangular corner origins, field frames and eigenmodes,
+  renderer options, stored-run selection and per-run counts. Immutable
+  geometry operations use `tagged_*` and `imprinted`. The
+  `migration-api-naming` guide lists every breaking mapping; existing
+  supported projects retain their coordinates, units and checkpoint meaning.
+- Sampled spectral axes use `f_axis`, requested recording samples use
+  `frequencies`, degree-valued phase inputs use `phase_deg`, and cell-centered
+  field access uses US spelling. Memory estimates use `estimate_memory`
+  and `n_runs`; material grid regions accept two 3D corners.
+
 - The `show()` help and 3D viewer guide now explain common viewer options,
   camera presets and custom views, including coordinate units and automatic
   scene fitting, with concrete examples.
@@ -194,6 +145,52 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Repeated parameter-domain tags on one CAD section endpoint no longer
+  create spurious edge crossings and reject valid filleted sections.
+  Geometric residual, shared-edge tolerance and contour-closure checks remain.
+
+- With `MeshControl(robust_sections=True)`, nearly tangent cuts through curved
+  and trimmed CAD faces retain thin
+  material regions in conformal meshes. Shared-edge contour assembly preserves
+  holes, while unresolved sensitive cuts report an error instead of silently
+  accepting incomplete coverage. This more expensive section route is opt-in;
+  the default fast route retains its known near-tangency limitation.
+
+- Project watching delivers the final state when a writer finishes while
+  the consumer is processing the previous update.
+
+- Opposing CPML boundaries sample electric and magnetic fields at their
+  staggered positions, removing the absorber asymmetry in symmetry-model
+  comparisons. Existing checkpoints retain their original profiles on resume.
+
+- CAD volume measurements accurately integrate small rational spline faces,
+  including smooth circular tapers, while retaining curved-sheet precision.
+
+- Electric-field line integrals retain the full complex voltage and phase
+  of frequency-domain fields. Real-valued fields still return a float.
+
+- S-parameter queries on stored general time-domain runs again explain
+  that a scattering analysis is required, instead of reporting a missing run.
+
+- Stored-result metadata and time plots no longer derive the full
+  S-matrix. Individual S-parameter queries evaluate only the selected
+  excitation and involved ports, reuse calibrated spectra on matching
+  frequency axes, and discard cached results after a run is resumed.
+  Fourier evaluation shares bounded temporary blocks across records.
+
+- Energy decay stopping waits for all scheduled finite excitations to
+  finish, including delayed drives, synthesised port-source buffers and
+  plane-wave spatial retardation, on initial runs and continuation.
+- Energy-stopped runs report the current port-voltage check interval.
+  Checkpoints retain current decay peaks and pending port envelopes.
+
+- A bare port name in `run(excited="port1")` selects one port instead
+  of interpreting its characters as port names.
+
+- The microstrip dispersion and periodic TESLA-cell tutorials execute with
+  the revised API; derived phases retain radians and eigenmode frequencies
+  use their documented accessor.
+
 - Conformally meshed conductor loops bonded to a housing no longer
   create an artificial short across a separate, locally open feed gap.
 
@@ -201,6 +198,10 @@ major version is 0, minor releases may change the public API.
   source has no name.
 
 ### Removed
+
+- Geometry's deprecated `plot` aliases and the surface-current
+  `current_through` integral. Use `show` for interactive geometry and read
+  the local surface-current vector or magnitude for current distributions.
 
 - The standalone `Face` constructor and `Curve.covered()`; use the
   `Profile` factories with three-dimensional world points instead.

@@ -19,6 +19,25 @@ dedicated DD keep their record here.
 **Two entries are open as of 2026-10-08: KB-038 and KB-043 on the default fast route.**
 KB-043 has an explicit opt-in mitigation; other entries are resolved.
 
+## KB-054: ~~Repeated edge tags reject a valid filleted CAD section~~ — Resolved (DD-287, 2026-10-08)
+
+Periodic pcurve copies and closing-edge refinement can attach several
+slightly differing parameters of the same CAD edge to one trace endpoint.
+The ordinal matcher counted these aliases as additional crossings and
+rejected a valid filleted-cylinder section. CI under pythonocc/OCCT 8.0.1
+exposed the error; under 7.9.0 direct conditioning 1/16 failed while 4/64
+passed, so the router retry masked it locally.
+
+Parameter clusters sharing an endpoint are now one face/edge crossing before
+ordinal matching. Geometric trace records remain identical; no tolerance is
+widened. Node residuals, CAD boundary tubes and reciprocal contour closure
+remain mandatory. The independent fillet area passes directly at all four
+conditioning values, with repeated router calls; a closed-circle reference
+covers duplicate tags. All 52 section tests, the 320-rectangle material
+certificate and the full local suite (4436 passed / 39 skipped) pass.
+GitHub CI also passes under 8.0.1. Evidence:
+`investigations/release-0.9.0/CAD-FIX.md` (internal record).
+
 ## KB-053: ~~Bounded-surface sections reject the repeated coaxial-cell CAD model~~ — Resolved (DD-287, 2026-10-06)
 
 The new section route rejected a valid 51-cell source at a three-endpoint
