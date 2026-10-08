@@ -312,7 +312,7 @@ Always check how many modes actually came back.
       mesh | materials
       mesh | materials | done (1.5 s)
       mesh | conformal cells
-      mesh | conformal cells | done (6.3 s)
+      mesh | conformal cells | done (6.4 s)
       mesh | PEC masks
       mesh | 28 x 28 x 9 = 7,056 cells | 2.2 MiB (7.9 s total)
       mesh | feature planes
@@ -483,15 +483,15 @@ Sweeping the window
       mesh | conformal cells
       mesh | conformal cells | done (21.7 s)
       mesh | PEC masks
-      mesh | 78 x 44 x 9 = 30,888 cells | 9.6 MiB (26.8 s total)
+      mesh | 78 x 44 x 9 = 30,888 cells | 9.6 MiB (26.9 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | materials | done (5.1 s)
       mesh | conformal cells
-      mesh | conformal cells | done (16.8 s)
+      mesh | conformal cells | done (16.9 s)
       mesh | PEC masks
-      mesh | 78 x 28 x 9 = 19,656 cells | 6.1 MiB (22.0 s total)
+      mesh | 78 x 28 x 9 = 19,656 cells | 6.1 MiB (22.1 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
@@ -728,27 +728,27 @@ either number alone.
       mesh | materials
       mesh | materials | done (2.3 s)
       mesh | conformal cells
-      mesh | conformal cells | done (11.1 s)
+      mesh | conformal cells | done (11.2 s)
       mesh | PEC masks
-      mesh | 56 x 40 x 13 = 29,120 cells | 8.9 MiB (13.4 s total)
+      mesh | 56 x 40 x 13 = 29,120 cells | 8.9 MiB (13.6 s total)
     probe at 6.0 mm:  f0 = 3.1095 GHz,  Qe = 14.3 (group delay) / 13.6 (ring-down)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | materials | done (2.3 s)
       mesh | conformal cells
-      mesh | conformal cells | done (11.1 s)
+      mesh | conformal cells | done (11.3 s)
       mesh | PEC masks
-      mesh | 57 x 40 x 13 = 29,640 cells | 9.1 MiB (13.4 s total)
+      mesh | 57 x 40 x 13 = 29,640 cells | 9.1 MiB (13.6 s total)
     probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.6 (ring-down)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | materials | done (2.3 s)
       mesh | conformal cells
-      mesh | conformal cells | done (11.1 s)
+      mesh | conformal cells | done (11.2 s)
       mesh | PEC masks
-      mesh | 59 x 40 x 13 = 30,680 cells | 9.4 MiB (13.4 s total)
+      mesh | 59 x 40 x 13 = 30,680 cells | 9.4 MiB (13.6 s total)
     probe at 8.0 mm:  f0 = 3.0140 GHz,  Qe = 36.1 (group delay) / 34.9 (ring-down)
 
 
@@ -922,11 +922,11 @@ full run and add nothing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (4.7 s)
+      mesh | materials | done (4.6 s)
       mesh | conformal cells
       mesh | conformal cells | done (22.0 s)
       mesh | PEC masks
-      mesh | 90 x 40 x 13 = 46,800 cells | 14 MiB (26.7 s total)
+      mesh | 90 x 40 x 13 = 46,800 cells | 14 MiB (26.5 s total)
     grid: 90 x 40 x 13 = 46800 cells
 
 
@@ -1177,7 +1177,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (7 minutes 44.285 seconds)
+   **Total running time of the script:** (7 minutes 49.278 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:

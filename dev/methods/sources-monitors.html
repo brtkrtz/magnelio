@@ -776,14 +776,13 @@ with <code class="docutils literal notranslate"><span class="pre">resume(project
 <p>Illumination from outside uses the <strong>total-field/scattered-field
 (TF/SF)</strong> technique: the domain is split by a virtual box; consistency
 corrections on the six box faces inject the incident wave into the
-total-field region while the exterior carries only scattered field
-(DD-013).  The TF/SF formulation is due to
+total-field region while the exterior carries only scattered field.  The TF/SF formulation is due to
 Merewether, Fisher and Smith <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id56" title="David E. Merewether, Ronald Fisher, and F. W. Smith. On implementing a numeric Huygens' source scheme in a finite difference program to illuminate scattering bodies. IEEE Transactions on Nuclear Science, 27(6):1829–1833, 1980. doi:10.1109/TNS.1980.4331114.">53</a>]</span> and
 Umashankar and Taflove <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id57" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">54</a>]</span>;
 textbook treatment in <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
 The incident samples are converted to FIT grid quantities per
 edge/face, so amplitudes are physical (V/m) on any grid — an
-in-house calibration (DD-085).  <code class="docutils literal notranslate"><span class="pre">SourcePlaneWave(name,</span> <span class="pre">direction,</span> <span class="pre">polarization,</span> <span class="pre">corners)</span></code> declares the wave and its box; the excitation
+in-house calibration.  <code class="docutils literal notranslate"><span class="pre">SourcePlaneWave(name,</span> <span class="pre">direction,</span> <span class="pre">polarization,</span> <span class="pre">corners)</span></code> declares the wave and its box; the excitation
 that names it supplies the waveform and the peak field.  Propagation
 is along a grid axis.</p>
 <p>Any other incident field is <code class="docutils literal notranslate"><span class="pre">SourceFieldIncident(name,</span> <span class="pre">field,</span> <span class="pre">corners)</span></code>, whose <code class="docutils literal notranslate"><span class="pre">field(x,</span> <span class="pre">y,</span> <span class="pre">z,</span> <span class="pre">t,</span> <span class="pre">drive)</span></code> returns <code class="docutils literal notranslate"><span class="pre">((Ex,</span> <span class="pre">Ey,</span> <span class="pre">Ez),</span> <span class="pre">(Hx,</span> <span class="pre">Hy,</span> <span class="pre">Hz))</span></code> at the sample positions of one box face — a
@@ -1076,13 +1075,12 @@ transform of the fields at selected frequencies during the march;
 the running-DFT-during-timestepping technique is standard practice
 in time-domain solvers <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p></li>
 <li><p><strong>MonitorFluxTime</strong> — Poynting flux through a plane,
-<span class="math notranslate nohighlight">\(\sum \hat e \cdot \hat h\)</span> in the FIT pairing (physical Watt after
-DD-085).</p></li>
+<span class="math notranslate nohighlight">\(\sum \hat e \cdot \hat h\)</span> in the FIT pairing (physical watts after calibration).</p></li>
 <li><p><strong>MonitorWallLoss</strong> — see the
 <a class="reference internal" href="conductor-losses.html"><span class="std std-doc">conductor-losses chapter</span></a>.</p></li>
 </ul>
 <p>All monitors return physical SI units; the calibration (C = 1 pinned
-at the excitation source) is in-house bookkeeping (DD-085).</p>
+at the excitation source) is in-house bookkeeping.</p>
 <p>A field monitor records the <em>grid quantities on the Yee positions</em> of
 its region — a copy of the solver’s own samples, nothing averaged — and
 hands them out as a <code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code> (<code class="docutils literal notranslate"><span class="pre">monitor.recording</span></code>) or, for the
@@ -1102,7 +1100,7 @@ title is the cell-center coordinate the request snapped to.  Geometry
 overlays follow the same rule: thin wires, discrete ports and lumped
 elements are drawn when they lie inside the displayed layer, so a wire
 declared on the grid nodes half a cell away still appears in the
-picture of the field around it (DD-175).</p>
+picture of the field around it.</p>
 </section>
 <section id="signal-processing">
 <h2>Signal processing<a class="headerlink" href="#signal-processing" title="Link to this heading">#</a></h2>
@@ -1116,8 +1114,7 @@ settling (<code class="docutils literal notranslate"><span class="pre">cw_lockin
 reason.  Its running sum <span class="math notranslate nohighlight">\(\sum_n F(t_n)\,e^{-j\omega t_n}\,\Delta t\)</span> is
 the transient folded with the excitation, so it carries an extra factor
 of time and the pulse’s own spectral shape.  Since the excitation
-waveform <em>is</em> the incident power-wave amplitude <span class="math notranslate nohighlight">\(a(t)\)</span> in <span class="math notranslate nohighlight">\(\sqrt{\rm W}\)</span>
-(DD-078), dividing it out leaves the field of a <strong>1 W CW excitation</strong> at
+waveform <em>is</em> the incident power-wave amplitude <span class="math notranslate nohighlight">\(a(t)\)</span> in <span class="math notranslate nohighlight">\(\sqrt{\rm W}\)</span>, dividing it out leaves the field of a <strong>1 W CW excitation</strong> at
 each monitor frequency — E in V/m, H in A/m, per <span class="math notranslate nohighlight">\(\sqrt{\rm W}\)</span> of
 incident power.  A run performs that division on its own monitors, so
 <code class="docutils literal notranslate"><span class="pre">.spectrum</span></code> is in those units from the moment the run returns;
@@ -1141,13 +1138,13 @@ For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode’s wave impedance varies across the band — and the run divides
 additionally by the ratio <span class="math notranslate nohighlight">\(|a(f)|/|W(f)|\)</span> of the incident wave it
 separated at the port to the waveform spectrum, so the statement holds
-for every feed type (DD-198).</p>
+for every feed type.</p>
 </section>
 <section id="project-store-checkpointing-resume">
 <h2>Project store, checkpointing, resume<a class="headerlink" href="#project-store-checkpointing-resume" title="Link to this heading">#</a></h2>
 <p>Runs stream results append-only into an HDF5-based on-disk project
 store (SWMR single-writer/multi-reader), with periodic checkpoints
-and bit-exact resume (DD-070).  File formats: HDF5 for the store, VTK
+and bit-exact resume.  File formats: HDF5 for the store, VTK
 series for field visualisation.  This is engineering infrastructure,
 not a research method; the formats are community standards.</p>
 </section>

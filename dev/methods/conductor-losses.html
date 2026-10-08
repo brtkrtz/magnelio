@@ -631,10 +631,10 @@ evaluated perturbatively from the tangential magnetic field,</p>
 P_{\text{loss}}(f) = \tfrac12\, R_s(f) \sum_{\text{wall}}
  w\,|H_{\tan}|^2, \qquad R_s = \sqrt{\pi f \mu / \sigma},
 \]</div>
-<p>(<code class="docutils literal notranslate"><span class="pre">monitors/wall_loss.py</span></code>, <code class="docutils literal notranslate"><span class="pre">postprocessing/wall_loss.py</span></code>, DD-082).
+<p>(<code class="docutils literal notranslate"><span class="pre">monitors/wall_loss.py</span></code>, <code class="docutils literal notranslate"><span class="pre">post/wall_loss.py</span></code>).
 This is the classical power-loss perturbation method of microwave
 engineering <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id55" title="John David Jackson. Classical Electrodynamics. Wiley, 3rd edition, 1999.">39</a>]</span>.  Two
-accuracy refinements are in-house (DD-087): exact conformal
+accuracy refinements are in-house: exact conformal
 wall areas on curved conductors (removing the <span class="math notranslate nohighlight">\(4/\pi\)</span> staircase
 over-count) and a conformal tangential-H sampling rule
 (uncut-face booking with a normal-direction walk).</p>
@@ -688,7 +688,7 @@ the arrows stay readable.</p>
 <p>Roughness enters the perturbative chain as one real,
 frequency-dependent multiplier <span class="math notranslate nohighlight">\(K(f)\)</span> on the surface resistance,
 <span class="math notranslate nohighlight">\(R_{s,\text{rough}} = K(f)\,R_{s,\text{smooth}}\)</span>
-(<code class="docutils literal notranslate"><span class="pre">materials/roughness.py</span></code>, DD-088).  Implemented models:</p>
+(<code class="docutils literal notranslate"><span class="pre">materials/roughness.py</span></code>).  Implemented models:</p>
 <ul class="simple">
 <li><p><strong>Hammerstad</strong> — the classical RMS-height curve fit of Hammerstad
 and Jensen <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id51" title="Erik Hammerstad and Øyvind Jensen. Accurate models for microstrip computer-aided design. In IEEE MTT-S International Microwave Symposium Digest, 407–409. 1980. doi:10.1109/MWSYM.1980.1124303.">40</a>]</span>.</p></li>
@@ -711,7 +711,7 @@ never forms a time-domain impedance.</p>
 The surface-impedance boundary condition realises the <strong>Leontovich
 condition</strong> <span class="math notranslate nohighlight">\(E_{\tan} = Z_s(\omega)\,(\hat n \times \mathbf H)\)</span>
 <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id42" title="Mikhail A. Leontovich. Approximate boundary conditions for the electromagnetic field on the surface of a good conductor. In Investigations on Radiowave Propagation, Part II. Academy of Sciences USSR, Moscow, 1948.">44</a>, <a class="reference internal" href="../bibliography.html#id43" title="Thomas B. A. Senior. Impedance boundary conditions for imperfectly conducting surfaces. Applied Scientific Research, Section B, 8:418–436, 1960. doi:10.1007/BF02920074.">45</a>]</span> directly in the
-leapfrog update (<code class="docutils literal notranslate"><span class="pre">solver/sibc.py</span></code>, DD-091):</p>
+leapfrog update (<code class="docutils literal notranslate"><span class="pre">solver/_sibc.py</span></code>):</p>
 <ul class="simple">
 <li><p><span class="math notranslate nohighlight">\(Z_s(\omega)\)</span> — smooth-metal <span class="math notranslate nohighlight">\(\sqrt{j\omega\mu/\sigma}\)</span> or the
 causally completed rough impedance — is fitted as a
@@ -743,7 +743,7 @@ antecedents; Magnelio’s specific NNLS-Foster construction with its
 unconditional dissipation identity is in-house.</p>
 <p>The conformal booking of SIBC faces (which faces carry the damping
 term and with which geometric weight <span class="math notranslate nohighlight">\(G_f = A_f/l^2_{\text{dual}}\)</span>)
-reuses the DD-087 conformal wall-area machinery.</p>
+reuses the conformal wall-area machinery.</p>
 </section>
 <section id="surface-current-quantities">
 <h2>Surface-current quantities<a class="headerlink" href="#surface-current-quantities" title="Link to this heading">#</a></h2>

@@ -340,7 +340,6 @@ once more without changing the mode.
 
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
@@ -355,6 +354,7 @@ once more without changing the mode.
       mesh | 27 x 39 x 10 = 10,530 cells | 3.3 MiB (0.7 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.02397 m, would create a 0.00103 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=7.3) keeps it, or refine the mesh.
+      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
@@ -362,6 +362,7 @@ once more without changing the mode.
       mesh | 28 x 40 x 10 = 11,200 cells | 3.5 MiB (0.7 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
+      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
@@ -374,7 +375,7 @@ once more without changing the mode.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.7 s total)
+      mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.8 s total)
       mesh | feature planes
       mesh | feature planes | done (0.5 s)
       mesh | grid lines
@@ -395,6 +396,7 @@ once more without changing the mode.
       mesh | PEC masks
       mesh | 28 x 40 x 10 = 11,200 cells | 3.5 MiB (0.7 s total)
       mesh | feature planes
+      mesh | feature planes | done (0.5 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
@@ -406,7 +408,7 @@ once more without changing the mode.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.7 s total)
+      mesh | 30 x 42 x 10 = 12,600 cells | 3.9 MiB (0.8 s total)
     h = 5 mm: Z_strip =  40.8 ohm (sum)   39.7 ohm (difference)
     h = 6 mm: Z_strip =  45.0 ohm (sum)   43.7 ohm (difference)
     h = 7 mm: Z_strip =  48.4 ohm (sum)   46.8 ohm (difference)
@@ -557,9 +559,9 @@ actually landed on.
       mesh | materials
       mesh | materials | done (1.7 s)
       mesh | conformal cells
-      mesh | conformal cells | done (15.4 s)
+      mesh | conformal cells | done (16.0 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (18.3 s total)
+      mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (19.0 s total)
     grid: 46 x 56 x 209 cells
     coax port impedance on the grid: 52.3 ohm
     field line recorded at y = 0.90 mm, 209 points
@@ -804,9 +806,9 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
       mesh | materials
       mesh | materials | done (1.7 s)
       mesh | conformal cells
-      mesh | conformal cells | done (15.3 s)
+      mesh | conformal cells | done (16.3 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (18.2 s total)
+      mesh | 46 x 56 x 209 = 538,384 cells | 158 MiB (19.2 s total)
 
 
 
@@ -1015,7 +1017,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 54.357 seconds)
+   **Total running time of the script:** (5 minutes 23.514 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

@@ -47,9 +47,9 @@ run to use it for an older model.
 
 - **PEC** (`boundaries/pec.py`): tangential-E edge zeroing after each
   E update; in the eigenmode solver, PEC is imposed by degree-of-
-  freedom elimination (DD-009).  Standard practice
+  freedom elimination.  Standard practice
   {cite}`taflovehagness2005`.
-- **PMC** (`boundaries/pmc.py`, DD-065): realised as the *natural*
+- **PMC** (`boundaries/pmc.py`): realised as the *natural*
   boundary of the FIT update (the missing exterior circulation terms
   are simply absent), which is the discretely exact magnetic wall on
   the dual grid.  Standard FIT/FDTD practice
@@ -63,7 +63,7 @@ run to use it for an older model.
 ## Symmetry planes
 
 A face may be declared a **symmetry plane**
-(`boundaries/boundary_conditions.py`, DD-154): physically one of the
+(`boundaries/boundary_conditions.py`): physically one of the
 walls above, plus the statement that the mirror image of the model
 exists beyond it.  Which wall applies follows from the field, not from
 the geometry — on an electric wall the electric field stands
@@ -95,7 +95,7 @@ reports full-model quantities throughout:
   them in series ($z_\text{full} = 2 z_\text{half}$).  The modes are
   power-normalised on the half window, so full-model wave amplitudes
   carry $\sqrt2$ per cutting plane and excitations $1/\sqrt2$ — a
-  declared injected power stays a full-model watt (DD-155).
+  declared injected power stays a full-model watt.
 - Registered wall losses and flux integrals are scaled by the mirrored
   share in the same way.
 - A lumped port or element cut by the plane is declared as the full
@@ -115,10 +115,10 @@ intended.
 ## Boundary-condition interaction with ports
 
 Waveguide ports are not PML-backed (a PML-terminated port was
-evaluated and rejected, DD-031/DD-043): port faces carry their own
+evaluated and rejected): port faces carry their own
 transparent terminations, described in the [ports chapter](ports.md).
 
-A port *window* may sit in an absorbing face (DD-198) — the way a horn
+A port *window* may sit in an absorbing face — the way a horn
 or an open-ended guide is fed from the wall of an open box.  The window
 must be the cross-section of a conductor-enclosed guide reaching the
 face; behind it the absorber is switched off over its whole depth
@@ -127,6 +127,6 @@ port's own termination, while the rest of the face keeps absorbing.
 The lateral edge of that switch-off falls on the guide's walls, which
 is why the enclosure is required rather than recommended.  The mesher
 continues a conductor that touches an absorbing face through the
-absorber layer — cell materials and, since DD-198, the conformal
+absorber layer — cell materials and the conformal
 sub-cell classification alike — so the guide is uniform up to the
 port plane.

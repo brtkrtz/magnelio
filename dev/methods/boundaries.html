@@ -663,9 +663,9 @@ run to use it for an older model.</p>
 <ul class="simple">
 <li><p><strong>PEC</strong> (<code class="docutils literal notranslate"><span class="pre">boundaries/pec.py</span></code>): tangential-E edge zeroing after each
 E update; in the eigenmode solver, PEC is imposed by degree-of-
-freedom elimination (DD-009).  Standard practice
+freedom elimination.  Standard practice
 <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p></li>
-<li><p><strong>PMC</strong> (<code class="docutils literal notranslate"><span class="pre">boundaries/pmc.py</span></code>, DD-065): realised as the <em>natural</em>
+<li><p><strong>PMC</strong> (<code class="docutils literal notranslate"><span class="pre">boundaries/pmc.py</span></code>): realised as the <em>natural</em>
 boundary of the FIT update (the missing exterior circulation terms
 are simply absent), which is the discretely exact magnetic wall on
 the dual grid.  Standard FIT/FDTD practice
@@ -680,7 +680,7 @@ phase advance, see <a class="reference internal" href="eigenmode-analysis.html">
 <section id="symmetry-planes">
 <h2>Symmetry planes<a class="headerlink" href="#symmetry-planes" title="Link to this heading">#</a></h2>
 <p>A face may be declared a <strong>symmetry plane</strong>
-(<code class="docutils literal notranslate"><span class="pre">boundaries/boundary_conditions.py</span></code>, DD-154): physically one of the
+(<code class="docutils literal notranslate"><span class="pre">boundaries/boundary_conditions.py</span></code>): physically one of the
 walls above, plus the statement that the mirror image of the model
 exists beyond it.  Which wall applies follows from the field, not from
 the geometry — on an electric wall the electric field stands
@@ -708,7 +708,7 @@ parallel (<span class="math notranslate nohighlight">\(z_\text{full} = z_\text{h
 them in series (<span class="math notranslate nohighlight">\(z_\text{full} = 2 z_\text{half}\)</span>).  The modes are
 power-normalised on the half window, so full-model wave amplitudes
 carry <span class="math notranslate nohighlight">\(\sqrt2\)</span> per cutting plane and excitations <span class="math notranslate nohighlight">\(1/\sqrt2\)</span> — a
-declared injected power stays a full-model watt (DD-155).</p></li>
+declared injected power stays a full-model watt.</p></li>
 <li><p>Registered wall losses and flux integrals are scaled by the mirrored
 share in the same way.</p></li>
 <li><p>A lumped port or element cut by the plane is declared as the full
@@ -728,9 +728,9 @@ intended.</p>
 <section id="boundary-condition-interaction-with-ports">
 <h2>Boundary-condition interaction with ports<a class="headerlink" href="#boundary-condition-interaction-with-ports" title="Link to this heading">#</a></h2>
 <p>Waveguide ports are not PML-backed (a PML-terminated port was
-evaluated and rejected, DD-031/DD-043): port faces carry their own
+evaluated and rejected): port faces carry their own
 transparent terminations, described in the <a class="reference internal" href="ports.html"><span class="std std-doc">ports chapter</span></a>.</p>
-<p>A port <em>window</em> may sit in an absorbing face (DD-198) — the way a horn
+<p>A port <em>window</em> may sit in an absorbing face — the way a horn
 or an open-ended guide is fed from the wall of an open box.  The window
 must be the cross-section of a conductor-enclosed guide reaching the
 face; behind it the absorber is switched off over its whole depth
@@ -739,7 +739,7 @@ port’s own termination, while the rest of the face keeps absorbing.
 The lateral edge of that switch-off falls on the guide’s walls, which
 is why the enclosure is required rather than recommended.  The mesher
 continues a conductor that touches an absorbing face through the
-absorber layer — cell materials and, since DD-198, the conformal
+absorber layer — cell materials and the conformal
 sub-cell classification alike — so the guide is uniform up to the
 port plane.</p>
 </section>

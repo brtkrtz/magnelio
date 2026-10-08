@@ -629,7 +629,7 @@ are expressed in the <strong>complex-conjugate pole-residue form</strong></p>
  + \sum_p \frac{r_p}{j\omega - a_p},
 \]</div>
 <p>with real poles and conjugate pairs stored once
-(<code class="docutils literal notranslate"><span class="pre">materials/dispersion.py</span></code>, DD-083).  Using this single general form —
+(<code class="docutils literal notranslate"><span class="pre">materials/dispersion.py</span></code>).  Using this single general form —
 with Debye, Lorentz, Drude and wideband-laminate models as
 <em>constructors</em> on it rather than separate update schemes — follows
 Han, Dutton and Fan <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id35" title="Mingqi Han, Robert W. Dutton, and Shanhui Fan. Model dispersive media in finite-difference time-domain method with complex-conjugate pole-residue pairs. IEEE Microwave and Wireless Components Letters, 16(3):119–121, 2006. doi:10.1109/LMWC.2006.869862.">32</a>]</span>, who introduced
@@ -652,7 +652,7 @@ by the well-known instability of non-passive dispersive FDTD models
 equation method</strong>: one polarisation-current state per pole on the
 dispersive edges only, advanced with the <strong>trapezoidal rule</strong> and
 folded semi-implicitly into the E update so the field kernels stay
-untouched (<code class="docutils literal notranslate"><span class="pre">solver/dispersion.py</span></code>, DD-084).  The ADE technique is due
+untouched (<code class="docutils literal notranslate"><span class="pre">solver/_dispersion.py</span></code>).  The ADE technique is due
 to Kashiwa and Fukai <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id37" title="Tatsuya Kashiwa and Ichiro Fukai. A treatment by the FD-TD method of the dispersive characteristics associated with electronic polarization. Microwave and Optical Technology Letters, 3(6):203–205, 1990. doi:10.1002/mop.4650030606.">35</a>]</span> and
 Joseph, Hagness and Taflove <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id38" title="Rose M. Joseph, Susan C. Hagness, and Allen Taflove. Direct time integration of Maxwell's equations in linear dispersive media with absorption for scattering and propagation of femtosecond electromagnetic pulses. Optics Letters, 16(18):1412–1414, 1991. doi:10.1364/OL.16.001412.">36</a>]</span>; the
 textbook treatment is <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
@@ -664,7 +664,7 @@ approach of Pereda et al. <span class="bibtex-citation" id="id8">[<a class="refe
 gates: the Drude DC pole (<span class="math notranslate nohighlight">\(a_p = 0\)</span>) reduces bit-exactly to
 the standard semi-implicit conductor update with
 <span class="math notranslate nohighlight">\(\sigma = \varepsilon_0 r_p\)</span>; and the magnetic mirror
-(<span class="math notranslate nohighlight">\(\mu(\omega)\)</span>, DD-089) is the <em>same operator</em> under the substitution
+(<span class="math notranslate nohighlight">\(\mu(\omega)\)</span>) is the <em>same operator</em> under the substitution
 <span class="math notranslate nohighlight">\(M_\varepsilon \to M_\mu\)</span>, <span class="math notranslate nohighlight">\(C^{\mathsf T}\hat h \to -C\hat e\)</span>, gated
 by the exact <span class="math notranslate nohighlight">\(\mu\)</span>-Drude-DC <span class="math notranslate nohighlight">\(\equiv \sigma^*\)</span> reduction.</p>
 </section>
@@ -672,14 +672,14 @@ by the exact <span class="math notranslate nohighlight">\(\mu\)</span>-Drude-DC 
 <h2>Magnetic loss <span class="math notranslate nohighlight">\(\sigma^*\)</span><a class="headerlink" href="#magnetic-loss-sigma" title="Link to this heading">#</a></h2>
 <p>Magnetic conductivity (the <span class="math notranslate nohighlight">\(\sigma^*\)</span> term in the Faraday update) is
 carried as a diagonal <span class="math notranslate nohighlight">\(M_{\sigma^*}\)</span> with the same semi-implicit
-time-averaged update as electric <span class="math notranslate nohighlight">\(\sigma\)</span> (DD-081) — standard
+time-averaged update as electric <span class="math notranslate nohighlight">\(\sigma\)</span> — standard
 FDTD/FIT practice <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
 </section>
 <section id="vector-fitting-of-measured-data">
 <h2>Vector fitting of measured data<a class="headerlink" href="#vector-fitting-of-measured-data" title="Link to this heading">#</a></h2>
 <p>Tabulated <span class="math notranslate nohighlight">\(\varepsilon(f)\)</span> data are fitted onto the pole-residue form
 with an in-repo implementation of <strong>vector fitting</strong>
-(<code class="docutils literal notranslate"><span class="pre">materials/vector_fit.py</span></code>, DD-086), the pole-relocation iteration of
+(<code class="docutils literal notranslate"><span class="pre">materials/vector_fit.py</span></code>), the pole-relocation iteration of
 Gustavsen and Semlyen <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id40" title="Bjorn Gustavsen and Adam Semlyen. Rational approximation of frequency domain responses by vector fitting. IEEE Transactions on Power Delivery, 14(3):1052–1061, 1999. doi:10.1109/61.772353.">38</a>]</span>,
 including the standard unstable-pole flipping rule.  Passivity is
 <em>not</em> enforced by the fit; the <code class="docutils literal notranslate"><span class="pre">DispersionModel</span></code> constructor is the

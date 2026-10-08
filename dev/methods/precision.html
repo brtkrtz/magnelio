@@ -662,7 +662,7 @@ and the transparent-boundary convolution state;</p></li>
 reduced word length.</p></li>
 </ul>
 <p>This mixed layout is ordinary engineering practice in production
-time-domain field solvers, not a research method (DD-094).</p>
+time-domain field solvers, not a research method.</p>
 </section>
 <section id="what-single-precision-buys">
 <h2>What single precision buys<a class="headerlink" href="#what-single-precision-buys" title="Link to this heading">#</a></h2>
@@ -756,8 +756,7 @@ regime.  The threshold moves with the machine; the shape of the law
 does not.</p>
 <p>The same effect drives the GPU case, where consumer cards additionally
 run FP64 at a fraction of the FP32 rate: the fused update kernels
-measure 1.25× at 97 k cells and 2.43× at 373 k on the reference card
-(DD-094).</p>
+measure 1.25× at 97 k cells and 2.43× at 373 k on the reference card.</p>
 <p>Whole-run speed-ups are smaller than kernel speed-ups, and on a small
 port-heavy model can vanish entirely — the double-only parts above do
 not shrink, and Amdahl’s law does the rest.  The end-to-end figure for

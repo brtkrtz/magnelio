@@ -633,19 +633,19 @@ problem <span class="math notranslate nohighlight">\(\mathbf K \hat e = \omega_c
 <span class="math notranslate nohighlight">\(\mathbf K = \mathbf C_{2D}^{\mathsf T}\,\mathrm{diag}(M_\mu^{-1})\,
 \mathbf C_{2D}\)</span>, where <span class="math notranslate nohighlight">\(\mathbf C_{2D}\)</span> is the <em>row/column slice of
 the 3D FIT curl matrix</em> at the port plane
-(<code class="docutils literal notranslate"><span class="pre">ports/modal/curl_curl_2d.py</span></code>).  Discretising the 2D problem in the
+(<code class="docutils literal notranslate"><span class="pre">ports/_modal/curl_curl_2d.py</span></code>).  Discretising the 2D problem in the
 same metric as the 3D problem (rather than with an independent 2D
 solver) is the property that makes the discrete mode an exact
 eigenvector of the 3D-restricted transversal operator; the FIT
 curl-curl eigenformulation itself is standard
 <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id6" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>, <a class="reference internal" href="../bibliography.html#id7" title="Markus Clemens and Thomas Weiland. Discrete electromagnetism with the finite integration technique. Progress In Electromagnetics Research (PIER), 32:65–87, 2001. doi:10.2528/PIER00080103.">3</a>]</span>.  The TM
 variant is the exact restriction of the same operator, an in-house
-derivation (DD-055).</p>
+derivation.</p>
 </section>
 <section id="tem-quasi-tem-laplace-solver">
 <h3>TEM / quasi-TEM Laplace solver<a class="headerlink" href="#tem-quasi-tem-laplace-solver" title="Link to this heading">#</a></h3>
 <p>Multi-conductor cross-sections use the electrostatic route
-(<code class="docutils literal notranslate"><span class="pre">ports/modal/tem_laplace.py</span></code>): a 2D FIT Laplace problem
+(<code class="docutils literal notranslate"><span class="pre">ports/_modal/tem_laplace.py</span></code>): a 2D FIT Laplace problem
 <span class="math notranslate nohighlight">\(\nabla\!\cdot(\varepsilon\nabla\varphi_k) = 0\)</span> per signal conductor
 with unit-potential boundary conditions, <span class="math notranslate nohighlight">\(\hat e_k = -\nabla\varphi_k\)</span>,
 line capacitance from the discrete energy.  For inhomogeneous filling
@@ -656,7 +656,7 @@ theory as found in the microwave-engineering literature
 <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id30" title="Robert E. Collin. Field Theory of Guided Waves. IEEE Press, 2nd edition, 1991.">17</a>]</span> (the specific
 formulation is textbook material; no single originating paper is
 claimed).  The line-impedance definition used for TEM modes is the
-power–current impedance <span class="math notranslate nohighlight">\(Z_{PI}\)</span> (DD-025); the coexistence of
+power–current impedance <span class="math notranslate nohighlight">\(Z_{PI}\)</span>; the coexistence of
 <span class="math notranslate nohighlight">\(Z_{PI}\)</span>, <span class="math notranslate nohighlight">\(Z_{PV}\)</span>, <span class="math notranslate nohighlight">\(Z_{VI}\)</span> definitions is classical waveguide
 theory <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id27" title="Nathan Marcuvitz. Waveguide Handbook. Volume 10 of MIT Radiation Laboratory Series. McGraw-Hill, 1951.">18</a>]</span>.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
@@ -701,21 +701,21 @@ directional coupler</em> and <em>Lange coupler</em>.  Channels are ordered by de
 capacitance-corrected mass.  A single signal conductor is the <span class="math notranslate nohighlight">\(1
 \times 1\)</span> case of the same construction.  For a homogeneous filling
 the pencil degenerates (all patterns share one speed), and the
-channels are the capacitance-matrix eigenmodes of DD-066 instead.</p>
+channels are the capacitance-matrix eigenmodes instead.</p>
 </section>
 <section id="mode-classification-and-multi-mode-merge">
 <h3>Mode classification and multi-mode merge<a class="headerlink" href="#mode-classification-and-multi-mode-merge" title="Link to this heading">#</a></h3>
 <p>TE/TM and TEM/QTEM branches are merged into one unified multi-mode
 port; degenerate multi-TEM subspaces are orthonormalised through a
 Gram eigenbasis, and multi-channel projections use the dual basis
-(Gram inverse) (DD-066).  Standard linear algebra.</p>
+(Gram inverse).  Standard linear algebra.</p>
 </section>
 <section id="ports-in-absorbing-walls">
 <h3>Ports in absorbing walls<a class="headerlink" href="#ports-in-absorbing-walls" title="Link to this heading">#</a></h3>
 <p>A radiating structure is fed through a guide that reaches the domain
 wall: the neck of a horn, a coax entering the box.  The wall is
 absorbing, the port sits in the guide’s cross-section on it (a window
-port with <code class="docutils literal notranslate"><span class="pre">corners</span></code>), and two things make that consistent (DD-198).
+port with <code class="docutils literal notranslate"><span class="pre">corners</span></code>), and two things make that consistent.
 The absorber is switched off in the columns behind the window over its
 whole depth, so the mode injected at the port travels a uniform,
 lossless guide into the domain and the reflected wave meets the port’s
@@ -734,8 +734,8 @@ far-field monitor knows about such feeds (far-field chapter).</p>
 </section>
 <section id="exact-discrete-transparent-boundary-conditions-dtbc">
 <h2>Exact discrete transparent boundary conditions (DTBC)<a class="headerlink" href="#exact-discrete-transparent-boundary-conditions-dtbc" title="Link to this heading">#</a></h2>
-<section id="scalar-dtbc-on-uniform-feed-lines-tem-dd-054-te-tm-dd-055">
-<h3>Scalar DTBC on uniform feed lines (TEM: DD-054, TE/TM: DD-055)<a class="headerlink" href="#scalar-dtbc-on-uniform-feed-lines-tem-dd-054-te-tm-dd-055" title="Link to this heading">#</a></h3>
+<section id="scalar-dtbc-on-uniform-feed-lines-tem-and-te-tm">
+<span id="scalar-dtbc-on-uniform-feed-lines-tem-dd-054-te-tm-dd-055"></span><h3>Scalar DTBC on uniform feed lines (TEM and TE/TM)<a class="headerlink" href="#scalar-dtbc-on-uniform-feed-lines-tem-and-te-tm" title="Link to this heading">#</a></h3>
 <p>On a uniform feed line, the longitudinal dynamics of one modal
 amplitude in the FIT leapfrog is exactly a 1D leapfrog <strong>discrete
 Klein–Gordon chain</strong> with modal Courant number <span class="math notranslate nohighlight">\(r\)</span> (read off the
@@ -748,10 +748,10 @@ root <span class="math notranslate nohighlight">\(\lambda(z)\)</span> yields the
 causal convolution over the boundary history whose kernel is computed
 by contour integration and auto-extended past the run length, making
 the boundary <strong>exact (reflection-free to machine precision) within any
-finite run</strong> (<code class="docutils literal notranslate"><span class="pre">ports/modal/dtbc.py</span></code>).  Incident waves are prescribed
+finite run</strong> (<code class="docutils literal notranslate"><span class="pre">ports/_modal/dtbc.py</span></code>).  Incident waves are prescribed
 at the ghost plane through the same kernel.</p>
 <p>This construction was derived in-house for the FIT/FDTD leapfrog
-lattice (derivation in DD-054/DD-055; measured port floors −124 to
+lattice (in-house derivation; measured port floors −124 to
 −250 dB).  The general concept of <em>exact discrete
 transparent boundary conditions</em> — deriving the boundary kernel from
 the discretised interior scheme rather than discretising a continuous
@@ -765,8 +765,8 @@ systems are constructed by Rowley and Colonius
 FIT/FDTD waveguide ports; that application appears to be original to
 Magnelio.</p>
 </section>
-<section id="cw-true-mode-ports-for-inhomogeneous-lines-dd-056">
-<h3>CW true-mode ports for inhomogeneous lines (DD-056)<a class="headerlink" href="#cw-true-mode-ports-for-inhomogeneous-lines-dd-056" title="Link to this heading">#</a></h3>
+<section id="cw-true-mode-ports-for-inhomogeneous-lines">
+<span id="cw-true-mode-ports-for-inhomogeneous-lines-dd-056"></span><h3>CW true-mode ports for inhomogeneous lines<a class="headerlink" href="#cw-true-mode-ports-for-inhomogeneous-lines" title="Link to this heading">#</a></h3>
 <p>For inhomogeneous cross-sections measured at a single frequency, the
 true discrete modes of the z-uniform feed section are computed as
 eigenpairs of the <strong>quadratic ζ-pencil</strong></p>
@@ -776,7 +776,7 @@ eigenpairs of the <strong>quadratic ζ-pencil</strong></p>
  + \mathbf D_{-1}\right]\varphi = 0
 \]</div>
 <p>built from the <em>production</em> system matrices at the port
-(<code class="docutils literal notranslate"><span class="pre">ports/modal/zeta_pencil.py</span></code>), solved by sparse shift-invert ARPACK
+(<code class="docutils literal notranslate"><span class="pre">ports/_modal/zeta_pencil.py</span></code>), solved by sparse shift-invert ARPACK
 on the linearised pencil.  Quadratic eigenvalue problems and their
 linearisations are covered by the survey of Tisseur and Meerbergen
 <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id25" title="Françoise Tisseur and Karl Meerbergen. The quadratic eigenvalue problem. SIAM Review, 43(2):235–286, 2001. doi:10.1137/S0036144500381988.">23</a>]</span>; computing waveguide
@@ -787,14 +787,14 @@ The frequency-local closed-form <span class="math notranslate nohighlight">\((r_
 fit (Hellmann–Feynman derivative matching so the scalar DTBC is exact
 at the drive frequency) is an in-house derivation.</p>
 </section>
-<section id="galerkin-band-subspace-dtbc-for-broadband-runs-dd-057">
-<h3>Galerkin band-subspace DTBC for broadband runs (DD-057)<a class="headerlink" href="#galerkin-band-subspace-dtbc-for-broadband-runs-dd-057" title="Link to this heading">#</a></h3>
+<section id="galerkin-band-subspace-dtbc-for-broadband-runs">
+<span id="galerkin-band-subspace-dtbc-for-broadband-runs-dd-057"></span><h3>Galerkin band-subspace DTBC for broadband runs<a class="headerlink" href="#galerkin-band-subspace-dtbc-for-broadband-runs" title="Link to this heading">#</a></h3>
 <p>For pulsed broadband runs on inhomogeneous lines, the tracked
 mode-family traces over the band span a low-rank W-orthonormal
 subspace; the exterior half-line is Galerkin-projected onto it,
 inheriting the palindromic symmetry that makes the projected lattice
 lossless, and is closed by the exact small-system DTBC kernel
-(<code class="docutils literal notranslate"><span class="pre">ports/modal/band_dtbc.py</span></code>).  Projection-based model order reduction
+(<code class="docutils literal notranslate"><span class="pre">ports/_modal/band_dtbc.py</span></code>).  Projection-based model order reduction
 (Galerkin projection onto an SVD/POD subspace) is standard numerical
 practice <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id26" title="Peter Benner, Serkan Gugercin, and Karen Willcox. A survey of projection-based model reduction methods for parametric dynamical systems. SIAM Review, 57(4):483–531, 2015. doi:10.1137/130932715.">24</a>]</span> (survey reference; the
 specific passive-by-construction boundary closure is in-house).</p>
@@ -804,13 +804,13 @@ specific passive-by-construction boundary closure is in-house).</p>
 <p>Analytical-path modes (and, with explicit specs, inhomogeneous QTEM) are
 terminated by a <strong>first-order Mur absorbing boundary applied per mode
 in modal-coefficient space</strong>, with the per-mode phase velocity at the
-mode-calculation frequency (<code class="docutils literal notranslate"><span class="pre">ports/modal/operator.py</span></code>).  The ABC is
+mode-calculation frequency (<code class="docutils literal notranslate"><span class="pre">ports/_modal/operator.py</span></code>).  The ABC is
 Mur’s <span class="bibtex-citation" id="id11">[<a class="reference internal" href="../bibliography.html#id14" title="Gerrit Mur. Absorbing boundary conditions for the finite-difference approximation of the time-domain electromagnetic-field equations. IEEE Transactions on Electromagnetic Compatibility, 23(4):377–382, 1981. doi:10.1109/TEMC.1981.303970.">25</a>]</span>.  The design of the
 modal port
 operator as a co-simulated 1D termination per mode follows the
 modal-absorbing-port literature, specifically Luo and Chen
-<span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id21" title="Shuiping Luo and Zhizhang Chen. An efficient modal FDTD for absorbing boundary conditions and incident wave generator in waveguide structures. Progress In Electromagnetics Research (PIER), 68:229–246, 2007. doi:10.2528/PIER06090506.">26</a>]</span> (DD-047; higher-order Mur/Higdon
-variants were evaluated and rejected, DD-069).</p>
+<span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id21" title="Shuiping Luo and Zhizhang Chen. An efficient modal FDTD for absorbing boundary conditions and incident wave generator in waveguide structures. Progress In Electromagnetics Research (PIER), 68:229–246, 2007. doi:10.2528/PIER06090506.">26</a>]</span> (higher-order Mur/Higdon
+variants were evaluated and rejected).</p>
 </section>
 <section id="which-termination-a-channel-gets-and-how-to-see-it">
 <h3>Which termination a channel gets, and how to see it<a class="headerlink" href="#which-termination-a-channel-gets-and-how-to-see-it" title="Link to this heading">#</a></h3>
@@ -824,7 +824,7 @@ mass entry on the port plane with its continuation into the first feed
 cells.  A channel that fails either one keeps working — it falls back
 to the modal Mur absorber — but its reflection floor rises from below
 <span class="math notranslate nohighlight">\(-100\)</span> dB to the order of <span class="math notranslate nohighlight">\(-30\)</span> dB.</p>
-<p>The threshold of the first gate is a <em>reflection budget</em> (DD-229).
+<p>The threshold of the first gate is a <em>reflection budget</em>.
 The termination is exact for the weighted-mean chain, so a spread
 <span class="math notranslate nohighlight">\(\delta\)</span> across the cross-section leaves a residual mismatch, and that
 mismatch was measured through the production solver on three fixtures
@@ -850,7 +850,7 @@ tell the two apart, so the gate assumes the worse one.</p>
 them.  A cross-section that was <em>meant</em> to be uniform and missed the
 budget is the surprising one, and it warns: the port, the channel, the
 measured deviation, and where the mesh can explain it, the conformal
-ladder behind the offending faces (DD-228).  A cross-section that is
+ladder behind the offending faces.  A cross-section that is
 genuinely inhomogeneous is not a defect; a quasi-TEM line deviates at
 the material-contrast level and never qualified for the scalar chain
 in the first place, so the answer there is a different port model, not
@@ -947,7 +947,7 @@ and the conformal cross-section inherits it.</p>
 <h2>Excitation and recording<a class="headerlink" href="#excitation-and-recording" title="Link to this heading">#</a></h2>
 <p>Port excitation prescribes the incident modal amplitude at the ghost
 plane (DTBC branch) or injects on the port plane (Mur branch); V/I are
-recorded on a single co-located plane (DD-041).  Time signals are
+recorded on a single co-located plane.  Time signals are
 smooth pulses (Gaussian and derived shapes, <code class="docutils literal notranslate"><span class="pre">signals/waveforms.py</span></code>) —
 standard practice
 <span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
@@ -1006,17 +1006,17 @@ it does not depend on the rank.</p>
 <p>S-parameters are computed as <strong>power waves</strong> with <span class="math notranslate nohighlight">\(\sqrt{\mathrm W}\)</span>
 normalisation, <span class="math notranslate nohighlight">\(a,b = (V \pm Z_0 I)/(2\sqrt{Z_0})\)</span> per mode, from the
 recorded modal V/I after Fourier transform
-(<code class="docutils literal notranslate"><span class="pre">postprocessing/modal_sparameters.py</span></code>, DD-042/DD-078).  The
+(<code class="docutils literal notranslate"><span class="pre">post/modal_sparameters.py</span></code>).  The
 power-wave formalism is Kurokawa’s <span class="bibtex-citation" id="id14">[<a class="reference internal" href="../bibliography.html#id20" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">27</a>]</span>.
 Two discrete-exactness refinements are
-in-house (DD-063, DD-056): the a/b split de-staggers E and H
+in-house: the a/b split de-staggers E and H
 with the exact discrete factor <span class="math notranslate nohighlight">\(\lambda^{1/2}(z)\)</span> and uses the exact
 discrete wave impedance of the leapfrog chain (rather than the
 continuum <span class="math notranslate nohighlight">\(Z_0\)</span>), which removes the <span class="math notranslate nohighlight">\(O(\beta\Delta z)\)</span> staggering
 leak; and CW measurements solve the exact 2×2 phasor system per port
 (lock-in demodulation of incident and reflected discrete waves).</p>
 <p>Excitation amplitudes are pinned to physical units at the source
-(C = 1 convention, DD-085), so recorded V/I and monitor fields are in
+(C = 1 convention), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.</p>
 <section id="reading-an-s-matrix">
 <h3>Reading an S-matrix<a class="headerlink" href="#reading-an-s-matrix" title="Link to this heading">#</a></h3>
@@ -1145,8 +1145,8 @@ with the length of the march, because a short run has barely filled the
 cavity yet.  Truncation error is not monotone in run length, so “run
 longer and see whether it moves” is a poor convergence test here.</p>
 </section>
-<section id="band-ports-one-decomposition-per-frequency-dd-235">
-<h3>Band ports: one decomposition per frequency (DD-235)<a class="headerlink" href="#band-ports-one-decomposition-per-frequency-dd-235" title="Link to this heading">#</a></h3>
+<section id="band-ports-one-decomposition-per-frequency">
+<span id="band-ports-one-decomposition-per-frequency-dd-235"></span><h3>Band ports: one decomposition per frequency<a class="headerlink" href="#band-ports-one-decomposition-per-frequency" title="Link to this heading">#</a></h3>
 <p>A band-subspace port does not record modal amplitudes whose
 incident/outgoing split is fixed once for the run.  Its recording
 channels are subspace projections, and the split is defined per
@@ -1205,8 +1205,8 @@ the port genuinely carries fewer channels than its cross-section
 carries modes, and only a rebuilt port or a shorter axis fixes that.
 What it does is keep a model error from reading as a result.</p>
 </section>
-<section id="reference-plane-shift-de-embedding-dd-187">
-<h3>Reference-plane shift (de-embedding, DD-187)<a class="headerlink" href="#reference-plane-shift-de-embedding-dd-187" title="Link to this heading">#</a></h3>
+<section id="reference-plane-shift-de-embedding">
+<span id="reference-plane-shift-de-embedding-dd-187"></span><h3>Reference-plane shift (de-embedding)<a class="headerlink" href="#reference-plane-shift-de-embedding" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">result.deembed({&quot;port1&quot;:</span> <span class="pre">d})</span></code> returns the S-matrix referenced at
 planes shifted a distance <span class="math notranslate nohighlight">\(d\)</span> from the port planes into the domain
 (negative distances move outward): every S-parameter touching a
@@ -1236,7 +1236,7 @@ microstrip (0.8 mm <span class="math notranslate nohighlight">\(\varepsilon_r = 
 S21 phase left after de-embedding the whole line is 0.3°, 1.5° and
 1.8° at 5, 10 and 15 GHz, against <span class="math notranslate nohighlight">\(-1.5\)</span>°, <span class="math notranslate nohighlight">\(-11\)</span>° and <span class="math notranslate nohighlight">\(-30\)</span>° with the
 quasi-static <span class="math notranslate nohighlight">\(\gamma\)</span> the fallback used to take; what remains is the
-drive port’s launch residue (DD-239), not the line.  Only a channel
+drive port’s launch residue, not the line.  Only a channel
 with neither — a feed section that is not a uniform chain behind the
 port — falls back to the mode’s continuum <span class="math notranslate nohighlight">\(\gamma(\omega)\)</span>, for a
 quasi-TEM mode the frequency-flat quasi-static one, which leaves the
@@ -1246,8 +1246,8 @@ length.  Below its cut-off a channel’s factor grows as <span class="math notra
 d}\)</span>; those bins keep the diagnostic character the raw values have.
 Lumped ports carry no feed line and cannot be de-embedded.</p>
 </section>
-<section id="reference-impedance-dispersion-and-renormalisation-dd-244">
-<h3>Reference impedance, dispersion and renormalisation (DD-244)<a class="headerlink" href="#reference-impedance-dispersion-and-renormalisation-dd-244" title="Link to this heading">#</a></h3>
+<section id="reference-impedance-dispersion-and-renormalisation">
+<span id="reference-impedance-dispersion-and-renormalisation-dd-244"></span><h3>Reference impedance, dispersion and renormalisation<a class="headerlink" href="#reference-impedance-dispersion-and-renormalisation" title="Link to this heading">#</a></h3>
 <p>Every S-parameter is a ratio of power waves, and power waves are
 defined against a reference impedance.  Magnelio measures each
 channel against <em>its own</em>: the impedance its port mode carries on the
@@ -1308,8 +1308,8 @@ port’s actual reference in the header, and a reader that renormalises
 on <code class="docutils literal notranslate"><span class="pre">R</span></code> would be wrong.  <code class="docutils literal notranslate"><span class="pre">to_skrf</span></code> carries per-port, per-frequency
 references in the network’s <code class="docutils literal notranslate"><span class="pre">z0</span></code> and needs no such choice.</p>
 </section>
-<section id="converging-the-port-cross-section-dd-244">
-<h3>Converging the port cross-section (DD-244)<a class="headerlink" href="#converging-the-port-cross-section-dd-244" title="Link to this heading">#</a></h3>
+<section id="converging-the-port-cross-section">
+<span id="converging-the-port-cross-section-dd-244"></span><h3>Converging the port cross-section<a class="headerlink" href="#converging-the-port-cross-section" title="Link to this heading">#</a></h3>
 <p>The 2D mode problem is the port-plane slice of the 3D operator, so its
 parameters carry the discretisation of the user’s mesh, and converging
 them by refining that mesh costs <span class="math notranslate nohighlight">\(8\times\)</span> cells per halving.
@@ -1335,8 +1335,8 @@ a renormalisation to 50 Ω would attribute to the device; the remaining
 ladder rerun in a four times larger box converges at 52.7 Ω) and the
 hand formula’s thickness correction.</p>
 </section>
-<section id="what-a-touchstone-export-covers-dd-184">
-<h3>What a Touchstone export covers (DD-184)<a class="headerlink" href="#what-a-touchstone-export-covers-dd-184" title="Link to this heading">#</a></h3>
+<section id="what-a-touchstone-export-covers">
+<span id="what-a-touchstone-export-covers-dd-184"></span><h3>What a Touchstone export covers<a class="headerlink" href="#what-a-touchstone-export-covers" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">to_touchstone()</span></code> and <code class="docutils literal notranslate"><span class="pre">to_skrf()</span></code> export the square sub-matrix over
 the <strong>excited</strong> channels: one Touchstone port per channel, so a
 multi-mode port occupies one port per mode.  Channels that were
@@ -1442,9 +1442,9 @@ change placements on minimum or maximum domain faces.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exact-discrete-transparent-boundary-conditions-dtbc">Exact discrete transparent boundary conditions (DTBC)</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scalar-dtbc-on-uniform-feed-lines-tem-dd-054-te-tm-dd-055">Scalar DTBC on uniform feed lines (TEM: DD-054, TE/TM: DD-055)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cw-true-mode-ports-for-inhomogeneous-lines-dd-056">CW true-mode ports for inhomogeneous lines (DD-056)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#galerkin-band-subspace-dtbc-for-broadband-runs-dd-057">Galerkin band-subspace DTBC for broadband runs (DD-057)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scalar-dtbc-on-uniform-feed-lines-tem-and-te-tm">Scalar DTBC on uniform feed lines (TEM and TE/TM)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cw-true-mode-ports-for-inhomogeneous-lines">CW true-mode ports for inhomogeneous lines</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#galerkin-band-subspace-dtbc-for-broadband-runs">Galerkin band-subspace DTBC for broadband runs</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modal-mur-fallback">Modal Mur fallback</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-termination-a-channel-gets-and-how-to-see-it">Which termination a channel gets, and how to see it</a></li>
 </ul>
@@ -1458,11 +1458,11 @@ change placements on minimum or maximum domain faces.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnitude-phase-and-time-signals">Magnitude, phase and time signals</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#finite-records-and-decay-stopping">Finite records and decay stopping</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-out-of-time-continuing-a-truncated-record">Running out of time: continuing a truncated record</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#band-ports-one-decomposition-per-frequency-dd-235">Band ports: one decomposition per frequency (DD-235)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-plane-shift-de-embedding-dd-187">Reference-plane shift (de-embedding, DD-187)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-impedance-dispersion-and-renormalisation-dd-244">Reference impedance, dispersion and renormalisation (DD-244)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#converging-the-port-cross-section-dd-244">Converging the port cross-section (DD-244)</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-touchstone-export-covers-dd-184">What a Touchstone export covers (DD-184)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#band-ports-one-decomposition-per-frequency">Band ports: one decomposition per frequency</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-plane-shift-de-embedding">Reference-plane shift (de-embedding)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-impedance-dispersion-and-renormalisation">Reference impedance, dispersion and renormalisation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#converging-the-port-cross-section">Converging the port cross-section</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-touchstone-export-covers">What a Touchstone export covers</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quantity-and-anchor-vocabulary">Quantity and anchor vocabulary</a></li>

@@ -642,13 +642,13 @@ corrections and port-mode restrictions are all expressed as
 modifications of the diagonal mass matrices
 <span class="math notranslate nohighlight">\(\mathbf M_\varepsilon, \mathbf M_\mu, \mathbf M_\sigma\)</span> rather than
 of the stencil.</p>
-<p>Implementation: <code class="docutils literal notranslate"><span class="pre">operators/curl.py</span></code> (sparse primal curl <span class="math notranslate nohighlight">\(\mathbf C\)</span>;
-the dual curl is <span class="math notranslate nohighlight">\(\mathbf C^{\mathsf T}\)</span>), <code class="docutils literal notranslate"><span class="pre">operators/material_matrices.py</span></code>
+<p>Implementation: <code class="docutils literal notranslate"><span class="pre">_operators/curl.py</span></code> (sparse primal curl <span class="math notranslate nohighlight">\(\mathbf C\)</span>;
+the dual curl is <span class="math notranslate nohighlight">\(\mathbf C^{\mathsf T}\)</span>), <code class="docutils literal notranslate"><span class="pre">_operators/material_matrices.py</span></code>
 (diagonal mass matrices <span class="math notranslate nohighlight">\(M_\varepsilon = \varepsilon_0\varepsilon_r
 A_{\text{dual}}/l_{\text{primal}}\)</span>, <span class="math notranslate nohighlight">\(M_\mu = \mu_0\mu_r
 A_{\text{primal}}/l_{\text{dual}}\)</span>, plus <span class="math notranslate nohighlight">\(M_\sigma\)</span> and the magnetic
-<span class="math notranslate nohighlight">\(M_{\sigma^*}\)</span>), <code class="docutils literal notranslate"><span class="pre">fields/field_arrays.py</span></code> (structure-of-arrays field
-storage, DD-002).</p>
+<span class="math notranslate nohighlight">\(M_{\sigma^*}\)</span>), <code class="docutils literal notranslate"><span class="pre">_fields/field_arrays.py</span></code> (structure-of-arrays field
+storage).</p>
 </section>
 <section id="leapfrog-time-integration">
 <h2>Leapfrog time integration<a class="headerlink" href="#leapfrog-time-integration" title="Link to this heading">#</a></h2>
@@ -712,14 +712,14 @@ the <a class="reference internal" href="meshing-conformal.html"><span class="std
 <h2>Selectable precision<a class="headerlink" href="#selectable-precision" title="Link to this heading">#</a></h2>
 <p>The whole time-loop state (fields, update coefficients, CPML and
 auxiliary ADE/SIBC states) can run in IEEE-754 single precision
-(<code class="docutils literal notranslate"><span class="pre">precision=&quot;single&quot;</span></code>, the production default) or double precision
-(DD-094), while accumulating quantities — the energy reduction, the
+(<code class="docutils literal notranslate"><span class="pre">precision=&quot;single&quot;</span></code>, the production default) or double precision,
+while accumulating quantities — the energy reduction, the
 DFT accumulators, the port arithmetic, geometry and mode solves —
 always stay in double.  This mixed-precision layout is engineering
 practice in production FDTD/FIT codes, not a research method.
 Stability of the reduced-precision auxiliary recursions follows from
 their contractive form (<span class="math notranslate nohighlight">\(|k| &lt; 1\)</span> for every decaying IIR branch); this
-is analysed per operator in the repository (DD-094), not taken from
+is analysed per operator in the repository, not taken from
 the literature.</p>
 <p>What the choice costs and buys, and how to recognise a result limited
 by the word length rather than by the mesh, is the subject of its own
@@ -728,12 +728,21 @@ chapter — see <a class="reference internal" href="precision.html"><span class=
 <section id="simulation-duration-and-energy-stopping">
 <h2>Simulation duration and energy stopping<a class="headerlink" href="#simulation-duration-and-energy-stopping" title="Link to this heading">#</a></h2>
 <p>Runs are terminated either after a fixed number of steps or by an
-energy criterion: the total discrete field energy
-<span class="math notranslate nohighlight">\(\tfrac12(\hat e^{\mathsf T} \mathbf M_\varepsilon \hat e + \hat
-h^{\mathsf T} \mathbf M_\mu \hat h)\)</span> must decay a configurable number
-of dB below its peak (DD-019).  Energy-based stopping is common
+energy criterion: the leapfrog energy
+$\tfrac12((\hat e^{n+1})^{\mathsf T} \mathbf M_\varepsilon \hat e^{n+1}</p>
+<ul class="simple">
+<li><p>(\hat h^{n+1/2})^{\mathsf T} \mathbf M_\mu \hat h^{n+3/2})$
+pairs the two magnetic half-steps around the electric instant and must decay
+a configurable number
+of dB below its peak.  Energy-based stopping is common
 engineering practice in time-domain S-parameter extraction; no
-specific publication is claimed.</p>
+specific publication is claimed.</p></li>
+</ul>
+<p>For a lossless stable closed system this is the conserved leapfrog quantity;
+using the magnetic field squared at only one half-step introduces an
+oscillatory time-staggering error. If the paired diagnostic is non-positive,
+the solver falls back to the positive electric-plus-magnetic squared norm
+for stopping. This fallback does not certify stability or spectral accuracy.</p>
 </section>
 </section>
 

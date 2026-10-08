@@ -282,7 +282,7 @@ reactance is what reflects at the top of the band.
       mesh | PEC masks
       mesh | 14 x 14 x 39 = 7,644 cells | 2.4 MiB
 
-    <matplotlib.legend.Legend object at 0x7f71d650b290>
+    <matplotlib.legend.Legend object at 0x7f863b6f2f90>
 
 
 
@@ -356,7 +356,7 @@ whole band; hold that thought for the microstrip section.
       mesh | 14 x 14 x 32 = 6,272 cells | 2.0 MiB
     coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-    <matplotlib.legend.Legend object at 0x7f71dd306d90>
+    <matplotlib.legend.Legend object at 0x7f863a8d5890>
 
 
 
@@ -409,7 +409,7 @@ mismatch.
       mesh | PEC masks
       mesh | 14 x 14 x 38 = 7,448 cells | 2.3 MiB
 
-    <matplotlib.legend.Legend object at 0x7f71d77b4950>
+    <matplotlib.legend.Legend object at 0x7f864b7d7a10>
 
 
 
@@ -597,7 +597,7 @@ of the band that matters most in your application.
       mesh | 24 x 23 x 19 = 10,488 cells | 3.2 MiB
     microstrip, trace end at -1.5·h_sub: max |phase error|  15.58 deg
 
-    <matplotlib.legend.Legend object at 0x7f71d5820590>
+    <matplotlib.legend.Legend object at 0x7f863ae180d0>
 
 
 
@@ -942,7 +942,7 @@ catalogue value leaves a visible broadband pedestal.
       mesh | PEC masks
       mesh | 23 x 31 x 33 = 23,529 cells | 7.1 MiB
 
-    <matplotlib.legend.Legend object at 0x7f71d6a2ed90>
+    <matplotlib.legend.Legend object at 0x7f863baa2f90>
 
 
 
@@ -1006,7 +1006,7 @@ quantities of your production model, run, and read the scoreboard.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 51.008 seconds)
+   **Total running time of the script:** (0 minutes 51.890 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_investigations.py:
