@@ -165,14 +165,13 @@ with `resume(project, name)`, and `project.result(name)` rebuilds its
 Illumination from outside uses the **total-field/scattered-field
 (TF/SF)** technique: the domain is split by a virtual box; consistency
 corrections on the six box faces inject the incident wave into the
-total-field region while the exterior carries only scattered field
-(DD-013).  The TF/SF formulation is due to
+total-field region while the exterior carries only scattered field.  The TF/SF formulation is due to
 Merewether, Fisher and Smith {cite}`merewether1980` and
 Umashankar and Taflove {cite}`umashankartaflove1982`;
 textbook treatment in {cite}`taflovehagness2005`.
 The incident samples are converted to FIT grid quantities per
 edge/face, so amplitudes are physical (V/m) on any grid — an
-in-house calibration (DD-085).  `SourcePlaneWave(name, direction,
+in-house calibration.  `SourcePlaneWave(name, direction,
 polarization, corners)` declares the wave and its box; the excitation
 that names it supplies the waveform and the peak field.  Propagation
 is along a grid axis.
@@ -492,13 +491,12 @@ two agree to eight digits.
   the running-DFT-during-timestepping technique is standard practice
   in time-domain solvers {cite}`taflovehagness2005`.
 - **MonitorFluxTime** — Poynting flux through a plane,
-  $\sum \hat e \cdot \hat h$ in the FIT pairing (physical Watt after
-  DD-085).
+  $\sum \hat e \cdot \hat h$ in the FIT pairing (physical watts after calibration).
 - **MonitorWallLoss** — see the
   [conductor-losses chapter](conductor-losses.md).
 
 All monitors return physical SI units; the calibration (C = 1 pinned
-at the excitation source) is in-house bookkeeping (DD-085).
+at the excitation source) is in-house bookkeeping.
 
 A field monitor records the *grid quantities on the Yee positions* of
 its region — a copy of the solver's own samples, nothing averaged — and
@@ -520,7 +518,7 @@ title is the cell-center coordinate the request snapped to.  Geometry
 overlays follow the same rule: thin wires, discrete ports and lumped
 elements are drawn when they lie inside the displayed layer, so a wire
 declared on the grid nodes half a cell away still appears in the
-picture of the field around it (DD-175).
+picture of the field around it.
 
 ## Signal processing
 
@@ -535,8 +533,7 @@ A frequency monitor is divided by the same spectrum, and for the same
 reason.  Its running sum $\sum_n F(t_n)\,e^{-j\omega t_n}\,\Delta t$ is
 the transient folded with the excitation, so it carries an extra factor
 of time and the pulse's own spectral shape.  Since the excitation
-waveform *is* the incident power-wave amplitude $a(t)$ in $\sqrt{\rm W}$
-(DD-078), dividing it out leaves the field of a **1 W CW excitation** at
+waveform *is* the incident power-wave amplitude $a(t)$ in $\sqrt{\rm W}$, dividing it out leaves the field of a **1 W CW excitation** at
 each monitor frequency — E in V/m, H in A/m, per $\sqrt{\rm W}$ of
 incident power.  A run performs that division on its own monitors, so
 `.spectrum` is in those units from the moment the run returns;
@@ -561,13 +558,13 @@ For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode's wave impedance varies across the band — and the run divides
 additionally by the ratio $|a(f)|/|W(f)|$ of the incident wave it
 separated at the port to the waveform spectrum, so the statement holds
-for every feed type (DD-198).
+for every feed type.
 
 ## Project store, checkpointing, resume
 
 Runs stream results append-only into an HDF5-based on-disk project
 store (SWMR single-writer/multi-reader), with periodic checkpoints
-and bit-exact resume (DD-070).  File formats: HDF5 for the store, VTK
+and bit-exact resume.  File formats: HDF5 for the store, VTK
 series for field visualisation.  This is engineering infrastructure,
 not a research method; the formats are community standards.
 

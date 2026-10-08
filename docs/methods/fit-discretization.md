@@ -31,7 +31,7 @@ the dual curl is $\mathbf C^{\mathsf T}$), `operators/material_matrices.py`
 A_{\text{dual}}/l_{\text{primal}}$, $M_\mu = \mu_0\mu_r
 A_{\text{primal}}/l_{\text{dual}}$, plus $M_\sigma$ and the magnetic
 $M_{\sigma^*}$), `fields/field_arrays.py` (structure-of-arrays field
-storage, DD-002).
+storage).
 
 ## Leapfrog time integration
 
@@ -99,14 +99,14 @@ the [conformal geometry chapter](meshing-conformal.md).
 
 The whole time-loop state (fields, update coefficients, CPML and
 auxiliary ADE/SIBC states) can run in IEEE-754 single precision
-(`precision="single"`, the production default) or double precision
-(DD-094), while accumulating quantities — the energy reduction, the
+(`precision="single"`, the production default) or double precision,
+while accumulating quantities — the energy reduction, the
 DFT accumulators, the port arithmetic, geometry and mode solves —
 always stay in double.  This mixed-precision layout is engineering
 practice in production FDTD/FIT codes, not a research method.
 Stability of the reduced-precision auxiliary recursions follows from
 their contractive form ($|k| < 1$ for every decaying IIR branch); this
-is analysed per operator in the repository (DD-094), not taken from
+is analysed per operator in the repository, not taken from
 the literature.
 
 What the choice costs and buys, and how to recognise a result limited
@@ -119,6 +119,6 @@ Runs are terminated either after a fixed number of steps or by an
 energy criterion: the total discrete field energy
 $\tfrac12(\hat e^{\mathsf T} \mathbf M_\varepsilon \hat e + \hat
 h^{\mathsf T} \mathbf M_\mu \hat h)$ must decay a configurable number
-of dB below its peak (DD-019).  Energy-based stopping is common
+of dB below its peak.  Energy-based stopping is common
 engineering practice in time-domain S-parameter extraction; no
 specific publication is claimed.

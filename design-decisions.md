@@ -8,6 +8,12 @@ numbers are never reused or deleted: they are the anchor system cited across
 src/, tests/ and the reference documents
 (gate: `validation/tools/check_dd_references.py`).
 
+Compacted entries distinguish the final contract from intermediate staging.
+For partially superseded entries, a struck-through title marks the historical
+framing; surviving decisions are stated explicitly. Historical implementation
+and validation anchors remain even where a later rename changed their paths.
+Detailed pre-compaction narratives remain in the release history (`v0.9.0`).
+
 Citations of the form `investigations/<topic>/…` (measurement dossiers:
 DERIVATION/MEASUREMENTS/FINDINGS records with their probe scripts) and
 `userscripts/…` (developer worksheets) refer to the maintainers' internal
@@ -4018,142 +4024,52 @@ Cluster 3 (discrete-port audit → lumped RLC → thin-wire) shares one
 ``Curve → grid-edge`` rasterizer.  Overlap policy 2a (same-material overlaps
 allowed, compared by value) is a separate small change, not part of this DD.
 ---
-## DD-072 — Standalone planar Face + generalised extrude
+## DD-072 — ~~Standalone planar Face + generalised extrude~~ → Refined by DD-275
 
-**Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 1,
-WP 1b + 1d — the continuation of DD-071).
-**Status:** Accepted — implemented and merged behind the plan.
-**Superseded in part by [[DD-275]] (2026-09-28):** the public
-axis-normal `Face` and the loose `face_near` operation grammar are migration
-history, not the durable geometry ontology.  Planar standalone geometry moves
-to `Profile`; owned CAD faces become `FaceRef`.  The implementation record
-below is retained because it explains the behaviour being migrated.
-**Problem.**  Solids could only be authored as CSG primitives + Boolean
-ops; there was no way to give an arbitrary planar profile and sweep it into
-a solid.  ``extrude`` existed but only for a *face of an existing solid*
-selected by ``face_near`` — it could not take a free-standing profile.  The
-motivating cases (spiral inductor, arbitrary microstrip pad, connector
-cross-sections) start from a hand-drawn 2D polygon.
-**Decision.**
-1. **``Face(normal, points, offset=0.0, material=None, name=None)``** — a
-   standalone planar polygon in an axis-normal plane.  ``points`` are
-   in-plane ``(u, v)`` vertices; ``(u, v)`` map to the two axes orthogonal
-   to *normal* using the **same convention as ``cross_section_polygons``**
-   (normal ``x`` → u=y, v=z; ``y`` → u=x, v=z; ``z`` → u=x, v=y), so a Face
-   and the cross-section of its extrusion share one coordinate frame.
-   ``offset`` positions the plane along the normal axis.  Built by a new
-   ``occ_backend.make_face`` (``BRepBuilderAPI_MakePolygon`` closed →
-   ``BRepBuilderAPI_MakeFace(wire, planar=True)``).  Validated at
-   construction: ``normal ∈ {x,y,z}`` and ``≥ 3`` points.
-2. **Optional material** is the load-bearing design point.  A Face with
-   ``material=None`` is a **construction profile** (input to
-   ``extrude``/``sweep``, not a physical object).  A Face **with** a
-   material is a **thin sheet** — but thin-sheet *physics* wiring (DD-035)
-   is deferred, so:
-   - a Face is not a ``_BaseShape`` (whose ``material`` is required); it is
-     its own dataclass with ``material`` optional;
-   - ``Mesh.from_geometry`` **rejects** any standalone Face up front with a
-     clear ``NotImplementedError`` (before grid construction, which would
-     otherwise die on the zero-thickness bounding box) — a zero-volume face
-     must not silently mesh to nothing, and a ``material=None`` face must
-     not reach the ``id(mat)`` material-keying.
-3. **``extrude`` generalised** to ``extrude(shape, *, vector,
-   face_near=None, material=None)``.  A **Face** input *is* the profile
-   (``face_near`` unused; ``BRepPrimAPI_MakePrism`` runs directly on
-   ``Face._occ_shape()`` — no ``find_nearest_face``); a **solid** input
-   keeps the existing ``face_near`` selection.  The extruded solid needs a
-   material: explicit ``material=`` wins, else the Face's own material, else
-   (construction Face) a ``ValueError`` asks for one.  ``face_near`` became
-   keyword-optional — backward compatible, since every existing caller
-   passes ``face_near=``/``vector=`` by keyword.
-**Rationale.**  Reusing the ``cross_section_polygons`` (u, v) convention
-means no new coordinate mental model and guarantees consistency between a
-profile and its swept solid's cross-sections.  Keeping ``material`` optional
-lets the Face object carry the eventual thin-sheet material for free while
-the physics is still deferred, and the up-front mesher rejection turns the
-deferral into a loud, actionable error instead of a silent wrong result.
-Making the Face-vs-solid dispatch live inside ``extrude`` (rather than a
-separate ``extrude_face``) keeps one verb for "sweep a profile linearly",
-matching how the later ``sweep``/``revolve`` (1c/1e) will also take a
-profile.
-**Consequences / scope.**  ``Face`` is exported from ``magnelio`` and
-``magnelio.geometry``.  Thin-sheet meshing, ``sweep``/``revolve`` (Cluster 1
-WP 1c/1e via the abstract ``Curve``), and the overlap-policy relaxation
-(Cluster 2, 2a) remain future work.
----
-## DD-073 — Curve (polyline / arc / spline / helix) + sweep/revolve; optimal bounding boxes
+**Date:** 2026-07-14. Implemented; the Face/loose-face_near grammar is retired.
+It introduced axis-normal (u,v) profiles using the section coordinate frame,
+optional construction material and a shared standalone/solid-face extrusion
+verb. Explicit material won over profile material; unsupported standalone
+sheet meshing failed early instead of silently producing no physical object.
+[[DD-275]] replaces Face with world-coordinate Profile and owned FaceRef,
+removes compatibility aliases and defines dimensional/material inheritance.
+The construction-profile idea survives; the old class/export/selection
+grammar does not. Context: [[DD-071]], [[DD-035]]; the original work was in
+GEOMETRY_CIRCUIT_PLAN.md, an internal planning record.
 
-**Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 1,
-WP 1c + 1e — continuation of DD-071 and DD-072).
-**Status:** Accepted — implemented and merged behind the plan.
-**Superseded in part by [[DD-275]] (2026-09-28):** `Curve` becomes a
-first-class transformable `Shape`, and profile-consuming operations move to
-the dimensional contract decided there.  The exact-helix construction,
-sweep positioning evidence and optimal-bounding-box decision below stand.
-**Problem.**  There was no way to author a curved solid (a coil, a bent
-trace, a solid of revolution).  The plan's motivating case — a spiral
-inductor — is a rectangular profile (WP 1b ``Face``) swept along a helix.
-That needs a *curve* object and *sweep*/*revolve* verbs.
-**Decision.**
-1. **``Curve``** — one abstract, OCC-backed 3D locus (a ``TopoDS_Wire``)
-   with **no material** (1D is never a physical object on its own); a
-   Curve exposes only ``_occ_shape()`` + ``bounding_box()``.  Consumers
-   decide use: ``sweep`` (→ solid), later Cluster 3 (rasterise onto grid
-   edges for voltage integration / thin-wire).  Four lazy classmethod
-   constructors (in ``curves.py``): ``Curve.polyline`` (open wire),
-   ``Curve.arc`` (3-point ``GC_MakeArcOfCircle``), ``Curve.spline``
-   (``GeomAPI_PointsToBSpline``), ``Curve.helix``.  Cheap validation is
-   eager (like ``Face``); OCC-dependent validation (collinear arc,
-   degenerate points) stays lazy in the ``make_*`` helpers.
-2. **Helix is exact, not sampled.**  ``make_helix`` builds the helix as a
-   straight line in the ``(angle, height)`` parameter space of a
-   ``Geom_CylindricalSurface`` (radius exact to machine precision), with
-   ``breplib.BuildCurve3d`` forcing the 3D curve — **required**, or the
-   edge carries only a pcurve on the surface and ``sweep``'s Frenet frame
-   dies with ``Standard_NullObject``.  Parameter span
-   ``last = turns·hypot(2π, pitch)``; handedness flips the 2D u-slope sign.
-3. **``sweep(profile, spine)``** via ``BRepOffsetAPI_MakePipe``.  MakePipe
-   uses the profile *at the position it already occupies*, so ``sweep``
-   first **auto-positions** the profile: it reads the profile plane's
-   normal + centroid (from the OCC face, so a transformed Face works too)
-   and the spine's start point + unit tangent (``BRepAdaptor_CompCurve``,
-   multi-edge safe), then applies a rigid ``gp_Trsf.SetDisplacement`` that
-   moves the profile centroid onto the spine start with its normal along
-   the start tangent (in-plane roll fixed by a deterministic perpendicular).
-   The user need not pre-place the profile — the canonical call is
-   ``sweep(Face(...), Curve.helix(...))``.  Verified: straight-spine volume
-   is exactly area·length; helix/arc volume matches area·arclength to
-   < 2 %; the tube is centred on the spine.
-4. **``revolve(profile, axis, angle_deg, origin)``** via
-   ``BRepPrimAPI_MakeRevol`` (no positioning ambiguity — profile used
-   as-is; must not cross the axis).  Full-revolution volume matches Pappus
-   to 1e-3.  ``axis`` accepts ``'x'/'y'/'z'`` or a vector.
-5. **``bounding_box`` → ``brepbndlib.AddOptimal(shape, box, False, False)``**
-   (a **correctness fix** these features force).  Plain ``Add`` bounds a
-   freeform (B-spline) surface by the convex hull of its control poles,
-   which over-sizes a swept / lofted / revolved solid by ~2× per axis
-   (~8× mesh cells).  ``AddOptimal`` computes geometry-based bounds:
-   **exact** for analytic primitives (box/cylinder/sphere/Boolean — and no
-   slower there, so a safe drop-in; the old gap correction is dropped) and
-   **tight** for freeform.  Measured: a 2 mm-radius helix coil now bounds
-   to ±2.4 mm (was ±4–5 mm) and meshes on a ~10³ grid instead of a
-   ~20³ one.  This also fixes the pre-existing ``loft`` bbox looseness.
-**Rationale.**  A single ``Curve`` type (rather than PolylineCurve /
-ArcCurve / … classes) matches the plan's "one locus, consumers decide use"
-and keeps the future rasterizer (Cluster 3) pointed at one type.
-Auto-positioning ``sweep`` matches how commercial suites present "sweep
-along path" and removes the error-prone manual step of placing the profile
-perpendicular to the path start.  The exact surface-helix (over a sampled
-spline) honours the Genauigkeit-first design priority.  The bbox fix is not
-optional polish: without it every curved solid inflates the grid, violating
-the Effizienz priority and the "must scale to large geometries" goal.
-**Consequences / scope.**  ``Curve`` exported from ``magnelio`` +
-``magnelio.geometry``; ``sweep``/``revolve`` from ``magnelio.geometry`` (with
-the other modifiers).  Cluster 1 (geometry authoring) is now complete
-(WP 1a/1f/1b/1d/1c/1e).  Next: Cluster 2 (2a same-material overlaps,
-compare by value) and Cluster 3 (discrete-port audit → RLC → thin-wire on
-one shared ``Curve → grid-edge`` rasterizer).
 ---
+
+## DD-073 — ~~Curve + sweep/revolve authoring grammar~~ → Refined by DD-275
+
+**Date:** 2026-07-14. Implemented; predecessor grammar of [[DD-275]].
+One OCC wire/locus served polyline/arc/spline/helix consumers, with eager
+cheap and lazy kernel-dependent validation. The old Curve lacked affine
+Shape verbs; Profile/FaceRef now replace standalone Face and profile-consuming
+operations use the dimensional hierarchy. Context: [[DD-071]], [[DD-072]].
+
+**Surviving decisions.** Helix is a line on a cylindrical parameter surface,
+not a sampled spline: BuildCurve3d is mandatory or Frenet sweep raises
+Standard_NullObject; span is turns*hypot(2*pi,pitch), handedness changes the
+u slope. Sweep auto-positions profile centroid/normal at the spine start;
+DD-275 replaces the initial arbitrary in-plane roll with the actual section
+roll. Straight volume=area*length; historical helix/arc volume error <2 %,
+full revolution agrees with Pappus to 1e-3 and must not cross its axis.
+
+Geometry bounds use AddOptimal(shape,box,False,False), not control-pole Add:
+analytic bounds stay exact while freeform control hulls could oversize each
+axis ~2× (~8× cells). The 2 mm-radius coil bounds ±2.4 mm rather than ±4–5
+mm, about a 10³ rather than 20³ grid. These exact-helix and tight-bound
+choices remain; old exports and staging plans are historical. Planning
+source: GEOMETRY_CIRCUIT_PLAN.md (internal record).
+
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
+
+- `curves.py`
+
+---
+
 ## DD-074 — Same-material overlaps allowed (value-equal materials)
 
 **Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 2,
@@ -7233,57 +7149,32 @@ crashed session never ran).**  Two fixture classes move:
   = 20 mostly saturate and stay bit-identical; low-resolution runs
   (10/λ) are where cells move.
 
+## DD-108 — ~~Two-tier public namespace: high-level API + components~~ → Superseded by DD-117
 
-## DD-108 — Two-tier public namespace: high-level API + components
+**Date:** 2026-08-02. The 30-name high-level/component split replaced 63
+flat exports and duplicate homes, but failed to cluster by domain; [[DD-117]]
+replaces that framing with thin core/domain namespaces.
+Surviving rules: one documented home, curated __all__, underscore internals,
+API-surface/import audits and no layer-a/b/c vocabulary. Port/runtime plumbing
+is internal, not another stable API tier.
+Constants moved to one constants namespace: exact C0, CODATA-2018 MU0,
+derived EPS0/ETA0 with exact floating-point free-space relations; this replaced
+14 drifting definitions, including C0=299792457.66 m/s in one mode solver.
+BoxFace moved from port plumbing to mesh/faces.py to remove the upward
+operator-to-port dependency. Those cleanup decisions survive the namespace
+refinement; old export counts/names are not the current public surface.
 
-**Status:** Decided 2026-08-02 (session 143, pre-release API review
-with the developer); shipped same session.  Hard API break (permitted:
-MAJOR = 0, no external users yet).  Two-tier framing superseded by
-DD-117 (thin core + domain namespaces); the one-home rule, the
-underscore-internals marking and the audit tooling remain in force.
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
 
-**Problem.**  The top-level namespace had grown to 63 flat names plus
-two accidental leaks (`GridLines`, the deprecation-shim factory), 34
-of them *also* exported from a subpackage — two documented homes per
-name.  The "layer a/b/c" model (spec.md §8) never matched the code:
-it suggested a horizontal cut through the whole library, but geometry
-or materials have no a/b split — the distinction only ever applied to
-*solving*.  Meanwhile the single most-needed object, `GeometryModel`,
-was not importable from the top level at all.
+- `STATUS.md`
+- `ports/modal/port_plane.py`
+- `spec.md`
+- `validation/tools/check_api_surface.py`
+- `validation/tools/check_imports.py`
 
-**Decision.**  Two tiers plus internals, enforced by tooling:
-
-- **High-level API** = the top-level `magnelio` namespace (30 names):
-  the model vocabulary + the problem classes.  Placement rule: *a name
-  a typical simulation script uses lives at the top level; a name only
-  needed when assembling custom simulations from parts lives in
-  exactly one component namespace; everything else is an underscore
-  module.*
-- **Components** = curated subpackage namespaces (`magnelio.ports`,
-  `magnelio.solver`, `magnelio.post` — renamed from `postprocessing` —
-  `magnelio.plot`, `magnelio.signals`, `magnelio.mesh`,
-  `magnelio.boundaries`, `magnelio.materials`, `magnelio.circuit`,
-  `magnelio.io`, `magnelio.sources`, `magnelio.constants`,
-  `magnelio.analysis`, `magnelio.geometry`), each with a curated
-  `__all__`; every public name has exactly one documented home.
-- **Internals** = underscore packages/modules (`_operators`,
-  `_fields`, `_backend`, `ports/_modal`, `ports/_lumped`, plus
-  module-level `_`-prefixes wherever no name reaches a public
-  `__all__`) — the former "layer c", made machine-readable.
-- The terms "layer a/b/c" / "Level A/B" are retired everywhere
-  (spec.md, STATUS.md, docstrings); the documentation vocabulary is
-  **high-level API** and **components**.
-- `validation/tools/check_api_surface.py` enforces the one-home rule
-  and the no-underscore-in-`__all__` rule;
-  `validation/tools/check_imports.py` AST-sweeps the script
-  directories (no test coverage there) after every rename.
-
-Physical constants moved to `magnelio.constants` (C0 exact, MU0 CODATA
-2018, EPS0/ETA0 derived so the free-space relations hold exactly in
-floating point) — previously 14 drifting definitions including a
-mode-solver C0 of 299792457.66 m/s.  `BoxFace` moved from
-`ports/modal/port_plane.py` to `mesh/faces.py`, removing the only
-upward `_operators` → `ports` edge.
+---
 
 ## DD-109 — Ports are declared on the model, before meshing
 
@@ -7392,36 +7283,21 @@ was never excited — no silent padding) and `.to_skrf()`
 The completeness rule was superseded by DD-184: an export covers the
 excited channels, with the rest matched.
 
-## DD-113 — Geometry verbs: CSG operators + chainable methods
+## DD-113 — ~~Undifferentiated ShapeOps geometry verbs~~ → Refined by DD-275
 
-**Status:** Decided 2026-08-02 (session 143); shipped same session.
-**Superseded in part by [[DD-275]] (2026-09-28):** named transform methods
-remain, but they no longer share one indiscriminate verb surface with every
-dimension, and transform repetition no longer changes the method's return
-category.  CSG operators become `Solid`-only.  The old grammar below is kept
-as the migration baseline.
+**Date:** 2026-08-02. Introduced `a+b`, `a-b`, `a&b` plus chainable
+past-tense transform/construction methods, replacing a mix of CamelCase
+constructors and imported transform functions. Explicit CSG classes remained.
+[[DD-275]] replaces the shared all-dimensional verb surface with Solid-only
+CSG and dimensional operations; [[DD-279]] refines immutable naming.
+Named methods survive, and DD-275's final amendment retains explicit array/
+copy/group/unite conveniences rather than banning them.
+Axis letters/vectors, negative-height direction and opposite-corner port
+boxes remain conventions; the latter follows [[DD-104]], not the old
+ambiguous pair-of-ranges syntax. Historical implementation: ShapeOps in
+geometry/_shape_ops.py; current category contracts are in DD-275.
 
-**Problem.**  CSG verbs were CamelCase classes (`Difference(a, b)`)
-while transform/modifier verbs were snake_case free functions
-(`translate(shape, v)`) — two conventions for the same kind of
-operation, and the free functions forced extra imports in every
-script.
-
-**Decision.**  A `ShapeOps` mixin (geometry/_shape_ops.py), inherited
-by every shape *including the private transform/modification
-wrappers* (which is what makes chaining work): operators `a + b` /
-`a - b` / `a & b` build `Union`/`Difference`/`Intersection` (the
-classes remain as the explicit spelling and result types; Group
-operands keep their descriptive rejection), and chainable methods
-`.translated/.rotated/.scaled/.chamfered/.filleted/.extruded/
-.revolved/.swept/.lofted` delegate to the implementations, which left
-the public API.  Ergonomics decided alongside: every `axis=` accepts
-a letter or any 3-vector (`geometry/_axes.normalize_axis`); a
-negative primitive height extrudes along −axis; port bboxes are two
-opposite corner points in the face's tangential frame (aligned with
-the DD-104 monitor corner convention — beware: the old symmetric
-spelling `((-r, r), (-r, r))` reads as two identical corners and now
-raises "degenerate").
+---
 
 ## DD-114 — Port-signal stop criterion on by default ("auto")
 
@@ -8644,89 +8520,33 @@ rejections).
 
 ---
 
-## DD-131 — Profiles from curves: `joined`, `covered`, `Path`
+## DD-131 — ~~Profiles from Curve.covered and PlanarSheet~~ → Refined by DD-275
 
-**Date:** 2026-08-11
-**Status:** Accepted — implemented, tested.
-**Superseded in part by [[DD-275]] (2026-09-28):** `Curve.covered()` and the
-private `PlanarSheet` category give way to public `Profile.from_wires()` and
-the `Sheet`/`Profile` hierarchy.  Joined curves and absolute `Path` segments
-remain; the no-ambient-coordinate-system decision is reaffirmed.
+**Date:** 2026-08-11. Implemented joined curves, covered planar wires and
+immutable absolute Path construction to fill the outline-to-profile gap.
+[[DD-275]] replaces covered/PlanarSheet with Profile.from_wires and the
+Sheet/Profile hierarchy, adding owned faces and relative poses. Joined/absolute
+Path grammar and the rejection of ambient coordinate systems survive.
 
-**Problem.**  `Curve` offered four constructors (polyline, arc, spline,
-helix) and no way to combine them.  Every outline that mixes straight
-runs with arcs — a chamfered pole piece, a rounded pad, a segment of a
-ring — was therefore unbuildable: `Face` covers only axis-normal
-polygons, and there was no route from a wire to a face at all
-(`make_face` was hard-wired to `_FACE_UV` polygons).  The verbs that
-consume profiles (`extruded`/`revolved`/`swept`) already existed and
-already accepted a standalone `Face`, so the gap was exactly one link
-wide.  Reported from modelling a 20° segment of a hollow cylinder.
+**Surviving rationale/contracts.** joined is an instance method retaining
+the receiver, flattening chains; Path prefixes can branch immutably. Seam
+tolerance is 1e-6 of chain diagonal ([[DD-120]]), with ShapeFix_Wire healing
+only gaps outside kernel but inside public tolerance, never exact inputs.
+Eager endpoint closure errors identify the segment; kernel planarity remains
+lazy. arc_to normal fixes plane/direction counter-clockwise about its axis;
+without it choose the short arc (major selects long) and reject antipodal
+ambiguity. Helix endpoints are left to kernel assembly, since helixes are
+sweep spines rather than profile segments. No hidden local working frame.
+Former deferred CAD work is handled by DD-275/[[DD-178]] or remains outside
+this entry, rather than being restated as a stale work list. Historical
+TestCurveJoined/TestCurveCovered/TestPath covered millimetre/micrometre
+relative tolerance and loud rejection of unsupported standalone sheets.
 
-**Decision.**  Three additions, one link each:
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
 
-- **`Curve.joined(*curves)`** chains segments into one wire.  An
-  *instance* method, not a classmethod: `a.joined(b, c)` reads as the
-  chain it builds, whereas a classmethod called on an instance would
-  silently drop the receiver.  Chains flatten (`_segments`), so
-  `a.joined(b).joined(c)` is a three-segment wire, not a nest.
-- **`Curve.covered()`** turns a closed planar curve into a planar
-  sheet, via a new backend `make_wire_face` — the free-boundary sibling
-  of `make_face`.
-- **`geo.Path`** is a frozen-dataclass pen over the same machinery:
-  `line_to`/`arc_to`/`spline_to` remember the current point, `curve()`
-  and `closed()` delegate to `joined`.  Pure sugar, no backend of its
-  own; immutable so a common prefix can branch into several outlines.
-
-Supporting rationale:
-
-- **`PlanarSheet` marker base.**  `Face` and the covered sheet are the
-  same kind of thing to four dispatch sites (the extrude material
-  guard, the revolve guard, the extrude profile-vs-solid branch, the
-  mesher's standalone-sheet rejection).  Introducing a shared base and
-  switching those sites from `isinstance(x, Face)` was cheaper than
-  teaching each one about a second type, and it is what makes a covered
-  sheet work in the existing verbs with no further change.
-- **Seam tolerance is relative, not absolute** — 1e-6 of the chain's
-  own bounding-box diagonal.  An absolute metre threshold cannot be
-  right for both a micrometre profile and a kilometre one (DD-120).
-  `BRepBuilderAPI_MakeWire` only fuses vertices within
-  `Precision::Confusion()`, which is tighter, so seams inside the
-  public tolerance but outside the kernel's are healed once through
-  `ShapeFix_Wire`.  It is *not* run unconditionally: it may reorder and
-  reverse edges, and exact input must stay untouched.
-- **Closure is checked eagerly, planarity lazily.**  Endpoints are
-  captured at construction (`_ends`), so a gap names the segment index
-  and the distance — which the kernel cannot.  Planarity needs the
-  actual curves and stays with `BRepBuilderAPI_MakeFace`.
-- **`arc_to` takes `normal=`.**  The `center=` form has two solutions,
-  and for diametrically opposite ends it has infinitely many (the plane
-  itself is free).  That case is not exotic — it is the rounded end of
-  a slot, the most common use of the form.  `normal=` names the axis
-  the arc turns about and settles direction and plane at once, running
-  counter-clockwise about it, the same handedness as `.rotated()`.
-  Without it the short arc is drawn (`major=True` for the long one) and
-  antipodal ends are rejected with a message pointing at `normal=`.
-- **A helix has no `_ends`.**  Its endpoints depend on the `gp_Ax3`
-  frame convention, which is deterministic but not worth pinning for
-  this; a helix in a chain skips the eager check and relies on the
-  kernel.  Helices are sweep spines, not profile segments.
-
-**Deferred/rejected** (recorded so the gaps are known, not forgotten):
-bend and cylindrical-bend operations; `Insert`/`Imprint` Booleans with
-material precedence; STEP import and healing (taken up in DD-178);
-analytical parametric
-curves (in Python, generate points and spline them); elliptical
-cylinder; sphere pole truncation; twist and taper on extrusions.
-**Local/working coordinate systems are rejected outright**, not
-deferred: they exist in GUI-driven tools because a mouse needs a
-drawing plane, and in a Python API they would add a mode to every call
-for nothing.
-
-**Consequence.**  Covered by `TestCurveJoined`, `TestCurveCovered` and
-`TestPath` in `tests/unit/test_geometry.py`, including the relative
-tolerance at both millimetre and micrometre scale, and the mesher's
-rejection of a standalone sheet.
+- `tests/unit/test_geometry.py`
 
 ---
 
@@ -10556,7 +10376,6 @@ vocabulary.
 `boundaries/__init__.py`, `analysis/_recipe.py`, docstrings in
 `geo/__init__.py` / `mesh/mesher.py`.
 
-
 ---
 
 ## DD-160 — Field plots resample onto a plot raster; port modes are drawn full-model
@@ -11177,7 +10996,6 @@ the same solids on the same grid), `mesh/mesher.py`,
 `tests/unit/test_geometry.py`.  The geometry plot keeps the default —
 it sections at a user-chosen deflection with no grid to relate a step
 to, and its far coarser default already reaches ±0.8 mm.
-
 
 ## DD-168 — Section edges are chained, not wired
 
@@ -15927,7 +15745,6 @@ section (1.3 of `sheets` 1.8 s on the 16 × 16 array).
 `tests/unit/test_area_pass_bookkeeping.py` (new), `CHANGELOG.md`,
 `benchmarks/results/bench_mesh_build.json` (re-run).
 
-
 ## DD-217 — Cylindrical faces are sectioned exactly by the engine
 
 **Status:** Decided and implemented 2026-08-28, branch
@@ -16807,363 +16624,179 @@ engine and the line table when a ladder row shows them.
 
 ## DD-224 — API grammar for problem classes, sources, waveforms and excitations
 
-**Naming refinement (2026-10-04):** [[DD-279]] retains the class grammar and
-refines run selectors, count scope, result import homes, frequency vocabulary
-and degree-valued phase inputs. The new names are implemented.
+**Date:** 2026-08-29. **Status:** Phases A–D implemented (2026-08-29/30).
+The remaining vocabulary is reserved, not scheduled or implemented by this DD.
+[[DD-279]] refines frequency/count/selectors/result homes and phase_deg;
+[[DD-281]]/[[DD-282]] refine pulse timing and finite-drive stopping.
+**Record:** `investigations/api-blueprint/` (internal dossier).
 
-**Status:** Decided 2026-08-29 (blueprint session with the developer;
-internal record `investigations/api-blueprint/` holds the suite-convention
-survey it was checked against).  **Phase A shipped 2026-08-29** (branch
-`feat/api-phase-a`): `Waveform` ABC + six classes, core `Excitation`
-(pin 10 → 11), `SourceFieldIncident`/`SourcePlaneWave` with
-`set_excitation` as the solver-facing binding, `add_source` /
-`Mesh.sources` / `with_sources` with the `mesh.h5` `sources` attribute,
-`ExcitationSpec` and the `PortSpec*.excitation` field removed
-(component drives bind on the operator), `AnalysisScatteringTD.waveform`
-with the per-mode default unchanged (the S-parameter suites pass
-bit-identically: the classes wrap the same closed forms), the three
-monitor migrations with the old recipe spellings still read until
-schema 2.0.  **Phase B shipped 2026-08-29** (branch `feat/api-phase-b`):
-`AnalysisTD` + `TDResult` on a private `_AnalysisBase` (`method=`,
-`solver=` validated; `analysis/time_domain.py`), `AnalysisScatteringTD`
-derived from it with its channel runs on the shared engine
-(`_prepare_run` / `_build_solver` / `_resume_transient`) — pinned
-bit-identical on a TEM and a TE10 guide against `main` with the
-pre-Phase-B pulse term (internal record
-`investigations/api-blueprint/phase-b/probe_s_bit_identity.py`); the
-run-length estimate now uses `max_i(delay_i + t_end_i)` as decided
-below, which lengthens TE/TM-fed runs (`8/(f_max − f_min)` instead of
-`8/f_max`) and moves their stop step a little (in-band |ΔS| ≤ 5·10⁻⁴
-on the two guides; TEM/lumped runs unchanged, `t_end = 8/f_max`);
-`run(t_end=, name=)`, the CW rules and the delay-aware estimate;
-`PortOperatorModal.set_excitation` holds one waveform and one
-source-history buffer *per mode* (checkpoint keys `src_buffers` /
-`src_maxlens`); `results.h5` carries the `excitations` attribute and
-one sampled drive per excitation (`excitations/ex<i>/signal`),
-`excited_name`/`excited_mode` only on scattering channel runs, the run
-index `excitations` for every run; `ProjectStore.open_run` /
-`reopen_run` / `register_planned_runs((name, entry))`,
-`Project.result(name)` rebuilds a `TDResult` (scattering channel runs
-included, by their excited pair), `resume(project, name)` for
-`AnalysisTD`; one project holds one analysis kind (a mismatch raises).
-Schema 2.0: `mesh.h5:element = "hexahedral"` (the loader rejects
-anything else), the legacy readers of Phase A retired
-(`MonitorFarField` tag, `plane`/`reference_plane` pairs, the
-`excitation` recipe key), `SCHEMA_VERSION = "2.0"`.  The mesher adds
-`source` grid planes at a source's finite box corners; the default
-TF/SF box sits two cells inside the *physical* domain (past the
-absorber cells — in Phase A the default box began two cells from the
-outer edge, i.e. inside the CPML).  `PortSignalRecorder` accepts an
-empty port list (source-only runs).  Tutorial 20 *plane-wave
-scattering* (PEC sphere, monostatic RCS against the Mie series) and
-the *general time-domain analysis* section in
-`docs/methods/sources-monitors.md`.  Core pin 11 → 12 (`AnalysisTD`).
-**Phase C shipped 2026-08-29** (branch `feat/api-phase-c`):
-`magnelio.fields.FieldState` — the public container that wraps the flat
-`_fields.FieldState` together with its `GridLines` and converts the FIT
-grid quantities to physical fields (`component`, `positions`, `at`,
-`cell_centred`, `scaled`, `real`, `plot`); `EigenmodeResult.field(n)`
-returns one and `EigenmodeResult.plot` now delegates its slice to it.
-`SourceFieldInitial` (`from_project` / `from_function` / `from_arrays`,
-`has_waveform = False` on the `Source` contract, excitation = amplitude
-only) writes `e(0)` on the primal edges (PEC edges zeroed) and
-`h(+dt/2) = h(0) − ½·β_H·(C e(0))`, the leapfrog half-step from the
-discrete Faraday law, so a discrete eigenmode started at its E maximum
-rings as that mode: measured 8.2375 GHz against the eigensolver's
-8.2312 GHz on a 15×7×20 WR-90 box (+0.076 %; with the sign inverted the
-same run reads −1.07 %, the tell-tale of a start half a step off).  The
-source imposes **no consistency gate at all** (decided with the
-developer, 2026-08-29, after a first implementation gated ports,
-absorbers, dispersive materials and surface-impedance walls); several
-initial fields superpose (the write adds onto the solver's zeroed
-state).  Every auxiliary state simply starts at its quiescent value —
-absorber empty, material unpolarised, wall stateless, port exterior
-quiet — which is a well-defined initial-value problem.  Measured
-stable in every case (`probe_aux_state_start.py`,
-`probe_sibc_start.py`): peak stored energy never exceeds the start,
-CPML with a packet straddling the absorber ends at 0.228 of the start
-against 0.250 for the same packet in the middle, and a Debye fill
-started unpolarised decays without incident.  The strongest check is
-SIBC: a copper-walled WR-90 cavity rung down from its TE101 mode reads
-Q_wall = 7745 against the perturbative surface-resistance evaluation's
-7769 (−0.31 %) — two independent routes to the same loss, so the
-zero-current start costs nothing measurable.  The *steady* state a mode
-would have built up around itself is a different matter, but judging
-that is the user's: `AnalysisTD` is the level at which arbitrary fields
-are loaded on purpose.
+**Problem and rationale.** A scattering-only excitation model could not
+express simultaneous sources, delayed drives or arbitrary initial fields.
+Sources must reach the mesher, while future methods/formulations need names
+that separate the physical problem from its discretization and avoid later
+class-name/store-tag collisions. Class proliferation by problem×method×mesh,
+analysis-owned sources and a separate excitation domain namespace were rejected.
 
-The port evidence, gathered while the gate still stood.  A waveguide port's transparent boundary
-assumes only a quiet *exterior* at t = 0;
-`PortOperatorModal.initialize_state`, which already existed for the
-silence test, is called by the solver after all sources attached, so
-superposed fields are captured as one.  A discrete port is the
-`SeriesRLC(R = Z0)` special case whose companion is stateless — there
-is no start condition to violate.  The first implementation refused
-both kinds and imposed a −60 dB quiescence test on the port plane
-besides; measurement retired all of it (internal record
-`investigations/api-blueprint/phase-c/probe_port_start_q2.py`).  With a
-constant continuation of amplitude α through the feed line, the fitted
-external Q of the iris cavity moves +0.03 % at −26 dB, +0.37 % at
-−13.9 dB and +2.2 % at −6 dB — monotone, no instability — and
-`initialize_state` changes those figures only in the third decimal,
-because the start jump it repairs is the same order as the disturbance
-the misplaced field causes anyway.  The mismatch leaves as a prompt
-burst (≈ 4× the steady port signal at α = 0.2); no energy floor
-appears, so the decay criterion is not blocked.  A discrete port
-loading a mode shows the other half: 18 dB in 2 ns at Q ≈ 104, then
-Q ≈ 666 for the families the probe couples to weakly — the setup's own
-mode selectivity, not a start artefact.  Judging whether a loaded field
-is the mode one meant is the user's, `AnalysisTD` being the level at
-which arbitrary fields are loaded on purpose.  Worth recording all the
-same: the eigenmode of a *coupled* model is not a ring-down start, the
-eigensolver seeing metal where the port is, so its mode lives in the
-feed line too — a modelling error, and by the numbers above a cheap one
-(−14 dB, 0.4 %), not a numerical failure.
+### Accepted grammar
 
-Its store payload
-rides in `mesh.h5` as datasets under `mesh/sources/<name>` (grid lines
-plus the six grid-quantity components) because attributes hold JSON
-only.  `SourceFieldIncident` becomes concrete: the whole TF/SF face
-table moved into it and now folds `beta·metric·sign` per face with the
-incident component evaluated from a user `field(x, y, z, t, drive)`,
-while `SourcePlaneWave` overrides `_patch`/`_apply` to keep the
-analytic delay table (a plane wave spelled out as a general field
-reproduces it to ≤ 10⁻¹² of the peak; two crossed plane waves match the
-same pair driven simultaneously, internal record
-`tests/integration/test_source_field_incident.py`).  A field that does
-not solve Maxwell itself leaks: the tapered "beam" without its
-longitudinal components leaks at 116 % of the total field, which is why
-the docs state the requirement.  `AnalysisEigenmode` moved onto
-`_AnalysisBase` (gains `params`, validates `backend`/`precision`/
-`method`/`solver`/`n_modes`; the eigensolve stays CPU/double).  How-to
-*Ring-down* takes an iris-coupled WR-90 cavity through one run per loss
-channel and hits three closed values: the filling Q against `ω₀ε/σ`
-(2015.8 vs 2016.0, −0.007 %), the wall Q of copper against the
-perturbative surface-resistance evaluation on the same mode (7745.2 vs
-7768.9, −0.31 %) and the sum rule `1/Q_L = 1/Q_fill + 1/Q_ext` (944.7
-vs 944.8, −0.01 %).  The iris pulls the resonance 1.24 % below the
-sealed eigenfrequency — the number a beam model has to match.  Two
-traps measured on the way: a fit to a field probe's `|E|` reads the
-zeros along with the peaks and lands 35 % high, so the energy trace is
-the instrument; and the filling Q must be taken at the *loaded*
-frequency, a conductivity being a loss tangent that falls with
-frequency (worth 0.6 % here).  The frequency-domain route is the
-expensive one on a high-Q structure: a scattering run of 450 000 steps
-still read a group-delay Q 10 % below the ring-down of a 39 000-step
-run, `|S₁₁|` at 0.94 rather than 1.  Phases D ff. follow in the last section.
+- Problem classes are Analysis<Problem><Formulation>. TD/FD appears only
+  where both formulations make sense; FIT/FEM/BEM is method=, not part of the
+  class name. AnalysisTD is the general simultaneous-source march, without
+  S-parameters; AnalysisScatteringTD derives from it and runs one incident
+  channel per record. Their run signatures deliberately differ. AnalysisEigenmode
+  shares private _AnalysisBase configuration but solves on CPU/double.
+- _AnalysisBase holds mesh/verbose/project/geometry/params/backend/precision/
+  method/solver. Results are <Problem><Formulation>Result; suffix-free
+  ScatteringResult is the common contract, satisfied by memory/store readers
+  ([[DD-112]]). Generic TDResult/FDResult are their own contracts. Shared
+  RunSettings has optional fields; post-processing remains on results rather
+  than becoming analysis classes.
+- Source<Kind> belongs to model.add_source before meshing, travels through
+  Mesh.sources/with_sources, and states amplitude_unit. Waveform<Kind> is a
+  pure time function with bandwidth, carrier, t_end, sampling and spectrum;
+  Signal1D is the sampled result. Core Excitation binds source/port, mode,
+  waveform, amplitude, delay and phase_deg. Units are source-native: ports
+  sqrt(W), plane waves V/m, beams C, current paths A, voltage sources V,
+  initial fields 1. Missing waveform resolves from mode cutoff or a Gaussian
+  for a non-port source. TD phase needs a carrier and is realized as delay;
+  baseband phase raises. SourceFieldInitial has no waveform, only amplitude.
+- AnalysisTD.run(excitations=[...]) drives all entries simultaneously, with
+  optional physical t_end/name. AnalysisScatteringTD keeps excited= channel
+  selection and rejects excitations=; its former ExcitationSpec field is
+  replaced by waveform. Per-mode source-history buffers let several modes of
+  one port coexist. Multiple general runs are separate run() calls.
+  Planned WakefieldTD/PIC inherit AnalysisTD; ScatteringFD inherits AnalysisFD.
+  Sources/runtime operators bind drives through set_excitation; PortSpec's
+  old excitation field and ExcitationSpec are removed rather than duplicated.
+- Monitor<Quantity><Domain> names distinguish time/frequency forms:
+  MonitorFarFieldFrequency replaces MonitorFarField. Planes use normal/
+  position ([[DD-153]]); point probes are MonitorFieldTime corner boxes.
+- Mesh remains the common analysis input. The historical future-family plan
+  reserves MeshHexahedral/MeshTetrahedral/MeshSurface and an element
+  discriminator, not additional currently supported solvers. Schema 2.0
+  persisted element="hexahedral" and rejected unsupported elements.
+- Sources/excitations/waveforms serialize by class tags. General runs use
+  run_<n> or explicit names; collisions, including scattering-channel names,
+  raise. Runs persist excitation descriptions and one sampled drive each;
+  excited_name/mode applies only to scattering channel runs. Project.result
+  reconstructs TDResult, resume addresses the run, and one project holds one
+  analysis kind. WaveformFunction is not serializable; resume says so.
+  The schema transition hard-rejects retired tags/keys ([[DD-111]]).
 
-**Problem.**  Two problem classes exist (`AnalysisScatteringTD`,
-`AnalysisEigenmode`) and one excitation reaches the analysis level:
-one `(port, mode)` channel per solver run, its waveform an
-`ExcitationSpec`.  `PlaneWaveSource` carries its own waveform and
-hangs off `FITTimeDomainSolver(sources=…)` only — no analysis class
-reaches it.  Time offsets, simultaneous excitation, loaded or
-analytic initial fields, wake beams and particle sources have no
-home.  DD-153 deferred the unification of `PlaneWaveSource.waveform`
-with `ExcitationSpec` as "its own design pass".  Meanwhile the store
-uses class names as its vocabulary (`setup["analysis"]`, monitor and
-recipe type tags, DD-117 §3), so every later rename also breaks
-saved projects; and the solvers to come — FIT-FD, FEM on tetrahedra,
-BEM on surfaces, statics, wakefield, tracking/PIC — need names that
-do not collide with the ones chosen now.  At MAJOR = 0 with no
-external users a rename is cheap today and expensive in a year.
+### Numerical/start-state contracts
 
-**Decision — the grammar.**
+- CW t_end=inf requires a finite physical t_end argument, exclusive with
+  total_time_steps, and disables decay stops. Step estimates include
+  max(delay_i + waveform_i.t_end) plus traversal time. Source-only runs
+  permit empty port recording; auto signal stopping is disabled without
+  modal ports. A waveform exceeding mesh.f_max warns rather than raises
+  ([[DD-186]]). TF/SF boxes sit inside the physical domain past the absorber;
+  finite source-box corners are mesh planes.
+- General TD frequency monitors remain raw until an excitation is selected
+  for normalization: simultaneous waveforms have no unique reference.
+  Scattering runs normalize their one incident channel.
+- Initial fields add on zeroed state, enforce PEC edges, and start H by
+  `h(dt/2)=h(0)-0.5*beta_H*C*e(0)`. No port/CPML/ADE/SIBC consistency veto:
+  auxiliary states start quiescent, not at a hypothetical modal steady state.
+  Modal initialize_state runs after all sources attach; quiet exterior is the
+  transparent-boundary assumption. Users judge the physical initial field.
+  A discrete port is a stateless SeriesRLC(R=Z0) companion and needs no
+  separate start-consistency condition.
+  [[DD-259]] later accounts for a recording's existing H half-step lead.
+- Arbitrary incident fields must solve Maxwell themselves. SourceFieldIncident
+  applies TF/SF face tables with beta/metric/sign weights; SourcePlaneWave
+  retains analytic retardation rather than evaluating a generic field at every
+  patch. Two crossed analytic/general fields agree; a tapered beam omitting
+  longitudinal components leaks and is not a valid incident solution.
+- Initial-field payloads carry grid lines and six grid components under
+  mesh/sources/<name> in mesh.h5; JSON attributes alone cannot hold arrays.
+  [[DD-225]] defines the ring-down energy instrument; [[DD-226]]/[[DD-227]]
+  implement recorded-surface sources and impressed current paths.
 
-1. *Problem classes* are `Analysis<Problem><Formulation>`.  `Problem`
-   ∈ {∅, `Scattering`, `Eigenmode`, `Wakefield`, `PIC`,
-   `ParticleTracking`, `Electrostatic`, `Magnetostatic`,
-   `CurrentStatic`}; `Formulation` ∈ {`TD`, `FD`} and is written
-   **only** where the same problem exists in both formulations
-   (Scattering, Wakefield, ∅).  The suffix names the formulation the
-   user reasons in, never the discretisation: the method (FIT, FEM,
-   BEM) follows from the mesh's element type, overridable by
-   `method=`; the algebraic solver by `solver=` (as `AnalysisEigenmode`
-   already does).  The same S-parameter problem on a hexahedral or a
-   tetrahedral mesh is one class, one result contract.
-2. *General classes* `AnalysisTD` / `AnalysisFD` carry the empty
-   problem: arbitrary simultaneous excitations, signals in and out
-   with their spectra, monitors, energy — no S-parameters.
-   `AnalysisScatteringTD`, `AnalysisWakefieldTD` and `AnalysisPIC`
-   derive from `AnalysisTD` (shared configuration, shared
-   `_run_transient(excitations, …) -> TDResult`; the derived `run()`
-   keeps its own signature and return type — a deliberate LSP
-   exception).  `AnalysisScatteringFD` derives from `AnalysisFD`.
-   A private `_AnalysisBase` holds `mesh`, `verbose`, `project`,
-   `geometry`, `params`, `backend`, `precision`, `method`, `solver`.
-3. *Results* are `<Problem><Formulation>Result` (SciPy style).  Where
-   `Problem` ≠ ∅ the suffix-free name is the contract protocol
-   (`ScatteringResult`, DD-112), satisfied by every formulation and
-   by the `Project` reader; where `Problem` = ∅ the class is the
-   contract (`TDResult`, `FDResult`).  One `RunSettings` for all
-   formulations (fields already optional).  Post-processing stays a
-   method on the result — `renormalize(z0)`, `Z()`, `Y()`, `tdr()`,
-   `vswr()`, `group_delay()` are reserved on `ScatteringResult` — and
-   never becomes an analysis class.
-4. *Excitation triad.*  `Source<Kind>` (`magnelio.sources`) is a
-   model object declared before meshing — `model.add_source(…)`,
-   carried as `Mesh.sources` next to `Mesh.ports`/`Mesh.elements`,
-   `Mesh.with_sources()` on the `from_grid` path — because the TF/SF
-   box, a beam axis and an emission face all shape the mesh.
-   `Waveform<Kind>` (`magnelio.signals`, ABC `Waveform`) is a pure
-   time function with a bandwidth: `__call__(t)`, `f_max`, `f_min`,
-   `f_center` (`None` for baseband), `t_end` (`inf` for CW forms),
-   `sample(dt, n) -> Signal1D`, `spectrum(f)`; `Signal1D` remains the
-   sampled series on the result side.  `Excitation` (core) binds one
-   source or port to a waveform and a weight:
+### Reserved vocabulary
 
-   ```python
-   Excitation(source, *, mode=0, waveform=None, amplitude=1.0,
-              delay=0.0, phase=0.0)
-   ```
+Names below prevent future collisions; each future capability requires its
+own accepted DD. Shipped TD/initial/incident/surface/current-path names above
+are not unimplemented reservations, and the initial restriction of loaded
+fields to lossless PEC/PMC models was rejected after measurement.
 
-   `run(excitations=[…])` is simultaneous in one run; sequential is
-   several `run()` calls or a specialised class.  `waveform=None`
-   derives the modal waveform from the port's cut-off (today's
-   `ExcitationSpec` logic) or `WaveformGaussian(f_max=mesh.f_max)` for
-   a non-port source.  `amplitude` is in the source's natural unit,
-   published as `Source.amplitude_unit` (`"sqrt(W)"` ports, `"V/m"`
-   plane wave, `"C"` beam, `"A"` current path, `"V"` voltage source,
-   `"1"` initial field).  `phase` is the FD phasor; in TD it is
-   allowed only with a carrier (`waveform.f_center`), converted to a
-   delay internally — circular polarisation from two TE11 modes at
-   90° needs it — and a `ValueError` on baseband forms.  Shorthands
-   `"port1"` / `("port1", 1)` are accepted.  `AnalysisScatteringTD`
-   keeps `run(excited=…)` — *channels*, one run each — and rejects
-   `excitations=` with a message; its `excitation: ExcitationSpec`
-   field becomes `waveform: Waveform | None`.
-5. *Monitors* keep `Monitor<Quantity>[<Domain>]`; the domain suffix
-   appears as soon as both domains exist, so `MonitorFarField` becomes
-   `MonitorFarFieldFrequency` now and `MonitorFarFieldTime` is
-   reserved.  Planes are `normal=` + `position=` everywhere (DD-153);
-   `MonitorFluxTime(plane=…)` and `MonitorWallLoss(reference_plane=…)`
-   migrate.  Point probes are a `MonitorFieldTime` with point
-   `corners` — no probe class.
-6. *Mesh family.*  `Mesh` stays the name users write and analyses
-   accept.  When tetrahedra or surfaces arrive, `Mesh` becomes the
-   base, today's body moves to `MeshHexahedral(Mesh)`,
-   `MeshTetrahedral` / `MeshSurface` join, `Mesh.from_geometry` stays
-   the one entry and returns the subclass; the discriminator is
-   `MeshControl(element="hexahedral")`.  Checked: `Mesh(` is
-   constructed directly only in `mesh/mesher.py` (self-copies →
-   `type(self)`) and the `io/project.py` loader (→ dispatch on an
-   `element` tag); no `isinstance(…, Mesh)` in the package;
-   `dataclasses.replace` is subclass-safe.  `mesh.h5` gains the
-   `element` attribute with the same schema bump as the rest.
-7. *Common arguments* on every analysis: `method` (`"auto"` = hex →
-   fit, tet → fem, surface → bem; `"fit"`, `"fem"`, `"bem"`),
-   `solver` (algebraic), `backend`, `precision`, `verbose`,
-   `project`, `geometry`, `params`.
-8. *Store.*  `setup["analysis"]` takes the new class names;
-   `AnalysisTD` runs are `run_<n>` or `run(name=…)` (collision with
-   any existing run name, including `<port>_mode<k>`, is an error).
-   `results.h5` loses its scattering-centric mandatory
-   `excited_name`/`excited_mode` for a JSON `excitations` attribute
-   (`excited_*` derived for scattering runs); the recipe serialises
-   sources, excitations and waveforms by class-name tag —
-   `WaveformFunction` is not serialisable and `resume` says so.
-   `SCHEMA_VERSION` → `"2.0"`, hard-validated (DD-111).
+- Analyses: AnalysisFD, AnalysisScatteringFD, AnalysisWakefieldTD,
+  AnalysisPIC, AnalysisParticleTracking, AnalysisElectrostatic,
+  AnalysisMagnetostatic, AnalysisCurrentStatic. Proposed inheritance follows
+  AnalysisTD/AnalysisFD as appropriate; method="auto" selects from element
+  type when those methods exist, not additional implemented backends now.
+- Results: FDResult, ScatteringFDResult, WakefieldTDResult (wake_potential,
+  wake_impedance, loss_factor, kick_factor), PICResult, ParticleTrackingResult,
+  ElectrostaticResult (capacitance_matrix), MagnetostaticResult
+  (inductance_matrix), CurrentStaticResult (conductance_matrix).
+- Sources/monitors: SourceVoltage, SourceBeam (charge/sigma/beta/axis/offset),
+  SourceParticle (species/emission), SourcePotential, SourceCharge, SourceCoil;
+  MonitorFarFieldTime, MonitorVoltage, MonitorCurrent, MonitorPowerLoss,
+  MonitorParticle, MonitorParticleCurrent; PortFloquet. The common Bloch/scan
+  vocabulary is phase_advance_deg ([[DD-182]]).
+- Waveform family introduced here: WaveformGaussian,
+  WaveformGaussianModulated, WaveformSine, WaveformStep, WaveformTable,
+  WaveformFunction; former gaussian/modulated_gaussian/waveform_for_mode
+  helpers become internal. DD-279 governs current argument spelling.
+- Other reserved homes/engines: particles (Species, Emission*,
+  SecondaryEmission*), optimize; FITFrequencyDomainSolver,
+  FEMFrequencyDomainSolver, BEMFrequencyDomainSolver. FD equation choices
+  full_wave/mqs/eqs and sweep discrete/adaptive/reduced_order; wake_length
+  and direct/indirect wake integration. Scattering renormalize/Z/Y/tdr/vswr/
+  group_delay are result vocabulary, not promises that this DD ships them.
+- Not adopted: TLM on the same hexahedral grid (would require a distinct
+  octree element), thermal/mechanical solvers, sensitivity/yield outside
+  optimize, and asymptotic/SBR. Thermal names were considered, not planned.
 
-**Reserved names** (fixed now so later DDs do not reinvent them;
-none exists yet):
+**Verdict and measured acceptance.** Phase-B engine refactoring was bit-exact
+on TEM/TE10 with the old pulse duration. Delay-aware sizing lengthened TE/TM
+records (8/(f_max-f_min) rather than 8/f_max), changing in-band S by at most
+5e-4 on those guides; TEM/lumped sizing was unchanged then. Later pulse DDs
+replace those historical defaults. Initial WR-90 mode: 8.2375 versus 8.2312
+GHz (+0.076 %), while reversing the H half-step sign gives −1.07 %.
+Quiescent auxiliary starts were stable; CPML packet final/start energy
+0.228 versus 0.250 in the middle, Debye starts decayed without incident.
+Constant feed continuation shifted external Q +0.03/+0.37/+2.2 % at
+−26/−13.9/−6 dB without instability; a loaded coupled-model eigenmode can
+include unwanted feed-line fields, which is a modelling error, not a veto.
+The start mismatch exits as a prompt burst (about 4× steady port signal at
+continuation amplitude 0.2), with no energy floor blocking decay stopping;
+initialize_state changes the fitted-Q shifts only in the third decimal.
 
-| Family | Names |
-|---|---|
-| Analyses | `AnalysisTD`, `AnalysisFD`, `AnalysisScatteringFD`, `AnalysisWakefieldTD`, `AnalysisPIC`, `AnalysisParticleTracking`, `AnalysisElectrostatic`, `AnalysisMagnetostatic`, `AnalysisCurrentStatic` |
-| Results | `TDResult`, `FDResult`, `ScatteringFDResult`, `WakefieldTDResult` (`wake_potential`, `wake_impedance`, `loss_factor`, `kick_factor`), `PICResult`, `ParticleTrackingResult`, `ElectrostaticResult` (`capacitance_matrix`), `MagnetostaticResult` (`inductance_matrix`), `CurrentStaticResult` (`conductance_matrix`) |
-| Sources | `SourcePlaneWave` (renamed from `PlaneWaveSource`, waveform removed) as a subclass of `SourceFieldIncident` (analytic/tabulated incident field on the TF/SF box), `SourceFieldInitial` (E/H at t = 0 from a project, function or arrays — limited to PEC/PMC walls and non-dispersive materials until CPML/ADE/SIBC states get a consistent start), `SourceFieldSurface` (Huygens currents from `MonitorFieldSurface`), `SourceCurrentPath`, `SourceVoltage`, `SourceBeam` (line charge: `charge`, `sigma`, `beta`, `axis`, `offset`), `SourceParticle` (face/point, `species`, `emission`), `SourcePotential`, `SourceCharge`, `SourceCoil` |
-| Waveforms | `WaveformGaussian(f_max)`, `WaveformGaussianModulated(f_min, f_max)`, `WaveformSine(f, phase, rise_time)`, `WaveformStep(rise_time, hold, fall_time)`, `WaveformTable(t, values)`, `WaveformFunction(fn, f_max)` — the free functions `gaussian`/`modulated_gaussian`/`waveform_for_mode` become internal |
-| Monitors | `MonitorFarFieldTime`, `MonitorVoltage`, `MonitorCurrent`, `MonitorPowerLoss`, `MonitorFieldSurface`, `MonitorParticle`, `MonitorParticleCurrent` |
-| Ports | `PortFloquet` (unit cells); `phase_advance_deg` (DD-182) is the one Bloch/scan vocabulary for every FD class |
-| Namespaces | `magnelio.fields` (public `FieldState` = the flat `_fields.FieldState` plus `GridLines` and the Yee offset convention: `component`, `at(points)`, `plot`; the coupling channel between monitors, eigenmodes, statics and `SourceField*`), `magnelio.particles` (`Species`, `Emission*`, `SecondaryEmission*`), `magnelio.optimize` (sweeps/optimisers — until then `run()` is a pure function of its arguments and a Python loop is the sweep; `params=` stays the store hook, DD-111) |
-| Engines | `FITFrequencyDomainSolver`, `FEMFrequencyDomainSolver`, `BEMFrequencyDomainSolver` under `magnelio.solver` (`fit_fd.py`, `fem/`, `bem/`, `statics/`, `particles/`) |
-| Arguments | `AnalysisFD(equation="full_wave"|"mqs"|"eqs", sweep="discrete"|"adaptive"|"reduced_order")`, `AnalysisTD.run(t_end=…, name=…)`, `AnalysisWakefieldTD.run(wake_length, integration="direct"|"indirect")` |
+General/analytic plane-wave agreement is <=1e-12 of peak; the invalid
+longitudinally incomplete beam leaked at 116 %. Ring-down how-to gates:
+fill Q 2015.8 versus 2016.0 (−0.007 %), wall Q 7745.2 versus 7768.9
+(−0.31 %), loaded-Q sum 944.7 versus 944.8 (−0.01 %). The iris shifts
+resonance −1.24 %; fitting |E| including zeros read Q 35 % high, and using
+the wrong frequency for conductive fill cost 0.6 %. A 450,000-step spectral
+estimate was still 10 % below a 39,000-step energy ring-down: decay and
+record length are not themselves spectral-accuracy certificates.
 
-Deliberately **not** taken up: TLM (an octree mesh with cell lumping
-is not a second discretisation of the same hexahedral grid — no
-`method="tlm"`; if ever, `MeshControl(element="octree")`), thermal and
-mechanical solvers (the grammar carries `AnalysisThermal` /
-`AnalysisThermalTD`; not planned), sensitivity and yield analysis
-(→ `optimize`), asymptotic/SBR.
+**Migration/gates:** the 0.5 guide records renamed source/waveform/monitor
+grammar; [[DD-117]]/API and import gates preserve public homes, recipe/store
+tests preserve drives and continuation, and executed Tutorial 20/ring-down
+recipes verify general-source and initial-field workflows. The historical
+phase narrative is replaced by these shipped contracts and explicit reservations.
 
-**Numerical rules the signatures must honour** (found while checking
-the blueprint against the solver; each becomes a test in its phase):
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
 
-* A CW waveform (`t_end = inf`) has no energy decay — `run()` then
-  requires `t_end=` (seconds, the physical duration; exclusive with
-  `total_time_steps`) and disables `energy_stop_db` and
-  `port_signal_stop_db`.
-* The step estimate becomes
-  `max_i(delay_i + waveform_i.t_end) + n_traversals · t_diag`; today's
-  `_estimate_steps` knows only bandwidth and diagonal.
-* `port_signal_stop_db="auto"` resolves to `None` when no modal port
-  is present (`FITTimeDomainSolver` raises otherwise).
-* `PortOperatorModal.set_excitation` holds one mode and one
-  retardation buffer; two modes of the same port in one excitation
-  list need a per-mode buffer (Phase B).  Different ports are
-  independent operators already.
-* Frequency monitors in a `TDResult` stay raw (`data_raw`);
-  `renormalize(excitation_name)` is the user's call — with several
-  waveforms there is no single reference spectrum.
-  `ScatteringTDResult` renormalises as today (one channel per run).
-* `Waveform.f_max > mesh.f_max` warns (DD-186 pattern), never raises.
-
-**Rejected.**  Method in the class name (`AnalysisScatteringFITTD`,
-`AnalysisEigenmodeTet`): multiplies classes by problem × method × mesh
-and makes the user choose numerics before stating the problem.
-`AnalysisTransient`/`AnalysisDriven`: readable, but break the TD/FD
-symmetry with `AnalysisScatteringTD`.  `Excitation` in a domain
-namespace: it is run vocabulary like `BoundaryConditions`, used by
-every TD/FD script.  Sources on the analysis instead of the model:
-the mesher could not see them — a later break for beams and emission
-faces.  `AnalysisStationaryCurrent` (the suite's word): breaks the
-`-static` triple; `AnalysisElectrostatics` etc. (nouns): a taste
-question decided for the adjective form.  Keeping `MonitorFarField`
-suffix-free: would force the rename on the day a time-domain far
-field arrives.
-
-**Migration (today → blueprint).**  `PlaneWaveSource(waveform,
-f_center, f_max, …)` → `SourcePlaneWave(name, direction, polarization,
-corners)` + `Excitation(waveform=…)`; `ports.ExcitationSpec` removed;
-`signals.gaussian`/`modulated_gaussian`/`waveform_for_mode` internal;
-`AnalysisScatteringTD(excitation=)` → `(waveform=)`;
-`GeometryModel.add_source`, `Mesh.sources`, `Mesh.with_sources`;
-`MonitorFarField` → `MonitorFarFieldFrequency` (store tag, recipe
-whitelist, `docs/api/monitors.md`, `docs/methods/far-field.md`, the
-antenna tutorials and the patch-array how-to); `MonitorFluxTime` /
-`MonitorWallLoss` to `normal=`/`position=`; core pin
-`EXPECTED_CORE` 10 → 12 (`AnalysisTD`, `Excitation`).  Unchanged:
-`AnalysisEigenmode`, `AnalysisScatteringTD.run(excited=…)`,
-`ScatteringTDResult`, `EigenmodeResult`, the other `Monitor*`,
-`Port*`/`PortSpec*`, `BoundaryConditions`, `Mesh`/`MeshControl`,
-`GeometryModel`, `Material`, `open_project`/`resume`.
-
-**Phases** (one feature branch each, `--no-ff` merge citing this DD;
-gates: full suite, `check_api_surface.py`, `check_imports.py` over the
-internal script directories, the S-parameter ladder bit-identical):
-
-* **A** — `Waveform` ABC and classes, `Excitation`,
-  `SourceFieldIncident`/`SourcePlaneWave` with `amplitude_unit`,
-  `add_source`/`Mesh.sources`, `ExcitationSpec` removed,
-  `AnalysisScatteringTD.waveform`, the three monitor migrations.
-* **B** — `AnalysisTD` + `TDResult` (`t_end`, `name`, CW rules,
-  delay-aware step estimate, per-mode excitation buffers),
-  `AnalysisScatteringTD` on `_run_transient`, the `results.h5`
-  writer's `excitations` attribute, recipe/store/`resume` for
-  `AnalysisTD`, schema 2.0 with `mesh.h5:element`; tutorial
-  *plane-wave scattering* (the first non-port excitation with a home)
-  and a concept page in `docs/methods/`.
-* ~~**C** — `magnelio.fields.FieldState`, `SourceFieldInitial`
-  (eigenmode ring-down from a project), `SourceFieldIncident`
-  beyond the plane wave.~~ Shipped 2026-08-29 (see Status);
-  `AnalysisEigenmode` moved onto `_AnalysisBase` with it.
-* ~~**D** — `SourceFieldSurface` + `MonitorFieldSurface`,
-  `SourceCurrentPath`.~~ Shipped 2026-08-29/30 (DD-226, DD-227).
-* **E ff.** — `AnalysisWakefieldTD`/`SourceBeam`;
-  `AnalysisScatteringFD`/`AnalysisFD` (FIT-FD on hexahedra first);
-  statics; `MeshTetrahedral`/FEM; `MeshSurface`/BEM;
-  `particles`/PIC/tracking — each its own DD, names from the table
-  above.
+- `analysis/time_domain.py`
+- `check_api_surface.py`
+- `check_imports.py`
+- `docs/api/monitors.md`
+- `docs/methods/far-field.md`
+- `docs/methods/sources-monitors.md`
+- `fit_fd.py`
+- `investigations/api-blueprint/phase-b/probe_s_bit_identity.py`
+- `investigations/api-blueprint/phase-c/probe_port_start_q2.py`
+- `io/project.py`
+- `mesh/mesher.py`
+- `probe_aux_state_start.py`
+- `probe_sibc_start.py`
+- `results.h5`
+- `tests/integration/test_source_field_incident.py`
 
 ---
 
@@ -18251,7 +17884,6 @@ order of magnitude, not two and a half, and the largest remaining item
 (postprocessing, 61 ms per axis frequency, rank-independent) grows to
 dominate on a production axis of 201 points, where it has never been
 touched.
-
 
 ## DD-235 — the band decomposition says when its mode basis is short
 
@@ -19755,144 +19387,68 @@ the certificates show it is invisible at the reported precision), a
 GPU-resident partition, and any change to the kernel build or the
 decomposition — the two items that are now the largest.
 
-
 ---
 
 ## DD-246 — the long-running operations report through one reporter, and its policy is a decision
 
-**Date:** 2026-09-03 (branch `feat/progress-reporting`).
-**Status:** Accepted — implemented and gated
-(`tests/unit/test_progress_reporting.py`, 19 cases: setting resolution,
-line shape, cadence, phase closure, and the reporting of the mesh build
-and the port solve).
-**Files:** `src/magnelio/_progress.py` (new), `src/magnelio/__init__.py`
-(`set_verbosity`, `get_verbosity`), `src/magnelio/mesh/mesher.py`
-(`Mesh.from_geometry`), `src/magnelio/analysis/_base.py` (`_verbose`),
-`src/magnelio/analysis/time_domain.py`,
-`src/magnelio/analysis/scattering_td.py`,
-`src/magnelio/solver/fit_td.py`,
-`src/magnelio/solver/_eigenmode_3d.py`,
-`src/magnelio/ports/_modal/refinement.py`.
-**Measurements:** internal record `investigations/verbose-progress/`
-(`probe_solve_ports_cost.py`, MEASUREMENTS.md).
+**Date:** 2026-09-03. **Status:** Implemented and gated; no numerical change.
+**Record:** `investigations/verbose-progress/` (internal dossier).
 
-**Problem.**  Only the time-domain loop reported anything.  Everything
-before it — the mesh build, the CFL eigenvalue, the port mode solves —
-ran silent, and there was no reporting *mechanism* at all: eleven
-hand-written `print` sites, no test (`capsys` appeared zero times in the
-suite), no terminal detection anywhere in the package.  Measured on
-tutorial 19 (2.08 M cells, one waveguide port): **23.3 s** mesh build,
-**14.1 s** CFL eigenvalue, **8.6 s** port build — some **46 s** with no
-output before the first `FIT-TD` line.  A silence that long is not
-merely uninformative: while measuring this, a probe run sat at 0.0 % CPU
-for 1h38 on a blocked viewer window, and nothing about its output
-distinguished it from a working run.
+**Problem/rationale.** Mesh, spectral CFL and mode preparation were silent
+before stepping: Tutorial 19 spent 23.3/14.1/8.6 s respectively, about 46 s
+without output. Ad hoc prints gave neither consistent verbosity nor useful
+phase timing. One Reporter owns progress rather than each subsystem choosing
+its own policy.
 
-**Decision.**  One `Reporter` owns every progress line, and three
-policy questions are settled in it rather than at each print site:
+**Decision.** Process-wide set_verbosity/get_verbosity is overridden by
+object verbose=True/False; verbose=None follows it, including nested port
+refinement. Terminals overwrite one carriage-return line; logs append whole
+lines at 30 s cadence. Workers stay silent. [[DD-251]] later separates
+notebook streams from logs; [[DD-253]] adds march timing and unified notices.
 
-* **Where the setting comes from.**  A process-wide default
-  (`magnelio.set_verbosity`) that any object overrides locally with
-  `verbose=`.  The analysis field becomes tri-state — `verbose=None`
-  (the new default) follows the global setting, `True`/`False` override
-  it — resolved through `_AnalysisBase._verbose`.  This is what lets a
-  setting reach *nested* work: `refine_port_modes` meshes and solves
-  ports once per rung, and used to pass `verbose=False` to them
-  unconditionally, throwing the user's setting away.
-* **Where the line goes.**  A terminal (`isatty`) gets one overwritten
-  `\r` line, the way the time-domain loop always reported; anything else
-  — a log file, a CI job, a notebook — gets whole lines on a slow
-  cadence (30 s).  This is not cosmetic: piping a run to a file used to
-  concatenate every status update into one unreadable row, and Jupyter
-  is on the non-tty side of that split.
-* **Who stays silent.**  Worker processes.  The section engine and the
-  band kernel run over spawn pools; eight workers writing one terminal
-  interleave into noise.
+Counts belong to cache misses in compute_face_material_areas, not a section
+pool that may not run after prefill. Six material passes use one accumulated
+count rather than six misleading restarting percentages. A ContextVar exposes
+the current Reporter without plumbing geometry signatures; finish/final/close
+restore nesting. Phases below 0.5 s suppress their finished line (TTY erases
+the announcement; logs retain it). Both port inspection and run use setup;
+eigensolves report target frequency and uneven factorization/iteration phases.
+ARPACK offers no progress callback, so count exposed LU solves/AMG-CG matvecs
+([[DD-195]]). Suppress zero tile-skip notices; DD-251 removes that statistic's
+remaining user output.
 
-**Rejected — making `solve_ports` cheaper instead.**  The suspicion was
-that building the full 3D `M_eps`/`M_mu` to flatten two cell slabs at
-the port plane was wasteful, and that a standalone port report need not
-pay the spectral time step at all.  Measured, both fail:
+**Rejected alternatives/evidence.** Matrix-build caching and bypassing the
+spectral step do not fix preparation cost: at 2.08 M cells M_eps+M_mu took
+0.16 s, cold spectral_dt 14.06 s, cached second call 0.00 s. courant_dt was
+2.47× the spectral limit (ratio 0.405), hence unstable, and would report
+different Mur coefficients from the actual run ([[DD-066]]).
+Conformal cells took 20.2 s versus 1.6 s materials; cProfile placed 22.3 s
+in face-material areas, 19.0 s of it in facet sections. A 48,910-DOF cavity
+spent 14.0 s factorizing versus 2.7 s iterating: phase names matter more than
+an invented percentage. Reporting gates cover setting resolution, cadence,
+line shape, phase closure, mesh and port preparation.
 
-    build_M_eps + build_M_mu    0.16 s      (2.08 M cells)
-    spectral_dt (cold)         14.06 s      62 % of a cold solve_ports
-    spectral_dt (2nd call)      0.00 s      lambda_max cache confirmed
+**Limit.** stderr warnings can briefly cut through a TTY progress row;
+owning the global warnings.showwarning hook was rejected because nesting and
+error restoration add failure modes. No solver shortcut or physics change
+was accepted to make reporting appear faster.
 
-The material matrices cost nothing worth caching, and the Lanczos is
-*already* paid once: `lambda_max` lives on the mesh, so the documented
-workflow — inspect the port report, then run — is optimal as it stands.
-Substituting `courant_dt` is worse than unnecessary: on this fixture it
-returns a step **2.47x larger** than the measured spectral limit
-(ratio 0.405), i.e. unstable, and even corrected it would give the port
-operators different Mur coefficients than `run()` uses — a report
-describing a port that is not the one being simulated, the failure mode
-[[DD-066]] paid for at −42 dB.  **No numerical change was made.**
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
 
-**Also.**  The `Tile skip: 0.0%` line no longer prints when there are no
-dead tiles to skip — a report of nothing gained, on every run that
-gained nothing.
-
-**The output policy, decided on what the phases then measured.**  With
-the phases in place they were pointed at tutorial 19, and the answer
-was not the expected one: `materials` (the cross-section fill) takes
-**1.6 s**, `conformal cells` (sub-cell classification) **20.2 s** — 90 %
-of a 22.4 s build, because every partially filled cell needs its own
-cross-section through a curved face.  A cProfile run puts 22.3 s of it
-in `compute_face_material_areas` and 19.0 s of that in the facet
-section path.  Three consequences:
-
-* **The counter went there, not into the process pool.**  The pool
-  (`_parallel_section_prefill`) is the obvious place for a percentage —
-  known denominator, parent-side consumption — but on this fixture it
-  never runs: `materials` has already filled the section cache, and the
-  batchable engine answers the rest in-process.  The count sits on the
-  cache misses in `compute_face_material_areas` instead, where the work
-  actually is.
-* **It is a count, not a percentage.**  That phase makes six passes for
-  different material properties; a per-pass percentage would run to 100
-  and restart five times, which reads as a stall followed by a restart.
-  `Reporter.advance` keeps a running total per phase and reports it
-  through `tick`.
-* **It is reached through a `ContextVar`, not a parameter.**  Four call
-  levels separate `Mesh.from_geometry` from that loop, none of which has
-  any interest in output; `_progress.current_reporter()` keeps the
-  concern out of geometry signatures and is safe across threads and
-  async tasks in a way a module global is not.  A reporter registers
-  itself on construction and stands down in `finish`/`final`/`close`.
-
-**A phase under 0.5 s does not report that it finished.**  Without the
-threshold a small model — every tutorial, most tests — prints one
-`done (0.0 s)` per phase and says nothing with any of them, which is the
-same defect as the `Tile skip: 0.0%` line this DD removes.  On a
-terminal the announcement is erased; in a log it stands, being the only
-live sign the phase ran.  The closing line carries the operation's
-total where the total is itself worth reporting.
-
-**Two labels were wrong and are fixed.**  The same three phases were
-reported as `setup` inside `run` and `ports` inside `solve_ports` (now
-`setup` in both), and the eigensolver printed its shift as a bare
-`sigma=2.012e+21` — an eigenvalue of the curl-curl operator, i.e.
-`(2*pi*f)**2`, which reads as an arbitrary number.  It now carries the
-frequency it targets (`7.14 GHz`), which is what a user checks against
-the model.  A single port is no longer counted `(1/1)`.
-
-**Known cosmetic defect.**  A warning written to stderr while a `\r`
-line is running cuts through it on a terminal; the running line is
-rebuilt by the next refresh, so nothing is lost, but the row is briefly
-mixed.  Fixing it properly means owning `warnings.showwarning` for the
-duration of an operation, which is a global hook with its own failure
-modes (nesting, restoration on error) and was judged not worth it here.
-
-**Progress where there is no fraction.**  An eigensolve has no step
-count: ARPACK converges when it converges.  What it has is a phase
-structure, and the phases are wildly uneven — measured on a 48,910-DOF
-cavity, **14.0 s factorising** against 2.7 s iterating.  Naming the
-phase is therefore most of the answer.  Beyond that, [[DD-195]] pulled
-the SuperLU factorisation out of `eigsh` so that several requests at one
-shift could share it; that also leaves `lu.solve` exposed as a callable
-this side owns, which is the only place an ARPACK iteration can be
-counted from — the library offers no progress callback.  The matvec
-counter rides there, and on the AMG-CG path in its own `opinv_matvec`.
+- `MEASUREMENTS.md`
+- `probe_solve_ports_cost.py`
+- `src/magnelio/__init__.py`
+- `src/magnelio/_progress.py`
+- `src/magnelio/analysis/_base.py`
+- `src/magnelio/analysis/scattering_td.py`
+- `src/magnelio/analysis/time_domain.py`
+- `src/magnelio/mesh/mesher.py`
+- `src/magnelio/ports/_modal/refinement.py`
+- `src/magnelio/solver/_eigenmode_3d.py`
+- `src/magnelio/solver/fit_td.py`
+- `tests/unit/test_progress_reporting.py`
 
 ---
 
@@ -20305,117 +19861,55 @@ an N-section loft with end tangents.
 
 ## DD-251 — a notebook is an in-place stream, the viewer starts its server on the running loop, and the tile-skip line is gone
 
-**Date:** 2026-09-04 (branch `fix/jupyter-progress-viewer`).
-**Status:** Implemented and gated
-(`tests/unit/test_progress_reporting.py::TestNotebookStream`; the
-*Run All* race is reproduced and closed by
-`investigations/viewer3d/runall_repro.py`, internal record).
-**Files:** `src/magnelio/_progress.py` (`_is_notebook_stream`,
-`_NOTEBOOK_INTERVAL`, `Reporter._inplace`), `src/magnelio/post/plot_3d.py`
-(`_show_when_server_ready`, `_loop_is_running`),
-`src/magnelio/solver/fit_td.py`, `docs/methods/progress-output.md`,
-`docs/methods/viewer.md`.
-**Amends:** [[DD-246]] (the terminal/log policy) and [[DD-190]] (the
-viewer's first call in a kernel).
+**Date:** 2026-09-04. **Status:** Implemented and gated.
+**Amends:** [[DD-246]], [[DD-190]]. **Record:** `userscripts/rect2circ.ipynb`
+(internal developer worksheet); `investigations/viewer3d/runall_repro.py`
+(internal record).
 
-**Problem.**  Three findings from one notebook session
-(`userscripts/rect2circ.ipynb`, developer worksheet):
+**Problem/rationale.** PyVista's nested first-call asyncio loop consumed
+queued ipykernel 7 Run All requests and re-entered an active ContextVar,
+aborting later cells. Manual execution concealed the race. Notebook OutStream
+also fell into the non-TTY 30 s log policy; a minute-long march first reported
+at 86 %. A bare tile-skip print escaped verbosity entirely.
 
-1. *Run All* aborted at the first `GeometryModel.plot()` with
-   `RuntimeError: cannot enter context: <Context ...> is already
-   entered` from ipykernel's `_async_in_context`, and the cells after
-   it never ran; executing the cells by hand worked.
-2. The time-domain march printed nothing for 30 s at a time.  On a
-   one-minute GPU run the first line came at step 75 900 of 88 601 —
-   86 % of the march — and the user read the heartbeat and the final
-   line as one failed overwrite.
-3. `Tile skip: 17.6% of kernel elements in dead tiles` appeared as a
-   bare `print` outside the reporter, and nobody could act on it.
+**Decision.** On an already running loop, immediately return an empty VBox,
+schedule launch_server/start(exec_mode="task"), await server.ready in a task,
+then assign the created viewer to widget children. Later calls use the
+running server directly. Do not nest a loop or send late display_data to an
+already returned cell: frontend widget-state updates remain routable, whereas
+late Output/display updates were dropped. Concurrent early view calls each
+get their own populated box. Name the wslink transport explicitly (aiohttp,
+or jupyter with the enabled extension), rather than inheriting an extension
+environment that could build a localhost:0 iframe without a TCP listener.
 
-**Causes.**  (1) PyVista's first-call path `elegantly_launch` applies
-`nest_asyncio2` and runs `asyncio.run(...)` *inside* the kernel's
-running loop until the trame server is ready.  Under ipykernel 7 every
-cell executes in its own `contextvars` context; the nested loop picks
-up the next queued `execute_request` — which *Run All* has already
-sent — and re-enters a context that is still entered.  Manual
-execution only works because the queue is empty while the server comes
-up.  Reproduced without a browser by queueing four requests at once
-through `jupyter_client` (`runall_repro.py`): the old code raises in
-cell 2 and cells 3–4 never execute.  (2) DD-246 keyed the policy on
-`isatty()`: ipykernel's `OutStream` answers no, so the notebook was
-filed with the logs and their 30 s cadence — although a notebook cell
-redraws a carriage-returned line exactly like a terminal.  (3) The
-line predates the reporter and slipped past DD-246, which had only
-silenced its `0.0%` case.
+Treat ipykernel streams as in-place at 0.5 s cadence; TTY refresh remains
+0.1 s and logs 30 s whole lines. Remove tile-skip user output completely;
+_tile_skip_stats remains available internally. The two independent stopping
+criteria and their display semantics are unchanged; configurable cadence
+was not adopted.
 
-**Decision.**
+**Verdict/rejections.** Four queued kernel requests reproduce the old error;
+after the change all cells and both views complete, including browser Restart
+Kernel and Run All. Starting a server at import did not bring it up between
+queued cells before a subsequent 15 s busy cell. It would add 0.36 s imports
+and a listening socket to every notebook for only a small manual first-call
+gain, so it was rejected. Run All still displays its first view after queued
+CPU-bound cells release the loop; documentation states that limit. Notebook
+stream tests verify carriage-return refresh and final termination.
 
-- **The viewer starts the server as a task on the loop that is
-  already running.**  When the trame server is not yet running and a
-  loop is (every Jupyter cell), `plot()` displays an empty
-  `ipywidgets.VBox` in the cell at once, calls PyVista's
-  `launch_server()` — which schedules `server.start(exec_mode="task")`
-  on that loop — and, from a task that awaits `server.ready`, builds
-  the view with `return_viewer=True` and makes it the box's child.
-  No loop is nested, so the request queue is never read out of turn.
-  Later calls find the server running and take the direct path as
-  before.  Reproduction after the change: all four queued cells run,
-  both views arrive, no error.  The cost is that the first view in a
-  kernel appears a fraction of a second after its cell returns.
-  **The hand-over has to be a widget-state change.**  The first cut
-  used an `ipywidgets.Output` and `display()` from the task; the kernel
-  sent the view, the cell stayed white.  Once a cell has returned, the
-  frontend drops `display_data` addressed to it, while a widget's
-  state (`children`) travels over the comm channel and renders
-  whenever it arrives — the repro shows the late `comm_open HTMLModel`
-  and `comm_msg children = 1` under the plot cells.  Two cells that
-  both plot before the server is up each take this path and each is
-  filled.  **And the transport has to be named.**  The second cut
-  rendered a grey "page could not load" frame in JupyterLab: its
-  kernel inherits `TRAME_BACKEND=jupyter` (with `TRAME_IFRAME_BUILDER`
-  and `TRAME_JUPYTER_ENDPOINT`) from the trame Jupyter server
-  extension, and `launch_server()` without an explicit backend takes
-  it — a comm-based transport whose `port_callback(0)` binds no TCP
-  port, so the iframe was built for `localhost:0`.  A kernel started
-  through `jupyter_client` has no such variable, which is why every
-  kernel-side probe showed a real port.  PyVista's own path names
-  `aiohttp` for the same reason; `_show_when_server_ready` now passes
-  `wslink_backend="aiohttp"` (or `"jupyter"` when the extension is
-  enabled).  Verified in the browser: *Restart Kernel and Run All* on
-  a three-cell notebook renders both views.
-  **Rejected on measurement: starting the server at import.**  The
-  hand-over from a task runs only once the loop is free — after every
-  queued cell of a *Run All*, since a mesh build or a march holds the
-  loop — so the view appears last.  A warm start (`import magnelio` in
-  a kernel scheduling `launch_server`) was built and measured in the
-  browser on a notebook whose plot cell was followed by a 15 s cell:
-  with the plot in the cell right after the import *and* with an
-  ordinary cell in between, the server was still pending when
-  `plot()` ran, and the view arrived after the sleeping cell as before.
-  Between two queued cells ipykernel gives the loop no usable time —
-  the next `execute_request` is already on the socket — and the
-  aiohttp start needs several iterations.  What the warm start would
-  have bought is a fraction of a second on the first hand-executed
-  plot, at the price of the PyVista and trame imports (0.36 s) and a
-  listening socket in every notebook that imports Magnelio.  Not
-  taken; the docs state the *Run All* behaviour.
-- **Three stream classes, not two.**  A stream from the `ipykernel`
-  package (`type(stream).__module__`) is an *in-place* stream like a
-  terminal, with its own cadence `_NOTEBOOK_INTERVAL = 0.5 s`: a
-  terminal takes ten refreshes a second without flicker, a notebook
-  sends each refresh to the browser, and half a second keeps the line
-  live without flooding the connection.  Logs keep their 30 s and
-  whole lines.  Measured in the kernel: the reporter's `\r` lines
-  arrive per refresh and the closing line terminates them.
-- **The tile-skip line is removed**, not moved onto the reporter.  The
-  fraction of dead tiles is a kernel statistic; it stays readable on
-  the solver as `_tile_skip_stats` (the integration test reads it
-  there), and the user has no decision that depends on it.
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
 
-**Non-goals.**  Making the two stop criteria print on one line (they
-are two criteria: the stored-energy stop and the port-signal stop,
-whichever fires first ends the run, and the heartbeat line shows the
-one it happens to sample); a configurable notebook cadence.
+- `docs/methods/progress-output.md`
+- `docs/methods/viewer.md`
+- `runall_repro.py`
+- `src/magnelio/_progress.py`
+- `src/magnelio/post/plot_3d.py`
+- `src/magnelio/solver/fit_td.py`
+- `tests/unit/test_progress_reporting.py`
+
+---
 
 ## DD-252 — `refine_port_modes` converges what the mode family defines
 
@@ -20452,318 +19946,187 @@ completely); a per-mode target list.
 
 ## DD-253 — every march is timed, and the time loop says what runs and how long it has run
 
-**Date:** 2026-09-05 (branch `feat/run-timing`).
-**Status:** Implemented and gated
-(`tests/unit/test_progress_reporting.py::TestDurations`, `::TestMultilineNote`,
-`::TestMarchLines`; `tests/unit/test_project_store.py::TestRunTiming`;
-`tests/integration/test_project_scattering.py::test_stop_reason_booked_in_index_and_settings`,
-`tests/integration/test_resume_api.py::test_resume_bounded_bit_exact`,
-`tests/integration/test_result_contract.py::TestContractShape::test_timing_populated`).
-**Files:** `src/magnelio/_progress.py`, `src/magnelio/solver/fit_td.py`,
-`src/magnelio/io/project.py`, `src/magnelio/analysis/time_domain.py`,
-`src/magnelio/analysis/scattering_td.py`, `src/magnelio/analysis/result_interface.py`,
-`docs/methods/progress-output.md`.
-**Amends:** [[DD-246]], [[DD-251]].  First of the usability series
-[[DD-254]] (run objects, reprs) and [[DD-255]] (`plot_energy`, `watch`, `monitor`).
+**Date:** 2026-09-05. **Status:** Implemented and gated.
+**Amends:** [[DD-246]], [[DD-251]]; [[DD-254]]/[[DD-255]] build on the clocks
+and writer identity. No numerical change.
 
-**Problem.**  Nothing in Magnelio knew what time it was.  The store held
-`created` and `modified` on the project and nothing per run; a result
-object carried no wall clock at all; the FIT-TD line reported the step
-and the criterion but neither how long the march had run nor how fast
-it was going, and its closing line — unlike the `mesh` and `setup`
-closers — omitted the total on purpose.  A user watching a run from
-another notebook could not say whether it had been marching for a
-minute or an hour, and a user reading a result a week later could not
-say when it was made.  Around the reporter, seven notices still went
-out as bare `print`s (the backend banner, the on-demand checkpoint
-confirmation, the resume line, the not-streamed-monitor notice, three
-band-pipeline notices), so `set_verbosity(False)` was not silence.
+**Decision/rationale.** FITTimeDomainSolver.run stamps UTC start, times the
+march with perf_counter and records finish/elapsed in finally across all
+returns/exceptions. Results and store runs expose started/finished/elapsed;
+scattering aggregation uses first start, last finish and summed march time.
+Resume preserves original start, stamps resumed, refreshes writer pid/host
+and accumulates elapsed. Project aggregation follows the same contract.
 
-**Decision.**
+Keep two clocks distinct: result/run elapsed means stepping only; the analysis
+record and run reporter include setup. open_run/reopen_run/planned-run entries
+persist pid/host and meta writer for stale detection. A shared status composer
+shows step, elapsed, sampled stopping criterion and rate; closing rows replace
+rate with stop reason. ETA appears only for fixed step counts: a generous
+25-transit estimate or nonmonotone resonator decay is not an honest ETA for
+open-ended runs. Header notes state cells/dt/precision/backend/approximate
+solver-owned array memory and the actual stopping rule/cap, not an inferred
+completion count. Clock/rate units scale for readability.
 
-1. *The clock lives in the march.*  `FITTimeDomainSolver.run()` is a
-   thin wrapper around `_run_loop()`: it stamps `_started` (UTC), starts
-   `perf_counter`, and in a `finally` sets `_elapsed` and `_finished` —
-   one place that covers the five exits and any exception.  The
-   analysis hands the three values to the result object
-   (`TDResult`/`ScatteringTDResult.started/finished/elapsed`; a
-   multi-excitation result folds its marches to first start, last
-   finish, summed time) and to the store through
-   `_RunSink.close(elapsed=)`.  `_finalize_run` *accumulates* `elapsed`,
-   so a resumed run's total is the sum of its marches; `reopen_run`
-   keeps `started`, stamps `resumed`, and refreshes the writer identity.
-   `Project.started/finished/elapsed` aggregate the runs the same way
-   and join the result contract (`ScatteringResult`), so a script reads
-   the clock off either implementation.
-2. *Two clocks, two names.*  `elapsed` on every result is the marching
-   only.  The analysis call, setup included, is the `finished in` line
-   of the new `run` reporter — one per `run()` or `resume()`, `(N runs)`
-   appended when N > 1 — and the `analysis` entry of `project.json`
-   (`started`, `finished`, `elapsed`), written by
-   `ProjectStore.mark_analysis_started/finished`.  The two differ by the
-   setup time, which is what the phase lines above the march account
-   for.
-3. *Who is writing.*  `open_run`, `reopen_run` and
-   `register_planned_runs` book `pid` and `host` on the run entry and as
-   `meta["writer"]`; [[DD-254]] turns a dead pid on the same host into
-   the reader's `stale` state.
-4. *The line.*  One composer, `_status_line`, builds both the running
-   and the closing line in the same slots: `step n/N | clock | status |
-   rate, ETA` while marching, `step n/N | clock | status | done (why)`
-   on the way out.  The clock is a stopwatch (`27.4 s`, `2:13`,
-   `1:02:13`; `format_clock`), totals read as a sentence (`1 min 12 s`;
-   `format_seconds`), the rate scales its unit (`3.9k steps/s`;
-   `format_rate`).  The ETA appears only when the step count is fixed:
-   an open-ended run ends on a criterion, and the run-length estimate
-   the analysis carries is a deliberately generous scale (25 diagonal
-   transits; a TEM line is done after three or four), so an ETA built
-   on it would overstate every ordinary run several-fold.  The status
-   vocabulary is shortened to fit the extra slots at 80 columns
-   (`energy -58.4/-70 dB`, `port signal -41.0/-60 dB`).
-5. *Two header lines* before the first step, via `Reporter.note`:
-   `37 k cells | dt 1.32 ps | single on NumPy (CPU) | ≈ 4 MB` (the
-   memory is the sum of the solver's own arrays, hence ≈) and `stops at
-   energy -70 dB or port signal -60 dB, cap 388480 steps` — what runs,
-   and what ends it.  The plan had foreseen an `≈ N steps` figure here;
-   for the reason in (4) the *rule* is stated instead of the number.
-6. *Everything through the reporter.*  The seven bare prints become
-   `Reporter.note` calls on a `setup` or `run` label; `note` accepts
-   multi-line text (the Mur balance sheet) and indents continuation
-   lines under the label.  The reporters nest: `run` is created before
-   `setup`, so `setup` and `FIT-TD` stand down onto it, and
-   `_start_run_clock` closes a reporter an earlier call left open when
-   it raised.
+Route former backend/checkpoint/resume/monitor/band prints through Reporter;
+multiline notes indent continuation rows. Nested setup/FIT-TD reporters
+restore the outer run, including cleanup after earlier errors. A run or
+resume prints one total operation duration, with number of runs when >1.
 
-**Measured** (WR-90 section, 37 k cells, NumPy single, this branch):
-`step 6001/∞ | 1.5 s | energy -70.2/-70 dB | done (energy criterion)`,
-`run | finished in 2.6 s` — the difference is the CFL eigenvalue and
-the two port solves.  The `store` path books `elapsed` 0.15 s per
-run against `analysis.elapsed` 0.43 s on the 2907-cell smoke model;
-the rebuilt `TDResult` carries the run's own figure.
+**Evidence/limits.** WR-90 37 k cells, NumPy single: 1.5 s march versus 2.6 s
+analysis; 2907-cell streamed smoke: 0.15 s per-run versus 0.43 s analysis.
+Timing/reason propagation and bit-exact resume gates cover both memory/store
+results. Decay-trend ETA, leveled verbosity and stderr-warning interception
+were not adopted; no timing field claims to include setup unless explicitly
+named as analysis time.
 
-**Non-goals.**  A decay-trend ETA for open-ended runs (the stall
-detector's slope fit would give one; a resonator makes it grow during
-the run, which reads as a fault) — deferred until asked for; a levelled
-verbosity; suppressing the `warnings` line that still cuts through a
-running `\r` line ([[DD-246]]'s known cosmetic defect).
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
+
+- `docs/methods/progress-output.md`
+- `project.json`
+- `src/magnelio/_progress.py`
+- `src/magnelio/analysis/result_interface.py`
+- `src/magnelio/analysis/scattering_td.py`
+- `src/magnelio/analysis/time_domain.py`
+- `src/magnelio/io/project.py`
+- `src/magnelio/solver/fit_td.py`
+- `tests/integration/test_project_scattering.py`
+- `tests/integration/test_result_contract.py`
+- `tests/integration/test_resume_api.py`
+- `tests/unit/test_progress_reporting.py`
+- `tests/unit/test_project_store.py`
 
 ---
 
 ## DD-254 — a run is an object, a project knows whether anyone is still writing it, and nothing prints its arrays
 
-**Date:** 2026-09-05 (branch `feat/run-objects`; the 0.6.0 break).
-**Status:** Implemented and gated
-(`tests/unit/test_project_store.py::TestRunObjects`, `::TestProjectStatus`,
-`::TestCheckpointState`; `tests/unit/test_repr.py`;
-`tests/integration/test_project_checkpoint.py::test_streamed_graceful_abort_via_sigint`,
-`tests/integration/test_result_contract.py::TestContractShape::test_repr_is_short_and_array_free`).
-**Files:** `src/magnelio/_repr.py` (new), `src/magnelio/post/_energy.py` (new),
-`src/magnelio/io/project.py`, `src/magnelio/io/__init__.py`,
-`src/magnelio/analysis/time_domain.py`, `src/magnelio/analysis/scattering_td.py`,
-`src/magnelio/analysis/result_interface.py`, `src/magnelio/post/sparameter_result.py`,
-`src/magnelio/solver/eigenmode_result.py`, `docs/methods/projects-and-runs.md` (new),
-`docs/migration-0.6.md` (new), `validation/tools/check_api_surface.py`.
-**Builds on:** [[DD-253]] (the stamps and the writer identity it reads).
-**Amends:** [[DD-070]] (the run index), [[DD-117]] (the API-surface pin now
-lists the verbosity switch of [[DD-246]], which had drifted past it).
+**Date:** 2026-09-05. **Status:** Implemented; intentional 0.6.0 API break.
+**Builds on:** [[DD-253]]. **Refines:** [[DD-070]], [[DD-117]], [[DD-246]].
 
-**Problem.**  Three things a user meets at the prompt were wrong in
-the same way: they showed the store's bookkeeping instead of the
-run.  `project.runs` returned the raw dictionaries of `project.json`
-(channel keys as lists, no clock, no energy, nothing the JSON did not
-hold); `repr(project)` was one line without a run in it and *raised*
-on a store from another release, so typing the name at a REPL gave a
-traceback; and two result classes had no `__repr__` at all, so a
-`ScatteringTDResult` printed its 201 × n × k complex matrix and every
-port signal.  Two states were wrong outright: an aborted run left the
-project `running` forever (`_finalize_run` only knew "all done or
-not"), and a run whose kernel had died stayed `running` with no way
-to tell it from one still marching.  And a reader of a live project
-had to call `refresh()` before every look, which no page showed.
+**Problem/decision.** Replace raw run-index dictionaries with live Run views
+and array-dumping reprs with summaries. Project.runs is a mapping of Run
+objects: iteration/len/membership remain, n_steps becomes an attribute and
+excited a tuple. Attributes read the current index; energy_trace reads only
+SWMR energy streams, sample counts use dataset shape, and running elapsed
+adds the current march clock. result/monitors/checkpoint_state delegate to
+the project; raw dictionaries remain under meta["runs"].
 
-**Decision.**
+Nonterminal meta accesses compare project.json (mtime_ns,inode,size), reparse
+an atomic replacement and clear derived S caches. Run-data cache keys include
+n_steps/finished so external resume reopens records. refresh remains available
+for finished projects; ordinary live reads need no manual refresh loop.
 
-1. *`Project.runs` is a mapping of `Run` objects* — the one breaking
-   change of 0.6.0 (`["n_steps"]` → `.n_steps`, `excited` a tuple;
-   iteration, `len`, `in` unchanged; `docs/migration-0.6.md`).  A `Run`
-   is a live view: every attribute reads the project's current index,
-   `energy_trace` reads the SWMR file's energy streams alone
-   (`_read_energy_trace`, split out of `_read_run_results`),
-   `n_energy_samples` reads one dataset shape, `elapsed` adds the time
-   since the current march started while the run is `running`.
-   `result()`, `monitors`, `checkpoint_state()` delegate to the
-   project.  Internal callers use `_run_index()` / `_run_info(name)`;
-   the raw dict stays reachable as `meta["runs"][name]`.
-2. *The index follows the file until the project is finished.*  `meta`
-   compares `(mtime_ns, inode, size)` of `project.json` on every access
-   while the stored status is not terminal and re-parses on a change,
-   clearing the derived S-matrix cache; `_load_run` keys its cache on
-   `(n_steps, finished)` so a run resumed by another process is
-   re-read.  `refresh()` stays for finished projects.  One `stat` per
-   access; the writer replaces the file atomically, so a half-written
-   index is never seen.
-3. *Status rules.*  `_finalize_run`: all done → `done`; else any
-   aborted → `aborted` (the interrupt propagates out of the analysis
-   call, so pending siblings never start in it); else `running`.
-   `stale` is derived, never stored: a `running` entry whose `pid` no
-   longer exists on the recording `host` ([[DD-253]] books both), or a
-   project between runs whose `writer` is gone.  POSIX only
-   (`os.kill(pid, 0)`); elsewhere the question is left open and the
-   run reads `running` — a wrong `stale` would be worse than a late
-   one.  Limits, documented: same host only, a zombie reads alive, a
-   reused pid after a reboot reads alive.
-4. *The repr principle*, in `_repr.py`: a repr says what an object is,
-   how big it is and what state it is in — never what it holds.  Text
-   as aligned key/value lines or a table with a rule; HTML as one
-   `<table>` with no colours of its own, so it reads on either
-   notebook theme.  Applied to `Project` (summary + run table, wrapped
-   so it *cannot* raise — a foreign schema prints the problem),
-   `_RunIndex`, `Run`, `CheckpointState` (a `Mapping` around the
-   checkpoint dict: index access unchanged, printing shows the step
-   and the array sizes), `TDResult`, `ScatteringTDResult`,
-   `SParameterResult`, `RunSettings` (recorded fields only) and
-   `EigenmodeResult` (HTML table).  The energy figure every summary
-   quotes, dB below the peak of the trace, lives in
-   `post/_energy.py` — the same number the FIT-TD line shows.
+Stored aggregate status is done if all runs completed, otherwise aborted if
+any aborted, otherwise running. Interrupts prevent pending siblings starting.
+stale is derived, never stored: a running run or between-runs writer whose
+pid is dead on the recorded host. POSIX os.kill(pid,0) cannot identify foreign
+hosts, zombies or reused pids; other platforms retain running rather than
+guessing stale. These are explicit liveness limits.
 
-**Measured** (WR-90 two-port, two excitations, this branch): `repr(project)`
-is a six-line head plus a two-row table; `CheckpointState` prints
-`e  float32[10060]` where the dict printed ten thousand floats.  A
-`running` entry with the pid of a finished subprocess reads `stale`
-on this host, `running` with a foreign host name.
+**Representation contract.** Reprs say identity, size and state, never array
+contents. Shared aligned text/theme-neutral HTML tables cover Project,
+Run/index, CheckpointState, TD/scattering/S-parameter/eigenmode results and
+recorded RunSettings. A foreign-schema Project repr reports the problem and
+cannot raise; CheckpointState remains a Mapping but prints shapes/dtypes.
+Shared energy dB is below trace peak, matching the solver's reported quantity.
 
-**Non-goals.**  A cross-project listing (a directory scan) — asked and
-declined for now; Windows liveness via `OpenProcess`; a levelled
-verbosity; `field(repr=False)` cosmetics on dataclasses that define
-their own `__repr__`.
+**Verdict.** Run/status/checkpoint/repr and graceful-abort gates pass. The
+WR-90 two-run project summary is six header lines plus two table rows; a
+10060-value checkpoint array prints float32[10060]. A dead local subprocess
+is stale, the same pid under a foreign hostname stays running. Cross-project
+listing, Windows liveness and leveled verbosity were explicitly declined.
+The 0.6 migration guide records dictionary-to-attribute access.
+
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
+
+- `_repr.py`
+- `docs/methods/projects-and-runs.md`
+- `docs/migration-0.6.md`
+- `post/_energy.py`
+- `src/magnelio/_repr.py`
+- `src/magnelio/analysis/result_interface.py`
+- `src/magnelio/analysis/scattering_td.py`
+- `src/magnelio/analysis/time_domain.py`
+- `src/magnelio/io/__init__.py`
+- `src/magnelio/io/project.py`
+- `src/magnelio/post/_energy.py`
+- `src/magnelio/post/sparameter_result.py`
+- `src/magnelio/solver/eigenmode_result.py`
+- `tests/integration/test_project_checkpoint.py`
+- `tests/integration/test_result_contract.py`
+- `tests/unit/test_project_store.py`
+- `tests/unit/test_repr.py`
+- `validation/tools/check_api_surface.py`
 
 ---
 
 ## DD-255 — a run is watched by polling the store, and one figure is what everyone watches
 
-**Naming refinement (2026-10-04):** [[DD-279]] names the immediate status
-widget watch_panel; watch remains the generator/callback interface and follow
-the blocking display. Observable behaviour is preserved; rename implemented.
+**Date:** 2026-09-05. **Status:** Implemented and gated; closes the
+[[DD-253]]/[[DD-254]] usability series. [[DD-279]] names the immediate
+status widget watch_panel; watch is generator/callback and follow the
+blocking display.
 
-**Date:** 2026-09-05 (branch `feat/watch-and-plot-energy`).
-**Status:** Implemented and gated
-(`tests/unit/test_plot_energy.py`, `tests/unit/test_project_monitor.py`,
-`tests/integration/test_project_watch.py`; how-to
-`examples/howto/plot_watch_running_simulation.py`).
-**Files:** `src/magnelio/post/_plot_energy.py` (new), `src/magnelio/io/project.py`,
-`src/magnelio/analysis/time_domain.py`, `src/magnelio/analysis/scattering_td.py`,
-`docs/methods/projects-and-runs.md`, `examples/tutorials/plot_07_project_store.py`.
-**Builds on:** [[DD-253]], [[DD-254]].  Closes the usability series.
+**Rationale/decision.** SWMR streams and atomically replaced indices already
+support a second reader ([[DD-070]]); package the polling/display loop so
+users need not reproduce it, and use one energy scale across results and
+progress. Filesystem notifications were rejected: extra dependency, unreliable
+on synchronized/network mounts and unable to certify an HDF5 flush.
 
-**Problem.**  The store had been built for a second reader since
-[[DD-070]] — SWMR streams, an atomically replaced index — and the
-docstring of `Project.refresh` said *"a live watcher may poll
-project.refresh().status"*, but no page showed the loop, `.refresh(`
-appeared nowhere in `docs/` or `examples/`, and the one watch loop in
-the tree was inside an integration test.  Tutorial 07 promised live
-following twice in prose and spent nine statements on the energy
-plot, where `plot_s` is one call; the ring-down how-to hand-rolled the
-same plot in different units.  The developer's ask was to be spared
-that loop, and to see the energy trace scaled the way the progress
-line reports it.
+- watch(interval,on_change,timeout) yields on signature changes and returns
+  on done/aborted/stale/timeout. Callback mode drives the loop internally and
+  returns the project. Signature includes modified/status and per-run state/
+  n_energy_samples: one index stat plus a few SWMR shapes, not full fields.
+  First and terminal states are always delivered; transient OSError during
+  replacement counts as no change. KB-052 later fixes a completion race
+  while a yielded snapshot is being consumed.
+- One plot_energy_traces layer serves TDResult, ScatteringTDResult, Run and
+  Project: 10*log10(E/peak), time in ns or steps, shared criterion as a dashed
+  line, fig/ax conventions matching plot_s. Running Run.n_steps reads the last
+  energy-sample step instead of the index's unfinished zero count.
+- The notebook watch_panel is a VBox with HTML summary and energy PNG; a
+  daemon thread owns a separate Project and Agg figure/canvas, updates widget
+  state and never starts pyplot's GUI backend off the main thread. Missing
+  ipywidgets names the jupyter extra. [[DD-251]] explains why late display
+  output is insufficient.
+- follow replaces its own output: notebook clear_output/display HTML, terminal
+  escape-sequence redraw, logs appended tables. A bare expression in a watch
+  loop displays nothing. follow(plot=True) uses its own Agg PNG per change;
+  a plot callback receives fresh axes. A window-capable terminal updates one
+  figure; headless follow shows the table. Kernel probes confirm text/html and
+  image/png messages during the watch, not only after cell completion.
+- Plot limits do not follow initial zero energy to −3000 dB: default floor
+  is ten dB below the criterion, lower for a deeper final run, or −100 dB
+  without a criterion, with upper +5 dB. Explicit floor_db overrides it.
+  Data is untouched; only the displayed frame clips zero-energy tails.
 
-**Decision.**
+**Verdict/limits.** Executed 37 k-cell WR-90 watch at 0.25 s cadence emits
+seven updates, steps 801→5101 and −0.9→−70.1 dB, ending done. A finished
+project yields once; stale returns before sleep; 0.3 s timeout returns on
+schedule. Log/TTY/notebook, plot callback and axis-floor gates pass. Live
+in-process solver plots and cross-project listings were not accepted. The
+ring-down Q plot deliberately remains relative to starting energy, not peak.
+Tutorial 07 and the watch how-to demonstrate the one-call energy/display flow.
 
-1. *Polling, packaged.*  `Project.watch(interval, on_change=,
-   timeout=)` is a generator that yields the project at every change
-   and returns when the status is terminal (`done`, `aborted`,
-   `stale`) or the timeout passes; with `on_change` the loop runs
-   inside and the project is returned.  A change is a change of the
-   signature `(modified, status, ((name, state, n_energy_samples),
-   …))` — the index stamp plus one dataset shape per run, so a poll
-   costs a `stat` and a handful of SWMR opens.  The first and the last
-   state are always delivered; an `OSError` during a poll (the writer
-   is replacing a file) counts as "no change".  File-system
-   notifications were rejected on purpose: a dependency, unreliable on
-   network and cloud-synced mounts, and blind to whether an HDF5 flush
-   is whole.
-2. *One figure.*  `post/_plot_energy.py::plot_energy_traces` draws
-   traces as `10·log10(E/peak)`, the rising edge below zero too, with
-   the energy criterion as a dashed line; `x` is time in ns or the
-   step.  `plot_energy()` on `TDResult`, `ScatteringTDResult` (its
-   [[DD-253]] `energy_traces`, one curve per excited channel), `Run`
-   and `Project` (one curve per started run, the criterion when every
-   run shares one) delegate to it with `plot_s`'s conventions
-   (`(fig, ax)`, `ax=`).  Same number as the progress line, the run
-   table and `Run.energy_db`.
-3. *The notebook panel.*  `Project.monitor(interval, x=)` returns an
-   `ipywidgets.VBox` of an `HTML` (the project summary and run table)
-   and an `Image` (the energy plot as PNG), refreshed by a daemon
-   thread over its own `Project` instance and `_watch_iter`.  The
-   thread sets widget *state* only — the [[DD-251]] lesson: output
-   written after the cell returned is dropped, widget state renders.
-   The PNG is drawn on a `Figure` + `FigureCanvasAgg` the thread owns,
-   never through pyplot (`plot_energy_traces` imports pyplot only
-   when it has to make a figure), so no GUI backend is started off the
-   main thread.  Missing `ipywidgets` raises naming the `jupyter`
-   extra.
-4. *A running run counts its steps.*  The index books `n_steps` only
-   when a march ends, so a live `Run` read `0`; `Run.n_steps` now
-   reads the latest energy sample's step while the run is `running`.
-5. *Docs.*  A how-to that runs the solver on a thread and watches it
-   from the main thread (real output on the page: `running  step
-   1801  -52.0 dB below peak` …), Tutorial 07's energy block reduced
-   to `proj.plot_energy()`, the projects chapter's section *Watching
-   from another process*, a cross-link from the progress chapter.
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
 
-**Measured** (WR-90, 37 k cells, NumPy single, this branch): the
-how-to's `watch(interval=0.25)` reports seven times over a 1.3 s march
-plus setup — steps 801 → 5101, −0.9 → −70.1 dB — and ends on `done`;
-a finished project reports once; a `stale` entry ends the watch
-before its first sleep; `timeout=0.3` on a live entry returns in
-0.3 s.
-
-**Non-goals.**  A live plot inside the process that runs the solver
-(the kernel is busy marching; the text line is what fits there —
-possible later through the same widget-state rule from the solver's
-check cadence); a cross-project listing; the ring-down how-to keeps
-its own plot (its y-axis is relative to the start, a deliberate
-choice for a Q fit).
-
-**Amendment (same day).**  The first notebook session wrote
-``for snapshot in proj.watch(): run = snapshot.runs[...]; run.energy_db``
-and saw nothing: a bare expression inside a loop displays nothing, in
-a notebook as anywhere else — and ``print(snapshot)`` scrolled a table
-per change.  ``Project.follow(interval, timeout=, stream=)`` is the
-loop ready-made, with the display *replacing itself*: an
-``_InPlacePainter`` tells the surface apart the way the reporter does
-— a notebook cell gets ``clear_output(wait=True)`` + ``display``
-(the HTML table), a terminal gets the text table redrawn over its own
-lines (``ESC[nA ESC[J``), a log gets whole tables appended.  The
-``watch`` docstring and the projects chapter now say that the loop
-body has to print.  Measured in a real ipykernel through
-``jupyter_client`` (internal record
-``investigations/usability-monitoring/follow_kernel_probe.py``): the
-cell's stdout is ``ipykernel.iostream``, and ``follow()`` on a finished
-project emits one ``clear_output(wait=True)`` followed by one
-``display_data`` carrying ``text/html`` — what a front-end renders in
-place.  Gates ``tests/unit/test_project_monitor.py::TestFollow`` (log,
-terminal escape sequence, notebook stub).  The second notebook session
-drew ``plt.subplots(); proj.plot_energy(ax=ax)`` inside the loop and
-saw nothing until the run ended: the inline backend flushes a cell's
-figures when the cell is over.  ``follow(plot=True)`` renders the
-energy plot per change on an Agg figure of its own and shows it as a
-PNG under the table (``display(Image)``, gone with the next
-``clear_output``); ``plot=callable(project, ax)`` draws into fresh
-axes for a picture of one's own.  On a terminal with a window-capable
-backend it is one window redrawn in place; headless, only the table.
-Probed in the kernel again: table as ``text/html``, picture as
-``image/png``.  Gates ``::TestFollowPlot``.
-
-The same session's plot started at −3000 dB: the first energy sample
-is the empty grid (exactly zero), the next few are 1e-33 J, and in dB
-that is a plunge the axis followed.  ``plot_energy_traces`` now sets
-the axis from a floor to +5 dB — ten dB below the energy criterion,
-lower only where a run actually ended deeper, −100 dB without a
-criterion — and every ``plot_energy`` takes ``floor_db=`` to pin it,
-the counterpart of ``plot_s(floor_db=)``.  The samples themselves are
-untouched; the plunge is clipped by the frame, which is the honest
-picture of an energy that was zero.  Gates ``TestAxisFloor``.
+- `docs/methods/projects-and-runs.md`
+- `examples/howto/plot_watch_running_simulation.py`
+- `examples/tutorials/plot_07_project_store.py`
+- `investigations/usability-monitoring/follow_kernel_probe.py`
+- `post/_plot_energy.py`
+- `src/magnelio/analysis/scattering_td.py`
+- `src/magnelio/analysis/time_domain.py`
+- `src/magnelio/io/project.py`
+- `src/magnelio/post/_plot_energy.py`
+- `tests/integration/test_project_watch.py`
+- `tests/unit/test_plot_energy.py`
+- `tests/unit/test_project_monitor.py`
 
 ---
 
@@ -20994,267 +20357,123 @@ record `investigations/patch-array/kb035_synthetic.py`.
 
 ## DD-259 — Field monitors keep the grid quantities; every view is derived at access time
 
-**Naming refinement (2026-10-04):** [[DD-279]] preserves raw quantities and
-normalization views while aligning normalize_to_excitation, frame/t/f,
-component, spectral axes and center spelling across live and stored results.
-This naming revision is implemented.
+**Date:** 2026-09-05. **Status:** Viewer prerequisite and steps 1–5 shipped
+2026-09-06; intentional 0.7.0 API/store break. [[DD-279]] refines
+normalize_to_excitation, frame/t/f/component/axes and center spelling.
+Energy/flux from recordings is the separate [[DD-260]] decision.
 
-**Date:** 2026-09-05
-**Status:** Accepted — all five steps shipped 2026-09-06 (developer
-consensus on the strategy 2026-09-05); the energy/flux identities on
-a recording are left to their own DD (step 5 note).
-**Step 0 implemented 2026-09-05** on `feat/field-viewer-3d`
-(`src/magnelio/post/field_3d.py`, `tests/unit/test_field_3d.py`,
-`docs/methods/viewer.md`, tutorials 07 and 20), reviewed by the
-developer in the browser 2026-09-06 and merged (`7a59be1`).
-**Step 1 implemented 2026-09-06** on `feat/field-series`
-(`src/magnelio/fields/series.py`, `fields/_interp.py`,
-`FieldState.mirrored`, `tests/unit/test_field_series.py`,
-`TestMirrored`, chapter section *Field containers*), merged `5b71c52`.
-**Step 2 implemented 2026-09-06** on `feat/raw-monitor-recording`
-(monitors, store schema 3.0, ParaView export), merged `ddd40e8`.
-**Step 3 implemented 2026-09-06** on `feat/monitor-container-api`:
-the dictionary API is gone (`data`, `data_raw`, `component`, `region`
-on both monitors and both store readers), the pictures are drawn
-through one shared layer (`monitors/_frame_plots.py`: `SeriesView`,
-`plot_frame`, `interact`) that averages only the drawn layer of the
-drawn frame (`_FieldSeries.cell_centred_layer`), the store's time
-reader hands out a lazy `FieldRecording` that reads one frame per
-HDF5 access, tutorial 13, the stripline and field-source how-tos and
-the chapter moved to the containers, `docs/migration-0.7.md` lists
-every renamed spelling.  `cell_centred(squeeze=True)` reproduces the
-old dictionaries' shapes for anyone who wants them, merged `fa4bde8`.
-**Step 4 documented 2026-09-06** (the code came forward with step 2):
-chapter section *ParaView export* in `sources-monitors.md`, tutorial
-07's *Into ParaView*, the viewer chapter's limitation pointing at it.
-**Step 5 implemented 2026-09-06** on `feat/initial-field-from-recording`:
-`SourceFieldInitial.from_recording(recording, name=, t=|frame=)` and
-the `h_lead` field on the source; gate
-`test_recorded_frame_continues_the_march` (bit-identical continuation
-and the eigenfrequency), `TestFromRecording` in the unit tests; the
-internal record's probe scripts moved off the dictionary API.
+**Problem and decision.** Record-time cell-centre averaging discarded Yee
+staggering, blurred interface fields and prevented exact replay/FIT identities.
+Replace dictionaries and region/data/data_raw access with raw-grid
+FieldRecording/FieldSpectrum containers; derive physical fields, plots and
+export only when accessed. This refines [[DD-014]]/[[DD-085]], supports
+[[DD-224]] initial fields and preserves [[DD-226]] tangential surface format.
 
-*Step 5 decisions.*  (a) **A recorded frame is a leapfrog pair, not a
-field at one instant.**  The source's start is `h(+dt/2)`, and Phase
-C derived it from a field at one instant by a half discrete Faraday
-step, `h(dt/2) = h(0) − ½·β_H·(C e(0))`.  A monitor's frame holds
-`E^{n+1}` and `H^{n+3/2}` — H already half a step ahead — and fed
-through that formula its H would land a full step ahead: still the
-same frequency for a single mode (a phase between E and H only
-re-weights the ±ω solutions), which is why the eigenfrequency gate
-alone could not have caught it, but not the recorded state, so no
-continuation.  The source therefore carries `h_lead`, the lead of its
-magnetic samples over its electric ones, and `attach` takes the
-Faraday step of the *difference*: `h(dt/2) = h(h_lead) − (½ −
-h_lead/dt)·β_H·(C e(0))` — the Phase C formula at `h_lead = 0`, no
-step at all at `h_lead = dt/2`, first-order consistent between (a
-recording replayed under another time step).  `from_recording` sets
-`h_lead = dt/2` from the recording's `dt`, zero for a recording
-assembled without one; the store carries the field with the recipe.
-Measured on the WR-90 ring-down (12×6×16 cells): the run resumed from
-the 2 ns frame reproduces the probe of the uninterrupted run
-**bit for bit** over 2 365 frames (max |ΔE_y| = 0 against 3.5·10⁸
-V/m), and rings at the eigenfrequency.  (b) **Default frame** is the
-last one — resuming where a recording stopped is the case without a
-number.  (c) **Energy and flux from a recording are not built here.**
-The flux identity `P = Σ e·h` is grid arithmetic the frame holds, but
-a recording knows neither the boundary conditions its region touched
-(a PMC face weights the boundary `h` fully, a PEC face by half, and a
-symmetry plane in the cross-section doubles the aperture) nor, at
-the two edge nodes of a sub-region, how much of the dual patch lies
-inside the region (the region's dual widths are the full grid's
-half-cell sums; only the inner half is the region's flux patch); the
-energy needs the material operators of the mesh restricted to the
-region, and the leapfrog-conserved energy of [[DD-225]] pairs
-`h(n−½)` with `h(n+½)`, which a recording has only when it holds
-every step.  Four design questions, one DD of their own, with the
-mesh as an argument.
+### Storage, time bases and access
 
-*Step 2 decisions and findings.*  (a) **The frames' instant.**  The
-solver calls the monitors after the H update of step *n* with the
-index time `t = n·dt`, where `e` already holds `E^{n+1}` and `h`
-`H^{n+3/2}`; the time monitor stamped that snapshot `t`, one step early,
-and its H a further half step late — DD-226's surface recording had
-already corrected this for its own frames.  A `FieldRecording`'s
-`times` are now the electric instants `t + dt`, `times_h = times + dt/2`,
-and the schedule is tested against the electric instant, so a target
-at 0 is served by the first frame the solver hands out (E¹ at dt; E⁰ is
-identically zero).  One frame per step: a schedule finer than the time
-step used to duplicate a snapshot under two labels (the ring-down gate
-divided by a zero interval the moment the labels became honest), now
-the further targets a step passes are consumed without a frame, and
-the checkpoint carries the frames recorded (`n_recorded`) beside the
-targets consumed (`next_idx`) — the store truncates on the former.  The
-frequency monitor **keeps** the index-time
-phase convention: the port recorder stamps `V` from the same `e` with
-the same `t`, so the renormalised pattern stays phase-consistent with
-the run's S-parameters, which a physical stamp would have shifted by
-`ω·dt`.  (b) **The dual widths of a region.**  `h = H·l_dual` with the
-*solver's* dual length; at the two boundary nodes of a region cut from
-the grid that length is the full grid's half-cell sum, not the "full
-end cell" the region's own grid implies.  A container built from a
-region therefore carries the region's dual widths (`FieldState._dual`,
-`FieldRecording`/`FieldSpectrum` likewise, `dual_x/y/z` in the store),
-and the cell-centre averaging takes them — without this a sub-region
-monitor's H at the region edge would have changed against 0.6.  With
-it the derived `.data` is bit-identical to the old record-time
-average (same arithmetic, later), which the parity gates confirm.
-(c) **Store schema 3.0.**  `results.h5` monitor groups carry
-`layout="yee"`, one dataset per component in its staggered shape,
-`grid_x/y/z` (nodes) and `dual_x/y/z`; `fields_freq.h5` dumps carry the
-same; a 2.x monitor is refused with a message naming the change.  The
-frequency monitor's bins accumulate the raw samples, so its per-step
-cost is a copy — the interpolation is paid when the spectrum is read.
-(d) **ParaView.**  The XDMF descriptor over `results.h5` cannot
-describe staggered datasets, so step 4's time-monitor part came
-forward: `_export_time_monitor` writes a `.vtr` per frame (cell data
-averaged at export time, the same quantity `.data` reports) and a
-`.pvd` over the electric instants; `fields.xdmf` and `io/xdmf.py` are
-gone.  What remains of step 4 is the documentation.  (e) `.data`,
-`.data_raw` and `.region` stay for this step, derived from
-`recording`/`spectrum` on access; step 3 removes them.
+- FieldRecording holds a leading frame axis of raw grid quantities, an
+  electric time base, times_h=times+dt/2, optional dt and available components.
+  FieldSpectrum holds complex raw component stacks and sampled frequencies.
+  A frame is FieldState with zeros for unrecorded components; component()
+  returns physical stacks. Interpolation lives in fields._interp, with
+  monitors importing containers, rather than the reverse dependency.
+- After solver step n, samples are E^(n+1), H^(n+3/2). Time frames are stamped
+  at the electric instant t+dt and scheduled against it, not one step early.
+  Target zero gets the first available E¹, not an invented E⁰ snapshot.
+  At most one frame per step: consume crossed targets without duplicating
+  snapshots. Checkpoints separate n_recorded from next_idx; truncation uses
+  recorded frames, not consumed targets.
+- Frequency accumulation deliberately retains port recorder index-time phase.
+  Both see the same E at the same label; changing only the monitor label
+  would shift normalized fields by omega*dt against S-parameters.
+- A sub-region carries its full-grid dual widths, including its boundary
+  half-cell sums; using the sub-grid's implied end-cell widths changes H.
+  Store grid_x/y/z and dual_x/y/z with staggered component datasets and
+  layout="yee" in results.h5/fields_freq.h5. Schema 3.0 rejects 2.x
+  cell-centred monitor stores explicitly; checkpoint field layout is unchanged.
+- Time monitors copy staggered sub-arrays (GPU slice/transfer where relevant);
+  frequency monitors accumulate raw components without per-step interpolation.
+  Physical conversion/averaging happens at access. Lazy store recordings read
+  one frame per HDF5 access; frame plots/interact average only the requested
+  layer. Temporary dictionary aliases were removed, not retained as shims;
+  squeeze=True reproduces former derived array shapes when requested.
+- Mirroring is shared on FieldState with signs, index reversal and extended
+  staggered grid ([[DD-154]]): PEC wall nodes appear once; a PMC wall bisects
+  an added cell. Odd components vanish at their wall samples. Analytic even/
+  odd continuation agrees to 1e-15; physical averaging stays bit-identical to
+  former record-time averaging under the parity gates.
 
-*Step 1 decisions.*  `FieldRecording(grid, times, dt=, **components)`
-and `FieldSpectrum(grid, frequencies, **components)` share one base:
-frames stacked along a leading axis as grid quantities, a subset of
-the six components allowed (`components` names them, a `frame(i)` is a
-`FieldState` with zeros for the rest), `component(name)` the physical
-stack, `cell_centred(frame=)` per frame or stacked, `plot` delegating
-to the frame with the instant or frequency appended to the title,
-`show` through the viewer's frame protocol (`_frames_from_series`).
-The magnetic time base is `times_h = times + dt/2`, stated rather than
-hidden.  The cell-centre averaging now lives in `fields._interp`;
-`monitors.base` re-exports it, so the dependency points from the
-monitors to the containers.  `FieldState.mirrored(*specs)` continues a
-field across DD-154's `MirrorSpec` planes on the *extended grid* with
-the staggering kept — and it is exact: on a PEC plane (a grid line)
-the wall's samples appear once, on a PMC plane (half a cell outside)
-the extended grid gains the cell the wall bisects, and the components
-whose samples fall on that wall (E normal, H tangential) are exactly
-the odd ones, so their wall sample is zero and no estimate is ever
-needed.  Verified against the analytic continuation of even/odd test
-fields to 1e-15.  A frame already feeds `SourceFieldInitial` (step 5's
-`from_recording` reduces to `at_time`).
+### Viewer and export
 
-*Step 0 findings.*  (a) PyVista 0.48 feeds a mesh added under an
-existing actor name through a small pipeline whose output stays empty
-until it executes — `mapper.dataset` reports zero cells, and a reader
-that does not render first (the browser serialiser, a test) sees no
-sheet; the view calls `mapper.Update()` after every rebuild.  (b) The
-colour ceiling must ignore cells buried in PEC: with a mesh they are cut
-out of the sheet, and a field that is nonzero there (a synthetic one, a
-stale frame) would otherwise flatten the visible ring to one colour.
-(c) The notebook controls are exercised without a browser by driving
-trame's state (`TestControls`), and a kernel-level "Run all" check lives
-in `investigations/viewer3d/field_view_kernel.py` (internal record).
-(d) **Browser round 2026-09-06** (developer, then Claude in Chrome on
-the same notebook): the first cut re-created the sheet and arrow actors
-on every frame — DD-190's own remedy for a swapped dataset the browser
-had dropped — and the vtk.js view **froze after about 75 frames** of a
-50-frame movie while the toolbar's frame label kept running: the client
-keeps every object it is sent, and a fresh actor, mapper and polydata
-per frame pile up until the render window stalls.  The sheet and the
-arrows now live in two persistent polydata that every frame and every
-cut change is written *into* (`copy_from`), one actor and one mapper
-each, one scalar bar swapped only when the component changes.  The
-client accepts a changed object when it is newer than the one it
-holds, which a modified polydata always is — the swapped-in one of
-DD-190 was not, which is what that round had actually hit.  Verified
-in the browser: three loops, camera live throughout.  The play loop is
-paced on the clock (a slow frame shortens the pause instead of queueing
-behind the websocket); the developer's browser ran the 50-frame movie
-at roughly two frames per second.
+- The notebook viewer was the condition for ending live ParaView-over-SWMR
+  viewing. Shared frame protocol supplies labels, nodes and a layer loader
+  to a coloured cutting sheet, isotropic field-group arrows, component/phase/
+  frame controls. FieldState, live/stored monitors and plots.show_field use
+  it; PEC-buried cells do not set the visible colour ceiling.
+- Persistent sheet/arrow polydata are updated with copy_from, with one actor/
+  mapper each and a scalar bar changed only with component. Recreating actors
+  each frame froze vtk.js after about 75 frames; persistent objects passed
+  three movie loops with a live camera. PyVista pipeline rebuilds call
+  mapper.Update so browser serialization sees actual cells. Playback uses
+  wall-clock pacing instead of accumulating queued websocket delays.
+- The initial view showed the modeled half; later viewer/symmetry refinements
+  govern current presentation. Data mirroring and recording physics are
+  independent of the view. [[DD-190]] supplies the geometry-viewer foundation;
+  [[DD-175]] defines single-layer monitor regions.
+- Staggered datasets cannot be described by the old XDMF descriptor.
+  Time export writes cell-averaged VTR per frame and PVD over electric times,
+  the same derived quantity as access; fields.xdmf/io/xdmf.py are removed.
+  Frequency export follows the same access-time rule. [[DD-255]] watch/follow
+  and the notebook viewer replace live ParaView; later [[DD-262]] makes
+  export an explicit call rather than a side effect. SWMR recording remains.
 
-**Problem.**  A field monitor averages the six staggered components onto
-cell centres *at record time* and hands back `dict[str, ndarray]` plus a
-`region` of cell-centre coordinates.  The layout is [[DD-014]]'s (2026-03-11,
-`(n, nz, ny, nx)` so that ParaView reads `results.h5` through XDMF without
-a conversion), decided three weeks before the first monitor existed;
-[[DD-085]] made the values physical but kept the averaging.  The averaging
-is a four-point low-pass filter that discards the half-cell stagger, so
-(i) tangential E on a conductor face and normal E across a dielectric
-interface are smeared into the neighbouring cell centres, (ii) energy,
-Poynting flux and curl — FIT identities on the grid quantities, the very
-reason `MonitorFluxTime` reads the raw states — cannot be recovered from a
-recorded field, and (iii) a recorded frame cannot be replayed as an initial
-field ([[DD-224]] Phase C needs Yee-offset data).  A time monitor also
-records H at `t + Δt/2` and labels it `t`; `SurfaceRecording` ([[DD-226]])
-already carries both time bases.  Finally, the monitor vocabulary
-(`.data["Ez"]`, `.region.zc`) differs from the field container's
-(`component`, `positions`, `at`, `plot`), so a monitor frame has to be
-repacked by hand to reach `SourceFieldInitial`.  Commercial suites keep
-the solver's raw field results and interpolate when plotting or exporting.
+### Reusing a recording
 
-**Decision (strategy).**  Record the raw grid quantities; derive every
-view at access time.  In order, each step merge-able on its own:
+- SourceFieldInitial.from_recording chooses t or frame, defaulting to the
+  last frame. A recorded pair already has H half a step ahead of E, unlike
+  a simultaneous analytic field. Persist h_lead and apply only the difference:
+  `h(dt/2)=h(h_lead)-(0.5-h_lead/dt)*beta_H*C*e(0)`.
+  h_lead=0 recovers Phase C, h_lead=dt/2 needs no extra Faraday step;
+  another dt is first-order consistent. from_recording uses its recorded
+  dt/2, or zero if no dt is available. Eigenfrequency alone cannot detect
+  a wrongly advanced H; exact continuation is the necessary gate.
+- WR-90 12×6×16 ring-down replay from the 2 ns frame reproduces 2365
+  frames bit-for-bit (max delta E_y=0 at peak 3.5e8 V/m) and the eigenfrequency.
+- Energy/flux cannot be recovered by naive physical-field sums: aperture
+  boundary weights, symmetry, restricted material operators and the two H
+  half-steps of conserved leapfrog energy ([[DD-225]]) are required. This
+  entry enables raw arithmetic but leaves those identities to DD-260.
+  Sparse time recordings do not necessarily contain the consecutive H
+  half-steps that the conserved energy requires.
 
-0. **3D field view in the notebook viewer** — the developer's condition
-   for giving up the live ParaView view over the SWMR store.  The
-   [[DD-190]] viewer lays the field on its cutting plane: the exposed cell
-   layer as a coloured sheet (|E|, |H| or one signed component) plus
-   arrows on an even lattice for a field group; frame slider (time or
-   frequency), phase slider for complex data, component selector.  Values
-   are the cell-centred fields of *that layer only*, computed when the cut
-   moves, so the slider walks through a volume monitor at the cost of one
-   layer.  Entry points `FieldState.show`, `MonitorFieldTime.show`,
-   `MonitorFieldFrequency.show`, the store readers, and
-   `plots.show_field`.  Cells buried in PEC are cut out of the sheet when
-   a mesh is given, so the solids' caps show through.  Symmetry planes are
-   not mirrored (the 3D view shows the modelled half, as the geometry view
-   does).  The frame source is an internal protocol (`_FieldFrames`:
-   region nodes, frame labels, a layer loader), so step 1 swaps the
-   storage underneath without touching the view.
-1. **Containers** — `_interp_to_cell_centres` moves from `monitors.base`
-   to `fields` (the public container imports from the monitor module
-   today, the wrong direction).  `fields.FieldRecording` (time series:
-   E time base and the half-step-shifted H base, `frame(i)` → `FieldState`,
-   `component`, `cell_centred`, `plot`, `show`) and `fields.FieldSpectrum`
-   (complex, frequency axis, `frame(f)`, phase).  A monitor region becomes
-   a sub-grid with its own `GridLines`; a plane monitor stores one cell
-   layer — the normal component on one node plane, the tangential ones on
-   two — which is [[DD-175]] taken literally.  Mirroring ([[DD-154]]) is
-   implemented once on `FieldState` (component signs, index reversal) and
-   shared by plots and export.
-2. **Recording and store** — `record()` copies six staggered sub-arrays
-   (device slice + transfer on the GPU); H keeps its own time; the
-   frequency monitor runs six staggered accumulators and drops its
-   per-step interpolation.  `results.h5` monitors carry six datasets of
-   staggered shape and a layout attribute; the schema version is bumped
-   and older stores are refused with a message (developer decision: no
-   compatibility with cell-centred stores).  `fields_freq.h5` follows;
-   the checkpoint is unchanged.
-3. **Access, plots, docs** — `.data` and `.region` go (hard break, no
-   deprecation layer); `MonitorFieldTime.recording` /
-   `MonitorFieldFrequency.spectrum` return the containers, `plot`,
-   `interact` and `show` delegate to them and interpolate the requested
-   layer only; the store readers hydrate lazily, one frame per HDF5 read.
-   Tutorial 13, the stripline how-to, `docs/methods/sources-monitors.md`
-   and an upgrade page for 0.7.
-4. **ParaView as an export step** — time monitors are written as VTR
-   series with cell data, as the frequency path already is; the XDMF
-   descriptor over `results.h5` goes.  The SWMR store stays for `watch`
-   and `follow`.
-5. **Reuse** — `SourceFieldInitial.from_recording(rec, t)` with the
-   existing resampling; energy and flux from a recording via the FIT
-   identities become possible (own DD).
+**Verdict/cost.** Grid-independence and 1 W-CW monitor gates survive with the
+same arithmetic performed later; raw replay, region-slice GPU and browser
+polydata gates cover the changed representation. Staggered storage adds node
+planes (a few percent for 3D monitors); recording becomes cheaper, while
+interpolation is paid per accessed layer. Sources of tutorials/how-tos and
+the 0.7 migration guide use containers. Earlier step counts, temporary access
+aliases and branch chronology are not continuing contracts.
 
-**Gates.**  The [[DD-085]] grid-independence tests run through
-`cell_centred` and stay bit-identical on uniform grids (same arithmetic,
-later); the 1 W-CW frequency-monitor gate stays green; new: a frame of a
-ring-down monitor replayed as an initial field continues the recorded
-run bit for bit and hits the eigenfrequency within [[DD-224]]'s
-tolerance (`test_recorded_frame_continues_the_march`); a GPU test for
-the region slice; the [[DD-190]] polydata guard covers the field sheet.
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
 
-**Cost.**  Staggered storage needs one more node plane per axis than cell
-blocks — a few percent on 3D monitors.  Recording gets cheaper per step,
-markedly so for the frequency monitor; interpolation is paid per displayed
-layer.
+- `docs/methods/sources-monitors.md`
+- `docs/methods/viewer.md`
+- `docs/migration-0.7.md`
+- `fields/_interp.py`
+- `fields_freq.h5`
+- `investigations/viewer3d/field_view_kernel.py`
+- `io/xdmf.py`
+- `monitors/_frame_plots.py`
+- `results.h5`
+- `sources-monitors.md`
+- `src/magnelio/fields/series.py`
+- `src/magnelio/post/field_3d.py`
+- `tests/unit/test_field_3d.py`
+- `tests/unit/test_field_series.py`
 
-**Consequences.**  0.x MINOR (0.7.0).  Surface monitors and the far-field
-box ([[DD-226]]) are a transport format for tangential fields and stay as
-they are.  Live viewing in ParaView during a run ends with step 4; the
-notebook viewer (step 0) and [[DD-255]]'s `watch`/`follow` replace it.
+---
 
 ## DD-260 — Energy and flux are identities on a recording; a monitor carries its region's operators
 
@@ -22563,868 +21782,273 @@ or server is started for them.
 
 ## DD-275 — Dimensional geometry, owned topology and affine values
 
-**Naming refinement (2026-10-04):** [[DD-279]] retains this ontology and
-topology history, uses tagged_* and imprinted for returned immutable owners,
-and registers Bend/Wrap/ImportedSheet in the curated geo surface. These
-naming/export changes are implemented.
-
-**Date:** 2026-09-28.
-**Status:** Accepted and implemented on `feat/geo-api-foundation`; WP0-WP5 and
-WP6.1/WP6.3-WP6.12 passed the foundation acceptance audit on 2026-10-02.
-WP6.2 was cancelled by developer decision.
-**Supersedes in part:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
-**Record:** `investigations/geo-api-foundation/` (internal dossier).
-
-**Problem.**  The geometry API grew useful capabilities without acquiring a
-stable ontology.  `Shape` currently means “an object accepted by the CSG
-wrappers”, so a solid, planar profile, curved sheet and `Group` advertise the
-same Boolean and modification verbs, while the genuinely one-dimensional
-`Curve` cannot even be translated.  Public `Face` means an axis-normal
-polygon rather than a face of a body.  A body face or edge is never a value:
-each operation consumes a loose nearest point immediately, equal-distance
-picks depend on OCC enumeration order, and there is no selection identity to
-carry through a rotation or a later construction.  Transform repetition
-compounds the category problem by returning one shape, a list, a `Union`, or
-a `Group` from the same method.
-
-The intended oblique-coax workflow needs all of those distinctions at once:
-name a physical end face, rotate the body without losing it, start a routed
-path in that face's pose, and sweep the selected profile to a domain plane.
-Persistent OCC indices cannot provide that identity: they are kernel-local
-enumeration details and change after reconstruction or a Boolean operation.
-
-**Decision — standalone geometry has an explicit dimensional hierarchy.**
-These names, including the intermediate bases, are public:
-
-```text
-Shape                         immutable standalone geometry
-|-- Curve                     one-dimensional wire/locus
-|-- Sheet                     standalone two-dimensional geometry
-|   |-- Profile               planar bounded sheet: outer wire plus holes
-|   `-- Surface               curved sheet
-`-- Solid                     closed three-dimensional body
-
-TopologyRef                   immutable owner-bound sub-entity, not Shape
-|-- VertexRef
-|-- EdgeRef
-|-- FaceRef
-|-- EdgeSetRef                deliberate multi-edge result
-`-- FaceSetRef                deliberate multi-face result
-```
-
-`Shape` owns only operations valid for every standalone category: the four
-affine transforms, `bounding_box()`, and identity metadata such as `name`.
-Dimension-specific operations live on the narrowest category that supports
-them.  In particular:
-
-- Boolean `+`, `-`, and `&` and their explicit `Union`, `Difference`, and
-  `Intersection` spellings accept and return `Solid` only.
-- `Profile` and eligible planar `FaceRef` values provide `extruded`,
-  `revolved`, and `swept`; lofting accepts profiles or eligible face refs and
-  returns a `Solid`.
-- Solid-only topology modifications (`chamfered`, `filleted`, `shelled`) take
-  refs or ref sets rather than loose points at their architectural core.
-- A physical standalone sheet may carry a material.  A profile without one
-  is construction geometry.  A solid without one remains a construction
-  solid under [[DD-127]].
-
-The existing solid primitives (`Brick`, `Sphere`, `Cylinder`, `Cone`,
-`Torus`, `ImportedSolid`) become `Solid` subclasses.  `Union`, `Difference`,
-`Intersection`, and `Loft` remain public result constructors with their
-dimensionally restricted inputs.  `Group` remains an immutable,
-material-preserving authoring collection, but is **not** a `Shape` and never a
-CSG operand; transforms apply member-wise and `GeometryModel.add()` continues
-to flatten it.  `ThinWire` remains an EM mesh declaration around a `Curve`,
-not a CAD dimension in the hierarchy.
-
-The current public `Face` is removed rather than aliased.  Its meanings split
-cleanly: standalone planar construction is `Profile`, while topology owned by
-a solid is `FaceRef`.  `PlanarSheet` stays an implementation detail during
-migration and then disappears.
-
-**Exact construction vocabulary.**  Curves keep `polyline`, `arc`,
-`ellipse_arc`, `spline`, `helix`, and `joined`, and add the exact factories
-`Curve.line(start, end)`, `Curve.circle(center, radius, *, normal="z")`, and
-`Curve.ellipse(center, semi_axes, *, major_axis, normal="z")`.
-`Curve.covered()` is removed.  Planar construction is spelled:
-
-```python
-Profile.polygon(points, *, material=None, name=None)
-Profile.rectangle(center, size, *, normal="z", x_direction=None,
-                  material=None, name=None)
-Profile.circle(center, radius, *, normal="z", material=None, name=None)
-Profile.from_wires(outer, holes=(), *, material=None, name=None)
-```
-
-Polygon points and all centres are three-dimensional world coordinates.
-`normal` accepts the established axis-letter or vector spelling;
-`x_direction`, when supplied, fixes the rectangle's in-plane width direction.
-The factory validates coplanarity, closure, wire nesting, and non-intersection
-before returning a profile.  Inner wires are intrinsic profile topology, not
-post-extrusion Boolean scaffolding.
-
-There is no ambient working coordinate system.  Explicit points, vectors and
-the in-plane direction fully determine a construction.  A moving pose stored
-inside a `Path` is different: it is geometry data, not hidden session state.
-The relative-path vocabulary is fixed now for WP5:
-
-```python
-Path.from_pose(point, tangent, up)
-Path.from_face(face_ref, *, up)
-path.forward(distance)
-path.turn_left(*, radius, angle_deg)
-path.turn_right(*, radius, angle_deg)
-path.turn_to(direction, *, radius)
-path.straight_to_plane(normal, position)
-```
-
-Absolute `line_to`, `arc_to`, `ellipse_to`, and `spline_to` remain.  `up`
-defines left/right and roll; zero or parallel tangent/up vectors are invalid.
-`turn_to` takes a target tangent and a radius, so it is geometrically
-determined rather than guessing a curvature.
-
-**Topology references are views owned by one immutable shape.**  A ref holds
-a strong reference to its `Solid` owner and a resolved, cached subshape for
-that owner's model scale.  It is not standalone geometry, cannot enter a
-`GeometryModel`, cannot be used as a Boolean operand, and has no transform
-methods.  Transform the owner and retrieve the ref from the returned owner.
-Detachment is explicit: `EdgeRef.as_curve()` returns a standalone `Curve`;
-`FaceRef.detached()` returns `Profile` for a planar face and `Surface` for a
-curved face.
-
-Singular selection uses one noun and two overloads:
-
-```python
-solid.face("port")
-solid.face(near=p, normal=n, surface_type="plane")
-solid.edge("rim")
-solid.edge(near=p, curve_type="circle")
-solid.vertex("feed")
-solid.vertex(near=p)
-```
-
-The first form is named lookup.  In the second, at least one semantic
-constraint is required.  `solid.faces(...)` and `solid.edges(...)` are the
-deliberate plurals and return `FaceSetRef` and `EdgeSetRef`; they never appear
-as accidental fallbacks from a singular selector.  The corresponding
-immutable registration methods are `tag_face`, `tag_faces`, `tag_edge`,
-`tag_edges`, and `tag_vertex`; for example
-`body.tag_face("port", near=p, normal=n)`.  Names are unique per topology kind
-and owner, are non-empty strings, and registration returns a new owner.  No
-public numeric topology index exists.
-
-Selection first filters by every supplied semantic constraint, then minimizes
-Euclidean distance to the complete subshape — not to a sampled centroid.
-The `normal=` constraint is compared orientation-sensitively with the solid
-face's outward normal.
-Supported surface-type vocabulary begins with `"plane"`, `"cylinder"`,
-`"cone"`, `"sphere"`, `"torus"`, `"bspline"`, and `"other"`; curve types
-use the analogous analytic names.  Zero candidates raises
-`TopologySelectionError`.  More than one candidate at the same distance
-within the owner scale's converted OCC tolerance raises
-`AmbiguousTopologyError`, a `TopologySelectionError` subclass.  Kernel order
-is never a tie-breaker; the message lists the remaining candidates and asks
-for a normal/type/near constraint that separates them.
-
-**Named topology follows construction history, not proximity.**  An affine
-transform carries every registered selection exactly.  A topology-changing
-operation uses OCC `Modified`, `Generated`, and `IsDeleted` history.  A
-singular name with one surviving successor is retained.  Deletion, no
-reported successor where identity cannot be proven, or one-to-many evolution
-raises `TopologyEvolutionError` at the operation that destroys the contract.
-A deliberately registered set may evolve to a set after duplicate removal.
-Unnamed refs are ephemeral owner views and are not propagated.  The store
-serializes the named selection's semantic origin and operation-history path,
-never an OCC enumeration index; read-back rebuilds the owner, replays the
-history and validates the same unique cardinality before exposing the name.
-
-**Reference measurements follow one property/method rule.**  Intrinsic,
-argument-free values are read-only properties and may be cached:
-
-- `VertexRef.point`;
-- `EdgeRef.length`, `start`, `end`, and `vertices`;
-- `FaceRef.centroid`, `area`, `is_planar`, `edges`, and `vertices`;
-- `FaceRef.normal` only for a planar face, where it is constant and outward.
-
-Parameterized queries and value-producing work remain methods:
-`FaceRef.normal_at(point)`, `detached()`, `as_curve()`, `bounding_box()`, and
-`volume()`.  Accessing `.normal` on a curved face raises `ValueError` and
-names `normal_at`; it does not silently mean “normal at the centroid”.
-Factories are class methods, transformations and construction steps are
-past-tense instance methods, and selectors are singular/plural nouns.  This
-is the naming convention for every later WP.
-
-**Affine placement is a value algebra.**  The public immutable classes are
-`Transform`, `Translation`, `Rotation`, `Mirror`, and `Scale`:
-
-```python
-Translation(vector)
-Rotation(axis, angle_deg, origin=(0, 0, 0))
-Mirror(normal, position=0)
-Scale(factor, center=(0, 0, 0))
-Transform.identity()
-```
-
-They act on column-vector points.  `A @ B @ geometry` applies `B` first and
-then `A`; `A @ B` returns a `Transform`.  A transform may act on any
-standalone `Shape` or on a `Group`, preserving the exact concrete geometry
-category, material, name and named topology.  `geometry @ transform` is not
-defined.  Uniform scale is retained; non-uniform scale would change analytic
-primitive categories and needs its own later decision.
-
-The primary spelling remains
-`translated(vector)`, `rotated(axis, angle_deg, origin=...)`,
-`mirrored(normal, position=...)`, and `scaled(factor, center=...)` on every
-standalone category. Each delegates to the same transform values and returns
-one value of the receiver's category by default. `translated` and `rotated`
-also accept `repeat`, `copy`, `unite`, and `group`; `mirrored` accepts the last
-three without `repeat`. `repeat` counts transformed copies at successive
-displacement/angle increments; `copy=True` includes the original first.
-Multiple values form a list unless aggregation is requested. An explicit
-`group=True` always returns a material-preserving Group, and `unite=True`
-always returns a Union of Solid input, including for a single copy. These
-aggregation modes are mutually exclusive; mirrored aggregation requires
-`copy=True`. Repeated Group assemblies preserve nested members and materials
-and reject fusion. Every copy is placed from the original through the affine
-backend. `Transform @ geometry` retains its strictly single-placement contract.
-`+` and `-` remain Solid CSG operators and are never overloaded with vectors.
-
-**Amendment (2026-09-28, after WP2).** The initial WP1 contract removed all
-array/copy/fusion options to make named methods category-preserving in every
-case. Developer review showed the loss of readable engineering construction,
-notably eightfold coax arrangements. That restriction is superseded by the
-explicit convenience modes above. The immutable affine algebra and dimensional
-Boolean boundary are unchanged; convenience flags request array construction
-and result aggregation deliberately. Existing named-topology evolution rules
-continue to govern fusion, whether requested through `unite` or explicit Union.
-Gate: `tests/unit/test_geo_transform_foundation.py` now has 34 tests, including
-the original-plus-seven 45-degree arrangement, placed profiles with holes,
-material-preserving nested assemblies, one-copy aggregation, invalid counts
-and conflicting modes, and the executed methods recipe. All 93 foundation
-gates and 650 affected unit/integration tests pass; Tutorial 14 is re-executed
-and the full Sphinx build passes with the known configuration-cache diagnostic
-suppressed. Private measurements: `investigations/geo-api-foundation/`
-(internal dossier).
-
-**Material and failure rules.**  Affine placement preserves `material`,
-`name`, and selection names exactly.  A solid produced from a `Profile` uses
-an explicit `material=` when given, otherwise the profile material; a solid
-continued from a `FaceRef` uses an explicit material when given, otherwise
-the owner solid's material.  Failure categories are stable:
-
-- a category mismatch raises `TypeError` and names the accepted categories;
-- invalid or underdetermined geometry arguments raise `ValueError` before a
-  kernel call where possible;
-- no semantic selection match raises `TopologySelectionError`;
-- a tied match raises `AmbiguousTopologyError`;
-- lost or split named identity raises `TopologyEvolutionError`;
-- an OCC construction failure after valid inputs raises `RuntimeError` with
-  the public operation and kernel diagnostic.
-
-`TopologySelectionError`, `AmbiguousTopologyError`, and
-`TopologyEvolutionError` are public in `magnelio.geo` alongside the reference
-and reference-set classes.  Existing `GeometryOverlapError` remains separate
-because it is a model-assembly failure, not topology selection.
-
-**Consequences and staging.**  This is an intentional breaking API for the
-next pre-1.0 minor release.  The old surface is frozen by
-`tests/unit/test_geo_api_baseline.py` and inventoried in the internal record;
-later WPs replace those assertions deliberately rather than preserving an
-accidental compatibility layer.  WP1 implements only the hierarchy and
-affine foundation.  Profiles, topology refs, uniform operations and routed
-paths remain WP2 through WP5 respectively; accepting this decision does not
-claim that those names are shipped yet.  Each slice must migrate its methods
-prose and executable examples with the code.
-
-**WP1 implementation (2026-09-28).**  `Curve`, `Sheet`, `Profile`, and
-`Solid` now form the public dimensional hierarchy under `Shape`; volume
-primitives, imported CAD, construction results, and Boolean results are
-`Solid`, while the transitional `Face`/`Curve.covered()` values already expose
-`Profile`.  `Group` is no longer a `Shape`.  All standalone categories and
-groups use the immutable homogeneous-matrix backend exposed as `Transform`,
-`Translation`, `Rotation`, `Mirror`, and `Scale`; composition follows the
-rightmost-first column-vector rule.  The named methods delegate to these
-values; the initial removal of repetition/copy/fusion switches was subsequently
-revised by the amendment above. CSG constructors
-reject every non-`Solid` category before a kernel call.  Gate:
-`tests/unit/test_geo_transform_foundation.py`; the remaining characterization
-test has been advanced only where WP1 deliberately replaced its assertions.
-
-
-**WP2 implementation (2026-09-28).** Exact `Curve.line`, `circle`, and
-`ellipse` factories retain analytic edges, including arbitrary plane normals
-and either order of ellipse semi-axes. `Curve.length` uses tolerance-controlled
-CAD arc-length integration; the default linear mass-property integration was
-0.027 % high for the 3:2 ellipse and is not the measurement contract.
-`Profile.polygon`, `rectangle`, `circle`, and `from_wires` replace public
-`Face` and `Curve.covered()` without aliases; the transitional `PlanarSheet`
-marker and covered-sheet wrapper are removed. Profiles validate their wires
-at construction using the existing model scaling: closure, planarity,
-self-intersection, strict containment, and disjoint non-nested holes. Hole
-winding is corrected without changing boundary geometry. `Profile.area`
-excludes holes; `boundary()` returns standalone Curve values, outer first
-and then holes in input order. An affine wrapper transforms these values
-through the same placement, preserving correspondence without kernel indices.
-
-Extrusion, revolution and pipe sweep consume the whole face, retaining every
-inner wire. Profile lofts construct corresponding outer and inner lofts and
-subtract the latter volumes; every section must have equal hole cardinality
-and input order determines correspondence. No geometry-nearest matching is
-introduced. An omitted Loft material inherits the first Profile's material;
-this closes the profile-only inheritance gap without advancing FaceRef or
-uniform-operation work. Changing hole cardinality, sweep-frame roll and
-intersection-checking modes remain outside this slice. Existing loose-point
-solid-face operations are not rewritten ahead of WP3/WP4.
-
-Gate: `tests/unit/test_geo_profiles_foundation.py` (24 tests), including
-analytic length/area/volume across model scales, invalid boundaries, multiple
-holes, transformed boundary extraction, all four solid constructors, project
-BREP round trip, and executed methods/upgrade snippets. The remaining baseline
-is migrated only for this slice's removed names. All 70 foundation gates pass;
-unit/integration: 3722 passed, 39 skipped, followed by 542 passing relevant
-tests including the documentation recipes. The methods and API pages,
-Tutorial 14, geometry upgrade guide,
-other affected examples and repository certificates use the new Profile
-vocabulary. All 32 selected gallery examples execute successfully, and the
-final full Sphinx build passes with the known configuration-cache diagnostic
-suppressed. Two existing tutorial RST formatting defects found by this gate
-are corrected.
-
-
-**WP3 implementation (2026-09-28).** `TopologyRef`, `VertexRef`, `EdgeRef`,
-`FaceRef`, `EdgeSetRef` and `FaceSetRef` are immutable owner-bound views of a
-Solid, with the accepted read-only measurements and connectivity. Semantic
-selectors filter analytic type and oriented normal before measuring distance
-to the complete trimmed subshape. Ties at the converted kernel tolerance
-raise with candidate summaries. Plural selection deliberately retains ties;
-without constraints it selects all members. For curved faces, a normal filter
-requires a near point and evaluates the closest point; without near it filters
-planar faces. Public indices remain absent.
-
-Registration returns an owner wrapper preserving the receiver and metadata.
-Names are unique per kind, and singular/set lookups enforce their declared
-cardinality. Affine history follows the actual transformed topology, including
-reflections and negative scale. Normal evaluation uses surface derivatives;
-Planarity is geometric, using GeomLib_IsPlanarSurface at kernel tolerance; a
-flat B-spline face detaches by re-covering its exact wires with a plane so the
-Profile operation contract remains usable. Analytic plane frames can become
-indirect under reflection, so reading only
-the plane axis gave the wrong sign. The existing planar outward-normal helper
-now accounts for that frame parity as well.
-
-Named construction is eager at the public operation call: a scoped ContextVar
-captures the relevant OCC builders after all direct sources are evaluated,
-maps same-kind Modified/Generated results,
-checks final owner membership, and releases the builders after resolution.
-Intermediate predecessors remain candidates until final owner membership is
-checked: a closed shell has parallel original/offset branches, not merely a
-linear replacement chain. Lazy untagged tools are built outside capture so
-their histories cannot delete or remap a named base.
-Unchanged identity in the result is accepted as proof even where kernel
-IsDeleted is incomplete for edges/vertices. Singular splits, missing/deleted
-successors and conflicting operand names raise. Sets can split or merge after
-deduplication, but deletion of any selected member still fails. Untagged
-geometry keeps the established lazy and fast fusion paths. Tagged Union and
-Difference use history-producing N-ary kernel passes, avoiding the planar
-fusion/pre-fused-tool paths that discard source history.
-
-Project metadata is additive and versioned: a DAG retains semantic origins
-and named construction branches; untagged origins are exact scaled BREP
-snapshots. Read-back replays only a closed set of internal operation codecs,
-validating origin and final cardinality. It never stores subshape indices or
-reselects transformed names by geometry. Saved snapshot scale is retained to
-avoid degrading nanometre topology by a meter-space round trip. Legacy
-projects without this metadata keep the final-BREP reader.
-
-Detachment returns an independent Curve, planar Profile with its real holes,
-or curved Surface, retaining world placement and the owner's face material.
-Only Solid owners register selections. Direct FaceRef construction verbs,
-uniform operation arguments and relative Path poses remain WP4/WP5. History
-adapters cover the existing kernel construction steps, but a wire-based loft
-can report no provable face successor and a shell can split one source face
-into outer/inner successors. Those cases are explicit, tested failures rather
-than an inferred nearest match.
-
-Gate: `tests/unit/test_geo_topology_foundation.py`; the methods/API pages,
-geometry upgrade guide, Unreleased changelog and Tutorial 21 explain the same
-shipped slice. The tutorial names a coax end before rotation, retrieves and
-detaches the placed annulus, shows a volume-checked straight continuation and
-a cap set split by a slot. Per-owner/per-scale topology inventories and cached
-bounding boxes support hundreds of faces; nearest queries screen bounds before
-kernel distance evaluations. Verification: 55 WP3 tests, 642 final relevant tests; full suite 3799 passed /
-40 skipped (before the last three regression additions and scoped-history/
-planarity corrections, covered by the final relevant run). All 33 selected
-gallery examples execute; a fresh Sphinx build and repository gates pass.
-Private verification and performance records are in
-`investigations/geo-api-foundation/WP3-VERIFICATION.md` (internal record).
-
-
-**WP4 implementation (2026-09-29).** One section adapter accepts standalone
-Profile, eligible Sheet and FaceRef inputs. Extrusion/thickening retain curved
-sheet support; revolution, sweep and loft require geometric planarity and
-re-cover flat spline sections from exact boundaries. Direct FaceRef verbs use
-the selected face's geometry and owner's material and produce independent
-solids; the original owner's registrations remain there, as they do for
-explicit detachment. Owner modifications retain the established named-history
-rules. Explicit material overrides win; all materialless sections now produce
-construction solids for Boolean use, consistently with [[DD-127]].
-
-`FaceRef.extruded/revolved/swept/thickened/lofted` and mixed `Loft` sections
-retain intrinsic holes. Two-section spline/ruled lofts use the same boundary
-matching as Loft. Tangent transitions construct corresponding hole tools with
-the full section's centroid and oriented normal conditions, preserving
-nonconcentric bores and spatial bends. Geometry volume measurement now uses
-span-aware adaptive Gauss-Kronrod integration: OCC's default mass quadrature
-over-read a valid constant annular transition by 0.84%. The adaptive result
-agrees with area-times-length within the kernel's loft approximation tolerance;
-the same measurement applies after placement, tagging, CSG and project read-back.
-Analytic conic and curved-sheet volume regressions retain their established
-precision; no operation-specific or geometry-specific quadrature switch is used.
-
-Fillet/chamfer accept owned edges through `edges=` or face boundaries through
-`faces=`; shell accepts faces through `openings=`. Singular refs, deliberate
-sets and sequences are accepted, with deduplication. References must belong to
-the exact receiver, including after zero-displacement placement. Wrong kinds,
-stale owners, empty selections and conflicting modes fail at the call. Retained
-point conveniences resolve semantic refs immediately; ties no longer depend on
-kernel enumeration order. Solid extrusion/loft conveniences preserve their
-existing history contract, including explicit name loss where kernel histories
-cannot prove identity; direct independent FaceRef construction does not carry
-unrelated owner names into its result.
-
-Selected owner modifications build once at the reference's resolved model
-scale, then rescale the completed result and its names through exact affine
-history for other model scales. This preserves input membership without
-persistent indices or geometrical retargeting. Additive project recipe codecs
-retain reference origins on their original immutable owners; connected set
-members use strict exact BREP snapshot matching, with unique-match failure,
-rather than OCC indices or a nearest pick. Old recipe codecs remain readable.
-
-Sweep placement uses the shortest rotation from the oriented section normal
-to the spine start tangent, carrying the actual boundary and its in-plane roll.
-An aligned section is preserved. The antiparallel convention uses the plane's
-actual X direction as the half-turn axis. Existing corrected Frenet transport
-continues along the pipe; user-selectable frame/twist modes stay in WP6.
-Planar thickening forward now follows the oriented normal, including reflected
-faces, rather than canonicalising its largest world component positive.
-
-Gate: `tests/unit/test_geo_operations_foundation.py`, with analytic annular
-extrusion/revolution/sweep/loft measurements, placed asymmetric roll, spatial
-tangent bores, offset multiple holes, Sheet eligibility, wrong owners, selection
-errors, reference-scale changes, exact project replay and executed methods/
-upgrade recipes. Methods/API prose, the upgrade guide and Tutorials 14/21
-show the same public grammar; Tutorial 21's absolute circular bend is not a
-relative Path implementation. Verification is recorded in
-`investigations/geo-api-foundation/WP4-VERIFICATION.md` (internal record).
-
-**WP5 implementation (2026-09-29).** The relative vocabulary above is now
-implemented on immutable Path values. `current`, `tangent` and `up` are
-read-only; `from_pose` normalizes tangent and projects up perpendicular to it.
-`from_face` accepts a planar FaceRef, begins at its area centroid and points
-along its outward normal, including after owner placement or reflection.
-An annular centroid is a centreline anchor and need not lie in the metal.
-Zero/parallel directions and curved/unowned face inputs fail eagerly.
-Path's direction parser prescales finite input vectors by their largest
-component before normalization, maintaining unit poses for magnitudes from
-1e-300 to 1e300 without changing the shared geometry axis parser.
-Absolute-only paths acquire tangent after a segment but no implicit up; forward
-runs and plane intersections then work, while all relative turns require an
-explicit initial pose. Absolute segments on posed paths retain transported up.
-
-Left is `up x tangent`; right is `tangent x up`. Circular turns have positive
-radius and angles strictly between zero and 360 degrees, building exact
-Curve arcs and rotating tangent/up together. Full loops use several turns.
-`turn_to` chooses the shortest arc in the old/target tangent plane; an aligned
-target adds no edge and an opposite target raises, since no bend plane can be
-inferred. Explicit left/right 180-degree turns disambiguate that case.
-Plane continuation uses `unit_normal dot point = signed_position` in world
-meters; it rejects parallel rays and intersections behind the current tangent.
-An already reached plane within projected-coordinate roundoff (eight ULPs)
-adds no degenerate edge. No default routing radius is inferred.
-
-**Spatial frame and roll contract.** At an absolute corner, up undergoes the
-shortest old-to-start-tangent rotation; an antiparallel corner uses up as the
-half-turn axis. Corners remain corners, not automatically smoothed bends.
-Along smooth absolute arcs, ellipses and spatial splines, the routing frame
-uses rotation-minimizing transport: `du/dq = -t (u dot dt/dq)`. CAD first and
-second derivatives are evaluated at the segment's model scale. Adaptive
-DOP853 integration uses rtol 1e-10, atol 1e-12 and at most one-sixteenth of
-the parameter range per step; endpoint up is re-orthonormalized. This requires
-no curvature-normal division, retains roll through inflections, and adds no
-spin about the tangent. Relative circles use exact Rodrigues rotation instead
-of numerical integration. A zero tangent fails instead of choosing a world
-axis. The routing frame is data of Path; a completed Curve retains geometry
-only. Pipe sweeps continue to use their existing corrected Frenet transport
-and actual section roll. No WP6 sweep frame/twist mode is introduced.
-
-Gate: `tests/unit/test_geo_paths_foundation.py`, covering analytic endpoints,
-tangents and arc lengths at nanometre to kilometre model scales; arbitrary
-spatial target tangents, projection and degeneracy rules, absolute/relative
-composition, major-circle roll, ellipse axis order, inflections and closed
-loops; an independent discrete parallel-transport check and rotation covariance
-for a spatial spline; posed reflected faces, annular bends to the domain plane,
-unchanged owners and exact project read-back; and executed prose recipes.
-Methods/API prose, the upgrade page and Tutorial 21 document the contract.
-The tutorial names an x-directed coax end, rotates its owner 22.5 degrees,
-routes a relative right bend to x=max, sweeps the actual annulus and checks
-area-times-length volume plus the open outlet. Verification record:
-`investigations/geo-api-foundation/WP5-VERIFICATION.md` (internal record).
-All 65 WP5 gates and 811 final relevant tests pass, including all 281 foundation
-gates. Existing profile/operation prose gates now isolate their own sections
-when additional routing recipes are added, retaining their numerical fixtures.
-All 33 selected Gallery examples execute successfully. The final fresh Sphinx
-build reloads the final API, re-executes Tutorial 21 with its last visual
-refinement and passes with warnings treated as errors.
-
-**WP6 orientation slice (2026-09-29, programme still open).** `swept` on
-standalone planar sections and FaceRef accepts `frame="corrected_frenet"`
-(unchanged default), `"frenet"`, `"fixed"` and `"fixed_binormal"`. The initial
-shortest normal-to-tangent rotation and actual section roll are unchanged.
-Frenet sections follow tangent/curvature/torsion; fixed sections remain parallel
-in world space. Fixed binormal retains the section's angular relation to a
-supplied world direction and can therefore be oblique to a spatial tangent.
-It requires `binormal=`; other modes reject that argument. Zero/nonfinite
-directions and initial tangent parallelism fail at the call. Direction parsing
-prescales finite vectors before normalization, retaining magnitudes from 1e-300
-to 1e300 without modifying the common axis parser.
-
-Non-default modes use MakePipeShell. Each section boundary is anchored explicitly
-to the same spine start vertex, including nonconcentric holes; automatically
-choosing a nearest station independently for a hole is not allowed. Inner pipe
-volumes are subtracted. The default MakePipe implementation remains intact.
-Named result snapshots/project replay and material rules are unchanged.
-Fixed monotone sections have volume equal to area times normal-projected
-displacement, whereas perpendicular constant sections use area times path length.
-No twist/draft or intersection-checking mode is added in this slice.
-
-Gate: `tests/unit/test_geo_sweep_frames.py`, with four-mode annular checks over
-nanometre-to-kilometre scales, independent asymmetric circular end vertices and
-volumes, offset multiple holes, arbitrary placement/reflection covariance,
-spatial cap-angle constraints, invalid directions, project read-back and an
-executed methods recipe. All 42 new gates and 853 relevant regressions pass.
-Methods/API prose, Unreleased changelog and Tutorial 22 explain the same contract;
-the fresh Sphinx build executes the new tutorial and reuses the 33 previously
-verified WP5 outputs. Record: `investigations/geo-api-foundation/WP6-ORIENTATION-VERIFICATION.md`
-(internal record). The developer requested committing orientation and
-concretizing the remainder. `investigations/geo-api-foundation/WP6-CONTRACTS.md`
-(internal record) proposes complete topic coverage, dependencies and acceptance
-conditions. Subsequent accepted twist/draft implementation is recorded below;
-physical bend/blend decisions and the other advanced operations remain open.
-
-**WP6.2 cancelled (2026-09-29).** The developer does not need additional sweep
-validity/self-intersection diagnostics for the interactive modeling workflow.
-No new checker, validation option or automatic repair is added. Existing argument
-checks and kernel construction errors remain unchanged. This is an explicit
-scope decision, not an implemented feature; later work does not depend on the
-cancelled package.
-
-**WP6.3 constant sweep laws (2026-09-29).** The developer accepted both total
-twist and constant draft. `Shape.swept` and `FaceRef.swept` add `twist_deg=0.0`,
-`draft_deg=0.0` and optional absolute `tolerance` [m]. Additional roll is
-`theta(s)=twist_deg*s/L`, right-handed about the transported section normal.
-This preserves fixed/fixed-binormal plane constraints, including oblique
-sections. Signed planar offset is `d(s)=s*tan(draft_deg)`; positive draft grows
-the exterior and shrinks holes. For straight perpendicular sections it is the
-wall angle. On other routes it remains the section-offset rate per arc length.
-Polygon joins use intersection/miter offsets. Scaling laws do not implement
-this contract. Both zero laws retain the previous pipe builders exactly.
-
-The nonzero-law backend copies boundary curves without source-face pcurves,
-canonicalizes their oriented wire containers and normalizes CAD length scales.
-This avoids an installed-kernel crash on sub-unit negative circle offsets and
-incorrect interpolation of reversed hole-wire containers. Source ownership
-and materials remain independent. Compatible native trihedra provide transport;
-span-aware adaptive quadrature and bracketed inversion determine arc-length
-stations. Default kernel abscissa tolerances were too coarse for this fit.
-Fixed-frame reference vectors are projected perpendicular to the initial tangent.
-
-Explicitly corresponding sections use isoparametric ThruSections fitting with
-compatibility retargeting disabled. Separate tangent-connected edge spans retain
-line/arc curvature jumps rather than smoothing the joint. Boundary solids fuse
-across spans; hole tools are subtracted. MakePipeShell multi-section simulation
-was discarded after incompatible circular wires and mutable simulation caches
-were observed. The sampled fit target defaults to the initial profile diagonal
-times 1e-6. Quarter/middle/three-quarter stations between constraints compare
-nine points per edge in both distance directions. This is not a global
-Hausdorff certificate or the cancelled self-intersection checker. Refinement
-is bounded to 4097 sections per edge span; below kernel resolution or at an
-unattainable fit the operation raises RuntimeError.
-
-Topology-changing section offsets, collapsing holes and sharp path joints raise
-rather than silently changing the section or inventing a joint. Closed routes
-require matching start/end boundary geometry and transported roll; nonzero draft
-cannot meet that condition. Compatible periodic seams are sewn. Elliptic offsets use parameter-preserving normal curves with a bounded spline
-representation after canonical quadrant segmentation: the kernel's generic
-elliptic offset changed section parameter correspondence. Newly constructed
-pcurves and 3-D curves synchronize parameter tolerances without changing the
-outline or source ownership. This is boundary assembly, not global geometric
-repair or self-intersection checking. Named result
-project recipes retain exact scaled BREP snapshots; public keywords are additive.
-Gate: `tests/unit/test_geo_sweep_laws.py`, including independent cuts, analytic
-volumes/slopes, asymmetric and curved outlines, holes, all frame modes, model
-scales, reflected chirality, ownership/materials, closed seams, meshing and
-project replay. Methods/API prose and Tutorial 23 explain the same laws.
-All 48 new gates and 901 relevant tests pass. Fresh Sphinx executes Tutorial 23
-and reuses 34 previously verified outputs; repository gates pass.
-Verification: `investigations/geo-api-foundation/WP63-VERIFICATION.md`
-(internal record). WP6 remains open; only WP6.3 is added in this slice.
-
-**WP6.4 partition and section (2026-09-29).** Solid and Sheet values now
-offer `partition(cutter)` or `partition(normal=..., position=...)`. A cutter
-is a standalone Solid or Sheet; the plane is the signed world equation
-`unit_normal dot point = position`. OCC Splitter partitions the source in one
-evaluation and exposes every connected region of the source's dimension as
-an independent value. The source material is inherited, the cutter material
-is irrelevant, and tuple order is explicitly not persistent across topology
-edits. A no-cut, tangent contact or coincident boundary returns the source as
-one independent region; an already disconnected source can yield several.
-The developer accepted this no-cut/coincidence rule before implementation.
-
-`section` with the same cutter grammar returns connected exact intersection
-wires as standalone Curve values; no curve returns an empty tuple. For a Solid
-and an explicit plane, `filled=True` intersects the solid with the plane and
-returns planar Profile regions, preserving holes and disconnected islands.
-A shared face region raises instead of interpreting its perimeter as a
-one-dimensional section. A point tangency has no curve. Filled geometry is
-requested explicitly, rather than silently changing the return dimension.
-
-Named source selections follow the Splitter history across the whole result
-before distribution to pieces. Singular splits or unprovable successors fail
-eagerly; a registered set can retain successors on multiple pieces. New cut
-faces receive no source names. Named result replay stores the construction
-operands plus an exact BREP match for the chosen region, never an OCC numeric
-subshape index. Model scales remain power-of-two safe and affine rescaling
-maps member identities through the transform builder. Gate:
-`tests/unit/test_geo_partition_foundation.py`; methods/API prose and Tutorial
-24 exercise the public contract. WP6.5-WP6.12 remain open.
-
-**WP6.5 directed imprint and material insertion (2026-09-29).** The developer
-accepted the receiver-directed imprint and explicit material winner contract:
-`Solid.imprint(cutter)` splits only the called Solid's boundary faces, leaving
-its volume and material intact and the Solid/Sheet cutter independent. Section
-edges feed SplitShape; a no-intersection build returns an independent Solid.
-Kernel validity and volume equality are checked. SplitShape history carries
-only receiver names; a singular split fails while a deliberate set can retain
-successors. A named imprinted body replays from receiver and cutter with exact
-BREP equality, without numeric face IDs.
-
-`geo.insert(*bodies, priorities=..., voids=...)` takes material-bearing Solids
-and one explicit integer rank each. A larger rank wins any overlap; equal
-ranks may be disjoint but overlapping equals raise. Strict pairwise overlap
-checks abort on kernel failure and count every positive kernel volume, rather
-than applying the model diagnostic's dust threshold: a representable tiny
-corner overlap still needs one material winner. Each body loses all overlapping
-higher-rank bodies and all overlapping material-less void tools in one N-ary
-cut. A void removes material without becoming a physical result. Same-material
-overlaps are still trimmed; contact bodies remain separate. Fully consumed
-untagged bodies are omitted. The output is a material-preserving Group, so
-model insertion order has no material effect. The cut-result subtype reuses
-Difference's operand-aware meshing route and resolves only the retained body's
-names; cutter names cannot leak into its owned selections. Named insert
-regions use the existing Difference construction recipe with this narrower
-history, and full project read-back is tested. Methods/API prose and Tutorial
-25 give the housing/dielectric recipe; gate:
-`tests/unit/test_geo_imprint_insert.py`. WP6.6-WP6.12 remain open.
-
-**WP6.6 bounded curve projection (2026-09-30).** The developer chose all
-three explicit projection policies: world-direction parallel rays, rays from
-a world perspective point through the source curve, and closest points on the
-selected bounded target. Ray projection rejects partial coverage by default;
-`clip=True` keeps only covered pieces. The ordinary ray call selects the first
-forward hit, while `all_hits=True` keeps every forward branch. The selected
-`Sheet` or owned `FaceRef` is used with its actual outer trim and holes. All
-outputs are independent Curve values; FaceRefs remain attached to their
-original owner. A complete ray miss raises unless clipping requests an empty
-tuple. A tangent line is retained, while an isolated point cannot produce a
-Curve. A ray lying in the target has a zero-distance first hit, but infinitely
-many hits under `all_hits=True`, which raises.
-
-`BRepProj_Projection` constructs exact bounded ray wires but treats its
-direction as an infinite line. Forward ray intersection filters back-facing
-results and ranks the first hit. Section/Splitter divides the source at
-source-target crossings, so the first-hit trace can change walls without
-keeping a whole wrong branch. Candidate wires are checked against source
-rays; endpoints on a true trim edge detect even narrow clipped gaps, while
-reverse branch checks retain small target pieces between source samples.
-Periodic target seams are not treated as outer boundaries. Coincident
-on-target portions are recovered by an exact Common when line projection is
-degenerate. A remaining depth-rank transition within one unsplit projected
-wire raises instead of silently returning a mixed branch.
-
-Closest-point projection uses trimmed-face distance extrema and separately
-checks exact boundary curves to avoid CAD seam vertex snapping. Its trace is
-fitted adaptively in surface parameter space to an explicit metre tolerance
-(default one millionth of source extent with a scale-aware kernel floor), so
-the curve stays on the underlying surface. Runs on one trim edge use exact
-boundary subedges, including circular hole rims. A discontinuous nearest
-assignment and target parameter singularity raise; the algorithm does not
-invent a bridge through a hole or pole. A final exact Common checks that the
-fitted wire stays inside the trimmed face; missing segments seed local source
-refinement at the trim crossings. Reversed boundary runs retain their short
-arc orientation. Closest-point projection has no `clip` or `all_hits` policy.
-A body built from the projected curve replays through the project store as
-exact BREP geometry. Gate:
-`tests/unit/test_geo_projection_foundation.py`; methods/API prose and Tutorial
-26 cover the housing/trace recipe. WP6.7-WP6.12 remain open.
-
-**WP6.7 independent geometry offsets (2026-10-01).** The developer accepted
-round outer joins for planar offsets, every surviving disconnected profile
-region, an empty tuple after full collapse, and a documented default error
-budget for curved sheets. `Curve.offset(distance, normal=...)` requires an
-explicit oriented world plane. Positive distance is left of traversal when
-viewed along its normal, negative is right. Open ends are uncapped. The
-one-sided Open CASCADE offset uses an explicit plane face for straight lines;
-closed wires use their own face. Open lines and arcs choose the kernel wire
-direction whose endpoints agree with the requested normal-cross-tangent
-side: the kernel ignored the distance sign and chose opposite conventions
-for a line and a circular arc. Normalised power-of-two CAD scale avoids the
-installed kernel's crash on negative sub-unit circle offsets. A circle that
-closes at its radius returns no curve; an elliptic curve offset that crosses
-its minimum curvature radius raises for a cusp. Result components are
-independent Curves, with no source mutation.
-
-`Profile.offset(distance)` acts on the material region, regardless of wire
-traversal: positive grows the exterior and reduces holes; negative erodes the
-exterior and enlarges holes. Rounded joins implement geometric clearance,
-distinct from the intersection joins of the constant sweep-draft law. Each
-boundary offsets at a normalised scale and the planar face difference resolves
-holes and all separate regions. Circle/ellipse collapse is explicit; ellipse
-offsets below cusp use the parameter-preserving section construction, while
-post-cusp region erosion uses the kernel's region contour rather than exposing
-an invalid standalone offset Curve. A zero-width pinch is an invalid boundary
-and raises. Surviving Profiles inherit source material, and total collapse
-returns an empty tuple. No largest-component tie-breaker exists.
-
-`Sheet.offset(distance, tolerance=None)` moves the actual bounded face along
-its oriented normal, retaining its trimmed rim. Positive/negative signs choose
-opposite sides; the output remains a zero-thickness Surface. The default
-absolute tolerance is the greater of one millionth of the source extent and
-the CAD resolution at the source model scale. The normal-offset result must
-have one valid face, no kernel-reported self-intersection, a consistent sampled
-Jacobian orientation and sampled normal displacement within the budget.
-These samples are an error gate, not a global Hausdorff certificate. A fold,
-singular normal, invalid face or unattainable tolerance fails rather than
-silently returning a plausible-looking sheet. A FaceRef must be explicitly
-detached before independent offsetting. Derived shapes round-trip as exact
-BREP origins when used in stored solids. Methods/API prose, Tutorial 27 and
-`tests/unit/test_geo_offsets_foundation.py` cover the public contract.
-WP6.9-WP6.12 remain open; WP6.2 remains cancelled.
-
-**WP6.8 freeform neutral-surface bend (2026-10-01).** The developer selected
-a freely curved neutral surface and one explicit source-to-target chart for
-all members of a component. In source coordinates `(u, v, w)`, the affected
-interval maps to `S(u, v) + w n(u, v)`. This changes volume in general. The
-neutral surface may stretch or shear within a required sampled principal
-strain limit; each occupied thickness must retain a positive sampled
-Jacobian. Material before the interval is unchanged. The target must meet
-the source pose there; its far boundary must provide one rigid tangent frame
-for the attached continuation. Incompatible boundary geometry raises.
-
-`geo.Bend` is an immutable reusable mapping applied with `@` to a Solid,
-Sheet or Group. The target is one regularly parameterized, hole-free Sheet;
-the source may carry arbitrary 3-D CAD faces and openings. The accepted
-result representation is smooth trimmed BREP, not a faceted approximation.
-The implementation splits faces at interval boundaries without partitioning
-the body, fits deformed faces to a scale-aware sampled distance budget,
-rebuilds shared edge curves including both pcurves of periodic seams, and
-checks BREP validity and kernel-reported self-interference. Fully rigid faces
-retain exact transformed surfaces. The default absolute budget is one
-millionth of the source/target extent subject to CAD resolution; unattainable
-fits raise. The strain, Jacobian and surface-fit samples do not prove global
-limits between sample stations. This limit is documented publicly.
-
-The source is immutable and Group members retain their individual materials.
-Named topology follows the source split and copy histories: a singular face
-name that splits fails, while a deliberate set can retain successors. Named
-project replay stores the target and map parameters, rebuilds them and
-compares the reconstructed solid by symmetric Boolean difference within the
-declared geometry budget. Methods/API prose, Tutorial 28 and
-`tests/unit/test_geo_bend_foundation.py` cover the contract. WP6.9-WP6.12
-and the umbrella WP6 remain open; WP6.2 remains cancelled.
-
-**WP6.9 G1 transitions and surface wrapping (2026-10-01).** The developer
-selected G1, without G2 curvature matching, for transitions and allowed
-doubly curved wrapping subject to an explicit strain limit. The existing
-planar face-to-face `blend="tangent"` is the G1 operation when the adjacent
-walls follow the selected end faces' outward extrusion directions. Its
-Hermite end rows match those wall tangents; the new asymmetric gate samples
-both end wall normals independently. A different adjacent wall tangent
-field is not inferred from a cap. Hole counts and closed CAD topology retain
-their existing construction rules.
-
-`geo.Wrap` shares WP6.8's explicit world source chart and normal-layer map,
-but applies it over the complete source instead of requiring matching rigid
-continuations. The source must fit in both declared chart intervals; the
-one-face target must have a regular, hole-free bounded chart. A periodic
-target needs an explicit seam cut. There is no inferred shortest-path or
-nearest-point mapping. The required `max_strain` bounds sampled principal
-neutral stretches, positive sampled thickness Jacobians reject folds, and
-the existing smooth BREP fitter and validity/interference gates reject bad
-CAD results. Strain and fit samples are not global certificates. All Group
-members share the map while retaining materials; named result replay
-reconstructs and compares geometry. Methods/API prose, Tutorial 29 and
-`tests/unit/test_geo_wrap_foundation.py` cover the public contract.
-WP6.10-WP6.12 and umbrella WP6 remain open; WP6.2 is cancelled.
-
-**WP6.10 reusable component placements (2026-10-01).** The existing
-immutable `Transform @ Group` grammar is the component placement contract:
-transforms distribute over recursively nested, mixed-category members and
-preserve each material and name. A selected face or set belongs to its placed
-Solid owner, so a component copy is queried through that owner rather than
-transforming a reference separately. Different copies and the source remain
-independent values. Tagged Solid leaves replay from their construction
-recipes. Reflection preserves measures while changing orientation; uniform
-scale changes lengths, areas and volumes by `|s|`, `s²` and `|s|³`.
-Nonuniform scale and shear remain rejected because the public transform
-preserves similarity and analytic categories. `Group` promises neither
-storage sharing nor mutable assembly instances; model insertion flattens it
-and applies material/geometry eligibility to each leaf. Methods/API prose,
-Tutorial 30 and `tests/unit/test_geo_component_placement.py` cover the
-contract. WP6.11-WP6.12 and umbrella WP6 remain open; WP6.2 is cancelled.
-
-**WP6.11 EM topology adapters (2026-10-01).** Existing FIT consumers define
-their sampling regions independently of CAD. A selected face may become a
-waveguide-port window or frequency-field recording plane only when it is an
-exact, hole-free, axis-normal rectangle; using a curved or trimmed face's
-bounding box would change the physical region. The port owner must belong to
-the model, and its selected plane must coincide with an undisplaced PEC domain
-face. Interior faces are eligible for field recording but not for a boundary
-port. `PortWaveguide.from_face` and `MonitorFieldFrequency.from_face` capture
-the current placed owner's world coordinates and return ordinary declarations,
-so existing mesh, solver and persistence paths remain authoritative. A moved
-owner requires retrieving its named face again. Whole-face boundary
-conditions, full-cross-section flux and closed Huygens recordings cannot be
-represented by one arbitrary CAD face; their numerical regions remain
-unchanged. The private eligibility matrix is
-`investigations/geo-api-foundation/WP611-ELIGIBILITY.md` (internal record).
-Methods/API prose, Tutorial 31 and
-`tests/unit/test_geo_em_face_adapters.py` cover the contract. WP6.12 and
-umbrella WP6 remain open; WP6.2 is cancelled.
-
-**WP6.12 CAD exchange (2026-10-02).** STEP and BREP imports classify
-independent solids separately from free faces; traversal stops at each solid,
-so its boundary faces never become duplicate sheets. Open shells and mixed
-compounds yield individual free-face `ImportedSheet` values within the
-existing `Group` contract. Repeated assembly leaves retain their placed
-world geometry; duplicate instance names deliberately map to the same
-material key, while unique CAD names distinguish independently mapped
-instances. Unsupported free curves/points warn and a file with neither solid
-nor sheet fails. Materials still come from explicit name mapping; an imported
-sheet's material may pass to `thickened`, but no sheet gains a thin-sheet mesh
-law. STEP import transfers in millimetres, heals before scaling and then
-normalizes geometry to meters; this preserves nanometre-scale topology that
-direct-meter transfer had degraded. STEP preserves length units, body names and unambiguous display colours;
-BREP has only geometry and requires an external unit. `export_step` and
-`export_brep` write selected Solid/Sheet/Group leaves, reject curves and
-refuse overwrite by default. Both write through a temporary file. STEP uses
-an explicit output unit with process-global OCCT settings restored after
-writing; BREP scales coordinates to the caller's stated unit. Neither format
-promises material physics, parametric history, persistent named selections
-or face enumeration. The Magnelio project store remains the replay format.
-Methods/API prose, Tutorial 14 and `tests/unit/test_import_cad.py` cover the
-contract. The final acceptance audit is recorded in
-`investigations/geo-api-foundation/FINAL-ACCEPTANCE.md` (internal record);
-WP6.2 remains cancelled.
+**Date:** 2026-09-28. **Status:** Implemented and released in v0.9.0.
+WP0–WP5 and WP6.1/WP6.3–WP6.12 passed final acceptance on 2026-10-02;
+WP6.2 validity/self-intersection diagnostics were explicitly cancelled.
+**Refines/replaces:** [[DD-072]], [[DD-073]], [[DD-113]], [[DD-131]].
+[[DD-279]] retains this ontology and names immutable registration/imprint
+verbs `tagged_*`/`imprinted`, exporting Bend/Wrap/ImportedSheet.
+
+**Problem and rationale.** One undifferentiated Shape surface gave curves,
+profiles, sheets and solids inappropriate verbs. Loose-point face selection
+lost identity after placement; persistent OCC indices cannot survive a
+Boolean or reconstruction. General CAD authoring needs explicit dimensions,
+owned selections, world-coordinate construction and provable named history.
+
+### Dimensional geometry and construction
+
+- Immutable standalone hierarchy: `Shape` → `Curve`, `Sheet` (`Profile`
+  planar, `Surface` curved), and `Solid`. Shape carries affine placement,
+  bounding boxes and identity metadata; narrower categories own their verbs.
+  Brick/Sphere/Cylinder/Cone/Torus/ImportedSolid and CSG/Loft results are Solids.
+- `+`, `-`, `&`, Union/Difference/Intersection accept Solids only. Group is a
+  material-preserving authoring collection, not Shape or a CSG operand;
+  placement distributes over members and model insertion flattens it.
+  ThinWire is an EM declaration around a Curve, not another CAD dimension.
+- Public `Face`, `Curve.covered()` and transitional PlanarSheet are removed
+  without aliases: standalone planar geometry is Profile, owned topology
+  FaceRef. Construction solids without material remain valid under [[DD-127]].
+- Exact Curve line/circle/ellipse factories complement polyline/arc/
+  ellipse_arc/spline/helix/joined. CAD arc-length integration controls length;
+  default mass integration was 0.027 % high on the 3:2 ellipse.
+- Profile polygon/rectangle/circle/from_wires take world-coordinate points
+  and explicit plane/orientation arguments. Validate closure, geometric
+  planarity, self-intersection, strict hole containment and disjoint,
+  non-nested holes; correct winding without changing boundaries. Area excludes
+  holes; boundary returns independent Curves, outer first, holes in input order.
+- Extrusion/revolution/sweep consume the whole face. Lofts pair outer/inner
+  wires by input order and require equal hole counts; no nearest matching.
+  Profile/eligible Sheet/FaceRef construction shares one section adapter;
+  geometrically flat spline faces are re-covered from exact wires.
+  Explicit material overrides section material or FaceRef owner material;
+  an omitted Loft material inherits the first Profile's material.
+  If neither supplies material, the result remains a construction Solid.
+- Direct FaceRef construction makes an independent Solid, leaving owner
+  registrations with the owner. Fillet/chamfer `edges=`/`faces=` and shell
+  `openings=` require refs on the exact receiver, deduplicate deliberate sets,
+  and reject stale/wrong owners, empty selections or conflicting modes.
+  Loose-point conveniences resolve semantic refs immediately.
+- Sweep placement uses the shortest section-normal-to-start-tangent rotation,
+  preserving actual in-plane roll; an antiparallel start uses the section's
+  actual X direction. Forward thickening follows the oriented normal,
+  including reflection. Volume uses span-aware adaptive Gauss-Kronrod rather
+  than the default quadrature that over-read an annular transition by 0.84 %;
+  measurement applies after placement, tagging, CSG and project read-back.
+  [[DD-285]] subsequently conditions that integration independently.
+
+### Owned topology and persistence
+
+- TopologyRef/VertexRef/EdgeRef/FaceRef/EdgeSetRef/FaceSetRef are immutable
+  views with a strong Solid owner and per-owner/per-model-scale caches. They
+  cannot transform, enter a model or serve as Boolean operands. Transform the
+  owner and retrieve the ref; explicit detachment returns Curve or planar
+  Profile/curved Surface, preserving world placement, holes and face material.
+- Singular face/edge/vertex selectors use a registered name or semantic
+  constraints; plural faces/edges return deliberate sets, never a singular
+  fallback. Filter all constraints before distance to the complete trimmed
+  subshape, not its centroid. Normal filters are orientation-sensitive;
+  curved-face normal filtering needs a near point. Zero candidates raises
+  TopologySelectionError; ties at converted OCC tolerance raise
+  AmbiguousTopologyError. Kernel order never breaks a tie; no public indices.
+  Surface filters use plane/cylinder/cone/sphere/torus/bspline/other,
+  with corresponding analytic curve-type names.
+- `tagged_*` returns a new owner. Nonempty names are unique per topology kind;
+  singular/set lookup enforces cardinality. Affine history carries names
+  exactly, including reflection/negative scale. Topology changes use OCC
+  Modified/Generated/IsDeleted plus proof of final-owner membership, not
+  proximity. Missing/deleted successors, singular splits and conflicting
+  names raise TopologyEvolutionError at construction. Sets may split/merge
+  after deduplication, but deletion of any selected member still fails.
+- Named construction captures builders in a scoped ContextVar after direct
+  sources are evaluated; intermediate predecessors remain until membership
+  is checked. Untagged lazy tools build outside capture. Tagged N-ary Boolean
+  paths retain histories instead of fast fusion paths that discard identity;
+  untagged geometry keeps the established lazy paths.
+- Argument-free measurements are read-only properties: vertex point; edge
+  length/start/end/vertices; face centroid/area/is_planar/edges/vertices and
+  constant outward normal only on planar faces. Curved `.normal` raises,
+  naming `normal_at(point)`. Parameterized queries/construction are methods.
+- Additive versioned geometry recipes retain semantic origins and a DAG of
+  named operations. Untagged origins are exact scaled BREP snapshots whose
+  saved scale survives replay; metre-space round trips degrade nanometre
+  topology. Closed codecs reconstruct history and validate cardinality,
+  never serialize OCC indices or geometrically reselect transformed names.
+  Legacy projects without metadata keep the final-BREP reader. Selected
+  owner modifications resolve once at the ref's model scale, then rescale
+  with exact affine history; strict unique BREP matching identifies stored
+  set members/result pieces rather than a nearest guess.
+
+### Affine placement and relative paths
+
+- Immutable Transform/Translation/Rotation/Mirror/Scale use column vectors:
+  `A @ B @ geometry` applies B first. Placement preserves concrete category,
+  material, name and named history; `geometry @ transform` is undefined.
+  Only similarity transforms are accepted; nonuniform scale/shear are rejected.
+- Named transformed methods delegate to the same algebra. The initial ban on
+  array/copy/fusion options was overturned after WP2 review: translated/
+  rotated support repeat/copy/unite/group; mirrored supports aggregation
+  with copy=True. Repeat counts successive transformed copies; copy includes
+  the original first. Default multiple results are a list; explicit group
+  always returns Group, unite always a Solid Union, including one copy.
+  Aggregation modes are exclusive; nested Groups preserve materials and
+  cannot fuse. Every copy places the original. `Transform @ geometry` remains
+  strictly one placement; Solid CSG never accepts vectors.
+- No ambient working coordinate system. Immutable Path stores an explicit
+  moving pose: from_pose/from_face, forward, turn_left/turn_right, turn_to and
+  straight_to_plane coexist with absolute line/arc/ellipse/spline segments.
+  Tangent is normalized; up is projected perpendicular. Direction parsing
+  prescales magnitudes from 1e-300 to 1e300. A planar FaceRef starts at its
+  area centroid and outward normal; an annular centroid may lie in the hole.
+- Left is up×tangent, right tangent×up. Turns use positive radius and
+  0<angle_deg<360 exact circles; turn_to chooses the shortest arc, makes an
+  aligned target a no-op and rejects an opposite tangent without a bend plane.
+  Explicit left/right half-turns resolve that ambiguity. Plane continuation
+  uses `unit_normal dot point = signed_position` in world metres,
+  rejects parallel/behind
+  intersections and makes an already reached plane within eight ULPs a no-op.
+- Absolute corners rotate up by the shortest tangent change, using up for an
+  antiparallel half-turn; corners are not smoothed. Smooth absolute segments
+  use rotation-minimizing `du/dq = -t (u dot dt/dq)`, CAD derivatives and
+  DOP853 (rtol 1e-10, atol 1e-12, maximum step 1/16 parameter span), with
+  endpoint re-orthonormalization. Relative circles rotate exactly. Zero
+  tangents fail; no curvature-normal division or world-axis reset. Completed
+  Curve values retain geometry, not Path's frame; sweep transport is separate.
+
+### Advanced CAD contracts
+
+- **Sweep orientation/laws:** corrected_frenet remains default; frenet,
+  fixed world sections and fixed_binormal are explicit. Only fixed_binormal
+  takes binormal; invalid/parallel initial directions fail. Boundaries and
+  holes share the same start station. Fixed monotone-section volume is area
+  times normal-projected displacement; perpendicular sections use arc length.
+  Twist is `theta(s)=twist_deg*s/L`; draft is signed normal offset
+  `d(s)=s*tan(draft_deg)`, growing exteriors/shrinking holes with miter joins.
+  Zero laws retain previous builders. Scaling laws and MakePipeShell's mutable
+  multi-section simulation were rejected; explicit section correspondence and
+  isoparametric ThruSections preserve line/arc curvature jumps and holes.
+  Arc-length quadrature/inversion controls stations. Default sampled fit
+  budget is profile diagonal×1e-6; quarter/middle/three-quarter checks sample
+  nine points per edge in both directions, at most 4097 sections per span.
+  This is not a Hausdorff/self-intersection certificate. Collapsing holes,
+  topology-changing offsets, sharp joints and unattainable tolerance raise.
+  Closed routes require matching boundary/roll and cannot carry nonzero draft.
+  Canonical wire orientation, elliptic parameter-preserving offsets and
+  synchronized pcurves avoid kernel correspondence failures without repair.
+- **Partition/section:** plane or Solid/Sheet cutters yield independent
+  source-dimensional regions with inherited source material; tuple order is
+  not persistent. No-cut/contact/coincidence retains an independent source.
+  Section yields connected exact Curves; no curve/point contact gives an empty
+  tuple. Solid-plane filled=True explicitly yields Profiles with holes/islands.
+  A shared face raises instead of substituting its perimeter. Names follow
+  Splitter history across all pieces; new cut faces get no source names.
+- **Imprint/insert:** receiver-directed imprinted splits only receiver faces,
+  preserving volume/material and cutter independence. Kernel validity/volume
+  equality and named SplitShape history are checked. Insert takes physical
+  Solids with explicit integer priorities: larger wins; overlapping equals
+  raise on every positive representable overlap, without a dust threshold.
+  Higher-priority bodies and material-less voids are cut N-arily. Consumed
+  untagged bodies disappear; contacts/same-material bodies remain separate
+  trimmed Group leaves. Only retained-body names propagate; insertion order
+  has no material effect. Operand-aware Difference meshing is reused.
+- **Bounded projection:** parallel world rays, perspective rays and closest
+  points act on actual trimmed Sheet/FaceRef targets and holes. Rays select
+  first forward hit, optionally all_hits; default partial/missing coverage
+  raises, clip retains covered pieces/empty tuple. Tangent lines remain;
+  points do not become Curves; coincident all_hits is infinite and raises.
+  Source splitting, forward-ray verification and exact Common reject mixed
+  depth-rank branches and retain narrow trims/periodic seams. Closest projection
+  fits in target UV at extent×1e-6 with scale-aware CAD floor, uses exact trim
+  edges where possible, and rejects discontinuous assignments/poles/bridges.
+  It has neither clip nor all_hits; outputs are independent Curves.
+- **Offsets:** Curve requires an oriented plane, positive to traversal's left,
+  round outer joins, uncapped ends; collapse returns no curve, cusp raises.
+  Profile offsets act on material regions independent of winding, retain every
+  surviving component/hole/material, and return empty on total collapse;
+  zero-width pinches fail. Draft's miter joins remain a different law.
+  Sheet offsets move actual bounded faces along oriented normals at
+  max(extent×1e-6, CAD resolution). Require a valid single face and sampled
+  Jacobian/displacement checks; samples do not prove global error. Detach a
+  FaceRef before offsetting; folds/singularities/unattainable fits fail.
+- **Bend/Wrap:** an explicit source chart maps `(u,v,w)` to `S(u,v)+w*n(u,v)`
+  on one regular hole-free target Sheet, changing volume in general. Smooth
+  trimmed BREP fitting retains seams/shared edges and rigid faces, checks
+  validity/kernel interference and sampled fit/required principal-strain/
+  positive-thickness-Jacobian bounds. Default fit budget is extent×1e-6 with
+  CAD floor; samples are not global certificates. Bend requires pose-matching
+  interval boundaries and a rigid tangent frame for continuation; Wrap maps
+  the complete fitting source, requires explicit chart bounds/seam cuts, and
+  infers no nearest/shortest-path mapping. All Group members share one map
+  while retaining materials. Names follow split/copy history; replay compares
+  reconstructed geometry by symmetric Boolean difference within its budget.
+  Tangent face transitions are G1, not G2, and assume adjacent wall tangents
+  follow the selected outward extrusion directions; unrelated tangents are
+  not inferred from a cap.
+- **Components:** immutable nested mixed Group placement preserves each
+  material/name; selected refs belong to placed Solid leaves, never independently
+  transformed refs. Copies are independent values, not mutable shared instances.
+  Uniform scale changes measures by |s|, s², |s|³; reflection changes orientation.
+- **EM adapters:** from_face waveguide windows/frequency-monitor planes need
+  exact hole-free axis-normal rectangles, not a bounding-box approximation.
+  Port owners must be in the model on an undisplaced PEC domain face;
+  interior faces support field recording, not boundary ports. Declarations
+  capture placed world coordinates; moving the owner requires new selection.
+  Whole boundaries, flux apertures and closed Huygens regions keep their
+  numerical definitions rather than taking an arbitrary CAD face.
+- **CAD exchange:** STEP/BREP traversal stops at solids; their boundary faces
+  never duplicate as Sheets. Free shell/compound faces become ImportedSheets;
+  assembly placement and explicit name/material mapping are retained. Free
+  curves/points warn; no solids/sheets fails. Imported sheets acquire no new
+  EM sheet law. STEP imports millimetres, heals, then scales to metres to
+  preserve nanometre topology. STEP carries output units/names/unambiguous
+  colours; BREP needs external units. Selected Solid/Sheet/Group export rejects
+  curves and overwrite by default, uses a temporary file and restores process-
+  global STEP settings. Neither format promises physics/history/named selections;
+  the project store remains the replay format.
+
+**Failure policy and verdict.** Category mismatches are TypeError, invalid
+arguments ValueError, selection/history failures their named public errors,
+and valid-input kernel construction failures RuntimeError with diagnostics.
+GeometryOverlapError remains a separate model-assembly failure. No implicit
+matching/repair substitutes for a failed contract. Analytic measures across
+model scales, placement/reflection, hole preservation, topology errors,
+project replay and executed public recipes passed the foundation acceptance;
+the former Tutorials 21–32 and CAD/PCB entrances are consolidated into
+Tutorial 14. The measured sampling limits above remain explicit.
+
+**Records:** `investigations/geo-api-foundation/` (internal dossier), including
+`FINAL-ACCEPTANCE.md`, WP3/WP4/WP5 verification, WP6 orientation/contracts,
+WP63 verification and WP611 eligibility records. Earlier slice counts and
+staging prose are historical; they do not describe pending implementation.
+
+**Historical implementation/validation anchors:** retained as recorded;
+paths and probe names may precede later renames. Private probes and
+records belong to the internal dossiers named above.
+
+- `investigations/geo-api-foundation/FINAL-ACCEPTANCE.md`
+- `investigations/geo-api-foundation/WP3-VERIFICATION.md`
+- `investigations/geo-api-foundation/WP4-VERIFICATION.md`
+- `investigations/geo-api-foundation/WP5-VERIFICATION.md`
+- `investigations/geo-api-foundation/WP6-CONTRACTS.md`
+- `investigations/geo-api-foundation/WP6-ORIENTATION-VERIFICATION.md`
+- `investigations/geo-api-foundation/WP611-ELIGIBILITY.md`
+- `investigations/geo-api-foundation/WP63-VERIFICATION.md`
+- `tests/unit/test_geo_api_baseline.py`
+- `tests/unit/test_geo_bend_foundation.py`
+- `tests/unit/test_geo_component_placement.py`
+- `tests/unit/test_geo_em_face_adapters.py`
+- `tests/unit/test_geo_imprint_insert.py`
+- `tests/unit/test_geo_offsets_foundation.py`
+- `tests/unit/test_geo_operations_foundation.py`
+- `tests/unit/test_geo_partition_foundation.py`
+- `tests/unit/test_geo_paths_foundation.py`
+- `tests/unit/test_geo_profiles_foundation.py`
+- `tests/unit/test_geo_projection_foundation.py`
+- `tests/unit/test_geo_sweep_frames.py`
+- `tests/unit/test_geo_sweep_laws.py`
+- `tests/unit/test_geo_topology_foundation.py`
+- `tests/unit/test_geo_transform_foundation.py`
+- `tests/unit/test_geo_wrap_foundation.py`
+- `tests/unit/test_import_cad.py`
 
 ---
 
@@ -23562,7 +22186,7 @@ Tutorial 07 demonstrate the public API.
 
 ## DD-279 — Public API vocabulary reflects physical meaning and operation scope
 
-**Date:** 2026-10-04. **Status:** Implemented and merged to main; unreleased.
+**Date:** 2026-10-04. **Status:** Implemented and released in v0.9.0.
 All 25 review cards were agreed with the developer. The accompanying viewer
 camera documentation is implemented separately in `3d40ba21`.
 **Refines in part:** [[DD-005]], [[DD-153]], [[DD-224]], [[DD-255]],
@@ -23691,11 +22315,10 @@ remain separate from import checks. Test results and docs/export/import/DD/ruff/
 recorded in `investigations/api-naming-review-2026-10-04/IMPLEMENTATION-ACCEPTANCE.md`
 (internal record). The developer subsequently authorized merging and pushing main; no release is assigned.
 
-
 ## DD-280 — Selected port solves, result plots and viewer display controls
 
 **Date:** 2026-10-05
-**Status:** Accepted (developer discussion; implemented on `feat/viewer-and-result-controls`).
+**Status:** Accepted, implemented and released in v0.9.0.
 
 **Problem.** A bare string excitation was iterated character by character;
 inspecting one port solved every port's modes. Results lacked a phase plot
@@ -23780,7 +22403,7 @@ both sides of the mid-plane with no visible cut actors.
 ## DD-281 — Gaussian upper-edge attenuation and shorter initial delay
 
 **Date:** 2026-10-05
-**Status:** Accepted (developer approved; merged to main, unreleased).
+**Status:** Accepted, implemented and released in v0.9.0.
 
 **Decision.** `WaveformGaussian` and `WaveformGaussianModulated` accept the
 keyword-only positive finite `edge_attenuation_db`, default 25 dB. It specifies
@@ -23855,8 +22478,8 @@ Evidence: `investigations/termination-accuracy/MEASUREMENTS.md` and
 
 ## DD-282: Finite-excitation arming and current decay diagnostics
 
-**Date:** 2026-10-05. **Status:** merged to main,
-unreleased. Resolves KB-050 and KB-051; follows DD-281.
+**Date:** 2026-10-05. **Status:** Implemented and released in v0.9.0.
+Resolves KB-050 and KB-051; follows DD-281.
 
 **Decision.** High-level runs guard energy decay by the latest nominal
 finite excitation end, including effective delay and any finite synthesized
@@ -23910,8 +22533,8 @@ acceptance and strategy live in `investigations/termination-accuracy/`
 
 ## DD-283 — Selective stored-result evaluation and shared Fourier blocks
 
-**Date:** 2026-10-05. **Status:** merged to main from
-`perf/selective-result-access`, unreleased.
+**Date:** 2026-10-05. **Status:** Implemented and released in v0.9.0
+(from `perf/selective-result-access`).
 
 **Problem.** A first time plot requested the excitation list through
 `Project.excitations`, which derived the complete S-matrix. On a 102-channel,
@@ -23992,7 +22615,7 @@ rejects reading an unrelated header. Evidence:
 
 ## DD-284 — Phase-preserving electric-field line integrals
 
-**Date:** 2026-10-05. **Status:** implemented, uncommitted.
+**Date:** 2026-10-05. **Status:** Implemented and released in v0.9.0.
 Resolves KB-047; extends DD-076 to the physical frames of DD-259.
 
 **Decision.** `circuit.integrate_E` accepts both real time-domain and
@@ -24030,7 +22653,7 @@ frequency-monitor frame and its own grid. Evidence:
 
 ## DD-285 — Condition CAD volume integration independently of construction
 
-**Date:** 2026-10-05. **Status:** implemented, unreleased.
+**Date:** 2026-10-05. **Status:** Implemented and released in v0.9.0.
 
 **Problem.** KB-046's fixed quadrature over-read the rational circular
 tangent taper by 0.884%. DD-275 WP4 already replaced it with span-aware
@@ -24075,7 +22698,7 @@ Reproduction, rejected approach and acceptance logs:
 
 ## DD-286 — Sample CPML profiles at the true staggered positions
 
-**Date:** 2026-10-05. **Status:** implemented, unreleased.
+**Date:** 2026-10-05. **Status:** Implemented and released in v0.9.0.
 
 **Problem.** KB-023 used one cell-centred stretching profile for both
 transverse E at normal-axis nodes and H at normal-axis cell centres.
@@ -24133,7 +22756,7 @@ limits and old-checkpoint continuation. Evidence and final suite status:
 
 ## DD-287 — Bounded-surface sections at geometric grazing planes
 
-**Date:** 2026-10-06. **Status:** implemented on `fix/near-tangent-sections`,
+**Date:** 2026-10-06. **Status:** Implemented and released in v0.9.0;
 accepted on the audited fixtures and complete repeated coaxial-cell model;
 explicit opt-in as of 2026-10-08. Mitigates KB-043 when selected and resolves
 the subsequent valid-CAD regression KB-053.

@@ -5,7 +5,9 @@
 > This is the internal design reference; the user-facing API reference
 > is the Sphinx documentation (`docs/api`).
 >
-> Last updated: 2026-09-29
+> Last updated: 2026-10-08 (maintenance corrections; not a full numerical re-audit)
+> Current contracts and migration notes take precedence over historical
+> implementation sketches below. Remaining reconciliation work is in `TODO.md`.
 
 ## Table of Contents
 
@@ -602,14 +604,13 @@ feature planes intact).
 
 ## 7. Backend Abstraction
 
-All numerical modules use `xp = get_xp()` instead of `import numpy as np` directly.
-GPU acceleration is activated via `set_backend('cupy')` before solver creation.
+Time stepping selects its array backend per analysis through `backend=`.
+The `"auto"` default honours `MAGNELIO_BACKEND`, then selects an available
+CUDA device or falls back to NumPy. Geometry and mode/operator preparation
+retain CPU work; backend selection does not move every allocation to the GPU.
 
 ```python
-from magnelio._backend.array_api import set_backend
-set_backend('cupy')          # all subsequent allocations go to GPU
-# … create solver, run simulation …
-set_backend('numpy')         # revert to CPU
+analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, backend="cupy")
 ```
 
 ### Solver kernel dispatch (three tiers)
@@ -621,19 +622,21 @@ set_backend('numpy')         # revert to CPU
 | 3 | `update_E_stencil` / `update_H_stencil` | CuPy GPU or NumPy fallback | 6 curl buffers | Array slice ops (`+=`, `-=`, `[:]=`) |
 
 The solver detects the active backend in `setup()` and picks the fastest available path.
-Numba kernels cannot operate on CuPy arrays, so GPU always uses the stencil path.
-All paths produce bitwise-identical results (verified on random fields).
+Numba kernels operate on host arrays; CUDA fused kernels precede the GPU
+stencil fallback. Equivalence is checked with precision-appropriate tolerances;
+CPU/GPU bitwise identity is not a general guarantee. Production time-loop
+precision defaults to single; tests pin NumPy/double unless explicitly overridden.
 
 ### GPU-ready components
 
 | Component | GPU-compatible | Notes |
 |-----------|---------------|-------|
-| FieldState (`field_arrays.py`) | ✅ | `_xp` attribute, flat arrays on device |
+| FieldState (`fields/state.py`) | ✅ | Field arrays carry their backend |
 | Material coefficients | ✅ | Computed on CPU, transferred in `setup()` |
 | PEC boundary | ✅ | Slice zeroing works on CuPy |
 | PEC integer index (`e[pec_idx] = 0`) | ✅ | Index array transferred to GPU |
 | Energy monitoring (`@` operator) | ✅ | Returns Python float via `float()` |
-| CPML | ⚠️ Functional | Aux arrays on CPU, implicit transfers per step |
+| CPML | ✅ | Backend-local auxiliary states and staggered profile arrays |
 | WaveguidePort update_bc | ⚠️ Functional | Fancy indexing works on CuPy, not optimised |
 | Monitors / Recorder | ⚠️ Functional | Read-only access, minimal transfer |
 
@@ -686,7 +689,7 @@ f_max, n_modes = 25.0e9, 5
 
 model = mio.GeometryModel()
 model.add(geo.Brick(origin=(0.0, 0.0, 0.0), size=(a, b, L),
-                    material=mio.Material.from_isotropic(name="air", epsilon=1.0)))
+                    material=mio.Material.air()))
 model.add_port(ports.PortWaveguide(name="port1", plane="zmin", n_modes=n_modes))
 model.add_port(ports.PortWaveguide(name="port2", plane="zmax", n_modes=n_modes))
 
@@ -1457,29 +1460,32 @@ Full-scale validation against analytical solutions. Scripts output JSON report.
 | `bench_stripline.py`            | Stripline S-parameters      | S-param error < 2 dB |
 | `bench_mesh_build.py`           | Mesh-build time per mesher pass on three production geometry classes (Lange-coupler row, patch array with corporate feed, post row), section-pool arms off / auto / forced; `sheets` (thin-sheet detection + footprints), `singular` (singular-edge planes), `overlap` (model overlap check) and `fuse` (every N-ary union, nested) columns | timing only; results in `benchmarks/results/bench_mesh_build.json` |
 
-### 10.4 Notebooks (`examples/notebooks/`)
+### 10.4 Tutorial and how-to notebooks
 
-| Notebook | Content |
-|----------|---------|
-| `01_rectangular_cavity.ipynb` | Cavity eigenmodes (mode-sort, eigenfrequency comparison) |
-| `02_waveguide_port.ipynb`     | Plane-wave propagation demo |
-| ~~`03_microstrip.ipynb`~~     | ~~Microstrip S-parameters with Port2D~~ (removed) |
-| `04_parallel_plate_waveguide.ipynb` | Parallel-plate TEM waveguide |
-| `05_coaxial_rg58.ipynb`       | RG-58 coaxial cable simulation |
-| `06_circular_waveguide.ipynb` | Circular waveguide modes |
-| `07_microstrip_rogers4003.ipynb` | Microstrip on Rogers RO4003 substrate |
-| ~~`08_rect_coax.ipynb`~~      | ~~Rectangular coaxial waveguide~~ (removed: depended on FIT eigenvalue 2D mode solver, deleted in step 9a as out of Phase-1 scope per `reference_architecture_waveguide_ports.md` §1) |
+Editable gallery sources live in `examples/tutorials/` and `examples/howto/`.
+Sphinx-Gallery generates downloadable notebooks; the old
+`examples/notebooks/` inventory is retired. There are 17 executable tutorials
+and one rendered Cassegrain example. JupyterLab and the `jupyter` viewer
+extra are recommended for interactive modelling and post-processing.
 
 ### 10.5 CI Strategy
 
-- **Current:** Local Git, manual `pytest tests/` invocation
-- **Future:** GitHub Actions — `pytest` + `ruff check` + `mypy src/`
+- GitHub Actions runs Ruff lint/format, public-content hygiene and the unit
+  suite on main pushes and pull requests. The conda environment includes CAD;
+  a headless display supports viewer checks. Device tests skip without CUDA.
+- Full integration/numerical acceptance remains a separate local check.
+  API/DD/import gates are available locally; mypy is not a current CI gate.
+- The separate Docs workflow executes the gallery and publishes stable/dev
+  channels when `DEPLOY_DOCS` is enabled or manually dispatched.
 
 ---
 
-## 11. Implementation Order
+## 11. Historical implementation order
 
-Recommended implementation sequence:
+Original planning sequence, retained as historical context. Superseded names
+and then-open defects below are not the current API or work list; current
+state is in `STATUS.md`, accepted choices in `design-decisions.md`, and
+unfinished work in `TODO.md`.
 
 | Step | Module / Task |
 |------|---------------|
@@ -1530,6 +1536,10 @@ python validation/tools/check_api_surface.py
 
 # Every DD-NNN citation resolves against design-decisions.md
 python validation/tools/check_dd_references.py
+
+# Public content and script imports
+python validation/tools/check_public_hygiene.py
+python validation/tools/check_imports.py
 ```
 
 The measured accuracy floors (port reflection, wall loss, curvature)

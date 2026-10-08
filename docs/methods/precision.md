@@ -48,7 +48,7 @@ none of them is a per-cell-per-step cost and all of them accumulate:
   reduced word length.
 
 This mixed layout is ordinary engineering practice in production
-time-domain field solvers, not a research method (DD-094).
+time-domain field solvers, not a research method.
 
 ## What single precision buys
 
@@ -102,8 +102,7 @@ does not.
 
 The same effect drives the GPU case, where consumer cards additionally
 run FP64 at a fraction of the FP32 rate: the fused update kernels
-measure 1.25× at 97 k cells and 2.43× at 373 k on the reference card
-(DD-094).
+measure 1.25× at 97 k cells and 2.43× at 373 k on the reference card.
 
 Whole-run speed-ups are smaller than kernel speed-ups, and on a small
 port-heavy model can vanish entirely — the double-only parts above do

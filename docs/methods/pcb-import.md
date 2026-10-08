@@ -5,7 +5,7 @@ solver, and it leaves that tool as *fabrication data*: the set of files
 a board house is sent.  {func}`~magnelio.io.import_pcb` reads that set
 and returns ordinary geometry — one solid per layer of the stackup,
 one per plated hole, each carrying a name and a material
-(`io/pcb.py`, DD-179).
+(`io/pcb.py`).
 
 ```python
 from magnelio import GeometryModel

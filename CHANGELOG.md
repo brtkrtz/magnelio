@@ -9,6 +9,20 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- The README recommends JupyterLab for interactive modelling and
+  post-processing, explains viewer installation, and updates the tutorial,
+  geometry and documentation overview. Development terminology now uses
+  "agentic coding".
+- Method chapters omit internal decision numbers while retaining their
+  explanations, literature citations and existing heading links. GPU
+  comparison coverage is stated explicitly; bibliographic verification
+  bookkeeping is kept out of the rendered references.
+- Developer decision records consolidate completed API and usability work,
+  distinguish superseded framing from surviving rules, and retain stable
+  decision numbers and implementation/validation references.
+
 ## [0.9.0] - 2026-10-08
 
 ### Added

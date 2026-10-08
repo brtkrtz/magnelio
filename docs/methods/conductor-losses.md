@@ -14,10 +14,10 @@ P_{\text{loss}}(f) = \tfrac12\, R_s(f) \sum_{\text{wall}}
  w\,|H_{\tan}|^2, \qquad R_s = \sqrt{\pi f \mu / \sigma},
 $$
 
-(`monitors/wall_loss.py`, `postprocessing/wall_loss.py`, DD-082).
+(`monitors/wall_loss.py`, `postprocessing/wall_loss.py`).
 This is the classical power-loss perturbation method of microwave
 engineering {cite}`pozar2012,jackson1999`.  Two
-accuracy refinements are in-house (DD-087): exact conformal
+accuracy refinements are in-house: exact conformal
 wall areas on curved conductors (removing the $4/\pi$ staircase
 over-count) and a conformal tangential-H sampling rule
 (uncut-face booking with a normal-direction walk).
@@ -77,7 +77,7 @@ the arrows stay readable.
 Roughness enters the perturbative chain as one real,
 frequency-dependent multiplier $K(f)$ on the surface resistance,
 $R_{s,\text{rough}} = K(f)\,R_{s,\text{smooth}}$
-(`materials/roughness.py`, DD-088).  Implemented models:
+(`materials/roughness.py`).  Implemented models:
 
 - **Hammerstad** — the classical RMS-height curve fit of Hammerstad
   and Jensen {cite}`hammerstadjensen1980`.
@@ -100,7 +100,7 @@ SIBC is currently an opt-in: `wall_model="sibc"`.
 The surface-impedance boundary condition realises the **Leontovich
 condition** $E_{\tan} = Z_s(\omega)\,(\hat n \times \mathbf H)$
 {cite}`leontovich1948,senior1960` directly in the
-leapfrog update (`solver/sibc.py`, DD-091):
+leapfrog update (`solver/sibc.py`):
 
 - $Z_s(\omega)$ — smooth-metal $\sqrt{j\omega\mu/\sigma}$ or the
   causally completed rough impedance — is fitted as a
@@ -133,7 +133,7 @@ unconditional dissipation identity is in-house.
 
 The conformal booking of SIBC faces (which faces carry the damping
 term and with which geometric weight $G_f = A_f/l^2_{\text{dual}}$)
-reuses the DD-087 conformal wall-area machinery.
+reuses the conformal wall-area machinery.
 
 ## Surface-current quantities
 

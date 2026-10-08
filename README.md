@@ -34,15 +34,17 @@ large grids stay tractable.
   losses (perturbative or SIBC wall model), surface roughness
   (Hammerstad, Huray)
 - Geometry: CSG primitives + Boolean operators (`a - b`, `a + b`,
-  `a & b`), chainable transforms, and profile-based construction
-  (loft, sweep, revolve, shell) via pythonocc-core
+  `a & b`), exact curves and profiles, affine transforms, owned face/edge
+  selection, and profile-based construction (loft, sweep, revolve,
+  shell) via pythonocc-core; STEP/BREP and PCB fabrication-data import
 - Circuit elements embedded in the field solution: thin wires and
   lumped RLC networks
 - Field monitors (time/frequency domain, flux, wall loss), plane-wave
   source (TF/SF), 3D eigenmode solver
 - Interactive 3D viewer of geometry and mesh: a Jupyter widget with an
   axis-aligned cutting plane that opens every solid and shows the grid
-  cells on the cut; the same call opens a window in a script
+  cells on the cut; the same call opens a browser view from a script,
+  with a native-window fallback
 - Antennas: near-to-far-field transform recorded on a Huygens box the
   monitor places by itself, with image theory for ground planes and
   symmetry planes — directivity, gain, realized gain, radiated power
@@ -56,6 +58,8 @@ large grids stay tractable.
 
 ## Installation
 
+Magnelio requires Python 3.11 or newer.
+
 From conda-forge, which is the route to take:
 
 ```bash
@@ -64,6 +68,20 @@ conda install -c conda-forge magnelio
 
 New to conda-forge?  [miniforge3](https://github.com/conda-forge/miniforge)
 is the smallest way in; the Anaconda distribution works too.
+
+**JupyterLab is recommended for modelling and post-processing.** Notebooks
+let you build and inspect geometry interactively, run simulations, and
+explore stored results and plots in the same document. Install it and
+the interactive viewer support in the same environment as Magnelio:
+
+```bash
+conda install -c conda-forge jupyterlab
+pip install "magnelio[jupyter]"
+jupyter lab
+```
+
+The `jupyter` extra supplies viewer widgets; JupyterLab itself is installed
+separately. Tutorials can be downloaded as notebooks from the documentation.
 
 There is a PyPI package as well:
 
@@ -80,6 +98,10 @@ an option, not the way to run simulations.
 The CUDA backend is optional on either route: install a `cupy` matching
 your CUDA version and `backend="auto"` picks the GPU up.  Without it the
 solver runs on the CPU.
+
+Time stepping defaults to single precision. Use `precision="double"` on
+the analysis when you need very low reflection floors; see the
+[precision guide](https://brtkrtz.github.io/magnelio/stable/methods/precision.html).
 
 Working from a source checkout is described in
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
@@ -116,14 +138,17 @@ s21 = result.S("port2", "port1")         # complex S21 on result.f_axis
 result.to_touchstone("wr90")             # -> wr90.s6p, 2 ports × 3 modes
 ```
 
-Fourteen executable tutorials — from a first parallel-plate line to a
-dielectric-resonator filter — live in
+Seventeen executable tutorials — from a first parallel-plate line to
+filters, antennas and plane-wave scattering — plus a Cassegrain reflector
+example live in
 [`examples/tutorials/`](examples/tutorials/); they are the source of
 the documentation's tutorial series.
 
 ## Documentation
 
-[`docs/`](docs/) holds the Sphinx documentation: the tutorial series,
+[Read the release documentation](https://brtkrtz.github.io/magnelio/stable/)
+or the [development documentation](https://brtkrtz.github.io/magnelio/dev/).
+[`docs/`](docs/) holds the Sphinx sources: tutorials, how-to guides,
 an API reference for the public surface (the core namespace and the
 domain namespaces, generated from the docstrings) and the technical
 method chapters — every numerical method with its literature source.
@@ -160,7 +185,7 @@ Security-relevant findings take a private route — see
 
 ## Development
 
-Magnelio is being built in an AI-assisted workflow ("vibe coding"):
+Magnelio is being built in an AI-assisted workflow ("agentic coding"):
 the code is written in collaboration with LLM coding agents, with
 method selection, validation targets and reviews set by the author.
 Every numerical method is anchored to published literature in the

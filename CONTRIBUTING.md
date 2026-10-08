@@ -52,15 +52,23 @@ skip on their own without a CUDA device.  `pre-commit install` sets up
 the ruff hooks locally (same rules, pinned in
 `.pre-commit-config.yaml`).
 
-Two repository-specific gates:
+Repository-specific gates:
 
 ```bash
 python validation/tools/check_dd_references.py   # DD anchors resolve
 python validation/tools/check_api_surface.py     # public surface unchanged
+python validation/tools/check_public_hygiene.py  # public content is safe to ship
+python validation/tools/check_imports.py         # script imports resolve
 ```
 
 ## Conventions
 
+- **Open development work.** [TODO.md](TODO.md) tracks robustness and
+  validation campaigns, investigations, maintenance and deferred improvements.
+  An entry is a work item, not an accepted design or a promised feature.
+  Investigated defects belong in `known-bugs.md`; decisions belong in
+  `design-decisions.md` once a strategy is accepted. `STATUS.md` records
+  the current state rather than duplicating the task list.
 - **Design decisions.**  Architectural and numerical choices are
   recorded in `design-decisions.md` as numbered `DD-` entries — read
   the relevant entries before changing an area, and record new
@@ -72,6 +80,14 @@ python validation/tools/check_api_surface.py     # public surface unchanged
 - **Docstrings.**  NumPy style for the public API; public docstrings
   and error messages carry no `DD-` references (those belong in code
   comments).
+- **Documentation and releases.** User-visible changes need concept and
+  limitation coverage in `docs/methods/` and, for standard workflows, a
+  tutorial or how-to; docstrings alone are insufficient. Record notable
+  changes under `CHANGELOG.md`'s Unreleased section, including documentation.
+  Keep `STATUS.md` current and at most 400 lines; replace obsolete state
+  rather than appending session reports. Every release, including patches,
+  needs a changelog entry and matching versions in `pyproject.toml`,
+  `src/magnelio/_version.py` and `CITATION.cff`.
 - **Script directories.**  `examples/` uses only the public high-level
   API; scripts that need internals go to `validation/` (anchored by a
   DD entry that names them) or `benchmarks/`.
