@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Upgrading geometry construction &#8212; Magnelio Documentation</title>
+    <title>Upgrading to 0.9: geometry construction &#8212; Magnelio Documentation</title>
   
   
   
@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
 
-    <script src="_static/documentation_options.js?v=33440781"></script>
+    <script src="_static/documentation_options.js?v=02904782"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/sg-tags.js?v=d80f6fa4"></script>
@@ -60,7 +60,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Upgrading from 0.7.x" href="migration-0.8.html" />
-    <link rel="prev" title="API naming migration" href="migration-api-naming.html" />
+    <link rel="prev" title="Upgrading to 0.9: API naming" href="migration-api-naming.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -189,14 +189,14 @@
                     
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="migration-api-naming.html">
-    API naming migration
+    Upgrading to 0.9: API naming
   </a>
 </li>
 
 
 <li class=" current active">
   <a class="nav-link dropdown-item nav-internal" href="#" aria-current="page">
-    Upgrading geometry construction
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -401,14 +401,14 @@
 
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="migration-api-naming.html">
-    API naming migration
+    Upgrading to 0.9: API naming
   </a>
 </li>
 
 
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#" aria-current="page">
-    Upgrading geometry construction
+    Upgrading to 0.9: geometry construction
   </a>
 </li>
 
@@ -574,7 +574,7 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Upgrading geometry construction</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Upgrading to 0.9: geometry construction</span></li>
   </ul>
 </nav>
 </div>
@@ -591,13 +591,14 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="upgrading-geometry-construction">
-<h1>Upgrading geometry construction<a class="headerlink" href="#upgrading-geometry-construction" title="Link to this heading">#</a></h1>
-<p>The development geometry API replaces standalone <code class="docutils literal notranslate"><span class="pre">Face</span></code> polygons and
-<code class="docutils literal notranslate"><span class="pre">Curve.covered()</span></code> with <code class="docutils literal notranslate"><span class="pre">Profile</span></code> factories. This change will require a minor
-release; it is not part of the published 0.8 releases. All coordinates in a
+  <section class="tex2jax_ignore mathjax_ignore" id="upgrading-to-0-9-geometry-construction">
+<h1>Upgrading to 0.9: geometry construction<a class="headerlink" href="#upgrading-to-0-9-geometry-construction" title="Link to this heading">#</a></h1>
+<p>Magnelio 0.9 replaces standalone <code class="docutils literal notranslate"><span class="pre">Face</span></code> polygons and
+<code class="docutils literal notranslate"><span class="pre">Curve.covered()</span></code> with <code class="docutils literal notranslate"><span class="pre">Profile</span></code> factories. All coordinates in a
 polygon are now three-dimensional world coordinates, and profiles can carry
 holes directly.</p>
+<p>For the other API changes in this release, see
+<a class="reference internal" href="migration-api-naming.html"><span class="std std-doc">Upgrading API naming</span></a>.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Previous construction</p></th>
@@ -781,7 +782,7 @@ orientation. Tutorial 14 executes the oblique coax bend to the domain plane.</p>
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">API naming migration</p>
+        <p class="prev-next-title">Upgrading to 0.9: API naming</p>
       </div>
     </a>
     <a class="right-next"

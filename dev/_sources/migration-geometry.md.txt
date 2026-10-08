@@ -1,10 +1,12 @@
-# Upgrading geometry construction
+# Upgrading to 0.9: geometry construction
 
-The development geometry API replaces standalone `Face` polygons and
-`Curve.covered()` with `Profile` factories. This change will require a minor
-release; it is not part of the published 0.8 releases. All coordinates in a
+Magnelio 0.9 replaces standalone `Face` polygons and
+`Curve.covered()` with `Profile` factories. All coordinates in a
 polygon are now three-dimensional world coordinates, and profiles can carry
 holes directly.
+
+For the other API changes in this release, see
+[Upgrading API naming](migration-api-naming.md).
 
 | Previous construction | Current construction |
 | --- | --- |
