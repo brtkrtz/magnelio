@@ -24164,6 +24164,24 @@ pre-existing imports in an archived test-health snapshot; active scripts resolve
 No new full EM suite or model simulation is claimed for this policy-only change.
 Record: `investigations/near-tangent-hesr-impact/opt-in-tests.log` (internal dossier).
 
+**Section endpoint aliases (2026-10-08).** The release CI rejects the
+filleted-cylinder reference under pythonocc/OCCT 8.0.1. Under local 7.9.0,
+the same cut succeeds only at conditioning 4/64; direct 1/16 cuts exhibit
+the same spurious single-endpoint crossing. Repeated periodic pcurve
+intersections and closing-edge refinement attach multiple, slightly differing
+parameters of the same CAD edge to one endpoint. Ranking every parameter
+cluster independently incorrectly counts these aliases as additional crossings.
+Within each face/edge, connected parameter clusters sharing an endpoint are
+now one crossing before ordinal matching across faces. This is topological
+identity, not a wider distance or parameter tolerance. Shared-node solving,
+CAD-edge tolerance tubes, curve/surface residuals and reciprocal closure remain
+unchanged. The analytic fillet area is checked directly at all four fixed
+conditioning choices, plus repeated router calls; a closed-circle reference
+checks duplicated endpoint tags. All 52 section tests and the independent
+320-rectangle material certificate pass under 7.9.0. CI-version validation and
+full-suite results are tracked in `investigations/release-0.9.0/`
+(internal record).
+
 **Problem.** The stored cylinder/bore fixture loses material on two distinct
 routes. The Boolean section collapses before polygon assembly; lifted facet
 crossings do not reach a trim boundary. The historical reference omitted

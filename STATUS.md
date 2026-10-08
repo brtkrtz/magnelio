@@ -1,31 +1,16 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-10-08.*  **Released v0.8.2** (2026-09-09): **DD-270**
-the Poynting vector as a derived view of any recorded field (`poynting()`,
-`"S"` in the component vocabulary), **DD-271** three more readings of an
-S-matrix (`plot_balance` / `plot_smith` / `plot_polar`), **DD-272**
-`result.extrapolate()`, which continues a truncated record by its own poles,
-and **DD-273** the surface current `J_s = n × H`, read out of the wall-loss
-booking (`Mesh.pec_surface` removed with it — never read by anything).
-**Released v0.8.1** (2026-09-08): **DD-269** — a discrete port or lumped element follows an arbitrary path
-(oblique, bent, or a curve) instead of an axis-parallel pair of
-terminals, through the same canonical rasteriser thin wires already use;
-its polarity now follows the declared direction (a behaviour change
-judged to reach no user, hence a patch).  **KB-047** opened:
-`integrate_E` drops the imaginary part of a complex frame.
-**Released v0.8.0** (2026-09-08; a minor under the Cargo reading — every
-complex frequency-domain field is the conjugate of what 0.7 returned,
-`docs/migration-0.8.md`): **DD-268** one phasor convention for the library,
-**DD-267** the phase of a picture is ωt, **DD-262…266** the ParaView export
-on request and the 3D viewer after the review.
-**Released v0.7.0** (2026-09-06; the field monitors' dictionary API is
-gone, `docs/migration-0.7.md`): **DD-259/260/261** — monitors keep the
-grid quantities and derive every view at access time (store schema 3.0),
-energy and flux are identities on a recording, fields in the volume of
-the 3D viewer; **DD-257** (CPU kernels 1.2× faster, bit-identical);
-**DD-256** (a thin wire on a thin sheet).  Before it: **v0.6.0**
-(2026-09-05, `Project.runs` hands out `Run` objects, DD-249…255) and **v0.5.0–v0.5.2** (2026-09-02…04, the API grammar, DD-224…248) — migration guides
-`docs/migration-0.5.md` … `docs/migration-0.8.md`.
+*Last updated: 2026-10-08.*  **Released v0.8.2** (2026-09-09).
+Previous release details and migrations are recorded in `CHANGELOG.md`.
+
+The 0.9.0 release is held pending CAD-section CI acceptance. Endpoint-tag
+aliases are corrected on `fix/cad-ci-section`: repeated tags on one face/edge
+endpoint no longer rank as spurious additional crossings (DD-287 follow-up).
+All 52 local section tests and the 320-rectangle material certificate pass
+with unchanged area, residual and boundary-tube limits. The exact fillet
+reference passes directly at conditioning 1/4/16/64. Full local and CI
+acceptance are pending; the CI CAD packages are not available in the local
+channel snapshot. Records: `investigations/release-0.9.0/` (internal record).
 
 Open: KB-038 and KB-043 on the default fast route; opt-in DD-287 mitigates KB-043 and resolves KB-053, available on `main`; KB-023/DD-286 and KB-052 are committed on the preceding `fix/cpml-staggered-profiles` branch (CPML commit `117c810f`). Latest full-suite acceptance: **4446 passed / 0 failed / 13 skipped**, 4459 collected, 1150.80 s, 132 warnings (2026-10-06), including the near-tangent section fix and existing integral, CAD, CPML and watch checks. Suite defaults pin NumPy/double; explicit single/GPU tests override them. Skipped paths are not verified. KB-047/DD-284 and KB-046/DD-285 are committed and backed up to private as `80eff88c` and `9fe0bdec`. Evidence: `investigations/near-tangent-meshing-performance/hesr/final-repair-tests.log` (internal record).
 All seven initial failures are addressed: scattering-only S access again raises the correct ValueError without opening unrelated records; cap/resume and incident-field fixtures follow resolved pulse timing; the dipole radiation gate uses negligible net current to avoid a static-tail DFT boundary term (independent tail completion agrees to 2e-8); the band gate preserves its original doubled-record ceilings and adds a short-record bound rather than rejecting an improved floor through its ratio. That test-health fix left production field/source/monitor arithmetic unchanged; DD-286 subsequently corrects CPML sampling. KB-038 remains open. Fresh offline HTML docs (gallery execution disabled), Ruff, format, hygiene, DD and API gates pass. Evidence: `investigations/test-health-2026-10-05/MEASUREMENTS.md`, `DERIVATION.md` and `final-pytest.log` (internal records).
