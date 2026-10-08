@@ -117,7 +117,8 @@ Ordinary cuts keep the existing fast paths.
 
 An imprint or construction edge embedded inside a CAD face does not create
 another material boundary. Sections follow the bounding wires, including
-holes and periodic seams. Boundary curves can differ slightly at a shared
+holes and periodic seams. Repeated parameter-domain representations of one
+seam endpoint identify one boundary crossing. Boundary curves can differ slightly at a shared
 vertex within the stored CAD tolerances; the interval classification uses
 another transversal direction when a test ray cannot give a consistent
 closed-boundary count. Trimmed periodic surfaces retain their native support

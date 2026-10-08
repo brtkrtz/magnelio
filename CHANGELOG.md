@@ -11,6 +11,10 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Repeated parameter-domain tags on one CAD section endpoint no longer
+  create spurious edge crossings and reject valid filleted sections.
+  Geometric residual, shared-edge tolerance and contour-closure checks remain.
+
 - Nearly tangent cuts through curved and trimmed CAD faces retain thin
   material regions in conformal meshes. Shared-edge contour assembly preserves
   holes, while unresolved sensitive cuts report an error instead of silently

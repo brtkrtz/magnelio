@@ -382,7 +382,8 @@ def test_swept_torus_sector_preserves_partial_major_domain(near_end):
     assert area(polygons) == pytest.approx(expected, rel=5e-5)
 
 
-def test_fillet_measurement_precision_retry_preserves_exact_cut():
+@pytest.mark.parametrize("conditioning", [1, 4, 16, 64])
+def test_fillet_measurement_precision_retry_preserves_exact_cut(conditioning):
     radius, fillet, height = 0.059, 0.0005, 0.0115
     body = geo.Cylinder(axis="z", height=height, radius=radius, inner_radius=0.046, material="pec")
     body = body.filleted(near=(0, radius, 0), radius=fillet).rotated(axis="z", angle_deg=22.5)
@@ -401,6 +402,9 @@ def test_fillet_measurement_precision_retry_preserves_exact_cut():
         return height - lower
 
     expected = 2 * quad(material_height, 0, half_width, epsabs=1e-14, epsrel=1e-10)[0]
+    engine = _SurfaceSectionEngine(shape, 1, conditioning)
+    direct, _, _ = engine.section(0, position, budget=4e-7)
+    assert sum(polygon_area(p - p[0]) for p in direct) == pytest.approx(expected, rel=1e-4)
     router = _SurfaceRouter(shape, 1, 4e-6)
     polygons = router.section(0, position)
     assert polygons is not None
@@ -409,7 +413,8 @@ def test_fillet_measurement_precision_retry_preserves_exact_cut():
     assert sum(polygon_area(p - p[0]) for p in repeat) == pytest.approx(expected, rel=1e-4)
 
 
-def test_refined_parts_retain_support_curve_cycle():
+@pytest.mark.parametrize("duplicate_tags", [False, True])
+def test_refined_parts_retain_support_curve_cycle(duplicate_tags):
     circle = Geom_Circle(gp_Ax2(gp_Pnt(), gp_Dir(0, 0, 1)), 1.0)
     intervals = [(0.0, np.pi), (np.pi, 2 * np.pi)]
     records = []
@@ -429,6 +434,10 @@ def test_refined_parts_retain_support_curve_cycle():
                 "support_range": (0.0, 2 * np.pi),
             }
         )
+    if duplicate_tags:
+        # Multiple pcurve projections still identify the same physical node.
+        records[0]["edge_tags"][1].extend([(0, 4e-14), (0, 4e-14)])
+        records[1]["edge_tags"][0].extend([(0, -3e-14), (0, -3e-14)])
     partners, _ = _endpoint_partners(records)
     segments = [_tessellate(record["curve"], *record["params"], 1e-5) for record in records]
     for endpoint, partner in enumerate(partners):

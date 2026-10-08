@@ -459,6 +459,8 @@ points, with limiting physical normals at declared/within-tolerance poles.
 Regular cuts retain the existing analytic/facet/kernel paths. Sensitive
 curves are measured on a centred power-of-two-scaled copy, trimmed in face
 parameter domains and joined through shared CAD edges, with outward winding.
+Within each face/edge, parameter clusters sharing one section endpoint are
+aliases of one crossing before ordinal matching across adjacent faces.
 Numerical curve/surface residuals consume at most 1/4096 of the section's
 chord budget above a relative double-rounding floor. Native spline-aware
 tessellation retains the common chord budget. Coplanar face-region and

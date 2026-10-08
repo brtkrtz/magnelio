@@ -1032,7 +1032,28 @@ def _endpoint_partners(records):
                 unique.append((param, {endpoint}))
             else:
                 unique[-1][1].add(endpoint)
-        for rank, (_, endpoints) in enumerate(unique):
+        # Periodic pcurve copies and closing-edge refinement can tag one
+        # endpoint repeatedly with slightly different parameters. These are
+        # aliases of one crossing, not additional crossings to rank.
+        roots = list(range(len(unique)))
+
+        def root(index):
+            while roots[index] != index:
+                roots[index] = roots[roots[index]]
+                index = roots[index]
+            return index
+
+        aliases = {}
+        for index, (_, endpoints) in enumerate(unique):
+            for endpoint in endpoints:
+                if endpoint in aliases:
+                    roots[root(index)] = root(aliases[endpoint])
+                else:
+                    aliases[endpoint] = index
+        crossings = {}
+        for index, (_, endpoints) in enumerate(unique):
+            crossings.setdefault(root(index), set()).update(endpoints)
+        for rank, endpoints in enumerate(crossings.values()):
             groups[edge_id, rank].update(endpoints)
     candidates = defaultdict(set)
     shared_edges = {}
