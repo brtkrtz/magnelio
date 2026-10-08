@@ -262,28 +262,28 @@ below is that rule.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 16 x 24 x 27 = 10,368 cells | 3.2 MiB
-      16   10368    1.9 s     0.0427     0.0115  
+      16   10368    1.8 s     0.0427     0.0115  
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
       mesh | 21 x 27 x 42 = 23,814 cells | 7.2 MiB
-      24   23814    4.0 s     0.0463     0.0121  
+      24   23814    3.9 s     0.0463     0.0121  
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
       mesh | 25 x 31 x 54 = 41,850 cells | 13 MiB
-      32   41850    7.8 s     0.0158     0.0037  ok
+      32   41850    7.5 s     0.0158     0.0037  ok
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
       mesh | 32 x 38 x 81 = 98,496 cells | 29 MiB
-      48   98496   28.5 s     0.0169     0.0045  ok
+      48   98496   27.6 s     0.0169     0.0045  ok
     converged: mnpw 32 (ΔS < 0.02 on this rung and the next)
 
 
@@ -462,14 +462,14 @@ of a curved cavity.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 30 x 30 x 9 = 8,100 cells | 2.6 MiB
-      32    11.4487     8100    2.3 s   0.51 %   -0.22 %  ok
+      32    11.4487     8100    2.2 s   0.51 %   -0.22 %  ok
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
       mesh | 45 x 45 x 14 = 28,350 cells | 8.7 MiB
-      48    11.4889    28350   41.1 s   0.35 %   +0.13 %  ok
+      48    11.4889    28350   40.9 s   0.35 %   +0.13 %  ok
     converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
 
 
@@ -593,7 +593,7 @@ under :doc:`../methods/meshing-conformal`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 28.543 seconds)
+   **Total running time of the script:** (1 minutes 26.917 seconds)
 
 
 .. _sphx_glr_download_howto_plot_mesh_convergence.py:

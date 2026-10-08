@@ -232,7 +232,7 @@ cap the cell size at 1/16 of the plate spacing.
       mesh | conformal cells
       mesh | conformal cells | done (7.1 s)
       mesh | PEC masks
-      mesh | 32 x 16 x 64 = 32,768 cells | 10.0 MiB (24.5 s total)
+      mesh | 32 x 16 x 64 = 32,768 cells | 10.0 MiB (24.6 s total)
     grid: 32 x 16 x 64 cells
 
 
@@ -514,7 +514,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 35.439 seconds)
+   **Total running time of the script:** (0 minutes 36.026 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:
