@@ -75,7 +75,9 @@ def test_coordinates_are_modal(tmp_path):
     )
     points = [obj.at for _, obj in layer.objects]
 
-    assert points == pytest.approx([(1 * MM, 1 * MM), (2 * MM, 1 * MM), (2 * MM, 3 * MM)])
+    expected = [(1 * MM, 1 * MM), (2 * MM, 1 * MM), (2 * MM, 3 * MM)]
+    for point, target in zip(points, expected, strict=True):
+        assert point == pytest.approx(target)
 
 
 def test_incremental_coordinates_are_refused(tmp_path):
