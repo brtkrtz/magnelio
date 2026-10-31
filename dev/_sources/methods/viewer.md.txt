@@ -339,11 +339,18 @@ core dependency.  The notebook widget additionally needs the trame
 stack:
 
 ```bash
-pip install "magnelio[jupyter]"
+python -m pip install "magnelio[jupyter]"
 # or, with conda-forge:
 conda install trame trame-vtk trame-vuetify nest-asyncio2
-pip install trame-pyvista
+python -m pip install trame-pyvista
 ```
+
+Install the extra in the same Python environment as the notebook kernel.
+It includes `trame-pyvista`, the standalone integration used by recent
+PyVista releases. Its Python import name is `trame_pyvista`; the package
+and extra names above still use hyphens and `magnelio[jupyter]`.
+Restart the kernel after installing or upgrading viewer packages so that
+the next view uses the new Python modules and browser assets.
 
 Without it an inline view falls back to a static image; a browser target
 falls back to the native VTK window.  The viewer says so in either case.
@@ -359,6 +366,8 @@ loop, so the view appears once they have run.  Nothing is nested into
 the running loop, so *Run All* works like running the cells one by one;
 `nest-asyncio2` is what PyVista's own first-call path uses and is not
 needed for Magnelio's viewer.
+The first call supplies the complete scene and toolbar; it does not need
+to be repeated or switched to server rendering to initialise the view.
 
 ## Limitations
 
