@@ -407,7 +407,7 @@ plane.
 
 `ThinWire(curve, radius)` embeds a conductor thinner than a cell as a
 PEC edge chain with corrected surrounding material matrices
-(`mesh/thin_wire.py`).  The model is the classic thin-wire
+(`mesh/_thin_wire.py`).  The model is the classic thin-wire
 sub-cell treatment of Holland and Simpson {cite}`hollandsimpson1981`,
 realised in the paired $(m, 1/m)$ encoding of
 Noda and Yokoyama {cite}`nodayokoyama2002`:

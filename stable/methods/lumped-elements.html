@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
@@ -37,12 +37,12 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
+    <script src="../_static/documentation_options.js?v=9dc39874"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -51,7 +51,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/lumped-elements';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -64,6 +64,7 @@
     <link rel="next" title="Dispersive and lossy materials" href="dispersive-materials.html" />
     <link rel="prev" title="Waveguide ports and S-parameter extraction" href="ports.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
   
@@ -631,7 +632,7 @@ i = \frac{v_{\text{src}} - v_{\text{hist}} - v_{\text{total}}}
          {r_{\text{eq}} + \Sigma\beta},
 \]</div>
 <p>which is unconditionally stable at the unchanged CFL limit
-(<code class="docutils literal notranslate"><span class="pre">ports/discrete/operator.py</span></code>, DD-030/DD-075).  Embedding lumped
+(<code class="docutils literal notranslate"><span class="pre">ports/_lumped/operator.py</span></code>).  Embedding lumped
 resistive sources and loads into the FDTD grid in this
 field-circuit-consistent way is the established <em>lumped-element FDTD</em>
 technique of Sui et al. <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id31" title="Wenquan Sui, Douglas A. Christensen, and Carl H. Durney. Extending the two-dimensional FDTD method to hybrid electromagnetic systems with active and passive lumped elements. IEEE Transactions on Microwave Theory and Techniques, 40(4):724–730, 1992. doi:10.1109/22.127522.">28</a>]</span> and Piket-May,
@@ -642,8 +643,7 @@ formulation follows the in-repo derivation).</p>
 <p>A discrete port is not an exact line termination: its residual
 reflection and phase offset depend on the grid at the gap, the gap
 geometry and position, and the chosen <span class="math notranslate nohighlight">\(Z_0\)</span>.  The how-to guide
-<em>Lumped ports: investigations</em> measures both against a waveguide port
-(DD-189) instead of relying on rules of thumb, and the <em>Lumped port
+<em>Lumped ports: investigations</em> measures both against a waveguide port instead of relying on rules of thumb, and the <em>Lumped port
 tuning</em> pages package the measurement as a per-line-type pre-flight
 tool.</p>
 </section>
@@ -651,7 +651,7 @@ tool.</p>
 <h2>Trapezoidal RLC companion models<a class="headerlink" href="#trapezoidal-rlc-companion-models" title="Link to this heading">#</a></h2>
 <p>General series/parallel RLC two-terminal elements are reduced per time
 step to a Thévenin companion <span class="math notranslate nohighlight">\((R_{\text{eq}}, V_{\text{hist}})\)</span> using
-the trapezoidal rule (<code class="docutils literal notranslate"><span class="pre">circuit/companion.py</span></code>, DD-077):</p>
+the trapezoidal rule (<code class="docutils literal notranslate"><span class="pre">circuit/companion.py</span></code>):</p>
 <div class="math notranslate nohighlight">
 \[
 \text{inductor: } R_{\text{eq}} = 2L/\Delta t, \qquad
@@ -665,13 +665,12 @@ and Lin <span class="bibtex-citation" id="id4">[<a class="reference internal" hr
 chosen (over backward Euler) for its energy conservation on L/C —
 matching the non-dissipative leapfrog interior — which is a standard
 argument in both circuit and field simulation.</p>
-<p><code class="docutils literal notranslate"><span class="pre">LumpedElementOperator</span></code> (DD-079) unifies the discrete port and
+<p><code class="docutils literal notranslate"><span class="pre">LumpedElementOperator</span></code> unifies the discrete port and
 general RLC elements under one operator; the classic resistive port
 is the special case <code class="docutils literal notranslate"><span class="pre">SeriesRLC(R=Z0)</span></code> (bit-identical by
 construction).</p>
 <p>Excitation units follow the power-wave convention: a user waveform in
-<span class="math notranslate nohighlight">\(\sqrt{\mathrm W}\)</span> is realised as <span class="math notranslate nohighlight">\(v_{\text{src}} = 2\sqrt{Z_0}\,a(t)\)</span>
-(DD-078), consistent with Kurokawa power waves
+<span class="math notranslate nohighlight">\(\sqrt{\mathrm W}\)</span> is realised as <span class="math notranslate nohighlight">\(v_{\text{src}} = 2\sqrt{Z_0}\,a(t)\)</span>, consistent with Kurokawa power waves
 <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id20" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">27</a>]</span>.</p>
 </section>
 <section id="lumped-devices-on-symmetry-planes">
@@ -857,8 +856,8 @@ in the conductor, not a path laid on top of it.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -891,7 +890,7 @@ in the conductor, not a path laid on top of it.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>

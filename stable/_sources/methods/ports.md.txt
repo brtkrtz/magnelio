@@ -15,19 +15,19 @@ problem $\mathbf K \hat e = \omega_c^2 \mathbf M \hat e$ with
 $\mathbf K = \mathbf C_{2D}^{\mathsf T}\,\mathrm{diag}(M_\mu^{-1})\,
 \mathbf C_{2D}$, where $\mathbf C_{2D}$ is the *row/column slice of
 the 3D FIT curl matrix* at the port plane
-(`ports/modal/curl_curl_2d.py`).  Discretising the 2D problem in the
+(`ports/_modal/curl_curl_2d.py`).  Discretising the 2D problem in the
 same metric as the 3D problem (rather than with an independent 2D
 solver) is the property that makes the discrete mode an exact
 eigenvector of the 3D-restricted transversal operator; the FIT
 curl-curl eigenformulation itself is standard
 {cite}`weiland1996,clemensweiland2001`.  The TM
 variant is the exact restriction of the same operator, an in-house
-derivation (DD-055).
+derivation.
 
 ### TEM / quasi-TEM Laplace solver
 
 Multi-conductor cross-sections use the electrostatic route
-(`ports/modal/tem_laplace.py`): a 2D FIT Laplace problem
+(`ports/_modal/tem_laplace.py`): a 2D FIT Laplace problem
 $\nabla\!\cdot(\varepsilon\nabla\varphi_k) = 0$ per signal conductor
 with unit-potential boundary conditions, $\hat e_k = -\nabla\varphi_k$,
 line capacitance from the discrete energy.  For inhomogeneous filling
@@ -38,7 +38,7 @@ theory as found in the microwave-engineering literature
 {cite}`pozar2012,collin1991` (the specific
 formulation is textbook material; no single originating paper is
 claimed).  The line-impedance definition used for TEM modes is the
-power–current impedance $Z_{PI}$ (DD-025); the coexistence of
+power–current impedance $Z_{PI}$; the coexistence of
 $Z_{PI}$, $Z_{PV}$, $Z_{VI}$ definitions is classical waveguide
 theory {cite}`marcuvitz1951,pozar2012`.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
@@ -85,21 +85,21 @@ $\varepsilon_{\text{eff}}$ and are orthogonal in the port's
 capacitance-corrected mass.  A single signal conductor is the $1
 \times 1$ case of the same construction.  For a homogeneous filling
 the pencil degenerates (all patterns share one speed), and the
-channels are the capacitance-matrix eigenmodes of DD-066 instead.
+channels are the capacitance-matrix eigenmodes instead.
 
 ### Mode classification and multi-mode merge
 
 TE/TM and TEM/QTEM branches are merged into one unified multi-mode
 port; degenerate multi-TEM subspaces are orthonormalised through a
 Gram eigenbasis, and multi-channel projections use the dual basis
-(Gram inverse) (DD-066).  Standard linear algebra.
+(Gram inverse).  Standard linear algebra.
 
 ### Ports in absorbing walls
 
 A radiating structure is fed through a guide that reaches the domain
 wall: the neck of a horn, a coax entering the box.  The wall is
 absorbing, the port sits in the guide's cross-section on it (a window
-port with ``corners``), and two things make that consistent (DD-198).
+port with ``corners``), and two things make that consistent.
 The absorber is switched off in the columns behind the window over its
 whole depth, so the mode injected at the port travels a uniform,
 lossless guide into the domain and the reflected wave meets the port's
@@ -117,7 +117,8 @@ far-field monitor knows about such feeds (far-field chapter).
 
 ## Exact discrete transparent boundary conditions (DTBC)
 
-### Scalar DTBC on uniform feed lines (TEM: DD-054, TE/TM: DD-055)
+(scalar-dtbc-on-uniform-feed-lines-tem-dd-054-te-tm-dd-055)=
+### Scalar DTBC on uniform feed lines (TEM and TE/TM)
 
 On a uniform feed line, the longitudinal dynamics of one modal
 amplitude in the FIT leapfrog is exactly a 1D leapfrog **discrete
@@ -131,11 +132,11 @@ $\hat u_{K+1} = \lambda(z)\,\hat u_K$, realised in time domain as a
 causal convolution over the boundary history whose kernel is computed
 by contour integration and auto-extended past the run length, making
 the boundary **exact (reflection-free to machine precision) within any
-finite run** (`ports/modal/dtbc.py`).  Incident waves are prescribed
+finite run** (`ports/_modal/dtbc.py`).  Incident waves are prescribed
 at the ghost plane through the same kernel.
 
 This construction was derived in-house for the FIT/FDTD leapfrog
-lattice (derivation in DD-054/DD-055; measured port floors −124 to
+lattice (in-house derivation; measured port floors −124 to
 −250 dB).  The general concept of *exact discrete
 transparent boundary conditions* — deriving the boundary kernel from
 the discretised interior scheme rather than discretising a continuous
@@ -149,7 +150,8 @@ systems are constructed by Rowley and Colonius
 FIT/FDTD waveguide ports; that application appears to be original to
 Magnelio.
 
-### CW true-mode ports for inhomogeneous lines (DD-056)
+(cw-true-mode-ports-for-inhomogeneous-lines-dd-056)=
+### CW true-mode ports for inhomogeneous lines
 
 For inhomogeneous cross-sections measured at a single frequency, the
 true discrete modes of the z-uniform feed section are computed as
@@ -161,7 +163,7 @@ $$
 $$
 
 built from the *production* system matrices at the port
-(`ports/modal/zeta_pencil.py`), solved by sparse shift-invert ARPACK
+(`ports/_modal/zeta_pencil.py`), solved by sparse shift-invert ARPACK
 on the linearised pencil.  Quadratic eigenvalue problems and their
 linearisations are covered by the survey of Tisseur and Meerbergen
 {cite}`tisseurmeerbergen2001`; computing waveguide
@@ -172,14 +174,15 @@ The frequency-local closed-form $(r_\text{eff}, q_\text{eff})$ chain
 fit (Hellmann–Feynman derivative matching so the scalar DTBC is exact
 at the drive frequency) is an in-house derivation.
 
-### Galerkin band-subspace DTBC for broadband runs (DD-057)
+(galerkin-band-subspace-dtbc-for-broadband-runs-dd-057)=
+### Galerkin band-subspace DTBC for broadband runs
 
 For pulsed broadband runs on inhomogeneous lines, the tracked
 mode-family traces over the band span a low-rank W-orthonormal
 subspace; the exterior half-line is Galerkin-projected onto it,
 inheriting the palindromic symmetry that makes the projected lattice
 lossless, and is closed by the exact small-system DTBC kernel
-(`ports/modal/band_dtbc.py`).  Projection-based model order reduction
+(`ports/_modal/band_dtbc.py`).  Projection-based model order reduction
 (Galerkin projection onto an SVD/POD subspace) is standard numerical
 practice {cite}`benner2015` (survey reference; the
 specific passive-by-construction boundary closure is in-house).
@@ -189,13 +192,13 @@ specific passive-by-construction boundary closure is in-house).
 Analytical-path modes (and, with explicit specs, inhomogeneous QTEM) are
 terminated by a **first-order Mur absorbing boundary applied per mode
 in modal-coefficient space**, with the per-mode phase velocity at the
-mode-calculation frequency (`ports/modal/operator.py`).  The ABC is
+mode-calculation frequency (`ports/_modal/operator.py`).  The ABC is
 Mur's {cite}`mur1981`.  The design of the
 modal port
 operator as a co-simulated 1D termination per mode follows the
 modal-absorbing-port literature, specifically Luo and Chen
-{cite}`luochen2007` (DD-047; higher-order Mur/Higdon
-variants were evaluated and rejected, DD-069).
+{cite}`luochen2007` (higher-order Mur/Higdon
+variants were evaluated and rejected).
 
 ### Which termination a channel gets, and how to see it
 
@@ -210,7 +213,7 @@ cells.  A channel that fails either one keeps working — it falls back
 to the modal Mur absorber — but its reflection floor rises from below
 $-100$ dB to the order of $-30$ dB.
 
-The threshold of the first gate is a *reflection budget* (DD-229).
+The threshold of the first gate is a *reflection budget*.
 The termination is exact for the weighted-mean chain, so a spread
 $\delta$ across the cross-section leaves a residual mismatch, and that
 mismatch was measured through the production solver on three fixtures
@@ -238,7 +241,7 @@ Failing a gate is two different events, and the reporting separates
 them.  A cross-section that was *meant* to be uniform and missed the
 budget is the surprising one, and it warns: the port, the channel, the
 measured deviation, and where the mesh can explain it, the conformal
-ladder behind the offending faces (DD-228).  A cross-section that is
+ladder behind the offending faces.  A cross-section that is
 genuinely inhomogeneous is not a defect; a quasi-TEM line deviates at
 the material-contrast level and never qualified for the scalar chain
 in the first place, so the answer there is a different port model, not
@@ -345,7 +348,7 @@ and the conformal cross-section inherits it.
 
 Port excitation prescribes the incident modal amplitude at the ghost
 plane (DTBC branch) or injects on the port plane (Mur branch); V/I are
-recorded on a single co-located plane (DD-041).  Time signals are
+recorded on a single co-located plane.  Time signals are
 smooth pulses (Gaussian and derived shapes, `signals/waveforms.py`) —
 standard practice
 {cite}`taflovehagness2005`.
@@ -409,10 +412,10 @@ it does not depend on the rank.
 S-parameters are computed as **power waves** with $\sqrt{\mathrm W}$
 normalisation, $a,b = (V \pm Z_0 I)/(2\sqrt{Z_0})$ per mode, from the
 recorded modal V/I after Fourier transform
-(`postprocessing/modal_sparameters.py`, DD-042/DD-078).  The
+(`post/modal_sparameters.py`).  The
 power-wave formalism is Kurokawa's {cite}`kurokawa1965`.
 Two discrete-exactness refinements are
-in-house (DD-063, DD-056): the a/b split de-staggers E and H
+in-house: the a/b split de-staggers E and H
 with the exact discrete factor $\lambda^{1/2}(z)$ and uses the exact
 discrete wave impedance of the leapfrog chain (rather than the
 continuum $Z_0$), which removes the $O(\beta\Delta z)$ staggering
@@ -420,7 +423,7 @@ leak; and CW measurements solve the exact 2×2 phasor system per port
 (lock-in demodulation of incident and reflected discrete waves).
 
 Excitation amplitudes are pinned to physical units at the source
-(C = 1 convention, DD-085), so recorded V/I and monitor fields are in
+(C = 1 convention), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.
 
 ### Reading an S-matrix
@@ -566,7 +569,8 @@ with the length of the march, because a short run has barely filled the
 cavity yet.  Truncation error is not monotone in run length, so "run
 longer and see whether it moves" is a poor convergence test here.
 
-### Band ports: one decomposition per frequency (DD-235)
+(band-ports-one-decomposition-per-frequency-dd-235)=
+### Band ports: one decomposition per frequency
 
 A band-subspace port does not record modal amplitudes whose
 incident/outgoing split is fixed once for the run.  Its recording
@@ -630,7 +634,8 @@ the port genuinely carries fewer channels than its cross-section
 carries modes, and only a rebuilt port or a shorter axis fixes that.
 What it does is keep a model error from reading as a result.
 
-### Reference-plane shift (de-embedding, DD-187)
+(reference-plane-shift-de-embedding-dd-187)=
+### Reference-plane shift (de-embedding)
 
 `result.deembed({"port1": d})` returns the S-matrix referenced at
 planes shifted a distance $d$ from the port planes into the domain
@@ -662,7 +667,7 @@ microstrip (0.8 mm $\varepsilon_r = 4.3$, 25 nodes per wavelength) the
 S21 phase left after de-embedding the whole line is 0.3°, 1.5° and
 1.8° at 5, 10 and 15 GHz, against $-1.5$°, $-11$° and $-30$° with the
 quasi-static $\gamma$ the fallback used to take; what remains is the
-drive port's launch residue (DD-239), not the line.  Only a channel
+drive port's launch residue, not the line.  Only a channel
 with neither — a feed section that is not a uniform chain behind the
 port — falls back to the mode's continuum $\gamma(\omega)$, for a
 quasi-TEM mode the frequency-flat quasi-static one, which leaves the
@@ -673,7 +678,8 @@ length.  Below its cut-off a channel's factor grows as $e^{+\alpha
 d}$; those bins keep the diagnostic character the raw values have.
 Lumped ports carry no feed line and cannot be de-embedded.
 
-### Reference impedance, dispersion and renormalisation (DD-244)
+(reference-impedance-dispersion-and-renormalisation-dd-244)=
+### Reference impedance, dispersion and renormalisation
 
 Every S-parameter is a ratio of power waves, and power waves are
 defined against a reference impedance.  Magnelio measures each
@@ -739,7 +745,8 @@ port's actual reference in the header, and a reader that renormalises
 on `R` would be wrong.  `to_skrf` carries per-port, per-frequency
 references in the network's `z0` and needs no such choice.
 
-### Converging the port cross-section (DD-244)
+(converging-the-port-cross-section-dd-244)=
+### Converging the port cross-section
 
 The 2D mode problem is the port-plane slice of the 3D operator, so its
 parameters carry the discretisation of the user's mesh, and converging
@@ -766,7 +773,8 @@ a renormalisation to 50 Ω would attribute to the device; the remaining
 ladder rerun in a four times larger box converges at 52.7 Ω) and the
 hand formula's thickness correction.
 
-### What a Touchstone export covers (DD-184)
+(what-a-touchstone-export-covers-dd-184)=
+### What a Touchstone export covers
 
 `to_touchstone()` and `to_skrf()` export the square sub-matrix over
 the **excited** channels: one Touchstone port per channel, so a

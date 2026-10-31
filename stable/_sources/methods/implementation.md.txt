@@ -6,23 +6,24 @@ citation apparatus of the previous chapters.
 
 ## Kernel dispatch and backends
 
-Three-tier kernel dispatch (DD-032): NumPy reference kernels,
+Three-tier kernel dispatch: NumPy reference kernels,
 Numba-JIT CPU stencil kernels {cite}`numba2015`, and
 CUDA kernels via CuPy {cite}`cupy2017` with
-`backend="auto"` GPU selection (DD-090).  GPU step orchestration
+`backend="auto"` GPU selection.  GPU step orchestration
 (device-resident recorder staging, fused port-plane transfers, CUDA
-graph capture of the device phases, DD-092) is performance
-engineering.  S-parameters on GPU are gated bit-exact against CPU.
+graph capture of the device phases) is performance
+engineering. Dedicated CPU/GPU comparisons cover selected workloads;
+general device-port coverage remains limited.
 The CPU kernels sweep the grid plane by plane, updating all three
 field components per plane so every field array streams from memory
 once per half-step; at production mesh sizes they move about 85 % of
-the bandwidth a STREAM triad reaches from Numba on the same CPU
-(DD-257), which is the practical ceiling short of temporal blocking.
+the bandwidth a STREAM triad reaches from Numba on the same CPU,
+which is the practical ceiling short of temporal blocking.
 
 ## Precision
 
-Selectable single/double precision for the whole time-loop state
-(DD-094).  The switch, its cost and its accuracy consequences have
+Selectable single/double precision for the whole time-loop state.
+The switch, its cost and its accuracy consequences have
 their own chapter — see [numerical precision](precision.md).
 
 ## Parallel mesh building

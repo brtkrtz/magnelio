@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
@@ -37,19 +37,19 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
+    <script src="../_static/documentation_options.js?v=9dc39874"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'howto/plot_watch_running_simulation';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -62,6 +62,7 @@
     <link rel="next" title="Measure voltage along a field path" href="../howto-voltage-integrals.html" />
     <link rel="prev" title="Striplines as pickups and kickers: beam-coupling figures from S-parameter runs" href="plot_stripline_pickup_kicker.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
   
@@ -690,7 +691,7 @@ stop criterion watches.</p>
 </span><span class="n">job</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>running   planned
-running   step      1     0.0 dB below peak
+running   step    901     0.0 dB below peak
 done      step   1601   -93.5 dB below peak
 </pre></div>
 </div>
@@ -710,19 +711,19 @@ callable <code class="docutils literal notranslate"><span class="pre">draw(proje
 own axis limits.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-io sphx-glr-backref-type-py-method reference internal" href="../api/io.html#magnelio.io.Project.follow" title="magnelio.io.Project.follow"><span class="n">proj</span><span class="o">.</span><span class="n">follow</span></a><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmp_411fxq4/wr90
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmpzz5imwr_/wr90
   analysis   AnalysisScatteringTD
   status     done
-  last call  finished 2026-10-08 12:02:15 in 1.0 s
-  created    2026-10-08 12:02:15
+  last call  finished 2026-10-31 14:00:17 in 1.1 s
+  created    2026-10-31 14:00:16
   runs       1
 run       excited  state  steps    energy  elapsed  stop reason
 ────────  ───────  ─────  ─────  ────────  ───────  ───────────
-p1_mode0  p1:0     done    1601  -93.5 dB    0.2 s  energy
+p1_mode0  p1:0     done    1601  -93.5 dB    0.3 s  energy
 </pre></div>
 </div>
 <div class="output_subarea output_html rendered_html output_result">
-<table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmp_411fxq4/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-10-08 12:02:15 in 1.0 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-10-08 12:02:15</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1601</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-93.5 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>0.2 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
+<table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmpzz5imwr_/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-10-31 14:00:17 in 1.1 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-10-31 14:00:16</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1601</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-93.5 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>0.3 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
 </div>
 <br />
 <br /></section>
@@ -793,7 +794,7 @@ what the table lists and what <code class="docutils literal notranslate"><span c
 longer exists on this host is not <code class="docutils literal notranslate"><span class="pre">running</span></code>; <code class="docutils literal notranslate"><span class="pre">watch</span></code> ends on it
 the way it ends on <code class="docutils literal notranslate"><span class="pre">done</span></code>.</p></li>
 </ul>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 1.154 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 1.388 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-watch-running-simulation-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/e41c5cfe5adcfc45c6c07c2549e9e50a/plot_watch_running_simulation.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_watch_running_simulation.ipynb</span></code></a></p>
@@ -888,8 +889,8 @@ the way it ends on <code class="docutils literal notranslate"><span class="pre">
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -922,7 +923,7 @@ the way it ends on <code class="docutils literal notranslate"><span class="pre">
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
@@ -37,12 +37,12 @@
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=39bb1c6d"></script>
+    <script src="../_static/documentation_options.js?v=9dc39874"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -51,7 +51,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'methods/eigenmode-analysis';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.22.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -64,6 +64,7 @@
     <link rel="next" title="Numerical precision" href="precision.html" />
     <link rel="prev" title="Far-field computation" href="far-field.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
   
@@ -628,18 +629,18 @@ eigenvalue problem</p>
 \mathbf C^{\mathsf T} \mathbf M_\mu^{-1} \mathbf C\, \hat e
  = \omega^2\, \mathbf M_\varepsilon\, \hat e
 \]</div>
-<p>(<code class="docutils literal notranslate"><span class="pre">solver/eigenmode_3d.py</span></code>), the standard FIT eigenformulation
+<p>(<code class="docutils literal notranslate"><span class="pre">solver/_eigenmode_3d.py</span></code>), the standard FIT eigenformulation
 <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id6" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>, <a class="reference internal" href="../bibliography.html#id7" title="Markus Clemens and Thomas Weiland. Discrete electromagnetism with the finite integration technique. Progress In Electromagnetics Research (PIER), 32:65–87, 2001. doi:10.2528/PIER00080103.">3</a>]</span>.  PEC walls
 are imposed by degree-of-freedom elimination, which also removes the
-gradient null space for all-PEC cavities (DD-009); PMC walls are the
-natural boundary condition (DD-065).</p>
+gradient null space for all-PEC cavities; PMC walls are the
+natural boundary condition.</p>
 <p>The default backend is <strong>ARPACK shift-invert Lanczos</strong>
 (<code class="docutils literal notranslate"><span class="pre">scipy.sparse.linalg.eigsh</span></code> with a SuperLU factorisation of
-<span class="math notranslate nohighlight">\(A - \sigma B\)</span>; DD-007), i.e. the implicitly restarted Arnoldi/Lanczos
+<span class="math notranslate nohighlight">\(A - \sigma B\)</span>), i.e. the implicitly restarted Arnoldi/Lanczos
 method of Lehoucq, Sorensen and Yang <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id59" title="Richard B. Lehoucq, Danny C. Sorensen, and Chao Yang. ARPACK Users' Guide: Solution of Large-Scale Eigenvalue Problems with Implicitly Restarted Arnoldi Methods. SIAM, 1998. doi:10.1137/1.9780898719628.">56</a>]</span>.
 The shift <span class="math notranslate nohighlight">\(\sigma\)</span> is auto-estimated
-boundary-condition-aware, an in-house heuristic (DD-010).</p>
-<p>Two experimental backends exist (DD-033):</p>
+boundary-condition-aware, an in-house heuristic.</p>
+<p>Two experimental backends exist:</p>
 <ul class="simple">
 <li><p>a CHOLMOD Cholesky path with <strong>tree-cotree gauging</strong> to eliminate
 the gradient null space; tree-cotree/spanning-tree gauging of
@@ -786,8 +787,8 @@ matrices and the ARPACK backend with the 3D solver.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -820,7 +821,7 @@ matrices and the ARPACK backend with the 3D solver.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>

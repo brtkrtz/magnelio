@@ -517,7 +517,7 @@ is independent and can be used in a thin-wire declaration.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f3a1704d290>
+    <matplotlib.legend.Legend object at 0x7fbd87b6e550>
 
 
 
@@ -629,7 +629,7 @@ One neutral surface bends both layers, including their straight ends.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f3a15525290>
+    <matplotlib.legend.Legend object at 0x7fbd84eceb50>
 
 
 
@@ -818,7 +818,7 @@ before they become meshable material volumes.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.790 seconds)
+   **Total running time of the script:** (0 minutes 2.247 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_14_profile_geometry.py:
