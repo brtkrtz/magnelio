@@ -21,11 +21,12 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
   `investigations/notebook-viewer-startup/` (internal dossier).
 - Versions agree at **0.9.1** in `pyproject.toml`, `_version.py` and
   `CITATION.cff`. All available release tags have changelog entries.
-- Latest full local release acceptance: **4436 passed / 0 failed /
+- Last full local suite (v0.9.0): **4436 passed / 0 failed /
   39 skipped**, 4475 collected, 1087.00 s, 130 warnings. Minimum available
   RAM was 11.22 GiB. Tests default to NumPy/double; explicit single/GPU
   settings override them. Skipped paths are not verified.
-- Accepted GitHub CI under pythonocc/OCCT 8.0.1: **3943 passed / 5 skipped**.
+- Hotfix source CI under pythonocc/OCCT 8.0.1: **3958 passed / 5 skipped**
+  (354.58 s, 76 warnings); no failures. Release delivery is tracked above.
   Local CAD acceptance uses 7.9.0. Hosted documentation at the accepted
   source commit passed with the full gallery executed; offline release HTML
   also passed. Exact-tag deployment and conda-forge publication have separate
