@@ -76,12 +76,15 @@ the interactive viewer support in the same environment as Magnelio:
 
 ```bash
 conda install -c conda-forge jupyterlab
-pip install "magnelio[jupyter]"
-jupyter lab
+python -m pip install "magnelio[jupyter]"
+python -m jupyter lab
 ```
 
 The `jupyter` extra supplies viewer widgets; JupyterLab itself is installed
-separately. Tutorials can be downloaded as notebooks from the documentation.
+separately. It includes `trame-pyvista`, the standalone PyVista viewer
+integration. After installing or upgrading viewer packages in an existing
+notebook environment, restart its kernel before calling `model.show()`.
+Tutorials can be downloaded as notebooks from the documentation.
 
 There is a PyPI package as well:
 

@@ -461,12 +461,10 @@ class TestToolbar:
         that is gone — and the cached viewer would drive the dead one:
         its toolbar renders and no button does anything.
         """
-        pv_ui = pytest.importorskip("pyvista.trame.ui")
-        if not hasattr(pv_ui, "_VIEWERS"):
-            pv_ui = pytest.importorskip("trame_pyvista.ui")
         pytest.importorskip("trame.app")
         from trame.app import get_server  # noqa: PLC0415
 
+        pv_ui = plot_3d._trame_module("ui")
         model, _ = coax
         server = get_server("magnelio_test_viewer", client_type="vue3")
         first = model.show(render_mode="none")
@@ -514,11 +512,9 @@ class TestToolbar:
 
     def test_own_toolbar_replaces_pyvistas(self, coax):
         pytest.importorskip("trame.app")
-        from pyvista.trame import ui as pv_ui  # noqa: PLC0415
         from trame.app import get_server  # noqa: PLC0415
 
-        if not hasattr(pv_ui, "_VIEWERS"):
-            pv_ui = pytest.importorskip("trame_pyvista.ui")
+        pv_ui = plot_3d._trame_module("ui")
 
         model, _mesh = coax
         pl = model.show(render_mode="none")
@@ -603,6 +599,52 @@ def _controls_scene(model, mesh=None):
         camera="iso",
         off_screen=True,
     )
+
+
+def test_startup_controls_do_not_cache_a_viewer_on_the_default_server():
+    from trame.app import get_server  # noqa: PLC0415
+
+    model = mio.GeometryModel()
+    model.add(geo.Brick(origin=(0, 0, 0), size=(1e-3, 2e-3, 3e-3), material="pec"))
+    scene = _controls_scene(model)
+    server = get_server(f"mio_startup_{id(scene)}", client_type="vue3")
+    ui = plot_3d._trame_module("ui")
+    try:
+        plot_3d._attach_controls(scene, server)
+        # The first server start flushes all controls before show() installs
+        # its viewer. Refresh must not create a default-server viewer here.
+        server.state.ready()
+        assert scene.plotter._id_name not in ui._VIEWERS
+        plot_3d._install_viewer(scene.plotter, server, "client")
+        viewer = ui._VIEWERS[scene.plotter._id_name]
+        assert viewer.server is server
+        assert type(viewer).__name__ == "MagnelioViewer"
+    finally:
+        ui._VIEWERS.pop(scene.plotter._id_name, None)
+        scene.plotter.close()
+
+
+@pytest.mark.parametrize("foreign_server", [False, True])
+def test_install_replaces_a_stock_or_foreign_server_viewer(foreign_server):
+    from trame.app import get_server  # noqa: PLC0415
+
+    pl = pv.Plotter(off_screen=True)
+    server = get_server(f"mio_repair_{id(pl)}", client_type="vue3")
+    other = get_server(f"mio_foreign_{id(pl)}", client_type="vue3") if foreign_server else server
+    ui = plot_3d._trame_module("ui")
+    try:
+        ui.get_viewer(pl, server=other)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", pv.PyVistaDeprecationWarning)
+            plot_3d._install_viewer(pl, server, "client")
+        viewer = ui._VIEWERS[pl._id_name]
+        assert viewer.server is server
+        assert type(viewer).__name__ == "MagnelioViewer"
+        plot_3d._install_viewer(pl, server, "client")
+        assert ui._VIEWERS[pl._id_name] is viewer
+    finally:
+        ui._VIEWERS.pop(pl._id_name, None)
+        pl.close()
 
 
 def test_boundary_and_symmetry_overlays_start_hidden(features_model):

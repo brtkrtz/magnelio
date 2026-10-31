@@ -9,6 +9,15 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Fixed
+
+- The first notebook viewer no longer opens a blank scene with a JavaScript
+  interactor error. Startup control updates preserve the viewer's server
+  association, and existing views on the wrong server are replaced.
+- Geometry and field viewers use the standalone `trame_pyvista` imports
+  when installed, avoiding PyVista 0.49 deprecation warnings while retaining
+  compatibility with older PyVista installations.
+
 ### Changed
 
 - The README recommends JupyterLab for interactive modelling and

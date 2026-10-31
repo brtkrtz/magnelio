@@ -19417,6 +19417,19 @@ an N-section loft with end tangents.
 
 ## DD-251 — a notebook is an in-place stream, the viewer starts its server on the running loop, and the tile-skip line is gone
 
+**Compatibility correction (2026-10-30, KB-055).** The first startup state
+flush runs control callbacks before the deferred view exists. A refresh
+must only update an existing viewer associated with the same plotter and
+server: calling get_viewer without the server created a stock viewer on
+trame's default server and poisoned the per-plotter cache. The subsequent
+show then reused it, leaving the connected server without renderer state.
+Installation now also replaces stock/foreign-server cache entries and
+publishes the new view's state before attaching its iframe. Prefer
+trame_pyvista imports when available, with bundled pyvista.trame fallback
+only when the standalone package is absent. Regression tests live in
+`tests/unit/test_plot_3d.py`; browser/kernel probes and package versions in
+`investigations/notebook-viewer-startup/` (internal dossier).
+
 **Date:** 2026-09-04. **Status:** Implemented and gated.
 **Amends:** [[DD-246]], [[DD-190]]. **Record:** `userscripts/rect2circ.ipynb`
 (internal developer worksheet); `investigations/viewer3d/runall_repro.py`

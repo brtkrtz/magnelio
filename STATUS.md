@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-10-08.* **Release v0.9.0**, commit `5e26a849`.
+*Last updated: 2026-10-30.* **Release v0.9.0**, commit `5e26a849`.
 Geometry construction and owned topology, explicit API names, viewer/result
 controls, memory planning, selective stored-result access, finite-drive
 stopping and CPML/CAD/integral fixes are released. Upgrade instructions:
@@ -12,6 +12,12 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
 
 ## Release and validation
 
+- Unreleased notebook-viewer correction: **109 geometry/field viewer tests
+  pass** with both PyVista 0.48.4 (bundled trame) and 0.49.2 with
+  trame-pyvista 0.2.3. Three queued Jupyter-kernel views open on their first
+  call; browser checks confirm visible geometry and mouse interaction in
+  client/server/trame modes without JavaScript errors. Evidence:
+  `investigations/notebook-viewer-startup/` (internal dossier).
 - Versions agree at **0.9.0** in `pyproject.toml`, `_version.py` and
   `CITATION.cff`. All 23 local release tags have changelog entries.
 - Latest full local release acceptance: **4436 passed / 0 failed /
@@ -171,6 +177,11 @@ measured floors. A port reflection floor is not a global 3D accuracy claim.
   execution disabled (prose-only edits). The README runs on CPU in single
   and double precision; its Touchstone export warns about varying modal
   references as documented. All 287 DD headings and their numbers survive.
+- Notebook startup refresh only updates an existing viewer on the matching
+  server; stock/foreign-server cache entries are replaced (KB-055, DD-251).
+  Viewer imports prefer standalone trame_pyvista with bundled fallback.
+  README/viewer requirements clarify installation in the kernel environment
+  and restarting the kernel after package upgrades.
 - README installation recommends JupyterLab and the viewer extra; it uses
   agentic-coding terminology and describes current geometry/viewer workflows.
 - Documentation historically needed follow-ups (including symmetry and two
@@ -182,9 +193,9 @@ measured floors. A port reflection floor is not a global 3D accuracy claim.
   statuses are corrected; historical planning is marked explicitly. Solver
   arithmetic and numerical acceptance thresholds are unchanged.
 - Two editorial passes condense 25 completed/refined DDs and 28 resolved KBs.
-  The logs retain all 287 DD and 54 KB headings, their references and essential
+  The logs retain all 287 DD and 55 KB headings, their references and essential
   conclusions/limits; KB-038/043 remain byte-identical in the final pass.
-  Current lengths: DD log 22,186, KB log 795. Detailed staging remains in
+  Detailed staging remains in
   release history and `investigations/housekeeping-completion-2026-10-08/`
   (internal record); no historical line cap or automatic truncation is imposed.
 - Pre-commit/CI enforce STATUS <=400, three matching version fields and dated

@@ -26,6 +26,7 @@ widget blank.
 
 from __future__ import annotations
 
+import importlib
 import math
 import os
 import threading
@@ -147,6 +148,16 @@ def _loop_is_running() -> bool:
 _PENDING_VIEWS: set = set()
 
 
+def _trame_module(name: str):
+    """Use the standalone integration, or PyVista's bundled legacy version."""
+    try:
+        return importlib.import_module(f"trame_pyvista.{name}")
+    except ModuleNotFoundError as exc:
+        if exc.name != "trame_pyvista":
+            raise
+        return importlib.import_module(f"pyvista.trame.{name}")
+
+
 def _launch_viewer_server():
     """Schedule the trame server's start on the running loop; return the server.
 
@@ -160,10 +171,9 @@ def _launch_viewer_server():
     the server pending or running and changes nothing.
     """
     import pyvista as pv  # noqa: PLC0415
-    from pyvista.trame.jupyter import launch_server  # noqa: PLC0415
 
     backend = "jupyter" if pv.global_theme.trame.jupyter_extension_enabled else "aiohttp"
-    return launch_server(wslink_backend=backend)
+    return _trame_module("jupyter").launch_server(wslink_backend=backend)
 
 
 def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
@@ -214,6 +224,9 @@ def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
                 view = pl.show(
                     jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs, return_viewer=True
                 )
+            # This task runs after trame's startup state flush. Publish the
+            # new layout's controls and full scene before its iframe connects.
+            server.state.flush()
             if not isinstance(view, Widget):
                 # An IFrame (server-proxy setups) is plain HTML.
                 view = HTML(view._repr_html_())
@@ -356,11 +369,15 @@ def _viewer_class():
     the state the scene is built in, and adds a pop-out and a help
     button.  Built lazily: the trame stack is an optional extra.
     """
-    from pyvista.trame.ui.vuetify3 import Viewer, button, checkbox  # noqa: PLC0415
     from trame.widgets import html  # noqa: PLC0415
     from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
+    ui = _trame_module("ui.vuetify3")
+    Viewer, button, checkbox = ui.Viewer, ui.button, ui.checkbox
+
     class MagnelioViewer(Viewer):
+        _magnelio_viewer = True
+
         def on_grid_visibility_change(self, **kwargs):
             """PyVista's ruler, with the axis titles carrying the display unit."""
             unit = getattr(self.plotter, "_magnelio_unit", None)
@@ -485,19 +502,21 @@ def _install_viewer(pl, server, mode: str | None) -> None:
     its index and reads as the same plotter.  The cached viewer then
     still drives the dead one — its toolbar renders and none of its
     buttons do anything.  An entry that does not belong to *pl* is
-    therefore replaced, not honoured.
+    therefore replaced, not honoured. Stock viewers and viewers bound
+    to another server are also replaced before the layout is built.
     """
     try:
-        from pyvista.trame import ui as pv_ui  # noqa: PLC0415
+        pv_ui = _trame_module("ui")
     except ImportError:  # pragma: no cover - the [jupyter] extra is absent
         return
-    if not hasattr(pv_ui, "_VIEWERS"):
-        # PyVista 0.49's compatibility module exports get_viewer, but the
-        # cache it reads lives in the extracted trame-pyvista package.
-        from trame_pyvista import ui as pv_ui  # noqa: PLC0415
 
     existing = pv_ui._VIEWERS.get(pl._id_name)
-    if existing is not None and getattr(existing, "plotter", None) is pl:
+    if (
+        existing is not None
+        and getattr(existing, "plotter", None) is pl
+        and existing.server is server
+        and getattr(existing, "_magnelio_viewer", False)
+    ):
         return
     viewer_class = _viewer_class()
     pv_ui._VIEWERS[pl._id_name] = viewer_class(
@@ -1350,16 +1369,12 @@ def _attach_controls(scene: _Scene, server) -> Any:
 
     def refresh() -> None:
         _apply_cut(scene)
-        from pyvista.trame.ui import get_viewer  # noqa: PLC0415
-
-        # PyVista announces every toggle of ``suppress_rendering`` the
-        # client-side view makes around a push; nothing to act on.
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Suppress rendering")
-            try:
-                get_viewer(scene.plotter).update()
-            except Exception:  # pragma: no cover - viewer not shown yet
-                pass
+        # Startup flushes the control state before the viewer exists. A
+        # get_viewer() lookup here would create a stock viewer on trame's
+        # default server and poison PyVista's per-plotter cache.
+        viewer = _trame_module("ui")._VIEWERS.get(scene.plotter._id_name)
+        if viewer is not None and viewer.plotter is scene.plotter and viewer.server is server:
+            viewer.update()
 
     field_items = None
     if scene.field_view is not None:
@@ -1795,9 +1810,10 @@ def _resolve_mode(
 
 def _browser_url(server, plotter) -> str:
     """Return the URL of *plotter* on a running trame *server*."""
-    from pyvista.trame.jupyter import build_url  # noqa: PLC0415
 
-    return build_url(server, ui=plotter._id_name, host="localhost", protocol="http")
+    return _trame_module("jupyter").build_url(
+        server, ui=plotter._id_name, host="localhost", protocol="http"
+    )
 
 
 def _display_in_browser(scene: _Scene, mode: str) -> bool:
@@ -1807,8 +1823,9 @@ def _display_in_browser(scene: _Scene, mode: str) -> bool:
     global _BROWSER_SERVER_THREAD
 
     try:
-        from pyvista.trame.jupyter import initialize  # noqa: PLC0415
         from trame.app import get_server  # noqa: PLC0415
+
+        initialize = _trame_module("jupyter").initialize
     except ImportError:
         warnings.warn(
             "the browser viewer needs the jupyter extra; opening the native VTK viewer instead",
@@ -1826,6 +1843,7 @@ def _display_in_browser(scene: _Scene, mode: str) -> bool:
         add_menu_items=menu_items,
         default_server_rendering=mode != "client",
     )
+    server.state.flush()
 
     def open_page(**_):
         if not webbrowser.open(_browser_url(server, scene.plotter)):
@@ -1893,6 +1911,8 @@ def _display(scene: _Scene, mode: str | None, target: str):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Suppress rendering")
             pl.show(jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs)
+        if server is not None:
+            server.state.flush()
         return None
 
     if target == "inline":  # static
