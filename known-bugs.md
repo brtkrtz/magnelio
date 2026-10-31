@@ -16,8 +16,20 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-10-08: KB-038 and KB-043 on the default fast route.**
+**Two entries are open as of 2026-10-30: KB-038 and KB-043 on the default fast route.**
 KB-043 has an explicit opt-in mitigation; other entries are resolved.
+
+## KB-055: ~~First notebook viewer has no current renderer~~ — Resolved (DD-251, 2026-10-30)
+
+The startup control-state flush created a stock viewer on trame's default
+server before the deferred notebook view was installed. The per-plotter cache
+then reused that viewer on the wrong server, producing a blank scene and
+`Can not forward events without a current renderer on the interactor.`
+Refresh now only updates an existing viewer on the matching server;
+installation replaces stock or foreign-server entries. Standalone
+`trame_pyvista` imports also avoid the PyVista 0.49 compatibility warnings.
+Regression tests cover startup ordering and cache repair. Reproduction and
+browser/kernel evidence: `investigations/notebook-viewer-startup/` (internal dossier).
 
 ## KB-054: ~~Repeated edge tags reject a valid filleted CAD section~~ — Resolved (DD-287, 2026-10-08)
 
