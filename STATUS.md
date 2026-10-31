@@ -1,6 +1,7 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-10-30.* **Release v0.9.0**, commit `5e26a849`.
+*Last updated: 2026-10-31.* **Version v0.9.1**, notebook-viewer hotfix
+on top of release v0.9.0 (`5e26a849`).
 Geometry construction and owned topology, explicit API names, viewer/result
 controls, memory planning, selective stored-result access, finite-drive
 stopping and CPML/CAD/integral fixes are released. Upgrade instructions:
@@ -12,14 +13,14 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
 
 ## Release and validation
 
-- Unreleased notebook-viewer correction: **109 geometry/field viewer tests
+- Version 0.9.1 notebook-viewer correction: **109 geometry/field viewer tests
   pass** with both PyVista 0.48.4 (bundled trame) and 0.49.2 with
   trame-pyvista 0.2.3. Three queued Jupyter-kernel views open on their first
   call; browser checks confirm visible geometry and mouse interaction in
   client/server/trame modes without JavaScript errors. Evidence:
   `investigations/notebook-viewer-startup/` (internal dossier).
-- Versions agree at **0.9.0** in `pyproject.toml`, `_version.py` and
-  `CITATION.cff`. All 23 local release tags have changelog entries.
+- Versions agree at **0.9.1** in `pyproject.toml`, `_version.py` and
+  `CITATION.cff`. All available release tags have changelog entries.
 - Latest full local release acceptance: **4436 passed / 0 failed /
   39 skipped**, 4475 collected, 1087.00 s, 130 warnings. Minimum available
   RAM was 11.22 GiB. Tests default to NumPy/double; explicit single/GPU
@@ -29,10 +30,10 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
   source commit passed with the full gallery executed; offline release HTML
   also passed. Exact-tag deployment and conda-forge publication have separate
   delivery status, recorded in the release checklist.
-- GitHub release and PyPI publication are recorded as complete. The
-  conda-forge 0.9.0 update is submitted as feedstock PR #20; its last recorded
-  state is open with successful build/lint. Do not infer package availability
-  from the submitted recipe. Docs channels are `/stable/` (tag) and `/dev/`
+- Version 0.9.1 publication, artifact checks and the feedstock update are
+  tracked in `investigations/release-0.9.1/RELEASE-CHECKLIST.md` (internal
+  record). The 0.9.0 GitHub/PyPI release is complete and its conda-forge
+  feedstock PR #20 is merged. Docs channels are `/stable/` (tag) and `/dev/`
   (main), with deployment gated by `DEPLOY_DOCS` or manual dispatch.
 - Evidence: `investigations/release-0.9.0/RELEASE-CHECKLIST.md` and
   `cad-fixed-full-pytest.log` (internal records).

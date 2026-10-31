@@ -9,6 +9,8 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-31
+
 ### Fixed
 
 - The first notebook viewer no longer opens a blank scene with a JavaScript
