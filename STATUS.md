@@ -31,11 +31,15 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
   source commit passed with the full gallery executed; offline release HTML
   also passed. Exact-tag deployment and conda-forge publication have separate
   delivery status, recorded in the release checklist.
-- Version 0.9.1 publication, artifact checks and the feedstock update are
-  tracked in `investigations/release-0.9.1/RELEASE-CHECKLIST.md` (internal
-  record). The 0.9.0 GitHub/PyPI release is complete and its conda-forge
-  feedstock PR #20 is merged. Docs channels are `/stable/` (tag) and `/dev/`
-  (main), with deployment gated by `DEPLOY_DOCS` or manual dispatch.
+- GitHub/PyPI 0.9.1 is published, with both artifact hashes independently
+  verified. The conda-forge feedstock PR #21 is merged; its main build/upload
+  succeeds and Anaconda lists the 0.9.1 package under the main label. Public
+  channel propagation checks are tracked in
+  `investigations/release-0.9.1/RELEASE-CHECKLIST.md` (internal record).
+- Exact-tag/main documentation and Pages deployments pass. The live
+  `/stable/` and `/dev/` viewer pages contain the updated standalone-package
+  and kernel-restart instructions. Deployment is gated by `DEPLOY_DOCS`
+  or manual dispatch.
 - Evidence: `investigations/release-0.9.0/RELEASE-CHECKLIST.md` and
   `cad-fixed-full-pytest.log` (internal records).
 - Current maintenance checks: Ruff, format, public hygiene, DD-reference,
