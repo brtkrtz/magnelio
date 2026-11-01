@@ -158,7 +158,7 @@ stop criterion watches.
  .. code-block:: none
 
     running   planned
-    running   step    701     0.0 dB below peak
+    running   step    301     0.0 dB below peak
     done      step   1601   -93.5 dB below peak
 
 
@@ -197,22 +197,22 @@ own axis limits.
 
  .. code-block:: none
 
-    Project /tmp/tmpavxqaytz/wr90
+    Project /tmp/tmpi5y4c2c9/wr90
       analysis   AnalysisScatteringTD
       status     done
-      last call  finished 2026-10-31 14:08:10 in 1.4 s
-      created    2026-10-31 14:08:09
+      last call  finished 2026-11-01 14:01:17 in 0.8 s
+      created    2026-11-01 14:01:16
       runs       1
     run       excited  state  steps    energy  elapsed  stop reason
     ────────  ───────  ─────  ─────  ────────  ───────  ───────────
-    p1_mode0  p1:0     done    1601  -93.5 dB    0.4 s  energy
+    p1_mode0  p1:0     done    1601  -93.5 dB    0.2 s  energy
 
 
 
 .. raw:: html
 
     <div class="output_subarea output_html rendered_html output_result">
-    <table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmpavxqaytz/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-10-31 14:08:10 in 1.4 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-10-31 14:08:09</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1601</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-93.5 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>0.4 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
+    <table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmpi5y4c2c9/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-11-01 14:01:17 in 0.8 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-11-01 14:01:16</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1601</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-93.5 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>0.2 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
     </div>
     <br />
     <br />
@@ -263,8 +263,8 @@ In a notebook, ``proj.watch_panel()`` returns a widget: the run table
 above the energy plot, refreshed from a background thread every few
 seconds until the project is finished.  Leave it as the last
 expression of a cell; the cell returns at once and the panel keeps
-moving while you work in other cells.  It needs the ``jupyter``
-extra (``pip install 'magnelio[jupyter]'``), and it is a notebook
+moving while you work in other cells. It needs ``ipywidgets``, supplied
+by the Conda package or the ``magnelio[jupyter]`` Pip extra. It is a notebook
 thing — this page is built without one, so the panel is only
 assembled here, not shown.
 
@@ -345,7 +345,7 @@ What to remember
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.633 seconds)
+   **Total running time of the script:** (0 minutes 0.991 seconds)
 
 
 .. _sphx_glr_download_howto_plot_watch_running_simulation.py:
