@@ -60,37 +60,46 @@ large grids stay tractable.
 
 Magnelio requires Python 3.11 or newer.
 
-From conda-forge, which is the route to take:
+Install [Miniconda](https://www.anaconda.com/docs/getting-started/miniconda)
+if Conda is not available yet. Current Conda includes a fast dependency
+solver; no separate package manager is needed.
 
-```bash
-conda install -c conda-forge magnelio
-```
-
-New to conda-forge?  [miniforge3](https://github.com/conda-forge/miniforge)
-is the smallest way in; the Anaconda distribution works too.
-
-**JupyterLab is recommended for modelling and post-processing.** Notebooks
+**Notebooks are recommended for modelling and post-processing.** They
 let you build and inspect geometry interactively, run simulations, and
-explore stored results and plots in the same document. Install it and
-the interactive viewer support in the same environment as Magnelio:
+explore stored results and plots in the same document. Create a fresh
+environment from conda-forge and start Notebook:
 
 ```bash
-conda install -c conda-forge jupyterlab
-python -m pip install "magnelio[jupyter]"
-python -m jupyter lab
+conda create -n mioenv --override-channels -c conda-forge magnelio notebook
+conda activate mioenv
+python -m notebook
 ```
 
-The `jupyter` extra supplies viewer widgets; JupyterLab itself is installed
-separately. It includes `trame-pyvista`, the standalone PyVista viewer
-integration. After installing or upgrading viewer packages in an existing
-notebook environment, restart its kernel before calling `model.show()`.
-Tutorials can be downloaded as notebooks from the documentation.
+The Conda package includes geometry support and the interactive viewer,
+including its notebook widgets. No Pip step or manual widget setup is
+needed with the dependency-complete package. Select the Python kernel
+from `mioenv` when creating a notebook. Tutorials can be downloaded as
+notebooks from the documentation.
+
+> **Conda packaging update pending:** viewer dependencies are being added
+> in build 1 of Magnelio 0.9.1. Until that build is published, append
+> `trame-pyvista ipywidgets anywidget nest-asyncio2` to the `conda create` command.
+> The published 0.9.1 build 0 does not yet include them automatically.
+
+Prefer JupyterLab? Replace `notebook` with `jupyterlab` in the create
+command and start it with `python -m jupyterlab`. For scripts without a
+notebook application, omit `notebook`; `model.show()` opens the viewer
+in a browser. After upgrading viewer packages, restart the notebook
+server and kernel.
 
 There is a PyPI package as well:
 
 ```bash
-pip install magnelio
+python -m pip install "magnelio[jupyter]"
 ```
+
+The published 0.9.1 PyPI extra also needs `anywidget`; its automatic
+dependency declaration is prepared for the next source release.
 
 It installs and imports, but it cannot build a mesh from geometry: that
 needs pythonocc-core (the Python bindings to Open CASCADE Technology),
@@ -98,8 +107,10 @@ which is published on conda-forge only.  Since a model normally starts
 with geometry, pip is the fallback for environments where conda is not
 an option, not the way to run simulations.
 
-The CUDA backend is optional on either route: install a `cupy` matching
-your CUDA version and `backend="auto"` picks the GPU up.  Without it the
+The CUDA backend is optional. With Conda, install `cupy` and a
+`cuda-version` supported by your driver, for example
+`conda install --override-channels -c conda-forge cupy "cuda-version=12"`.
+Then `backend="auto"` picks the GPU up. Without it the
 solver runs on the CPU.
 
 Time stepping defaults to single precision. Use `precision="double"` on

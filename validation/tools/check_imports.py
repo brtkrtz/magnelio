@@ -10,7 +10,7 @@ rename.
 
 Usage::
 
-    ~/.local/share/mamba/envs/mio/bin/python \\
+    conda run --no-capture-output -n mio python \\
         validation/tools/check_imports.py [extra_dir ...]
 
 Exit status 0 when every import resolves, 1 otherwise.

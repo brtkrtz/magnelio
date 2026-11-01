@@ -18,7 +18,7 @@ Audited tree: ``src/``, ``tests/``, ``validation/``, ``examples/``,
 
 Usage::
 
-    ~/.local/share/mamba/envs/mio/bin/python validation/tools/check_dd_references.py
+    conda run --no-capture-output -n mio python validation/tools/check_dd_references.py
 
 Exit status 0 when every citation resolves, 1 otherwise (unreferenced
 entries alone do not fail the audit).

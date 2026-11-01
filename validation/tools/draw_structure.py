@@ -24,7 +24,7 @@ corrections before it tells the truth: DD-145.
 
 Usage::
 
-    ~/.local/share/mamba/envs/mio/bin/python \\
+    conda run --no-capture-output -n mio python \\
         validation/tools/draw_structure.py packages [--render svg] [--stats]
 
 Without ``--render`` the DOT source goes to stdout, so it can be piped

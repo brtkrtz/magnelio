@@ -12496,7 +12496,9 @@ tutorials only *mention* `model.plot()`).
    displays and returns `None`.  `plots.show_geometry` is the same
    function; `post.plot_3d` is its home.
 
-**Consequences.**  pythreejs and the pythonocc renderer are gone from
+**Consequences.** The optional viewer packaging described below is superseded
+for Conda by DD-288; PyPI retains an optional `jupyter` extra.
+pythreejs and the pythonocc renderer are gone from
 the code path (pythonocc still depends on pythreejs; nothing to
 uninstall).  `pyvista` joins the core dependencies (pure Python, VTK
 was already there); the widget needs the `[jupyter]` extra
@@ -22197,3 +22199,41 @@ Evidence and scripts:
 `IMPLEMENTATION.md`, `final-acceptance-tests.log`, `surface-certificate.log`,
 `scale-certificate.log`, `port-pair-tolerance.log` and
 `full-stress-certificate.log`.
+
+## DD-288 — Complete Conda viewer dependencies and a Conda-only setup
+
+**Date:** 2026-11-01. **Status:** Implemented locally; feedstock publication pending.
+Amends the distribution policy in DD-190 and DD-274.
+
+**Decision/rationale.** The conda-forge `magnelio` package includes
+`trame-pyvista`, `ipywidgets`, `anywidget` and `nest-asyncio2` alongside its existing CAD
+and numerical dependencies. `trame-pyvista` owns the compatible trame stack;
+`ipywidgets` owns the frontend extension dependencies. Users select only the
+notebook application: create an environment with `magnelio notebook` (or
+`magnelio jupyterlab`), activate it, and start the application. A separate
+package-manager installation, Pip dependency step and manual widget setup
+are not part of that workflow. Notebook applications remain optional for
+script users. PyPI retains `magnelio[jupyter]`; its dependency list delegates
+the trame stack to `trame-pyvista` as well.
+
+The feedstock change increments the 0.9.1 build number to 1 without changing
+the upstream source hash. Package tests check viewer imports and the installed
+frontend extension assets and construct an iframe widget: the clean browser
+probe exposed `trame-pyvista` 0.3.0's additional `anywidget` requirement,
+which was not caught by imports alone. Documentation explicitly distinguishes the pending
+build from published build 0 until delivery is authorized and completed.
+
+The development environment and hosted CI/docs use Conda. `environment.yml`
+contains only conda-forge dependencies, including Hatchling and the notebook
+applications, excludes default channels and disables Python user-site imports.
+Pip only links the local checkout with `--no-deps --no-build-isolation` after
+Conda has installed the dependencies. CUDA is opt-in through Conda rather
+than fetched by Pip for every CPU-only development or documentation run.
+Existing local installation directories and historical measurement commands
+are provenance, not an instruction to migrate or delete working environments.
+
+**Validation.** Local package build/tests, clean-environment browser acceptance,
+development-environment solving and repository checks are recorded in
+`investigations/simple-conda-install/` (internal dossier). The numerical
+implementation and public API are unchanged. Hosted workflows and public
+channel availability require their own post-publication checks.

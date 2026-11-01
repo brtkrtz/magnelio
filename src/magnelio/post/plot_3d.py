@@ -2037,9 +2037,9 @@ def show_geometry(
     left) pans, right drag or the wheel zooms, alt + shift + left
     rolls.  The help button lists the same.
 
-    The widget needs the ``trame`` stack (``pip install magnelio[jupyter]``
-    or the conda-forge packages ``trame``, ``trame-vtk``,
-    ``trame-vuetify``).  Without it a browser target falls back to the
+    The Conda package includes the notebook widget dependencies; Pip
+    installations need the ``magnelio[jupyter]`` extra. Without the trame
+    integration a browser target falls back to the
     native VTK window with a warning; an inline target falls back to a
     static image.
 

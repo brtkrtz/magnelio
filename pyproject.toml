@@ -56,11 +56,9 @@ interop = [
 ]
 jupyter = [
     "trame-pyvista>=0.1.5",
-    "trame>=3.5",
-    "trame-vtk>=2.8",
-    "trame-vuetify>=2.4",
     "nest_asyncio2",
     "ipywidgets>=8.0",
+    "anywidget>=0.9",
 ]
 gpu = [
     "cupy-cuda12x>=13.0",

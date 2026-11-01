@@ -24,7 +24,7 @@ Checks (DD-062 invariant style):
       material_id
 
 Run:
-    ~/.local/share/mamba/envs/mio/bin/python validation/fiber_micron_regression.py
+    conda run --no-capture-output -n mio python validation/fiber_micron_regression.py
 """
 
 import math

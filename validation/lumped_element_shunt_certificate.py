@@ -26,7 +26,7 @@ Three gates:
 
 Run from the repository root:
 
-    mamba run --no-capture-output -n mio python \
+    conda run --no-capture-output -n mio python \
         validation/lumped_element_shunt_certificate.py
 """
 

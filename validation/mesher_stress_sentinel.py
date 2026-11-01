@@ -36,7 +36,7 @@ Case families (the session-88/91/92 lessons as permanent regressions):
 * rotated bricks (tilted faces contribute only bbox planes);
 * seeded random brick/cylinder soups with random floors.
 
-Run with: ``mamba run --no-capture-output -n mio python
+Run with: ``conda run --no-capture-output -n mio python
 validation/mesher_stress_sentinel.py [--fast]``.
 Exit code 0 = all invariants hold.
 """

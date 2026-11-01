@@ -67,11 +67,16 @@ jobs:
           ref: ${{ steps.target.outputs.ref }}
       # environment.yml (not pip): the geometry tutorials need
       # pythonocc-core, which exists only on conda-forge.
-      - uses: mamba-org/setup-micromamba@v2
+      - uses: conda-incubator/setup-miniconda@v4
         with:
           environment-file: environment.yml
-          init-shell: bash
-          cache-environment: true
+          activate-environment: mio
+          channels: conda-forge
+          channel-priority: strict
+          conda-remove-defaults: true
+          auto-activate: false
+      - run: python -m pip install --no-deps --no-build-isolation -e .
+        shell: bash -el {0}
       # -d keeps Sphinx's doctree cache out of the HTML output.  Its
       # default location is <outdir>/.doctrees, which is 96 MB of
       # pickles per build — nothing a browser ever asks for, but the

@@ -16,7 +16,7 @@ bonus surfacing.
 
 Run on the CUDA machine (needs a real GPU; this is NOT runnable on a CPU host):
 
-    ~/.local/share/mamba/envs/mio/bin/python benchmarks/precision_kernel_ab.py
+    conda run --no-capture-output -n mio python benchmarks/precision_kernel_ab.py
 
 Note (per project memory): a fresh git worktree has a cold Numba cache — not
 relevant here (pure CuPy), but the CUDA device is invisible to a

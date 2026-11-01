@@ -31,9 +31,26 @@ The geometry stack needs pythonocc-core, which exists only on
 conda-forge, so the development environment is conda-based:
 
 ```bash
-mamba env create -f environment.yml
-mamba activate mio
-pip install -e .[dev]
+conda create -n mio --override-channels -c conda-forge --file environment.yml
+conda activate mio
+python -m pip install --no-deps --no-build-isolation -e .
+```
+
+Conda supplies all runtime, viewer, development and build dependencies.
+The final command only links the local source checkout into the environment;
+it does not download dependencies. The environment includes Notebook and
+JupyterLab and excludes Python packages from the user site directory.
+Current Conda already includes a fast dependency solver; no separate package
+manager is needed.
+Use current Conda for YAML input with `conda create --file`; explicit channel
+selection also avoids contacting Miniconda's default package channels.
+
+The default development environment runs on the CPU. For CUDA development,
+install the optional backend through Conda, choosing a CUDA version supported
+by your driver, for example:
+
+```bash
+conda install --override-channels -c conda-forge cupy "cuda-version=12"
 ```
 
 ## Checks
