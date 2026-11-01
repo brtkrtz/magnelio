@@ -335,24 +335,29 @@ lists the bindings of the widget.
 ## Requirements
 
 The viewer is built on [PyVista](https://docs.pyvista.org), which is a
-core dependency.  The notebook widget additionally needs the trame
-stack:
+core dependency. The Conda package includes the trame integration and
+notebook widgets. Install a notebook application in the same environment:
 
 ```bash
-python -m pip install "magnelio[jupyter]"
-# or, with conda-forge:
-conda install trame trame-vtk trame-vuetify nest-asyncio2
-python -m pip install trame-pyvista
+conda create -n mioenv --override-channels -c conda-forge magnelio notebook
+conda activate mioenv
+python -m notebook
 ```
 
-Install the extra in the same Python environment as the notebook kernel.
-It includes `trame-pyvista`, the standalone integration used by recent
-PyVista releases. Its Python import name is `trame_pyvista`; the package
-and extra names above still use hyphens and `magnelio[jupyter]`.
-Restart the kernel after installing or upgrading viewer packages so that
-the next view uses the new Python modules and browser assets.
+Viewer dependencies are included from Conda package version 0.9.2 onward.
+For an existing environment, update Magnelio before starting the notebook.
+`ipywidgets` installs the frontend widget extension automatically.
 
-Without it an inline view falls back to a static image; a browser target
+In a Pip-based installation, install `magnelio[jupyter]` instead; this
+extra remains optional on PyPI. It supplies the same viewer dependencies
+but does not supply the notebook application or the Conda-only CAD kernel.
+The standalone integration is packaged as `trame-pyvista` and imported as
+`trame_pyvista`.
+Restart the server and kernel after upgrading viewer packages so that
+the next view uses the new Python modules and browser assets. Select the
+kernel belonging to the environment in which Magnelio is installed.
+
+Without the trame integration an inline view falls back to a static image; a browser target
 falls back to the native VTK window.  The viewer says so in either case.
 The widget talks to the kernel over its own websocket on `localhost`; on a
 remote JupyterHub set `PYVISTA_TRAME_JUPYTER_MODE` as described in the

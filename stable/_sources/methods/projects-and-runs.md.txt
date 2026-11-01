@@ -239,8 +239,8 @@ line along the top; `floor_db=` pins the lower end by hand.
 energy plot — that a background thread refreshes every few seconds
 until the project is finished.  Left as the last expression of a
 cell, the cell returns at once and the panel keeps moving while other
-cells run; `panel.stop()` ends it early.  It needs the `jupyter`
-extra.
+cells run; `panel.stop()` ends it early. It needs `ipywidgets`, included
+with the Conda package or the `magnelio[jupyter]` extra for Pip installations.
 
 Polling is the deliberate choice.  The store is written by another
 process, often on another file system; a subscription to file-system

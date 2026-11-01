@@ -283,7 +283,7 @@ below is that rule.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 32 x 38 x 81 = 98,496 cells | 29 MiB
-      48   98496   22.2 s     0.0169     0.0045  ok
+      48   98496   22.4 s     0.0169     0.0045  ok
     converged: mnpw 32 (ΔS < 0.02 on this rung and the next)
 
 
@@ -469,7 +469,7 @@ of a curved cavity.
       mesh | conformal cells
       mesh | PEC masks
       mesh | 45 x 45 x 14 = 28,350 cells | 8.7 MiB
-      48    11.4889    28350   36.5 s   0.35 %   +0.13 %  ok
+      48    11.4889    28350   36.6 s   0.35 %   +0.13 %  ok
     converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
 
 
@@ -593,7 +593,7 @@ under :doc:`../methods/meshing-conformal`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 12.859 seconds)
+   **Total running time of the script:** (1 minutes 13.219 seconds)
 
 
 .. _sphx_glr_download_howto_plot_mesh_convergence.py:
