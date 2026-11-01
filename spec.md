@@ -1445,9 +1445,9 @@ Editable gallery sources live in `examples/tutorials/` and `examples/howto/`.
 Sphinx-Gallery generates downloadable notebooks; the old
 `examples/notebooks/` inventory is retired. There are 17 executable tutorials
 and one rendered Cassegrain example. Notebook or JupyterLab is recommended
-for interactive modelling and post-processing. The prepared conda-forge
-0.9.1 build 1 includes the viewer dependencies; PyPI retains the optional
-`jupyter` extra. Publication of that Conda build is pending (DD-288).
+for interactive modelling and post-processing. The conda-forge package
+includes viewer dependencies from 0.9.2; PyPI retains the optional
+`jupyter` extra (DD-288).
 
 ### 10.5 CI Strategy
 

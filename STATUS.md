@@ -1,7 +1,7 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-11-01.* **Version v0.9.1**, notebook-viewer hotfix
-on top of release v0.9.0 (`5e26a849`).
+*Last updated: 2026-11-01.* **Version v0.9.2**, complete Conda viewer
+dependencies and Conda-based setup on top of the 0.9.1 viewer hotfix.
 Geometry construction and owned topology, explicit API names, viewer/result
 controls, memory planning, selective stored-result access, finite-drive
 stopping and CPML/CAD/integral fixes are released. Upgrade instructions:
@@ -13,23 +13,22 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
 
 ## Release and validation
 
-- Conda setup is prepared for 0.9.1 build 1: the feedstock includes the
+- The 0.9.2 Conda recipe includes the
   viewer and widgets, and the README shows `magnelio notebook` in one
   environment. The local build passes import/pip checks on Python 3.11
   and 3.14 plus frontend-asset and iframe-widget construction checks.
   Fresh Miniconda acceptance installs only `magnelio notebook` from the
   local candidate channel and conda-forge: Run All produces an embedded,
   mouse-interactive viewer on the first call. The missing `anywidget`
-  dependency in trame-pyvista 0.3.0 setups is fixed locally (KB-056).
+  dependency in trame-pyvista 0.3.0 setups is fixed (KB-056).
   A Notebook 7.6.4 settings-schema JavaScript error also reproduces in a
   print-only baseline notebook; the viewer adds no browser errors.
   The new development environment creates successfully, its editable
   checkout installs with dependency downloads disabled, and **143 focused
   tests pass** (109 3D viewer / 34 geometry and project-panel tests).
   The non-executing documentation build passes with one cache warning.
-  Hosted workflows are updated but have not run on GitHub yet.
-  Publication is pending; README
-  and viewer instructions retain explicit guidance for published build 0.
+  Release delivery and hosted workflow results are tracked in
+  `investigations/release-0.9.2/` (internal dossier).
   CI/docs setup and current script instructions use Conda. Development
   dependencies are all conda-forge packages; Pip only links the checkout,
   and CUDA is opt-in. Acceptance evidence is kept in
@@ -40,7 +39,7 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
   call; browser checks confirm visible geometry and mouse interaction in
   client/server/trame modes without JavaScript errors. Evidence:
   `investigations/notebook-viewer-startup/` (internal dossier).
-- Versions agree at **0.9.1** in `pyproject.toml`, `_version.py` and
+- Versions agree at **0.9.2** in `pyproject.toml`, `_version.py` and
   `CITATION.cff`. All available release tags have changelog entries.
 - Last full local suite (v0.9.0): **4436 passed / 0 failed /
   39 skipped**, 4475 collected, 1087.00 s, 130 warnings. Minimum available

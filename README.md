@@ -81,10 +81,8 @@ needed with the dependency-complete package. Select the Python kernel
 from `mioenv` when creating a notebook. Tutorials can be downloaded as
 notebooks from the documentation.
 
-> **Conda packaging update pending:** viewer dependencies are being added
-> in build 1 of Magnelio 0.9.1. Until that build is published, append
-> `trame-pyvista ipywidgets anywidget nest-asyncio2` to the `conda create` command.
-> The published 0.9.1 build 0 does not yet include them automatically.
+Viewer dependencies are included from Conda package version 0.9.2 onward.
+For an existing environment, update Magnelio before starting the notebook.
 
 Prefer JupyterLab? Replace `notebook` with `jupyterlab` in the create
 command and start it with `python -m jupyterlab`. For scripts without a
@@ -97,9 +95,6 @@ There is a PyPI package as well:
 ```bash
 python -m pip install "magnelio[jupyter]"
 ```
-
-The published 0.9.1 PyPI extra also needs `anywidget`; its automatic
-dependency declaration is prepared for the next source release.
 
 It installs and imports, but it cannot build a mesh from geometry: that
 needs pythonocc-core (the Python bindings to Open CASCADE Technology),

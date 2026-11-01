@@ -344,17 +344,13 @@ conda activate mioenv
 python -m notebook
 ```
 
-The dependency update is prepared for conda-forge build 1 of Magnelio
-0.9.1 and is not published yet. With build 0, append
-`trame-pyvista ipywidgets anywidget nest-asyncio2` to the create command; these
-packages are all available from conda-forge. `ipywidgets` installs the
-frontend widget extension automatically.
+Viewer dependencies are included from Conda package version 0.9.2 onward.
+For an existing environment, update Magnelio before starting the notebook.
+`ipywidgets` installs the frontend widget extension automatically.
 
 In a Pip-based installation, install `magnelio[jupyter]` instead; this
 extra remains optional on PyPI. It supplies the same viewer dependencies
 but does not supply the notebook application or the Conda-only CAD kernel.
-For the published 0.9.1 PyPI extra, also install `anywidget`; the correction
-to that extra's dependencies is not released yet.
 The standalone integration is packaged as `trame-pyvista` and imported as
 `trame_pyvista`.
 Restart the server and kernel after upgrading viewer packages so that

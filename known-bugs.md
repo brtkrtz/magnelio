@@ -17,18 +17,17 @@ that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
 **Two numerical entries are open as of 2026-11-01: KB-038 and KB-043 on the default fast route.**
-KB-043 has an explicit opt-in mitigation. KB-056 is fixed locally with
-package publication pending; other entries are resolved.
+KB-043 has an explicit opt-in mitigation; other entries are resolved.
 
-## KB-056: ~~Clean notebook install lacks the iframe widget dependency~~ — Fixed locally; publication pending (DD-288, 2026-11-01)
+## KB-056: ~~Clean notebook install lacks the iframe widget dependency~~ — Fixed in 0.9.2 (DD-288, 2026-11-01)
 
 The `jupyter` extra and the original Conda viewer dependency proposal included
 `ipywidgets` but not `anywidget`. A clean installation selecting
 trame-pyvista 0.3.0 rendered ordinary sliders, yet the first 3D view reported
 `ImportError('Please install anywidget.')`. Import-only package checks passed.
 The extra, development environment and prepared Conda build now include
-`anywidget`; the recipe also constructs the actual iframe widget. Delivery
-of the updated Conda build and PyPI extra is pending. Evidence:
+`anywidget`; the recipe also constructs the actual iframe widget. The
+dependency corrections ship in 0.9.2 on Conda and PyPI. Evidence:
 `investigations/simple-conda-install/` (internal dossier).
 
 ## KB-055: ~~First notebook viewer has no current renderer~~ — Resolved (DD-251, 2026-10-30)

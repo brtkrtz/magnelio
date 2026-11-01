@@ -22202,7 +22202,7 @@ Evidence and scripts:
 
 ## DD-288 — Complete Conda viewer dependencies and a Conda-only setup
 
-**Date:** 2026-11-01. **Status:** Implemented locally; feedstock publication pending.
+**Date:** 2026-11-01. **Status:** Implemented in 0.9.2.
 Amends the distribution policy in DD-190 and DD-274.
 
 **Decision/rationale.** The conda-forge `magnelio` package includes
@@ -22216,12 +22216,13 @@ are not part of that workflow. Notebook applications remain optional for
 script users. PyPI retains `magnelio[jupyter]`; its dependency list delegates
 the trame stack to `trame-pyvista` as well.
 
-The feedstock change increments the 0.9.1 build number to 1 without changing
-the upstream source hash. Package tests check viewer imports and the installed
+The original candidate used 0.9.1 build 1; the accepted source and Conda
+release is 0.9.2 build 0 so both distribution paths carry the same fixes.
+Package tests check viewer imports and the installed
 frontend extension assets and construct an iframe widget: the clean browser
 probe exposed `trame-pyvista` 0.3.0's additional `anywidget` requirement,
-which was not caught by imports alone. Documentation explicitly distinguishes the pending
-build from published build 0 until delivery is authorized and completed.
+which was not caught by imports alone. The README identifies 0.9.2 as the
+first Conda package with the complete viewer dependencies.
 
 The development environment and hosted CI/docs use Conda. `environment.yml`
 contains only conda-forge dependencies, including Hatchling and the notebook
