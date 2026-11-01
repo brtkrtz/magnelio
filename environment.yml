@@ -1,6 +1,9 @@
 name: mio
 channels:
   - conda-forge
+  - nodefaults
+variables:
+  PYTHONNOUSERSITE: "1"
 dependencies:
   - python=3.11
 
@@ -19,14 +22,15 @@ dependencies:
   # dispatch — Numba CPU fused / CUDA fused / NumPy-CuPy stencil fallback)
   - numba>=0.59
 
-  # Jupyter kernel and the interactive 3D viewer widget (DD-190; mirrors
-  # the pyproject [jupyter] extra).  trame-jupyter-extension is deliberately
-  # absent: the viewer uses trame's own websocket transport.
+  # Notebook applications and viewer dependencies are all from conda-forge.
+  # trame-pyvista supplies its compatible trame stack. Do not install the
+  # trame Jupyter extension: the viewer uses its own websocket transport.
+  - notebook
+  - jupyterlab
   - ipykernel
   - ipywidgets
-  - trame>=3.5
-  - trame-vtk>=2.8
-  - trame-vuetify>=2.4
+  - anywidget>=0.9
+  - trame-pyvista>=0.1.5
   - nest-asyncio2
 
   # Dev tools
@@ -43,13 +47,6 @@ dependencies:
   - sphinx-gallery>=0.15
   - sphinx-design>=0.6  # tab set around the interactive 3D views
 
-  # pip - editable install
+  # Build the local editable checkout without fetching build dependencies.
+  - hatchling
   - pip
-  - pip:
-      - -e .
-      - trame-pyvista>=0.1.5  # PyVista >=0.49 moved its trame integration here
-      - cupy-cuda12x>=13.0  # optional GPU tier; see pyproject.toml [gpu] extra
-      - nvidia-cublas-cu12  # CUDA-12 runtime libs the pip cupy wheel preloads
-                            # (matmul/energy check needs cuBLAS; without it a
-                            # GPU run fails mid-march with libcublas.so.12
-                            # missing)

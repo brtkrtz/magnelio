@@ -5,7 +5,7 @@
 > This is the internal design reference; the user-facing API reference
 > is the Sphinx documentation (`docs/api`).
 >
-> Last updated: 2026-10-08 (current-code/documentation reconciliation)
+> Last updated: 2026-11-01 (Conda packaging and development workflow)
 > Current contracts and migration notes take precedence over explicitly
 > historical sketches. This editorial reconciliation changes no numerical method
 > and does not replace the DD-named accuracy certificates.
@@ -1444,13 +1444,17 @@ microstrip/stripline benchmark names do not describe current files.
 Editable gallery sources live in `examples/tutorials/` and `examples/howto/`.
 Sphinx-Gallery generates downloadable notebooks; the old
 `examples/notebooks/` inventory is retired. There are 17 executable tutorials
-and one rendered Cassegrain example. JupyterLab and the `jupyter` viewer
-extra are recommended for interactive modelling and post-processing.
+and one rendered Cassegrain example. Notebook or JupyterLab is recommended
+for interactive modelling and post-processing. The conda-forge package
+includes viewer dependencies from 0.9.2; PyPI retains the optional
+`jupyter` extra (DD-288).
 
 ### 10.5 CI Strategy
 
 - GitHub Actions runs Ruff lint/format, public-content hygiene and the unit
-  suite on main pushes and pull requests. The conda environment includes CAD;
+  suite on main pushes and pull requests. Conda creates the development
+  environment; Pip only links the checkout without resolving dependencies.
+  The environment includes CAD;
   a headless display supports viewer checks. Device tests skip without CUDA.
 - Full integration/numerical acceptance remains a separate local check.
   API/import gates are available locally; DD-reference and project-consistency

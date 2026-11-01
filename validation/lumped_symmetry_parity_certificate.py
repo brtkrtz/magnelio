@@ -23,7 +23,7 @@ C. **Parallel cut (PMC containment)** — a passive lumped load lying
 
 Run from the repository root:
 
-    mamba run --no-capture-output -n mio python \
+    conda run --no-capture-output -n mio python \
         validation/lumped_symmetry_parity_certificate.py
 """
 

@@ -15,7 +15,7 @@ C. **Symmetry parity** — SymmetryPEC half model with the DD-172
 
 Run from the repository root:
 
-    mamba run --no-capture-output -n mio python \
+    conda run --no-capture-output -n mio python \
         validation/farfield_dipole_certificate.py
 """
 

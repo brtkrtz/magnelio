@@ -5,7 +5,7 @@ Measures solve time, peak RAM, and eigenfrequency error vs. analytical
 for an all-PEC rectangular cavity across increasing grid sizes.
 
 Usage:
-    mamba run --no-capture-output -n mio python \
+    conda run --no-capture-output -n mio python \
         benchmarks/bench_eigenmode_scaling.py
 """
 

@@ -128,8 +128,8 @@ ax.set_title("Stored energy in the grid, one curve per run")
 # above the energy plot, refreshed from a background thread every few
 # seconds until the project is finished.  Leave it as the last
 # expression of a cell; the cell returns at once and the panel keeps
-# moving while you work in other cells.  It needs the ``jupyter``
-# extra (``pip install 'magnelio[jupyter]'``), and it is a notebook
+# moving while you work in other cells. It needs ``ipywidgets``, supplied
+# by the Conda package or the ``magnelio[jupyter]`` Pip extra. It is a notebook
 # thing — this page is built without one, so the panel is only
 # assembled here, not shown.
 

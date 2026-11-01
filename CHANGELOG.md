@@ -9,6 +9,24 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-11-01
+
+### Changed
+
+- Installation and development instructions use Conda throughout, including
+  CI and documentation builds. All development dependencies come from
+  conda-forge; Pip only links the editable source checkout. CUDA support is
+  an optional Conda install rather than a default Pip download.
+- The conda-forge package includes the interactive viewer and notebook
+  widgets. The README documents the three-command notebook setup without
+  a Pip dependency step. The PyPI `jupyter` extra remains available.
+
+### Fixed
+
+- Notebook installations include `anywidget`, required by the iframe widget
+  in trame-pyvista 0.3.0. The Conda recipe tests widget construction as well
+  as imports and frontend assets.
+
 ## [0.9.1] - 2026-10-31
 
 ### Fixed

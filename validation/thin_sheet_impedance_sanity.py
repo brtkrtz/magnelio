@@ -26,7 +26,7 @@ beyond the sub-cell approximation error.  Gate: 2 % (the architecture
 stretch target) — accepted by the developer 2026-07-10 (session 92)
 from the measured numbers.
 
-Run with: ``mamba run --no-capture-output -n mio python
+Run with: ``conda run --no-capture-output -n mio python
 validation/thin_sheet_impedance_sanity.py``.
 """
 

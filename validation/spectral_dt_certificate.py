@@ -17,7 +17,7 @@ Certifies three claims:
 
 Run from ``magnelio/``:
 
-    mamba run --no-capture-output -n mio python validation/spectral_dt_certificate.py
+    conda run --no-capture-output -n mio python validation/spectral_dt_certificate.py
 """
 
 import numpy as np

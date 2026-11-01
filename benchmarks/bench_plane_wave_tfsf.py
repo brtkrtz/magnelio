@@ -11,7 +11,7 @@ same mesh, and normalises the difference by the number of box boundary
 cells so the two backends can be compared directly.
 
 Usage:
-    mamba run --no-capture-output -n mio python \
+    conda run --no-capture-output -n mio python \
         benchmarks/bench_plane_wave_tfsf.py [--backend numpy|cupy] [--cells 1.0]
 """
 

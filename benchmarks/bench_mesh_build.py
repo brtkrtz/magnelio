@@ -38,9 +38,9 @@ Output: a table per family on stdout and, with ``--json``, a report at
 ``benchmarks/results/bench_mesh_build.json``.
 
 Usage:
-    mamba run --no-capture-output -n mio python benchmarks/bench_mesh_build.py \\
+    conda run --no-capture-output -n mio python benchmarks/bench_mesh_build.py \\
         --family posts --sizes 60 240 --pool off
-    mamba run --no-capture-output -n mio python benchmarks/bench_mesh_build.py \\
+    conda run --no-capture-output -n mio python benchmarks/bench_mesh_build.py \\
         --family all --pool off auto --json
 """
 

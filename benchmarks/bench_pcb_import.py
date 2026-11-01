@@ -17,7 +17,7 @@ fix is to fuse in tiles and then fuse the tiles: fusing is associative,
 so the result is the same shape, and each tile stays small.
 
 Usage:
-    mamba run --no-capture-output -n mio python \
+    conda run --no-capture-output -n mio python \
         benchmarks/bench_pcb_import.py
 """
 

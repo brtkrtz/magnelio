@@ -24,7 +24,7 @@ all tools into one compound before a single ``BRepAlgoAPI_Cut`` (see
 
 Usage
 -----
-    mamba run --no-capture-output -n mio python benchmarks/profile_csg_scaling.py
+    conda run --no-capture-output -n mio python benchmarks/profile_csg_scaling.py
 """
 
 from __future__ import annotations

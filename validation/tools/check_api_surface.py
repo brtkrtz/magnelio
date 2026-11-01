@@ -14,7 +14,7 @@ script flags:
 
 Usage::
 
-    ~/.local/share/mamba/envs/mio/bin/python validation/tools/check_api_surface.py
+    conda run --no-capture-output -n mio python validation/tools/check_api_surface.py
 
 Exit status 0 when the surface is clean, 1 otherwise.
 """

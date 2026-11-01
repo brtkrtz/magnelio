@@ -31,14 +31,14 @@ so per-step costs are directly comparable across the three cases.
 Usage
 -----
     # Quick smoke test (~40k cells):
-    mamba run --no-capture-output -n mio python benchmarks/profile_solver.py small
+    conda run --no-capture-output -n mio python benchmarks/profile_solver.py small
 
     # Medium / large:
-    mamba run --no-capture-output -n mio python benchmarks/profile_solver.py medium
-    mamba run --no-capture-output -n mio python benchmarks/profile_solver.py large
+    conda run --no-capture-output -n mio python benchmarks/profile_solver.py medium
+    conda run --no-capture-output -n mio python benchmarks/profile_solver.py large
 
     # One case only, custom step count, cProfile dump:
-    mamba run --no-capture-output -n mio python benchmarks/profile_solver.py small \
+    conda run --no-capture-output -n mio python benchmarks/profile_solver.py small \
         --case dispersive --steps 2000 --profile-out results/x.prof
 
 The script prints a per-phase wall-time summary (mesh / run), the

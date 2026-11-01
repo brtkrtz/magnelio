@@ -14,7 +14,7 @@ coordinates themselves round differently at 1e-3x), so the pass bound
 is a measured numerical-noise level, not zero.
 
 Run:
-    ~/.local/share/mamba/envs/mio/bin/python validation/scale_invariance_certificate.py
+    conda run --no-capture-output -n mio python validation/scale_invariance_certificate.py
 """
 
 import sys

@@ -4914,8 +4914,8 @@ class Project(ScatteringResultMixin):
         peak as a picture — until the project is finished.  Leave it
         as the last expression of a cell; the cell returns at once and
         the panel keeps moving.  ``panel.stop()`` ends the refresh
-        early.  Needs the ``jupyter`` extra (``pip install
-        'magnelio[jupyter]'``).
+        early. Requires ``ipywidgets``, included with the Conda package
+        and with the ``magnelio[jupyter]`` extra for Pip installations.
 
         Parameters
         ----------
@@ -4928,8 +4928,9 @@ class Project(ScatteringResultMixin):
             import ipywidgets  # noqa: PLC0415
         except ImportError as exc:
             raise ImportError(
-                "Project.watch_panel() needs ipywidgets; install the notebook extra: "
-                "pip install 'magnelio[jupyter]'",
+                "Project.watch_panel() needs ipywidgets; install it with "
+                "conda install -c conda-forge ipywidgets, or install "
+                "'magnelio[jupyter]' with Pip",
             ) from exc
         if not interval > 0.0:
             raise ValueError(f"interval must be positive; got {interval!r}")
