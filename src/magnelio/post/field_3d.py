@@ -1331,7 +1331,7 @@ class _FieldView:
         def colour_menu():
             with vuetify.VMenu(close_on_content_click=False):
                 with vuetify.Template(v_slot_activator="{ props }"):
-                    vuetify.VBtn("Colour scale", v_bind="props", variant="text", size="small")
+                    _viewer._menu_button("Colour scale")
                 with vuetify.VCard(style="width: 320px; max-width: 90vw; padding: 12px;"):
                     html.Div(f"Field units: {{{{ {k_unit} }}}}")
                     for name, label in ((k_min, "Minimum"), (k_max, "Maximum")):
@@ -1351,7 +1351,7 @@ class _FieldView:
         def arrow_menu():
             with vuetify.VMenu(close_on_content_click=False):
                 with vuetify.Template(v_slot_activator="{ props }"):
-                    vuetify.VBtn("Arrows", v_bind="props", variant="text", size="small")
+                    _viewer._menu_button("Arrows")
                 with vuetify.VCard(style="width: 320px; max-width: 90vw; padding: 12px;"):
                     vuetify.VSelect(
                         v_model=(k_length, self.arrow_length),
@@ -1467,8 +1467,8 @@ class _FieldView:
                     label="Field",
                     density="compact",
                     hide_details=True,
-                    variant="plain",
-                    style="width: 80px; margin-left: 8px;",
+                    variant="filled",
+                    style="width: 100px; flex: 0 0 100px; margin: 4px 0 4px 8px;",
                 )
                 if self.can_iso and self.levels is None:
                     vuetify.VSlider(
