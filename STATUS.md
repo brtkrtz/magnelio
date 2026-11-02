@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-11-02.* **Version v0.9.3 prepared**, compact shaded
+*Last updated: 2026-11-02.* **Version v0.9.3**, compact shaded
 viewer menus on top of the complete Conda viewer dependencies in 0.9.2.
 Geometry construction and owned topology, explicit API names, viewer/result
 controls, memory planning, selective stored-result access, finite-drive
@@ -16,9 +16,14 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
 - Version 0.9.3 toolbar hotfix: **109 geometry/field viewer tests pass**;
   browser checks cover the four menus, visibility toggles and responsive
   wrapping. Offline non-executing HTML, Ruff, format, public hygiene,
-  project-consistency and DD-reference gates pass. Publication is pending;
-  delivery evidence is tracked in `investigations/release-0.9.3/`
-  (internal dossier).
+  project-consistency and DD-reference gates pass. Twelve additional
+  project-consistency tests pass. Source CI passes **3958 tests / 5 skipped**
+  (462.45 s, 76 warnings). GitHub and PyPI are published; both distribution
+  hashes and an independent source download are verified. Feedstock PR #23
+  is merged and the official Conda main upload passes. The registered Conda
+  artifact's hash and viewer sources match the accepted checkout; default
+  CDN propagation and stable/dev documentation delivery remain pending.
+  Evidence: `investigations/release-0.9.3/` (internal dossier).
 - The 0.9.2 Conda recipe includes the
   viewer and widgets, and the README shows `magnelio notebook` in one
   environment. The local build passes import/pip checks on Python 3.11
