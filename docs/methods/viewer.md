@@ -123,6 +123,11 @@ the group without forgetting the individual choices. Group paths survive
 project storage; older projects without this metadata list their bodies
 under *Ungrouped*. Bodies are selected only through this menu.
 
+The **Show**, **Solids**, **Colour scale** and **Arrows** menus use compact,
+lightly shaded buttons with a downward arrow. The **Show** button keeps its
+label; open the menu to see the checked visibility groups. **Cut** and
+**Field** show their current selection in shaded fields.
+
 Both toolbar rows wrap when the window is narrow. The arrow settings live
 in a submenu so the cutting plane and field selector remain accessible.
 

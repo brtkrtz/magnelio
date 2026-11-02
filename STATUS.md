@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-11-01.* **Version v0.9.2**, complete Conda viewer
+*Last updated: 2026-11-02.* **Version v0.9.2**, complete Conda viewer
 dependencies and Conda-based setup on top of the 0.9.1 viewer hotfix.
 Geometry construction and owned topology, explicit API names, viewer/result
 controls, memory planning, selective stored-result access, finite-drive
@@ -45,17 +45,18 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
   39 skipped**, 4475 collected, 1087.00 s, 130 warnings. Minimum available
   RAM was 11.22 GiB. Tests default to NumPy/double; explicit single/GPU
   settings override them. Skipped paths are not verified.
-- Hotfix source CI under pythonocc/OCCT 8.0.1: **3958 passed / 5 skipped**
-  (354.58 s, 76 warnings); no failures. Release delivery is tracked above.
+- Version 0.9.2 source CI under pythonocc/OCCT 8.0.1: **3958 passed / 5 skipped**
+  (348.47 s, 76 warnings); no failures. Release delivery is tracked above.
   Local CAD acceptance uses 7.9.0. Hosted documentation at the accepted
   source commit passed with the full gallery executed; offline release HTML
   also passed. Exact-tag deployment and conda-forge publication have separate
   delivery status, recorded in the release checklist.
-- GitHub/PyPI 0.9.1 is published, with both artifact hashes independently
-  verified. The conda-forge feedstock PR #21 is merged; its main build/upload
-  succeeds and Anaconda lists the 0.9.1 package under the main label. Public
-  channel propagation checks are tracked in
-  `investigations/release-0.9.1/RELEASE-CHECKLIST.md` (internal record).
+- GitHub/PyPI 0.9.2 is published, with both artifact hashes independently
+  verified. The conda-forge feedstock PR #22 is merged and its main upload
+  succeeds. A fresh public-channel solve selects 0.9.2 and all viewer
+  dependencies with only `magnelio notebook` requested. Fresh public-package
+  browser acceptance remains open in
+  `investigations/release-0.9.2/RELEASE-CHECKLIST.md` (internal record).
 - Exact-tag/main documentation and Pages deployments pass. The live
   `/stable/` and `/dev/` viewer pages contain the updated standalone-package
   and kernel-restart instructions. Deployment is gated by `DEPLOY_DOCS`
@@ -130,6 +131,9 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
 - **Viewer.** Inline notebook widgets, browser views from scripts and native
   fallback; grouped visibility, cuts, boundary overlays, field arrows,
   numeric colour limits and whole-volume views are implemented (DD-280).
+  Toolbar menus use compact shaded buttons with adjacent dropdown arrows;
+  visibility selections stay inside Show. Cut and Field retain visible values.
+  All 109 geometry/field viewer tests pass after the styling change.
   Viewer state does not change solver physics.
 
 ## Accuracy and remaining limits

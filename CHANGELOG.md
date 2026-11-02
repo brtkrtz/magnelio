@@ -9,6 +9,13 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Fixed
+
+- Viewer menus use consistent, compact buttons with a downward arrow,
+  subtle shading and a fine border. The Show menu keeps visibility choices
+  inside its dropdown instead of displaying a long list in the toolbar.
+  Cut and Field retain their current values in shaded selection fields.
+
 ## [0.9.2] - 2026-11-01
 
 ### Changed

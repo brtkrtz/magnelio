@@ -321,7 +321,23 @@ _MENU_CSS = (
     ".v-card:has(.mio-menu-row) { height: auto !important; overflow: visible !important; }\n"
     ".v-card:has(.mio-menu-row) > .v-row { align-items: flex-start !important; }\n"
     ".v-card:has(.mio-menu-row) > .v-row > .v-row { flex-wrap: wrap !important; }\n"
+    ".mio-menu-button { margin: 4px; text-transform: none; letter-spacing: normal; "
+    "border: 1px solid rgba(var(--v-theme-on-surface), 0.12); }\n"
 )
+
+
+def _menu_button(label: str) -> None:
+    """Build a compact, shaded menu activator with an adjacent dropdown arrow."""
+    from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
+
+    vuetify.VBtn(
+        label,
+        v_bind="props",
+        variant="tonal",
+        size="small",
+        append_icon="mdi-menu-down",
+        classes="mio-menu-button",
+    )
 
 
 # The browser tab's name, set on the trame state when the toolbar is
@@ -1483,7 +1499,7 @@ def _attach_controls(scene: _Scene, server) -> Any:
             return
         with vuetify.VMenu(close_on_content_click=False):
             with vuetify.Template(v_slot_activator="{ props }"):
-                vuetify.VBtn("Solids", v_bind="props", variant="text", size="small")
+                _menu_button("Solids")
             with vuetify.VCard(style="width: 360px; max-width: 90vw;"):
                 vuetify.VTextField(
                     v_model=(k_search, ""),
@@ -1529,7 +1545,7 @@ def _attach_controls(scene: _Scene, server) -> Any:
 
     def menu_items() -> None:
         # PyVista's menu is a card of fixed height whose rows do not
-        # wrap, so a select's floating label ("Cut", "Show") is clipped
+        # wrap, so a select's floating label ("Cut", "Field") is clipped
         # at the top and a narrow window hides the controls on the
         # right.  The card is told to grow instead, and its rows to
         # wrap; the field row below adds itself as a row of its own.
@@ -1544,8 +1560,8 @@ def _attach_controls(scene: _Scene, server) -> Any:
                 label="Cut",
                 density="compact",
                 hide_details=True,
-                variant="plain",
-                style="width: 90px; margin-left: 8px;",
+                variant="filled",
+                style="width: 90px; flex: 0 0 90px; margin: 4px 0 4px 8px;",
             )
             vuetify.VSlider(
                 v_model=(k_pos, state[k_pos]),
@@ -1605,16 +1621,19 @@ def _attach_controls(scene: _Scene, server) -> Any:
             with vuetify.VBtn(icon=True, size="small", variant="text", click=ctrl[k_reset]):
                 vuetify.VIcon("mdi-backup-restore")
                 vuetify.VTooltip("Reset cut", activator="parent", location="bottom")
-            vuetify.VSelect(
-                v_model=(k_show, state[k_show]),
-                items=(f"{key}_groups", state[f"{key}_groups"]),
-                label="Show",
-                multiple=True,
-                density="compact",
-                hide_details=True,
-                variant="plain",
-                style="width: 150px; margin-left: 8px;",
-            )
+            with vuetify.VMenu(close_on_content_click=False):
+                with vuetify.Template(v_slot_activator="{ props }"):
+                    _menu_button("Show")
+                with vuetify.VCard(classes="pa-2", style="max-height: 70vh; overflow-y: auto;"):
+                    vuetify.VCheckbox(
+                        v_for=(f"group in {key}_groups",),
+                        key="group.value",
+                        v_model=(k_show, state[k_show]),
+                        label=("group.title",),
+                        value=("group.value",),
+                        density="compact",
+                        hide_details=True,
+                    )
             solid_menu()
         if field_items is not None:
             field_items()
