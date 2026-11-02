@@ -9,6 +9,8 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-11-02
+
 ### Fixed
 
 - Viewer menus use consistent, compact buttons with a downward arrow,

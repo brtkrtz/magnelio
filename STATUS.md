@@ -1,7 +1,7 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-11-02.* **Version v0.9.2**, complete Conda viewer
-dependencies and Conda-based setup on top of the 0.9.1 viewer hotfix.
+*Last updated: 2026-11-02.* **Version v0.9.3 prepared**, compact shaded
+viewer menus on top of the complete Conda viewer dependencies in 0.9.2.
 Geometry construction and owned topology, explicit API names, viewer/result
 controls, memory planning, selective stored-result access, finite-drive
 stopping and CPML/CAD/integral fixes are released. Upgrade instructions:
@@ -13,6 +13,12 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
 
 ## Release and validation
 
+- Version 0.9.3 toolbar hotfix: **109 geometry/field viewer tests pass**;
+  browser checks cover the four menus, visibility toggles and responsive
+  wrapping. Offline non-executing HTML, Ruff, format, public hygiene,
+  project-consistency and DD-reference gates pass. Publication is pending;
+  delivery evidence is tracked in `investigations/release-0.9.3/`
+  (internal dossier).
 - The 0.9.2 Conda recipe includes the
   viewer and widgets, and the README shows `magnelio notebook` in one
   environment. The local build passes import/pip checks on Python 3.11
@@ -39,7 +45,7 @@ investigated defects: `known-bugs.md`; pending engineering work: `TODO.md`.
   call; browser checks confirm visible geometry and mouse interaction in
   client/server/trame modes without JavaScript errors. Evidence:
   `investigations/notebook-viewer-startup/` (internal dossier).
-- Versions agree at **0.9.2** in `pyproject.toml`, `_version.py` and
+- Versions agree at **0.9.3** in `pyproject.toml`, `_version.py` and
   `CITATION.cff`. All available release tags have changelog entries.
 - Last full local suite (v0.9.0): **4436 passed / 0 failed /
   39 skipped**, 4475 collected, 1087.00 s, 130 warnings. Minimum available
